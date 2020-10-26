@@ -87,7 +87,7 @@ class Main:
 
         if not os.path.isfile(os.path.join(self.addon_data_dir, 'anidub.db')):
             try:
-                data = urllib.urlopen('https://github.com/NIV82/kodi_repo/tree/main/release/plugin.niv.anidub/anidub.db')
+                data = urllib.urlopen('https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anidub/anidub.db')
                 chunk_size = 8192
                 bytes_read = 0
                 file_size = int(data.info().getheaders("Content-Length")[0])
