@@ -41,8 +41,8 @@ def xml_rebuild():
             for line in xml_data:
                 if '<?xml' in line:
                     continue
-                #if '<icon>' in line:
-                    #line = line.replace('resources/media/', '')
+                if '<icon>' in line:
+                    line = line.replace('resources/media/', '')
                 full_xml = '{}{}\n'.format(full_xml, line)
             
         full_xml = '{}\n'.format(full_xml)

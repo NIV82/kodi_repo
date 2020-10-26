@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.shiza" name="SHIZA Project" version="1.0.0" provider-name="NIV">
+  <extension point="xbmc.python.pluginsource" library="shiza.py">
+        <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary>SHIZA Project</summary>
+    <description>Плагин для просмотра аниме с сайта shiza-project.com</description>  
+    <assets>
+        <icon>resources/media/icon.jpg</icon>
+    </assets>
+  </extension>
+</addon>
