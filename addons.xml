@@ -13,7 +13,7 @@
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
-        <icon>icon.jpg</icon>
+        <icon>https://github.com/NIV82/kodi_repo/blob/main/release/plugin.niv.anidub/icon.jpg?raw=true</icon>
     </assets>
   </extension>
 </addon>
