@@ -13,7 +13,7 @@
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
-        <icon>icon.jpg</icon>
+        <icon>resources/media/icon.jpg</icon>
     </assets>
   </extension>
 </addon>
@@ -30,7 +30,7 @@
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
-        <icon>icon.jpg</icon>
+        <icon>resources/media/icon.jpg</icon>
     </assets>
   </extension>
 </addon>
@@ -47,7 +47,7 @@
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
-        <icon>icon.jpg</icon>
+        <icon>resources/media/icon.jpg</icon>
     </assets>
   </extension>
 </addon>
@@ -64,7 +64,7 @@
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
-        <icon>icon.jpg</icon>
+        <icon>resources/media/icon.jpg</icon>
     </assets>
   </extension>
 </addon>
