@@ -40,11 +40,11 @@ data = '[sett]\n\
 Остальные движки, на данный момент , не проверены\n\
 \n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]T2HTTP[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Ubuntu[/COLOR] | [COLOR blue]LibreELEC[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]TorrServer[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Ubuntu[/COLOR] | [COLOR blue]LibreELEC[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]Elementum[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Ubuntu[/COLOR] | [COLOR blue]LibreELEC[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/comp]\n\
 \n\
@@ -63,12 +63,11 @@ data = '[sett]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [B][COLOR red]ERROR: 102[/COLOR][/B]\n\
 Ошибка в модуле очистки Истории Поиска\n\
-Возникает если плагин не может удалить историю\n\
 Сама не исправляется, необходимо сообщить автору плагина название аниме\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [B][COLOR red]ERROR: 103[/COLOR][/B]\n\
-Ошибка в плагине - в модуле обработки Избранного с Сайта\n\
-Сама по себе не исправляется, необходимо сообщить автору плагина название аниме, чтобы он мог проверить и исправить\n\
+Ошибка в модуле обработки Избранного с Сайта\n\
+Сама по себе не исправляется, необходимо сообщить автору плагина название аниме\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [B][COLOR red]ERROR: 404[/COLOR][/B]\n\
 Типичная ошибка - Страница не найдена, удалена, перемещена\n\

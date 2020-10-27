@@ -28,13 +28,11 @@ data = '[sett]\n\
 Остальные движки, на данный момент , не проверены\n\
 \n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]T2HTTP[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Ubuntu[/COLOR] | [COLOR gray]LibreELEC[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Ubuntu[/COLOR] | [COLOR gray]LibreELEC[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]Elementum[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]TorrServer_TAM[/COLOR] | [COLOR red]Win10[/COLOR] | [COLOR gray]Ubuntu[/COLOR] | [COLOR gray]LibreELEC[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]TorrServer_module[/COLOR] | [COLOR red]Win10[/COLOR] | [COLOR gray]Ubuntu[/COLOR] | [COLOR gray]LibreELEC[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/comp]\n\
 [bugs]\n\
