@@ -27,7 +27,7 @@ def xml_rebuild():
     for plugin in os.listdir(develop_dir):
         plugin_path = os.path.join(develop_dir, plugin)
             
-        if not os.path.isdir(plugin_path) or not 'plugin.' in plugin_path:
+        if not os.path.isdir(plugin_path):# or not 'plugin.' in plugin_path:
             continue
             
         develop_xml = os.path.join(plugin_path, 'addon.xml')
@@ -80,7 +80,7 @@ develop_plugins = os.listdir(develop_dir)
 for develop_plugin in develop_plugins:
     plugin_path = os.path.join(develop_dir, develop_plugin)
 
-    if not os.path.isdir(plugin_path) or not 'plugin.' in plugin_path:
+    if not os.path.isdir(plugin_path):# or not 'plugin.' in plugin_path:
         continue
 
     xml_path = os.path.join(plugin_path, 'addon.xml')

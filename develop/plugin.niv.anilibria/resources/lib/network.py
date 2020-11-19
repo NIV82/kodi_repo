@@ -6,84 +6,78 @@ import urllib2
 import cookielib
 
 class WebTools:
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:74.0) Gecko/20100101 Firefox/74.0',
-        'Accept': '*/*',
-        'X-Requested-With': 'XMLHttpRequest'
-    }
+    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
+            'Accept': '*/*',
+            'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+            'Accept-Charset': 'utf-8',
+            'Accept-Encoding': 'identity'
+            }
 
-    def __init__(self, use_auth=False, auth_state=False, proxy_data=None):
-        self.use_auth = use_auth
+        self.auth_usage = auth_usage
         self.proxy_data = proxy_data
-        self.download_dir = None
-
         self.proxy = urllib2.ProxyHandler(self.proxy_data)
 
-        if self.use_auth:
-            self.cj = cookielib.MozillaCookieJar()
-            self.cookie = urllib2.HTTPCookieProcessor(self.cj)            
-            self.url_opener = urllib2.build_opener(self.cookie, self.proxy)
-            self.auth_state = auth_state
-            self.sid_file = ''            
-            self.auth_url = 'https://www.anilibria.tv/public/login.php'
+        if self.auth_usage:
+            self.mcj = cookielib.MozillaCookieJar()
+            self.hcp = urllib2.HTTPCookieProcessor(self.mcj)            
+            self.url_opener = urllib2.build_opener(self.hcp, self.proxy)
+            self.auth_status = auth_status
+            self.sid_file = ''
+            self.search_cookie_name = 'dle_user_id'
+            self.auth_url = 'https://tr.anidub.com/'
             self.auth_post_data = {}
         else:
             self.url_opener = urllib2.build_opener(self.proxy)
 
-    def get_html(self, target, referer='', post=None):
-        WebTools.headers['Referer'] = referer
-
-        if self.use_auth:
-            if not self.authorization():
-                return None
+    def get_html(self, target_name, post=None):
+        if self.auth_usage and not self.authorization():
+            return None
         try:
-            url = self.url_opener.open(urllib2.Request(url=target, data=post, headers=WebTools.headers))            
+            url = self.url_opener.open(urllib2.Request(url=target_name, data=post, headers=self.headers))            
             data = url.read()
             return data        
         except urllib2.HTTPError as err:
             return err.code
 
-    def get_file(self, target, referer='', post=None, dest_name=None):
-        if not self.download_dir:
+    def get_file(self, target_name, post=None, destination_name=None):
+        if self.auth_usage and not self.authorization():
             return None
-        WebTools.headers['Referer'] = referer
         try:
-            if not dest_name:
-                dest_name = os.path.basename(target)
-            url = self.url_opener.open(urllib2.Request(url=target, data=post, headers=WebTools.headers))
-            fl = open(os.path.join(self.download_dir, dest_name), "wb")
-            fl.write(url.read())
-            fl.close()
-            return os.path.join(self.download_dir, dest_name)
+            url = self.url_opener.open(urllib2.Request(url=target_name, data=post, headers=self.headers))
+            with open(destination_name, 'wb') as write_file:
+                write_file.write(url.read())
+            return destination_name
         except urllib2.HTTPError as err:
             return err.code
 
     def authorization(self):
-        if not self.use_auth or self.sid_file == '':
+        if not self.auth_usage or self.sid_file == '':
             return False
         
-        if self.auth_state:
+        if self.auth_status:
             try:
-                self.cj.load(self.sid_file)
+                self.mcj.load(self.sid_file)
                 auth = True
             except:
-                data = self.url_opener.open(urllib2.Request(self.auth_url, urllib.urlencode(self.auth_post_data), WebTools.headers))
+                data = self.url_opener.open(urllib2.Request(self.auth_url, urllib.urlencode(self.auth_post_data), self.headers))
                 response = data.read()
                 
                 if 'success' in response:
                     auth = True
-                    self.cj.save(self.sid_file)
+                    self.mcj.save(self.sid_file)
                 else:
                     auth = False
         else:
-            data = self.url_opener.open(urllib2.Request(self.auth_url, urllib.urlencode(self.auth_post_data), WebTools.headers))
+            data = self.url_opener.open(urllib2.Request(self.auth_url, urllib.urlencode(self.auth_post_data), self.headers))
             response = data.read()
             
             if 'success' in response:
                 auth = True
-                self.cj.save(self.sid_file)
+                self.mcj.save(self.sid_file)
             else:
                 auth = False
 
-        self.auth_state = auth
+        self.auth_status = auth
         return auth

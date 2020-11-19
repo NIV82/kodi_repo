@@ -7,6 +7,7 @@ import urllib
 import time
 
 import xbmc
+import xbmcvfs
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
@@ -25,16 +26,26 @@ class Main:
         self.dialog = xbmcgui.Dialog()
 
         self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
-        if not os.path.exists(self.addon_data_dir):
-            os.makedirs(self.addon_data_dir)
+        if not xbmcvfs.exists(self.addon_data_dir):
+            xbmcvfs.mkdir(self.addon_data_dir)
 
         self.images_dir = os.path.join(self.addon_data_dir, 'images')
-        if not os.path.exists(self.images_dir):
-            os.mkdir(self.images_dir)
+        if not xbmcvfs.exists(self.images_dir):
+            xbmcvfs.mkdir(self.images_dir)
 
         self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
-        if not os.path.exists(self.torrents_dir):
-            os.mkdir(self.torrents_dir)
+        if not xbmcvfs.exists(self.torrents_dir):
+            xbmcvfs.mkdir(self.torrents_dir)
+        
+        self.cookies_dir = os.path.join(self.addon_data_dir, 'cookies')
+        if not xbmcvfs.exists(self.cookies_dir):
+            xbmcvfs.mkdir(self.cookies_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not xbmcvfs.exists(self.database_dir):
+            xbmcvfs.mkdir(self.database_dir)
+
+        self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'shiza.sid' ))
 
         self.params = {'mode': 'main_part', 'param': '', 'page': 1}
 
@@ -58,71 +69,75 @@ class Main:
                 proxy_data = {'https': Main.addon.getSetting('proxy')}                
         else:
             proxy_data = None
+#================================================
+        try:
+            session_time = float(Main.addon.getSetting('session_time'))
+        except:
+            session_time = 0
 
+        if time.time() - session_time > 259200:
+            Main.addon.setSetting('session_time', str(time.time()))
+            xbmcvfs.delete(self.sid_file)
+            Main.addon.setSetting('auth', 'false')
+#================================================
         from network import WebTools
-        self.network = WebTools(use_auth=True, auth_state=bool(Main.addon.getSetting("auth").lower() == 'true'), proxy_data=proxy_data)
-        del WebTools
-
+        self.network = WebTools(auth_usage=True,
+                                auth_status=bool(Main.addon.getSetting("auth").lower() == 'true'),
+                                proxy_data=proxy_data)
         self.network.auth_post_data = {
             'field-email': Main.addon.getSetting('login'),
             'field-password': Main.addon.getSetting('password')}
-        self.network.sid_file = utility.fs_enc(os.path.join(self.addon_data_dir, 'shiza.sid' ))
-        self.network.download_dir = self.addon_data_dir
-        
-        if self.params['mode'] == 'main_part' and self.params['param'] == '':
-            try: os.remove(self.network.sid_file)
-            except: pass
+        self.network.sid_file = self.sid_file
+        del WebTools
 
         if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
             self.params['mode'] = 'addon_setting'
             xbmc.executebuiltin('XBMC.Notification(Авторизация, Укажите логин и пароль)')            
             return
 
-        if not self.network.auth_state:
+        if not self.network.auth_status:
             if not self.network.authorization():
                 self.params['mode'] = 'addon_setting'
                 xbmc.executebuiltin('XBMC.Notification(Ошибка, Проверьте логин и пароль)')
                 return
             else:
-                Main.addon.setSetting("auth", str(self.network.auth_state).lower())
+                Main.addon.setSetting("auth", str(self.network.auth_status).lower())
 
-        if not os.path.isfile(os.path.join(self.addon_data_dir, 'shiza.db')):
-            try:
-                data = urllib.urlopen('https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.shiza/shiza.db')
+        if not os.path.isfile(os.path.join(self.database_dir, 'shiza.db')):
+            db_file = os.path.join(self.database_dir, 'shiza.db')
+            db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.shiza/shiza.db'
+            try:                
+                data = urllib.urlopen(db_url)
                 chunk_size = 8192
                 bytes_read = 0
                 file_size = int(data.info().getheaders("Content-Length")[0])
                 self.progress.create('Загрузка Базы Данных')
-                with open(os.path.join(self.addon_data_dir, 'shiza.db'), 'wb') as f:
+                with open(db_file, 'wb') as write_file:
                     while True:
                         chunk = data.read(chunk_size)
                         bytes_read = bytes_read + len(chunk)
-                        f.write(chunk)
+                        write_file.write(chunk)
                         if len(chunk) < chunk_size:
                             break
-                        p = bytes_read * 100 / file_size
-                        if p > 100:
-                            p = 100
-                        self.progress.update(p, 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                        percent = bytes_read * 100 / file_size
+                        self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                     self.progress.close()
                 xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
+                Main.addon.setSetting('database', 'true')
             except:
                 xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+                Main.addon.setSetting('database', 'false')
                 pass
 
         from database import DBTools
-        self.database = DBTools(utility.fs_dec(os.path.join(self.addon_data_dir, 'shiza.db')))
+        if Main.addon.getSetting('database') == 'false':
+            xbmcvfs.delete(os.path.join(self.database_dir, 'shiza.db'))
+            Main.addon.setSetting('database', 'true')
+        self.database = DBTools(os.path.join(self.database_dir, 'shiza.db'))
         del DBTools
 
-    def execute(self):
-        getattr(self, 'exec_{}'.format(self.params['mode']))()        
-        try:
-            self.database.end()
-        except:
-            pass
-
     def create_info(self, anime_id):
-        html = self.network.get_html('http://shiza-project.com/releases/view/{}'.format(anime_id))
+        html = self.network.get_html(target_name='http://shiza-project.com/releases/view/{}'.format(anime_id))
 
         if type(html) == int:
             return html
@@ -243,8 +258,8 @@ class Main:
             if local_img in os.listdir(self.images_dir):
                 return utility.fs_dec(os.path.join(self.images_dir, local_img))
             else:
-                self.network.download_dir = self.images_dir
-                return self.network.get_file(target=url, dest_name=local_img)
+                file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
+                return self.network.get_file(target_name=url, destination_name=file_name)
 
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True): 
         li = xbmcgui.ListItem(title)
@@ -276,6 +291,13 @@ class Main:
         url = '{}?{}'.format(sys.argv[0], urllib.urlencode(params))
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+
+    def execute(self):
+        getattr(self, 'exec_{}'.format(self.params['mode']))()        
+        try:
+            self.database.end()
+        except:
+            pass
 
     def exec_addon_setting(self):
         Main.addon.openSettings()
@@ -311,7 +333,7 @@ class Main:
         if 'releases/search' in self.params['param']:
             url = 'http://shiza-project.com/{}{}&page={}'.format(self.params['param'], self.params['search_string'], self.params['page'])
 
-        html = self.network.get_html(target=url)
+        html = self.network.get_html(target_name=url)
         
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -420,7 +442,7 @@ class Main:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_select_part(self):
-        html = self.network.get_html('http://shiza-project.com/releases/view/{}'.format(self.params['id']))
+        html = self.network.get_html(target_name='http://shiza-project.com/releases/view/{}'.format(self.params['id']))
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -475,14 +497,15 @@ class Main:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
-    def exec_torrent_part(self):        
-        self.network.download_dir = self.torrents_dir
-
+    def exec_torrent_part(self):
         url = 'http://shiza-project.com/download/torrents/{}/{}'.format(self.params['id'], self.params['torrent_id'])
-        file_name = self.network.get_file(target=url, dest_name='{}.torrent'.format(self.params['torrent_id']))
+        file_name = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['torrent_id']))
+
+        torrent_file = self.network.get_file(target_name=url, destination_name=file_name)
 
         import bencode
-        torrent_data = open(utility.fs_dec(file_name), 'rb').read()
+        with open(torrent_file, 'rb') as read_file:
+            torrent_data = read_file.read()
         torrent = bencode.bdecode(torrent_data)
 
         info = torrent['info']

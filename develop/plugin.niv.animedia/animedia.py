@@ -7,6 +7,7 @@ import urllib
 import time
 
 import xbmc
+import xbmcvfs
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
@@ -25,16 +26,26 @@ class Main:
         self.dialog = xbmcgui.Dialog()
 
         self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
-        if not os.path.exists(self.addon_data_dir):
-            os.makedirs(self.addon_data_dir)
+        if not xbmcvfs.exists(self.addon_data_dir):
+            xbmcvfs.mkdir(self.addon_data_dir)
 
         self.images_dir = os.path.join(self.addon_data_dir, 'images')
-        if not os.path.exists(self.images_dir):
-            os.mkdir(self.images_dir)
+        if not xbmcvfs.exists(self.images_dir):
+            xbmcvfs.mkdir(self.images_dir)
 
         self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
-        if not os.path.exists(self.torrents_dir):
-            os.mkdir(self.torrents_dir)
+        if not xbmcvfs.exists(self.torrents_dir):
+            xbmcvfs.mkdir(self.torrents_dir)
+        
+        self.cookies_dir = os.path.join(self.addon_data_dir, 'cookies')
+        if not xbmcvfs.exists(self.cookies_dir):
+            xbmcvfs.mkdir(self.cookies_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not xbmcvfs.exists(self.database_dir):
+            xbmcvfs.mkdir(self.database_dir)
+
+        self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'animedia.sid' ))
 
         self.params = {'mode': 'main_part', 'param': '', 'page': 0}
        
@@ -58,50 +69,80 @@ class Main:
                 proxy_data = {'https': Main.addon.getSetting('proxy')}                
         else:
             proxy_data = None
+#================================================
+        try:
+            session_time = float(Main.addon.getSetting('session_time'))
+        except:
+            session_time = 0
 
+        if time.time() - session_time > 259200:
+            Main.addon.setSetting('session_time', str(time.time()))
+            xbmcvfs.delete(self.sid_file)
+            Main.addon.setSetting('auth', 'false')
+#================================================
         from network import WebTools
-        self.network = WebTools(proxy_data)
+        self.network = WebTools(auth_usage=bool(Main.addon.getSetting('auth_mode') == 'true'),
+                                auth_status=bool(Main.addon.getSetting('auth') == 'true'),
+                                proxy_data=proxy_data)
+        self.network.sid_file = self.sid_file
+        self.network.login = Main.addon.getSetting('login')
+        self.network.password = Main.addon.getSetting('password')
         del WebTools
 
-        self.network.download_dir = self.addon_data_dir
-
-        if not os.path.isfile(os.path.join(self.addon_data_dir, 'animedia.db')):
+        if Main.addon.getSetting('auth_mode') == 'true':
             try:
-                data = urllib.urlopen('https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.animedia/animedia.db')
+                session_time = float(Main.addon.getSetting('session_time'))
+            except:
+                session_time = 0
+            
+            if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
+                self.params['mode'] = 'addon_setting'
+                xbmc.executebuiltin('XBMC.Notification(Авторизация, Укажите логин и пароль)')            
+                return
+
+            if not self.network.auth_status:
+                if not self.network.authorization():
+                    self.params['mode'] = 'addon_setting'
+                    xbmc.executebuiltin('XBMC.Notification(Ошибка, Проверьте логин и пароль)')
+                    return
+                else:
+                    Main.addon.setSetting("auth", str(self.network.auth_status).lower())
+
+        if not xbmcvfs.exists(os.path.join(self.database_dir, 'animedia.db')):
+            db_file = os.path.join(self.database_dir, 'animedia.db')
+            db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.animedia/animedia.db'           
+            try:                
+                data = urllib.urlopen(db_url)
                 chunk_size = 8192
                 bytes_read = 0
                 file_size = int(data.info().getheaders("Content-Length")[0])
                 self.progress.create('Загрузка Базы Данных')
-                with open(os.path.join(self.addon_data_dir, 'animedia.db'), 'wb') as f:
+                with open(db_file, 'wb') as write_file:
                     while True:
                         chunk = data.read(chunk_size)
                         bytes_read = bytes_read + len(chunk)
-                        f.write(chunk)
+                        write_file.write(chunk)
                         if len(chunk) < chunk_size:
                             break
-                        p = bytes_read * 100 / file_size
-                        if p > 100:
-                            p = 100
-                        self.progress.update(p, 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                        percent = bytes_read * 100 / file_size
+                        self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                     self.progress.close()
                 xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
+                Main.addon.setSetting('database', 'true')
             except:
                 xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+                Main.addon.setSetting('database', 'false')
                 pass
 
-        from database import AnimeDB
-        self.DB = AnimeDB(utility.fs_dec(os.path.join(self.addon_data_dir, 'animedia.db')))
-        del AnimeDB
-
-    def execute(self):
-        getattr(self, 'exec_{}'.format(self.params['mode']))()        
-        try:
-            self.DB.end()
-        except:
-            pass
+        from database import DBTools
+        if Main.addon.getSetting('database') == 'false':
+            xbmcvfs.delete(os.path.join(self.database_dir, 'animedia.db'))
+            Main.addon.setSetting('database', 'true')
+        self.database = DBTools(os.path.join(self.database_dir, 'animedia.db'))
+        del DBTools
 
     def create_title(self, anime_id, series):
-        title = self.DB.get_title(anime_id)
+        title = self.database.get_title(anime_id)
 
         if series:
             #series = series.replace('Серия','').replace('Серии','')
@@ -120,7 +161,7 @@ class Main:
         return label
 
     def create_image(self, anime_id):        
-        cover = self.DB.get_cover(anime_id)
+        cover = self.database.get_cover(anime_id)
         url = 'https://static.animedia.tv/uploads/{}'.format(cover[0])
 
         if Main.addon.getSetting('cover_mode') == 'false':
@@ -130,13 +171,43 @@ class Main:
             if local_img in os.listdir(self.images_dir):
                 return utility.fs_dec(os.path.join(self.images_dir, local_img))
             else:
-                self.network.download_dir = self.images_dir
-                return self.network.get_file(target=url, dest_name=local_img)
+                file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
+                return self.network.get_file(target_name=url, destination_name=file_name)
+
+    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, ex_info=None): 
+        li = xbmcgui.ListItem(title)
+
+        if anime_id:
+            cover = self.create_image(anime_id)
+            art = {'icon': cover, 'thumb': cover, 'poster': cover}
+            li.setArt(art)
+
+            anime_info = self.database.get_anime(anime_id)
+            info = {'title': title, 'genre': anime_info[0], 'year': anime_info[1], 'studio': anime_info[2], 'director': anime_info[3], 'writer': anime_info[4], 'plot': anime_info[5]}
+
+            if ex_info:
+                info['plot'] += '\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
+                    ex_info['series'], ex_info['quality'], ex_info['size'], ex_info['container'], ex_info['video'], ex_info['audio'], ex_info['translate'], ex_info['timing'])
+
+            if size:
+                info['size'] = size
+
+            li.setInfo(type='video', infoLabels=info)
+            
+        if self.params['mode'] == 'search_part':
+            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animedia/?mode=clean_part")')])
+
+        if folder==False:
+                li.setProperty('isPlayable', 'true')
+
+        url = '{}?{}'.format(sys.argv[0], urllib.urlencode(params))
+
+        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
     def create_info(self, anime_id):
         url = 'https://tt.animedia.tv/anime/{}'.format(anime_id)
 
-        html = self.network.get_html(url)
+        html = self.network.get_html(target_name=url)
 
         if type(html) == int: return html
 
@@ -175,42 +246,22 @@ class Main:
                 info['author'] = data[data.find('<span>')+6:data.find('</span>')]
 
         try:
-            self.DB.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['year'],
+            self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['year'],
                           info['studio'], info['director'], info['author'], info['plot'], info['cover'])
         except:
-            xbmc.executebuiltin("XBMC.Notification(Ошибка парсера, ERROR: 101, time=3000)")
+            xbmc.executebuiltin("XBMC.Notification(Ошибка парсера, ERROR: 101)")
             return 101
         return
 
-    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, ex_info=None): 
-        li = xbmcgui.ListItem(title)
+    def execute(self):
+        getattr(self, 'exec_{}'.format(self.params['mode']))()        
+        try:
+            self.database.end()
+        except:
+            pass
 
-        if anime_id:
-            cover = self.create_image(anime_id)
-            art = {'icon': cover, 'thumb': cover, 'poster': cover}
-            li.setArt(art)
-
-            anime_info = self.DB.get_anime(anime_id)
-            info = {'title': title, 'genre': anime_info[0], 'year': anime_info[1], 'studio': anime_info[2], 'director': anime_info[3], 'writer': anime_info[4], 'plot': anime_info[5]}
-
-            if ex_info:
-                info['plot'] += '\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
-                    ex_info['series'], ex_info['quality'], ex_info['size'], ex_info['container'], ex_info['video'], ex_info['audio'], ex_info['translate'], ex_info['timing'])
-
-            if size:
-                info['size'] = size
-
-            li.setInfo(type='video', infoLabels=info)
-            
-        if self.params['mode'] == 'search_part':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animedia/?mode=clean_part")')])
-
-        if folder==False:
-                li.setProperty('isPlayable', 'true')
-
-        url = '{}?{}'.format(sys.argv[0], urllib.urlencode(params))
-
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+    def exec_addon_setting(self):
+        Main.addon.openSettings()
 
     def exec_clean_part(self):
         try:
@@ -284,7 +335,7 @@ class Main:
 
             url = 'https://tt.animedia.tv/ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(genre, voice, studio, year, form, ongoing, sort)
 
-        html = self.network.get_html(target=url)
+        html = self.network.get_html(target_name=url)
         
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -309,7 +360,7 @@ class Main:
                     break
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-                if not self.DB.is_anime_in_db(anime_id):
+                if not self.database.is_anime_in_db(anime_id):
                     inf = self.create_info(anime_id)
 
                     if type(inf) == int:
@@ -390,7 +441,7 @@ class Main:
         return
 
     def exec_select_part(self):
-        html = self.network.get_html('https://tt.animedia.tv/anime/{}'.format(self.params['id']))
+        html = self.network.get_html(target_name='https://tt.animedia.tv/anime/{}'.format(self.params['id']))
 
         ex_info = dict.fromkeys(['series', 'quality', 'size', 'container', 'video', 'audio', 'translate', 'timing'], '')
 
@@ -474,11 +525,14 @@ class Main:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_torrent_part(self):
-        self.network.download_dir = self.torrents_dir
-        file_name = self.network.get_file(target=self.params['torrent_url'], dest_name='{}.torrent'.format(self.params['id']))
+        url = self.params['torrent_url']
+        file_name = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
+        torrent_file = self.network.get_file(target_name=url, destination_name=file_name)
 
         import bencode
-        torrent_data = open(utility.fs_dec(file_name), 'rb').read()
+        
+        with open(torrent_file, 'rb') as read_file:
+            torrent_data = read_file.read()
         torrent = bencode.bdecode(torrent_data)
 
         info = torrent['info']

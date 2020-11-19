@@ -7,6 +7,7 @@ import urllib
 import time
 
 import xbmc
+import xbmcvfs
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
@@ -25,16 +26,26 @@ class Main:
         self.dialog = xbmcgui.Dialog()
 
         self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
-        if not os.path.exists(self.addon_data_dir):
-            os.makedirs(self.addon_data_dir)
+        if not xbmcvfs.exists(self.addon_data_dir):
+            xbmcvfs.mkdir(self.addon_data_dir)
 
         self.images_dir = os.path.join(self.addon_data_dir, 'images')
-        if not os.path.exists(self.images_dir):
-            os.mkdir(self.images_dir)
+        if not xbmcvfs.exists(self.images_dir):
+            xbmcvfs.mkdir(self.images_dir)
 
         self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
-        if not os.path.exists(self.torrents_dir):
-            os.mkdir(self.torrents_dir)
+        if not xbmcvfs.exists(self.torrents_dir):
+            xbmcvfs.mkdir(self.torrents_dir)
+        
+        self.cookies_dir = os.path.join(self.addon_data_dir, 'cookies')
+        if not xbmcvfs.exists(self.cookies_dir):
+            xbmcvfs.mkdir(self.cookies_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not xbmcvfs.exists(self.database_dir):
+            xbmcvfs.mkdir(self.database_dir)
+        
+        self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'anilibria.sid' ))
 
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'sort':''}
 
@@ -58,21 +69,25 @@ class Main:
                 proxy_data = {'https': Main.addon.getSetting('proxy')}                
         else:
             proxy_data = None
+#================================================
+        try:
+            session_time = float(Main.addon.getSetting('session_time'))
+        except:
+            session_time = 0
 
+        if time.time() - session_time > 259200:
+            Main.addon.setSetting('session_time', str(time.time()))
+            xbmcvfs.delete(self.sid_file)
+            Main.addon.setSetting('auth', 'false')
+#================================================
         from network import WebTools
-        self.network = WebTools(bool(Main.addon.getSetting('auth_mode') == 'true'),
-                                bool(Main.addon.getSetting('auth') == 'true'), proxy_data)
-        del WebTools
-
+        self.network = WebTools(auth_usage=bool(Main.addon.getSetting('auth_mode') == 'true'),
+                                auth_status=bool(Main.addon.getSetting('auth') == 'true'),
+                                proxy_data=proxy_data)
         self.network.auth_post_data = {'mail': Main.addon.getSetting('login'),
             'passwd': Main.addon.getSetting('password'), 'fa2code': '', 'csrf': '1'}
-
-        self.network.sid_file = utility.fs_enc(os.path.join(self.addon_data_dir, 'anilibria.sid' ))
-        self.network.download_dir = self.addon_data_dir
-
-        if self.params['mode'] == 'main_part' and self.params['param'] == '':
-            try: os.remove(self.network.sid_file)
-            except: pass
+        self.network.sid_file = self.sid_file
+        del WebTools
 
         if Main.addon.getSetting('auth_mode') == 'true':
             if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
@@ -80,44 +95,46 @@ class Main:
                 xbmc.executebuiltin('XBMC.Notification(Авторизация, Укажите логин и пароль)')            
                 return
 
-            if not self.network.auth_state:
+            if not self.network.auth_status:
                 if not self.network.authorization():
                     self.params['mode'] = 'addon_setting'
                     xbmc.executebuiltin('XBMC.Notification(Ошибка, Проверьте логин и пароль)')
                     return
                 else:
-                    Main.addon.setSetting("auth", str(self.network.auth_state).lower())
+                    Main.addon.setSetting("auth", str(self.network.auth_status).lower())
 
-        if not os.path.isfile(os.path.join(self.addon_data_dir, 'anilibria.db')):
-            try:
-                data = urllib.urlopen('https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anilibria/anilibria.db')
+        if not os.path.isfile(os.path.join(self.database_dir, 'anilibria.db')):
+            db_file = os.path.join(self.database_dir, 'anilibria.db')
+            db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anilibria/anilibria.db'
+            try:                
+                data = urllib.urlopen(db_url)
                 chunk_size = 8192
                 bytes_read = 0
                 file_size = int(data.info().getheaders("Content-Length")[0])
                 self.progress.create('Загрузка Базы Данных')
-                with open(os.path.join(self.addon_data_dir, 'anilibria.db'), 'wb') as f:
+                with open(db_file, 'wb') as write_file:
                     while True:
                         chunk = data.read(chunk_size)
                         bytes_read = bytes_read + len(chunk)
-                        f.write(chunk)
+                        write_file.write(chunk)
                         if len(chunk) < chunk_size:
                             break
-                        p = bytes_read * 100 / file_size
-                        if p > 100:
-                            p = 100
-                        self.progress.update(p, 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                        percent = bytes_read * 100 / file_size
+                        self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                     self.progress.close()
                 xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
+                Main.addon.setSetting('database', 'true')
             except:
                 xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+                Main.addon.setSetting('database', 'false')
                 pass
 
         from database import DBTools
-        self.database = DBTools(utility.fs_dec(os.path.join(self.addon_data_dir, 'anilibria.db')))
+        if Main.addon.getSetting('database') == 'false':
+            xbmcvfs.delete(os.path.join(self.database_dir, 'anilibria.db'))
+            Main.addon.setSetting('database', 'true')
+        self.database = DBTools(os.path.join(self.database_dir, 'anilibria.db'))
         del DBTools
-
-    def save_auth_setting(self):
-        Main.addon.setSetting("auth", str(self.network.auth_state))
 
     def create_title(self, title, series):
         if series:            
@@ -142,7 +159,7 @@ class Main:
         if type(html) == int:
             return html
                 
-        info = dict.fromkeys(['anime_id','title_ru', 'title_en', 'year', 'dubbing', 'genre', 'plot'], '')
+        info = dict.fromkeys(['anime_id', 'title_ru', 'title_en', 'year', 'dubbing', 'genre', 'plot'], '')
 
         data_array = html[html.find('<ul class="list-unstyled">'):html.find('<div class="col">')]
         data_array = utility.clean_list(data_array)
@@ -184,8 +201,8 @@ class Main:
             if local_img in os.listdir(self.images_dir):
                 return utility.fs_dec(os.path.join(self.images_dir, local_img))
             else:
-                self.network.download_dir = self.images_dir
-                return self.network.get_file(target=url, dest_name=local_img)
+                file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
+                return self.network.get_file(target_name=url, destination_name=file_name)
 
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
         li = xbmcgui.ListItem(title)
@@ -231,10 +248,13 @@ class Main:
         except:
             pass
 
+    def exec_addon_setting(self):
+        Main.addon.openSettings()
+
     def exec_favorites_part(self):
         url = 'https://www.anilibria.tv/release/{}.html'.format(self.params['id'])
 
-        html = self.network.get_html(target=url)
+        html = self.network.get_html(target_name=url)
 
         csrf_token = html[html.find('value=\'{')+7:html.find('}\'>')+1]
         rid = html[html.find('350x500/')+8:html.find('.jpg')]
@@ -243,16 +263,13 @@ class Main:
         post = 'rid={}&csrf_token={}'.format(rid, csrf_token)
 
         try:
-            self.network.get_html(target=fav_url,post=post)
+            self.network.get_html(target_name=fav_url,post=post)
             xbmc.executebuiltin("XBMC.Notification(Избранное, Готово, time=3000)")
         except:
             xbmc.executebuiltin("XBMC.Notification(Избранное, ERROR: 103, time=3000)")
             
         xbmc.executebuiltin('Container.Refresh')
     
-    def exec_addon_setting(self):
-        Main.addon.openSettings()
-
     def exec_clean_part(self):
         try:
             Main.addon.setSetting('search', '')
@@ -341,7 +358,7 @@ class Main:
             url = 'https://www.anilibria.tv/public/search.php'
             post = 'search={}&small=1'.format(self.params['search_string'])
 
-        html = self.network.get_html(target=url, post=post)     
+        html = self.network.get_html(target_name=url, post=post)     
         
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -481,14 +498,15 @@ class Main:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_torrent_part(self):
-        self.network.download_dir = self.torrents_dir
         url = 'https://dark-libria.it{}'.format(self.params['torrent_url'])
-        file_id = url[url.rfind('/')+1:url.rfind('.')]
-
-        file_name = self.network.get_file(target=url, dest_name='{}.torrent'.format(file_id))
+        file_id = url[url.rfind('/')+1:url.rfind('.')] 
+        file_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_id))
+        torrent_file = self.network.get_file(target_name=url, destination_name=file_name)
 
         import bencode
-        torrent_data = open(utility.fs_dec(file_name), 'rb').read()
+
+        with open(torrent_file, 'rb') as read_file:
+            torrent_data = read_file.read()
         torrent = bencode.bdecode(torrent_data)
 
         info = torrent['info']

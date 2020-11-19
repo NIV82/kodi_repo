@@ -13,12 +13,15 @@ data = '[sett]\n\
 [play]\n\
 [COLOR blue]Торрент просмотр:[/COLOR]\n\
 - Требует дополнительной настройки. В настройках плагина зайти в раздел [COLOR blue]P2P[/COLOR], выбрать торрент движок (или торрент Менеджер [COLOR gold]TAM[/COLOR] - выставив предпочитаемый движок)\n\
-- Рекомендуется [COLOR blue]ELEMENTUM[/COLOR], [COLOR blue]T2HTTP[/COLOR], [COLOR blue]TorrServer[/COLOR]. Остальные движки, на данный момент, еще не проверены\n\
-- [COLOR=red]Внимание:[/COLOR] [COLOR gold]TAM[/COLOR], [COLOR blue]ELEMENTUM[/COLOR], [COLOR blue]T2HTTP[/COLOR] или [COLOR blue]TorrServer[/COLOR] нужно устанавливать отдельно\n\
+- Рекомендуется [COLOR blue]ELEMENTUM[/COLOR]. Остальные движки, на данный момент, еще не проверены\n\
+- [COLOR=red]Внимание:[/COLOR] [COLOR gold]TAM[/COLOR], [COLOR blue]ELEMENTUM[/COLOR] нужно устанавливать отдельно\n\
 - Вся необходимая информация по загрузке и установке этих плагинов находится на форуме [COLOR gold]xbmc.ru[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/play]\n\
 [news]\n\
+[COLOR blue]version 1.0.1[/COLOR]\n\
+- Оптимизация системы авторизации\n\
+[COLOR gray]=========================================================================[/COLOR]\n\
 [COLOR blue]version 1.0.0[/COLOR]\n\
 - Release\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
@@ -28,11 +31,11 @@ data = '[sett]\n\
 Остальные движки, на данный момент , не проверены\n\
 \n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]Elementum[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] |\n\
+[COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/comp]\n\
 [bugs]\n\
@@ -45,17 +48,15 @@ data = '[sett]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [B][COLOR red]ERROR: 101[/COLOR][/B]\n\
 Ошибка в парсере, при попытке добавить аниме в Базу Данных\n\
-Сама не исправляется, необходимо сообщить автору плагина ID аниме (не обязательно целиком)\n\
+Рекомендуется сообщить автору плагина ID аниме (не обязательно целиком)\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [B][COLOR red]ERROR: 102[/COLOR][/B]\n\
 Ошибка в модуле очистки Истории Поиска\n\
-Возникает если плагин не может удалить историю\n\
-Сама не исправляется, необходимо сообщить автору плагина название аниме\n\
+Рекомендуется сообщить автору плагина название аниме\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [B][COLOR red]ERROR: 103[/COLOR][/B]\n\
 Ошибка в модуле обработки Избранного\n\
-Возникает если плагин не может добавить или удалить аниме в списке\n\
-Сама не исправляется, необходимо сообщить автору плагина название аниме\n\
+Рекомендуется сообщить автору плагина название аниме\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [B][COLOR red]ERROR: 404[/COLOR][/B]\n\
 Типичная ошибка - Страница не найдена, удалена, перемещена\n\

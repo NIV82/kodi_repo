@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-class AnimeDB:
+class DBTools:
     def __init__(self, data_file):
         import sqlite3 as db
         self.c = db.connect(database=data_file)
