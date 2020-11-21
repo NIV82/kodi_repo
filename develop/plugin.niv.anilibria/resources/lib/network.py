@@ -25,8 +25,7 @@ class WebTools:
             self.url_opener = urllib2.build_opener(self.hcp, self.proxy)
             self.auth_status = auth_status
             self.sid_file = ''
-            self.search_cookie_name = 'dle_user_id'
-            self.auth_url = 'https://tr.anidub.com/'
+            self.auth_url = 'https://www.anilibria.tv/public/login.php'
             self.auth_post_data = {}
         else:
             self.url_opener = urllib2.build_opener(self.proxy)
