@@ -26,24 +26,24 @@ class Main:
         self.dialog = xbmcgui.Dialog()
 
         self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
-        if not xbmcvfs.exists(self.addon_data_dir):
-            xbmcvfs.mkdir(self.addon_data_dir)
+        if not os.path.exists(self.addon_data_dir):
+            os.makedirs(self.addon_data_dir)
 
         self.images_dir = os.path.join(self.addon_data_dir, 'images')
-        if not xbmcvfs.exists(self.images_dir):
-            xbmcvfs.mkdir(self.images_dir)
+        if not os.path.exists(self.images_dir):
+            os.mkdir(self.images_dir)
 
         self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
-        if not xbmcvfs.exists(self.torrents_dir):
-            xbmcvfs.mkdir(self.torrents_dir)
+        if not os.path.exists(self.torrents_dir):
+            os.mkdir(self.torrents_dir)
         
         self.cookies_dir = os.path.join(self.addon_data_dir, 'cookies')
-        if not xbmcvfs.exists(self.cookies_dir):
-            xbmcvfs.mkdir(self.cookies_dir)
+        if not os.path.exists(self.cookies_dir):
+            os.mkdir(self.cookies_dir)
 
         self.database_dir = os.path.join(self.addon_data_dir, 'database')
-        if not xbmcvfs.exists(self.database_dir):
-            xbmcvfs.mkdir(self.database_dir)
+        if not os.path.exists(self.database_dir):
+            os.mkdir(self.database_dir)
         
         self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'anilibria.sid' ))
 
@@ -77,7 +77,7 @@ class Main:
 
         if time.time() - session_time > 259200:
             Main.addon.setSetting('session_time', str(time.time()))
-            xbmcvfs.delete(self.sid_file)
+            os.remove(self.sid_file)
             Main.addon.setSetting('auth', 'false')
 #================================================
         from network import WebTools
@@ -131,10 +131,32 @@ class Main:
 
         from database import DBTools
         if Main.addon.getSetting('database') == 'false':
-            xbmcvfs.delete(os.path.join(self.database_dir, 'anilibria.db'))
+            os.remove(os.path.join(self.database_dir, 'anilibria.db'))
             Main.addon.setSetting('database', 'true')
         self.database = DBTools(os.path.join(self.database_dir, 'anilibria.db'))
         del DBTools
+
+    def create_title_info(self, title):
+        info = dict.fromkeys(['title_ru', 'title_en'], '')
+        
+        if 'Судьба/' in title or 'fate/' in title:
+            title = title.replace('Судьба/', 'Судьба-')
+            title = title.replace('fate/', 'fate-')
+
+        title = utility.tag_list(title)
+        title = utility.rep_list(title)
+        title = utility.rbr_list(title)
+        title = utility.sbr_list(title)
+
+        v = title.split('/', 1)
+
+        try:
+            info['title_ru'] = v[0].strip().capitalize()
+            info['title_en'] = v[1].strip().capitalize()
+        except:
+            pass
+        
+        return info
 
     def create_title(self, title, series):
         if series:            
@@ -154,39 +176,53 @@ class Main:
         return label
 
     def create_info(self, anime_url):
-        html = self.network.get_html('https://dark-libria.it/release/{}'.format(anime_url))
-        
+        html = self.network.get_html('https://www.anilibria.tv/release/{}.html'.format(anime_url))
+
         if type(html) == int:
             return html
-                
-        info = dict.fromkeys(['anime_id', 'title_ru', 'title_en', 'year', 'dubbing', 'genre', 'plot'], '')
 
-        data_array = html[html.find('<ul class="list-unstyled">'):html.find('<div class="col">')]
-        data_array = utility.clean_list(data_array)
-        data_array = data_array.replace('</span> </li>', '</span></li>').split('</span></li>')
+        info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'dubbing', 'timing', 'subs', 'plot'], '')
+
+        try:
+            anime_id = html[html.find('/release/350x500/')+17:html.find('.jpg?')].strip()
+        except:
+            xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ID])')
+            return 101
+        
+        title_data = html[html.find('<title>')+7:html.find('</title>')].strip()
+        info.update(self.create_title_info(title_data))
+
+        data_array = html[html.find('<hr class="poloska-detail"'):html.find('<div class="detail_torrent_side">')]
+        data_array = data_array.replace('<p class', 'plot: <p class')
+        data_array = data_array.splitlines()
 
         for data in data_array:
             data = utility.tag_list(data)
-
-            if 'ID:' in data:
-                info['anime_id'] = data[3:].lstrip()                
-            if 'Название:' in data:
-                info['title_ru'] = utility.rep_list(data[17:]).lstrip()
-            if 'Оригинальное название:' in data:
-                info['title_en'] = utility.rep_list(data[42:]).lstrip()
+ 
             if 'Сезон:' in data:
-                info['year'] = data[-4:]
-            if 'Озвучка:' in data:
-                info['dubbing'] = utility.rep_list(data[15:]).lstrip()
+                for i in range(1996, 2030, 1):
+                    if str(i) in data:
+                        info['year'] = i
             if 'Жанры:' in data:
-                info['genre'] = data[11:].strip()
-            if 'Описание:' in data:
-                info['plot'] = utility.rep_list(data[17:]).lstrip()
+                data = data.replace('Жанры:', '').strip()
+                info['genre'] = utility.rep_list(data)
+            if 'Озвучка:' in data:
+                data = data.replace('Озвучка:', '').strip()
+                info['dubbing'] = utility.rep_list(data)
+            if 'Тайминг:' in data:
+                data = data.replace('Тайминг:', '').strip()
+                info['timing'] = utility.rep_list(data)
+            if 'Работа над субтитрами:' in data:
+                data = data.replace('Работа над субтитрами:', '').strip()
+                info['subs'] = utility.rep_list(data)
+            if 'plot:' in data:
+                data = data.replace('plot:', '').strip()
+                info['plot'] = utility.rep_list(data)
         
         try:
-            self.database.add_anime(info['anime_id'], info['title_ru'], info['title_en'], info['year'], info['dubbing'], info['genre'], info['plot'], anime_url)
+            self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['dubbing'], info['timing'], info['subs'], info['plot'], anime_url)
         except:
-            xbmc.executebuiltin("XBMC.Notification(Ошибка парсера, ERROR: 101, time=3000)")
+            xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ADD])')
             return 101
         return
 
@@ -214,10 +250,11 @@ class Main:
 
             anime_info = self.database.get_anime(anime_id)
 
-            info = {'title': title, 'year': anime_info[0], 'genre': anime_info[2], 'plot': anime_info[3]}
+            info = {'title': title, 'year': anime_info[0], 'genre': anime_info[1], 'plot': anime_info[5]}
 
-            if anime_info[1]:
-                info['plot'] = '{}\n\nОзвучка: {}'.format(info['plot'], anime_info[1])
+            info['plot'] = '{}\n\nОзвучка: {}'.format(info['plot'], anime_info[2])
+            info['plot'] = '{}\nТайминг: {}'.format(info['plot'], anime_info[3])
+            info['plot'] = '{}\nСабы: {}'.format(info['plot'], anime_info[4])
 
             if size:
                 info['size'] = size
@@ -264,18 +301,18 @@ class Main:
 
         try:
             self.network.get_html(target_name=fav_url,post=post)
-            xbmc.executebuiltin("XBMC.Notification(Избранное, Готово, time=3000)")
+            xbmc.executebuiltin('XBMC.Notification(Избранное, Готово)')
         except:
-            xbmc.executebuiltin("XBMC.Notification(Избранное, ERROR: 103, time=3000)")
+            xbmc.executebuiltin('XBMC.Notification(Избранное, ERROR: 103)')
             
         xbmc.executebuiltin('Container.Refresh')
     
     def exec_clean_part(self):
         try:
             Main.addon.setSetting('search', '')
-            xbmc.executebuiltin("XBMC.Notification(Удаление истории, Успешно выполнено)")
+            xbmc.executebuiltin('XBMC.Notification(Удаление истории, Успешно выполнено)')
         except:
-            xbmc.executebuiltin("XBMC.Notification(Удаление истории, [COLOR=yellow]ERROR: 102[/COLOR])")
+            xbmc.executebuiltin('XBMC.Notification(Удаление истории, [COLOR=yellow]ERROR: 102[/COLOR])')
             pass
         xbmc.executebuiltin('Container.Refresh')
 
@@ -376,6 +413,7 @@ class Main:
 
                 anime_url = data[data.find('release\/')+9:data.find('.html')]
                 series = data[data.find('anime_number\\">')+15:data.find('<\/span><span class=\\"anime_desc')]
+
                 if self.params['param'] == 'search_part':
                     series = ''
 
@@ -441,65 +479,65 @@ class Main:
             Main.addon.setSetting(id='status', value=info.status.keys()[result])
 
     def exec_select_part(self):
-        html = self.network.get_html('https://dark-libria.it/release/{}'.format(self.params['id']))
+        html = self.network.get_html('https://www.anilibria.tv/release/{}.html'.format(self.params['id']))
         
         if Main.addon.getSetting('online_mode') == 'false':
-            data_array = html[html.find('<tr class="torrent">')+20:html.find('</tbody>')]
-            data_array = utility.clean_list(data_array)
-            data_array = data_array.split('<tr class="torrent">')
+            data_array = html[html.find('<td id="torrentTableInfo'):html.rfind('Cкачать</a>')+17]
+            data_array = data_array.split('</tr>')
 
             for data in data_array:
-                torrent_url = data[data.find('/upload/torrents/'):data.find('.torrent')+8]
-                data = data.replace('</td>','|')            
-                data = utility.tag_list(data)
-                data = utility.rep_list(data)
-                data = data.split('|')
+                torrent_title = data[data.find('tcol1">')+7:data.find('</td>')]
+                torrent_stat = data[data.find('alt="dl"> ')+10:data.rfind('<td id')]
+                torrent_stat = utility.tag_list(torrent_stat).replace('  ', '|').split('|')
+                torrent_url = data[data.find('php?id=')+7:data.find('">Cкачать')]
 
-                label = 'Серии: {} , [COLOR=F0FFD700]{}[/COLOR] , [COLOR=F020F0F0]{}[/COLOR] , Сидов: [COLOR=F000F000]{}[/COLOR] , Пиров: [COLOR=F0F00000]{}[/COLOR]'.format(
-                    data[0], data[2], data[1], data[5], data[6])
+                label = '{} , [COLOR=F0FFD700]{}[/COLOR], Сидов: [COLOR=F000F000]{}[/COLOR] , Пиров: [COLOR=F0F00000]{}[/COLOR]'.format(
+                    torrent_title, torrent_stat[0], torrent_stat[1], torrent_stat[2])
                 
                 self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
         else:
             info = dict.fromkeys(['title','sd', 'mid', 'hd', 'id'], '')
-            data_array = html[html.find('"[')+2:html.find('}]"')]
-            data_array = data_array.split('},')
+            data_array = html[html.find('[{')+2:html.find('},]')]
+            data_array = data_array.split('},{')
 
             sd = []
             mid = []
             hd = []
 
             for data in data_array:
-                data = data.decode('unicode-escape').encode('utf-8')
-                data = data.split(',')                
+                data = data.split(',')
 
                 for d in data:
                     if 'title' in d:
-                        info['title'] = d[d.find(': "')+3:d.rfind('"')]
-                    if 'Среднее' in d:
-                        info['mid'] = d[d.find('http'):d.rfind('m3u8')+4]
-                        mid.append('{}|{}'.format(info['title'], info['mid']))
-                    if 'Высокое' in d:
-                        info['hd'] = d[d.find('http'):d.rfind('m3u8')+4]
-                        hd.append('{}|{}'.format(info['title'], info['hd']))
-                    if 'Низкое' in d:
-                        info['sd'] = d[d.find('http'):d.rfind('m3u8')+4]
+                        info['title'] = d[d.find(':\'')+2:d.rfind('\'')]
+                    if '[480p]' in d:
+                        d = d[d.find('[480p]//')+8:d.find('m3u8')+4]
+                        info['sd'] = 'https://{}'.format(d)
                         sd.append('{}|{}'.format(info['title'], info['sd']))
+                    if '[720p]' in d:
+                        d = d[d.find('[720p]//')+8:d.find('m3u8')+4]
+                        info['mid'] = 'https://{}'.format(d)
+                        mid.append('{}|{}'.format(info['title'], info['mid']))
+                    if '[1080p]' in d:
+                        d = d[d.find('[1080p]//')+9:d.find('m3u8')+4]
+                        info['hd'] = 'https://{}'.format(d)
+                        hd.append('{}|{}'.format(info['title'], info['hd']))
 
             if info['sd']:
-                label = 'Качество: [COLOR=F020F0F0]Низкое[/COLOR]' 
+                label = 'Качество: [COLOR=F020F0F0]480p[/COLOR]' 
                 self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(sd)}, anime_id=self.params['id'])
             if info['mid']:
-                label = 'Качество: [COLOR=F020F0F0]Среднее[/COLOR]'
+                label = 'Качество: [COLOR=F020F0F0]720p[/COLOR]'
                 self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(mid)}, anime_id=self.params['id'])
             if info['hd']:
-                label = 'Качество: [COLOR=F020F0F0]Высокое[/COLOR]'
+                label = 'Качество: [COLOR=F020F0F0]1080p[/COLOR]'
                 self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(hd)}, anime_id=self.params['id'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_torrent_part(self):
-        url = 'https://dark-libria.it{}'.format(self.params['torrent_url'])
-        file_id = url[url.rfind('/')+1:url.rfind('.')] 
+        url = 'https://www.anilibria.tv/public/torrent/download.php?id={}'.format(self.params['torrent_url'])
+        file_id = self.params['torrent_url']
         file_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_id))
         torrent_file = self.network.get_file(target_name=url, destination_name=file_name)
 

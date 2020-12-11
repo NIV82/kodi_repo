@@ -58,3 +58,21 @@ def tag_list(data):
         start = data.find('<')
         end = data.find('>')
     return data
+
+def rbr_list(data):
+    start = data.find('(')
+    end = data.find(')')
+    while start < end and start > -1:
+        data = data.replace(data[start:end+1], '').strip()
+        start = data.find('(')
+        end = data.find(')')
+    return data
+
+def sbr_list(data):
+    start = data.find('[')
+    end = data.find(']')
+    while start < end and start > -1:
+        data = data.replace(data[start:end+1], '').strip()
+        start = data.find('[')
+        end = data.find(']')
+    return data
