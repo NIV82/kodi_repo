@@ -162,9 +162,10 @@ class Main:
         info = dict.fromkeys(['title_ru', 'title_en'], '')
 
         title = utility.rep_list(title)
+        title = utility.tag_list(title)
         title = title.replace('|', '/')
         title = title.replace('\\', '/')
-
+        
         v = title.split('/', 1)
         
         if len(v) == 1:
@@ -234,47 +235,94 @@ class Main:
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
+    # def create_info(self, data):
+    #     info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot', 'categories'], '')
+
+    #     if data.find('[email&#160;protected]') > -1:
+    #         data = data.replace('<span class="__cf_email__" data-cfemail="e7aea3a8abaaa7b4b3a2b5">','')
+    #         data = data.replace('[email&#160;protected]</span>', 'Idolmaster')
+    #         data = data.replace('[email&#160;protected]', 'Idolmaster')
+
+    #     if data.find('<p class="tags">') > -1:
+    #         cat = data[data.find('<p class="tags">')+16:data.find('</a></p>')]
+    #         cat = cat.replace('Новинки(онгоинги)', '').replace('Аниме', '')
+    #         cat = cat.replace('Категория:', '').replace('Хентай', '')
+    #         cat = cat.replace('Дорамы', '').replace('></a>,','>')
+    #         info['categories'] = utility.tag_list(cat)
+
+    #         # if 'Новости сайта' in info['categories']:
+    #         #     return 'adv'
+
+    #     anime_id = data[data.find('posters/')+8:data.find('/original.jpg')]
+
+    #     if '<a href="/cdn-cgi/l/email-protection"' in data:
+    #         title_data = data[data.find('">')+2:data.find('</h1>')]
+    #     else:
+    #         title_data = data[data.find('">')+2:data.find('</a>')]
+        
+    #     info.update(self.create_title_info(title_data))
+
+    #     plot = data[data.find('<div class="descripts">'):data.rfind('<div class="clear"></div>')]        
+    #     if plot.find('<p class="reason">') > -1:
+    #         plot = plot[:plot.find('<p class="reason">')]
+
+    #     if plot.find('<div class="title_spoiler">') > -1:
+    #         spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]                    
+    #         spoiler = utility.rep_list(spoiler)                    
+    #         spoiler = spoiler.replace('</div>', ' ').replace('"','')
+    #         spoiler = utility.tag_list(spoiler)                    
+    #         spoiler = spoiler.replace('#', '\n#')
+    #         plot = plot[:plot.find('<!--dle_spoiler')]                    
+    #         plot = '{}\n\n{}'.format(plot, spoiler)
+        
+    #     info['plot'] = utility.tag_list(plot)
+
+    #     data_array = data[data.find('news_text">')+11:data.find('<div class="descripts"')]
+    #     data_array = data_array.splitlines()
+
+    #     for line in data_array:
+    #         if 'Год выпуска:' in line:
+    #             for year in range(1996, 2030, 1):
+    #                 if str(year) in line:
+    #                     info['year'] = year
+    #         if 'Жанр:' in line:
+    #             line = line.replace('Жанр:','')
+    #             info['genre'] = utility.tag_list(line)
+    #         if 'Режиссёр:' in line:
+    #             line = line.replace('Режиссёр:','')
+    #             info['director'] = utility.tag_list(line)
+    #         if 'Автор оригинала:' in line:
+    #             line = line.replace('Автор оригинала:','')
+    #             info['author'] = utility.tag_list(line)
+
+    #     if info['genre'] == '':
+    #         info['genre'] = info['categories']
+
+    #     info['plot'] = utility.rep_list(info['plot'])
+
+    #     try:
+    #         self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['director'], info['author'], info['plot'])
+    #     except:
+    #         xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ADD])')
+    #         return 101
+    #     return
+
     def create_info(self, data):
-        info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot', 'categories'], '')
-
-        if data.find('[email&#160;protected]') > -1:
-            data = data.replace('<span class="__cf_email__" data-cfemail="e7aea3a8abaaa7b4b3a2b5">','')
-            data = data.replace('[email&#160;protected]</span>', 'Idolmaster')
-            data = data.replace('[email&#160;protected]', 'Idolmaster')
-
-        if data.find('<p class="tags">') > -1:
-            cat = data[data.find('<p class="tags">')+16:data.find('</a></p>')]
-            cat = cat.replace('Новинки(онгоинги)', '').replace('Аниме', '')
-            cat = cat.replace('Категория:', '').replace('Хентай', '')
-            cat = cat.replace('Дорамы', '').replace('></a>,','>')
-            info['categories'] = utility.tag_list(cat)
-
-            # if 'Новости сайта' in info['categories']:
-            #     return 'adv'
+        info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot'], '')
 
         anime_id = data[data.find('posters/')+8:data.find('/original.jpg')]
 
-        if '<a href="/cdn-cgi/l/email-protection"' in data:
-            title_data = data[data.find('">')+2:data.find('</h1>')]
-        else:
-            title_data = data[data.find('">')+2:data.find('</a>')]
-        
+        title_data = data[data.find('">')+2:data.find('</a>')]
         info.update(self.create_title_info(title_data))
 
-        plot = data[data.find('<div class="descripts">'):data.rfind('<div class="clear"></div>')]        
-        if plot.find('<p class="reason">') > -1:
-            plot = plot[:plot.find('<p class="reason">')]
+        genre = data[data.find('<p class="tags">')+16:data.find('</a></p>')]
+        genre = genre.replace('Новинки(онгоинги)', '').replace('Аниме', '')
+        genre = genre.replace('Категория:', '').replace('Хентай', '')
+        genre = genre.replace('Дорамы', '').replace('></a>,','>')            
+        info['genre'] = utility.tag_list(genre)
 
-        if plot.find('<div class="title_spoiler">') > -1:
-            spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]                    
-            spoiler = utility.rep_list(spoiler)                    
-            spoiler = spoiler.replace('</div>', ' ').replace('"','')
-            spoiler = utility.tag_list(spoiler)                    
-            spoiler = spoiler.replace('#', '\n#')
-            plot = plot[:plot.find('<!--dle_spoiler')]                    
-            plot = '{}\n\n{}'.format(plot, spoiler)
-        
-        info['plot'] = utility.tag_list(plot)
+        if 'Новости сайта' in info['genre']:
+            return 'advertising'
 
         data_array = data[data.find('news_text">')+11:data.find('<div class="descripts"')]
         data_array = data_array.splitlines()
@@ -284,9 +332,6 @@ class Main:
                 for year in range(1996, 2030, 1):
                     if str(year) in line:
                         info['year'] = year
-            if 'Жанр:' in line:
-                line = line.replace('Жанр:','')
-                info['genre'] = utility.tag_list(line)
             if 'Режиссёр:' in line:
                 line = line.replace('Режиссёр:','')
                 info['director'] = utility.tag_list(line)
@@ -294,10 +339,25 @@ class Main:
                 line = line.replace('Автор оригинала:','')
                 info['author'] = utility.tag_list(line)
 
-        if info['genre'] == '':
-            info['genre'] = info['categories']
+        plot = data[data.find('<div class="descripts">'):data.rfind('<div class="clear"></div>')]
 
-        info['plot'] = utility.rep_list(info['plot'])
+        if plot.find('<p class="reason">') > -1:
+            plot = plot[:plot.find('<p class="reason">')]
+        
+        plot = utility.clean_list(plot)
+        plot = utility.rep_list(plot)
+
+        if plot.find('<div class="title_spoiler">') > -1:
+            spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]
+            spoiler = spoiler.replace('</div>', ' ').replace('"','')
+            spoiler = spoiler.replace('#', '\n#')
+            spoiler = utility.tag_list(spoiler)
+
+            plot = plot[:plot.find('<!--dle_spoiler')]
+            plot = utility.tag_list(plot)
+            info['plot'] = '{}\n\n{}'.format(plot, spoiler)
+        else:
+            info['plot'] = utility.tag_list(plot)
 
         try:
             self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['director'], info['author'], info['plot'])
@@ -305,7 +365,6 @@ class Main:
             xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ADD])')
             return 101
         return
-
 
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
@@ -437,6 +496,9 @@ class Main:
 
                 if not self.database.is_anime_in_db(anime_id):
                     inf = self.create_info(data)
+
+                    if inf == 'advertising':
+                        continue
 
                     if type(inf) == int:
                         self.create_line(title='[B][ [COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
