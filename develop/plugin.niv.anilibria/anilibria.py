@@ -77,7 +77,7 @@ class Main:
 
         if time.time() - session_time > 259200:
             Main.addon.setSetting('session_time', str(time.time()))
-            os.remove(self.sid_file)
+            xbmcvfs.delete(self.sid_file)
             Main.addon.setSetting('auth', 'false')
 #================================================
         from network import WebTools
