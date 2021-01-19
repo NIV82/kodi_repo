@@ -15,7 +15,7 @@ import xbmcaddon
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
 import utility
-#import info
+import info
 
 class Main:
     addon = xbmcaddon.Addon(id='plugin.niv.anistar')
@@ -54,6 +54,12 @@ class Main:
         args = utility.get_params()
         for a in args:
             self.params[a] = urllib.unquote_plus(args[a])
+
+        if Main.addon.getSetting('adult') == 'false':
+            try:
+                Main.addon.setSetting('adult_pass', '')
+            except:
+                pass
 
         if Main.addon.getSetting('unblock') == '1':
             try:
@@ -105,31 +111,31 @@ class Main:
         #         else:
         #             Main.addon.setSetting("auth", str(self.network.auth_status).lower())
 
-        # if not os.path.isfile(os.path.join(self.database_dir, 'anistar.db')):
-        #     db_file = os.path.join(self.database_dir, 'anistar.db')
-        #     db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anistar/anistar.db'
-        #     try:                
-        #         data = urllib.urlopen(db_url)
-        #         chunk_size = 8192
-        #         bytes_read = 0
-        #         file_size = int(data.info().getheaders("Content-Length")[0])
-        #         self.progress.create('Загрузка Базы Данных')
-        #         with open(db_file, 'wb') as write_file:
-        #             while True:
-        #                 chunk = data.read(chunk_size)
-        #                 bytes_read = bytes_read + len(chunk)
-        #                 write_file.write(chunk)
-        #                 if len(chunk) < chunk_size:
-        #                     break
-        #                 percent = bytes_read * 100 / file_size
-        #                 self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-        #             self.progress.close()
-        #         xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
-        #         Main.addon.setSetting('database', 'true')
-        #     except:
-        #         xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
-        #         Main.addon.setSetting('database', 'false')
-        #         pass
+        if not os.path.isfile(os.path.join(self.database_dir, 'anistar.db')):
+            db_file = os.path.join(self.database_dir, 'anistar.db')
+            db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anistar/anistar.db'
+            try:                
+                data = urllib.urlopen(db_url)
+                chunk_size = 8192
+                bytes_read = 0
+                file_size = int(data.info().getheaders("Content-Length")[0])
+                self.progress.create('Загрузка Базы Данных')
+                with open(db_file, 'wb') as write_file:
+                    while True:
+                        chunk = data.read(chunk_size)
+                        bytes_read = bytes_read + len(chunk)
+                        write_file.write(chunk)
+                        if len(chunk) < chunk_size:
+                            break
+                        percent = bytes_read * 100 / file_size
+                        self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                    self.progress.close()
+                xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
+                Main.addon.setSetting('database', 'true')
+            except:
+                xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+                Main.addon.setSetting('database', 'false')
+                pass
 
         from database import DBTools
         if Main.addon.getSetting('database') == 'false':
@@ -171,8 +177,8 @@ class Main:
         if len(v) == 1:
             v.append('')
 
-        if v[1].find('/') > -1:
-            v[1] = v[1][:v[1].find('/')]
+        # if v[1].find('/') > -1:
+        #     v[1] = v[1][:v[1].find('/')]
 
         try:
             info['title_ru'] = v[0].strip().capitalize()
@@ -235,82 +241,8 @@ class Main:
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
-    # def create_info(self, data):
-    #     info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot', 'categories'], '')
-
-    #     if data.find('[email&#160;protected]') > -1:
-    #         data = data.replace('<span class="__cf_email__" data-cfemail="e7aea3a8abaaa7b4b3a2b5">','')
-    #         data = data.replace('[email&#160;protected]</span>', 'Idolmaster')
-    #         data = data.replace('[email&#160;protected]', 'Idolmaster')
-
-    #     if data.find('<p class="tags">') > -1:
-    #         cat = data[data.find('<p class="tags">')+16:data.find('</a></p>')]
-    #         cat = cat.replace('Новинки(онгоинги)', '').replace('Аниме', '')
-    #         cat = cat.replace('Категория:', '').replace('Хентай', '')
-    #         cat = cat.replace('Дорамы', '').replace('></a>,','>')
-    #         info['categories'] = utility.tag_list(cat)
-
-    #         # if 'Новости сайта' in info['categories']:
-    #         #     return 'adv'
-
-    #     anime_id = data[data.find('posters/')+8:data.find('/original.jpg')]
-
-    #     if '<a href="/cdn-cgi/l/email-protection"' in data:
-    #         title_data = data[data.find('">')+2:data.find('</h1>')]
-    #     else:
-    #         title_data = data[data.find('">')+2:data.find('</a>')]
-        
-    #     info.update(self.create_title_info(title_data))
-
-    #     plot = data[data.find('<div class="descripts">'):data.rfind('<div class="clear"></div>')]        
-    #     if plot.find('<p class="reason">') > -1:
-    #         plot = plot[:plot.find('<p class="reason">')]
-
-    #     if plot.find('<div class="title_spoiler">') > -1:
-    #         spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]                    
-    #         spoiler = utility.rep_list(spoiler)                    
-    #         spoiler = spoiler.replace('</div>', ' ').replace('"','')
-    #         spoiler = utility.tag_list(spoiler)                    
-    #         spoiler = spoiler.replace('#', '\n#')
-    #         plot = plot[:plot.find('<!--dle_spoiler')]                    
-    #         plot = '{}\n\n{}'.format(plot, spoiler)
-        
-    #     info['plot'] = utility.tag_list(plot)
-
-    #     data_array = data[data.find('news_text">')+11:data.find('<div class="descripts"')]
-    #     data_array = data_array.splitlines()
-
-    #     for line in data_array:
-    #         if 'Год выпуска:' in line:
-    #             for year in range(1996, 2030, 1):
-    #                 if str(year) in line:
-    #                     info['year'] = year
-    #         if 'Жанр:' in line:
-    #             line = line.replace('Жанр:','')
-    #             info['genre'] = utility.tag_list(line)
-    #         if 'Режиссёр:' in line:
-    #             line = line.replace('Режиссёр:','')
-    #             info['director'] = utility.tag_list(line)
-    #         if 'Автор оригинала:' in line:
-    #             line = line.replace('Автор оригинала:','')
-    #             info['author'] = utility.tag_list(line)
-
-    #     if info['genre'] == '':
-    #         info['genre'] = info['categories']
-
-    #     info['plot'] = utility.rep_list(info['plot'])
-
-    #     try:
-    #         self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['director'], info['author'], info['plot'])
-    #     except:
-    #         xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ADD])')
-    #         return 101
-    #     return
-
-    def create_info(self, data):
+    def create_info(self, anime_id, data):
         info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot'], '')
-
-        anime_id = data[data.find('posters/')+8:data.find('/original.jpg')]
 
         title_data = data[data.find('">')+2:data.find('</a>')]
         info.update(self.create_title_info(title_data))
@@ -318,7 +250,8 @@ class Main:
         genre = data[data.find('<p class="tags">')+16:data.find('</a></p>')]
         genre = genre.replace('Новинки(онгоинги)', '').replace('Аниме', '')
         genre = genre.replace('Категория:', '').replace('Хентай', '')
-        genre = genre.replace('Дорамы', '').replace('></a>,','>')            
+        genre = genre.replace('Дорамы', '').replace('></a>,','>')
+        genre = utility.rep_list(genre)
         info['genre'] = utility.tag_list(genre)
 
         if 'Новости сайта' in info['genre']:
@@ -329,7 +262,7 @@ class Main:
 
         for line in data_array:
             if 'Год выпуска:' in line:
-                for year in range(1996, 2030, 1):
+                for year in range(1950, 2030, 1):
                     if str(year) in line:
                         info['year'] = year
             if 'Режиссёр:' in line:
@@ -385,22 +318,39 @@ class Main:
     # def exec_addon_setting(self):
     #     Main.addon.openSettings()
 
-    def exec_main_part(self):        
+    def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        #self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
-        self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
-        self.create_line(title='[B][COLOR=lime][ Аниме ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/'})
+        self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
+        self.create_line(title='[B][COLOR=lime][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
+        self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
         self.create_line(title='[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
-        self.create_line(title='[B][COLOR=lime][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
-        self.create_line(title='[B][COLOR=lime][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
+        self.create_line(title='[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})
+        self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
+        self.create_line(title='[B][COLOR=yellow][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
+        if Main.addon.getSetting('adult') == 'true':
+            if Main.addon.getSetting('adult_pass') in info.ignor_list:
+                self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
 
-        # if self.create_adult_content():
-        #     self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
-        self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
-
-        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
+        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+    def exec_information_part(self):
+        if self.params['param'] == '':
+            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
+            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
+            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
+            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)      
+        else:
+            txt = info.data
+            start = '[{}]'.format(self.params['param'])
+            end = '[/{}]'.format(self.params['param'])
+            data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+            self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]anistar.org[/COLOR]', data)
+        return
 
     def exec_search_part(self):
         if not Main.addon.getSetting('search'):
@@ -408,8 +358,8 @@ class Main:
 
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
-            #self.create_line(title='[B][COLOR=red][ Поиск по жанрам ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
-            #self.create_line(title='[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
+            self.create_line(title='[B][COLOR=red][ Поиск по жанрам ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
+            self.create_line(title='[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
 
             data_array = Main.addon.getSetting('search').split('|')
             data_array.reverse()
@@ -417,47 +367,66 @@ class Main:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': urllib.quote(data)})
+                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': urllib.quote(data.decode('utf8').encode('cp1251'))})
 
         if self.params['param'] == 'search':
             skbd = xbmc.Keyboard()
             skbd.setHeading('Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
-                self.params['search_string'] = urllib.quote(skbd.getText())
+                search_string = skbd.getText()
+                self.params['search_string'] = urllib.quote(search_string.decode('utf8').encode('cp1251'))
+
                 data_array = Main.addon.getSetting('search').split('|')                    
                 while len(data_array) >= 10:
                     data_array.pop(0)
-                data_array = '{}|{}'.format('|'.join(data_array), urllib.unquote(self.params['search_string']))
+                data_array = '{}|{}'.format('|'.join(data_array), urllib.unquote(search_string))
                 Main.addon.setSetting('search', data_array)
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
             else:
                 return False
 
-        # if self.params['param'] == 'genres':
-        #     data = info.genres
+        if self.params['param'] == 'genres':
+            data = info.categories
 
-        # if self.params['param'] == 'years':
-        #     data = reversed(info.years)
-        #     data = tuple(data)
+        if self.params['param'] == 'years':
+            data = info.years
 
-        # if self.params['param'] == 'genres' or self.params['param'] == 'years':
-        #     for i in data:
-        #         self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'xfsearch/{}/'.format(urllib.quote_plus(i))})  
+        if self.params['param'] == 'genres':
+            for i in data:
+                label = '{}'.format(i[1])
+                self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&xf={}'.format(urllib.quote_plus(i[1]))})
+
+        if self.params['param'] == 'years':
+            for i in data:
+                label = '{}'.format(i)
+                self.create_line(title=label, params={'mode': 'common_part', 'param': 'do=xfsearch&xf={}&type=year&r=anime'.format(urllib.quote_plus(i))})
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+    def exec_categories_part(self):
+        data_array = info.categories
+
+        for data in data_array:
+            label = '[B][COLOR=white]{}[/COLOR][/B]'.format(data[1])
+            self.create_line(title=label, params={'mode': 'common_part', 'param': '{}'.format(data[0])})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_common_part(self):
         self.progress.create("AniStar", "Инициализация")
-
+        
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         post = ''
 
+        if 'xfsearch' in self.params['param']:
+            url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], self.params['param'])
+
         if self.params['param'] == 'search_part':
-            url = '{}index.php?do=search'.format(self.site_url)
+            url = 'https://as93.online-stars.org/'
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
-                self.params['page'], urllib.quote_plus(self.params['search_string']))
+                self.params['page'], self.params['search_string'])
 
         html = self.network.get_html(target_name=url, post=post)
 
@@ -477,15 +446,19 @@ class Main:
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
 
-                if '/m/">Манга</a>' in data:
+                if data.find('/m/">Манга</a>') > -1:
                     continue
 
-                # if data.find('/hentai/">Хентай</a>') > -1:
-                #     if not self.create_adult_content():
-                #         continue
+                if data.find('/hentai/">Хентай</a>') > -1:
+                    if not Main.addon.getSetting('adult_pass') in info.ignor_list:
+                        continue
 
-                anime_id = data[data.find('posters/')+8:data.find('/original.jpg')]
+                anime_id = data[data.find(self.site_url):].replace(self.site_url, '')
+                anime_id = anime_id[:anime_id.find('-')]                
                 series = ''
+
+                if anime_id in info.ignor_list:
+                    continue
 
                 if data.find('<p class="reason">') > -1:
                     series = data[data.find('<p class="reason">')+18:data.rfind('</p>')]
@@ -495,9 +468,10 @@ class Main:
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
                 if not self.database.is_anime_in_db(anime_id):
-                    inf = self.create_info(data)
+                    inf = self.create_info(anime_id, data)
 
                     if inf == 'advertising':
+                        self.create_line(title='[B][ [COLOR=red]Реклама[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(anime_id), params={})
                         continue
 
                     if type(inf) == int:
@@ -529,7 +503,6 @@ class Main:
             data_array = data_array.split('<div class="title">')
 
             for data in data_array:
-                #torrent_url = data[data.find('href="')+6:data.find('">')]
                 torrent_url = data[data.find('gettorrent.php?id=')+18:data.find('">')]
 
                 data = utility.clean_list(data).replace('<b>','|').replace('&nbsp;','')            

@@ -23,5 +23,6 @@
   </category>
   <category label="Контент 18+">
     <setting id="adult" type="bool" label="Использовать контент 18+" default="false" />
+    <setting id="adult_pass" type="text" option="hidden" label="Пароль" enable="eq(-1,true)" default="" />
   </category>
 </settings>
