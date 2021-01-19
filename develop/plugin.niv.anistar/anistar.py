@@ -320,13 +320,14 @@ class Main:
 
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
+        #self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
         self.create_line(title='[B][COLOR=lime][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
         self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
         self.create_line(title='[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
         self.create_line(title='[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})
         self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
         self.create_line(title='[B][COLOR=yellow][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
+
         if Main.addon.getSetting('adult') == 'true':
             if Main.addon.getSetting('adult_pass') in info.ignor_list:
                 self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
@@ -401,7 +402,8 @@ class Main:
         if self.params['param'] == 'years':
             for i in data:
                 label = '{}'.format(i)
-                self.create_line(title=label, params={'mode': 'common_part', 'param': 'do=xfsearch&xf={}&type=year&r=anime'.format(urllib.quote_plus(i))})
+                #self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&xf={}&type=year&r=anime'.format(urllib.quote_plus(i))})
+                self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&type=year&r=anime&xf={}'.format(i)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
@@ -428,6 +430,8 @@ class Main:
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
                 self.params['page'], self.params['search_string'])
 
+        xbmc.log(str(url), xbmc.LOGNOTICE)
+
         html = self.network.get_html(target_name=url, post=post)
 
         if type(html) == int:
@@ -453,15 +457,25 @@ class Main:
                     if not Main.addon.getSetting('adult_pass') in info.ignor_list:
                         continue
 
-                anime_id = data[data.find(self.site_url):].replace(self.site_url, '')
-                anime_id = anime_id[:anime_id.find('-')]                
+                # anime_id = data[data.find(self.site_url):].replace(self.site_url, '')
+                # anime_id = anime_id[:anime_id.find('-')]                
+                # series = ''
+
+                anime_id = data[data.find(self.site_url):data.find('">')].replace(self.site_url, '')
+                if 'index.php?newsid=' in anime_id:
+                    anime_id = anime_id.replace('index.php?newsid=', '').strip()
+                else:
+                    anime_id = anime_id[:anime_id.find('-')]
+
                 series = ''
+                if data.find('<p class="reason">') > -1:
+                    series = data[data.find('<p class="reason">')+18:data.rfind('</p>')]
 
                 if anime_id in info.ignor_list:
                     continue
 
-                if data.find('<p class="reason">') > -1:
-                    series = data[data.find('<p class="reason">')+18:data.rfind('</p>')]
+                # if data.find('<p class="reason">') > -1:
+                #     series = data[data.find('<p class="reason">')+18:data.rfind('</p>')]
 
                 if self.progress.iscanceled():
                     break
