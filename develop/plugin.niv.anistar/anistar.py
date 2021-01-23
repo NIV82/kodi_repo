@@ -86,7 +86,10 @@ class Main:
         #if time.time() - session_time > 259200:
         if time.time() - session_time > 28800:
             Main.addon.setSetting('session_time', str(time.time()))
-            try: os.remove(self.sid_file)
+            try:
+                os.remove(self.sid_file)
+            except:
+                pass
             #xbmcvfs.delete(self.sid_file)
             Main.addon.setSetting('auth', 'false')
 #================================================
