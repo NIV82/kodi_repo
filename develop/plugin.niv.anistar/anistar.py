@@ -47,9 +47,9 @@ class Main:
         if not os.path.exists(self.database_dir):
             os.mkdir(self.database_dir)
         
-        #self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'anistar.sid' ))
+        self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'anistar.sid' ))
 
-        self.params = {'mode': 'main_part', 'param': '', 'page': '1'}
+        self.params = {'mode': 'main_part', 'param': '', 'node': '', 'page': '1'}
 
         args = utility.get_params()
         for a in args:
@@ -78,38 +78,42 @@ class Main:
         else:
             proxy_data = None
 #================================================
-        # try:
-        #     session_time = float(Main.addon.getSetting('session_time'))
-        # except:
-        #     session_time = 0
+        try:
+            session_time = float(Main.addon.getSetting('session_time'))
+        except:
+            session_time = 0
 
-        # if time.time() - session_time > 259200:
-        #     Main.addon.setSetting('session_time', str(time.time()))
-        #     os.remove(self.sid_file)
-        #     Main.addon.setSetting('auth', 'false')
+        #if time.time() - session_time > 259200:
+        if time.time() - session_time > 28800:
+            Main.addon.setSetting('session_time', str(time.time()))
+            try: os.remove(self.sid_file)
+            #xbmcvfs.delete(self.sid_file)
+            Main.addon.setSetting('auth', 'false')
 #================================================
         from network import WebTools
         self.network = WebTools(auth_usage=bool(Main.addon.getSetting('auth_mode') == 'true'),
                                 auth_status=bool(Main.addon.getSetting('auth') == 'true'),
-                                proxy_data=proxy_data)
-        self.network.auth_post_data = {'mail': Main.addon.getSetting('login'),
-            'passwd': Main.addon.getSetting('password'), 'fa2code': '', 'csrf': '1'}
-        #self.network.sid_file = self.sid_file
+                                proxy_data=proxy_data,
+                                auth_url=self.site_url)
+        self.network.auth_post_data = {'login_name': Main.addon.getSetting('login'),
+                                       'login_password': Main.addon.getSetting('password'),
+                                       'login': 'submit'}
+        self.network.sid_file = self.sid_file
         del WebTools
 
-        # if Main.addon.getSetting('auth_mode') == 'true':
-        #     if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
-        #         self.params['mode'] = 'addon_setting'
-        #         xbmc.executebuiltin('XBMC.Notification(Авторизация, Укажите логин и пароль)')            
-        #         return
+        if Main.addon.getSetting('auth_mode') == 'true':
+            if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
+                self.params['mode'] = 'addon_setting'
+                xbmc.executebuiltin('XBMC.Notification(Авторизация, Укажите логин и пароль)')            
+                return
 
-        #     if not self.network.auth_status:
-        #         if not self.network.authorization():
-        #             self.params['mode'] = 'addon_setting'
-        #             xbmc.executebuiltin('XBMC.Notification(Ошибка, Проверьте логин и пароль)')
-        #             return
-        #         else:
-        #             Main.addon.setSetting("auth", str(self.network.auth_status).lower())
+            if not self.network.auth_status:
+                if not self.network.authorization():
+                    self.params['mode'] = 'addon_setting'
+                    xbmc.executebuiltin('XBMC.Notification(Ошибка, Проверьте логин и пароль)')
+                    return
+                else:
+                    Main.addon.setSetting("auth", str(self.network.auth_status).lower())
 
         if not os.path.isfile(os.path.join(self.database_dir, 'anistar.db')):
             db_file = os.path.join(self.database_dir, 'anistar.db')
@@ -231,8 +235,14 @@ class Main:
 
             li.setInfo(type='video', infoLabels=info)
 
+        # if self.params['mode'] == 'search_part' and self.params['param'] == '':
+        #     li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.anistar/?mode=clean_part")')])
+        
         if self.params['mode'] == 'search_part' and self.params['param'] == '':
             li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.anistar/?mode=clean_part")')])
+        else:
+            li.addContextMenuItems([('[B]Добавить Избранное (anistar)[/B]', 'Container.Update("plugin://plugin.niv.anistar/?mode=favorites_part&node=plus&id={}")'.format(anime_id)), 
+                                    ('[B]Удалить Избранное (anistar)[/B]', 'Container.Update("plugin://plugin.niv.anistar/?mode=favorites_part&node=minus&id={}")'.format(anime_id))])
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -306,6 +316,20 @@ class Main:
         except:
             pass
 
+    def exec_addon_setting(self):
+        Main.addon.openSettings()
+    
+    def exec_favorites_part(self):
+        url = '{}engine/ajax/favorites.php?fav_id={}&action={}&skin=new36'.format(self.site_url, self.params['id'], self.params['node'])
+
+        try:
+            self.network.get_html(target_name=url)
+            xbmc.executebuiltin("XBMC.Notification(Избранное, Готово)")
+        except:
+            xbmc.executebuiltin("XBMC.Notification(Избранное, ERROR: 103)")
+
+        xbmc.executebuiltin('Container.Refresh')
+
     def exec_clean_part(self):
         try:
             Main.addon.setSetting('search', '')
@@ -315,23 +339,19 @@ class Main:
             pass
         xbmc.executebuiltin('Container.Refresh')
 
-    # def exec_addon_setting(self):
-    #     Main.addon.openSettings()
-
     def exec_main_part(self):
+        if Main.addon.getSetting('auth_mode') == 'true':
+            self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        #self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
         self.create_line(title='[B][COLOR=lime][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
         self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
         self.create_line(title='[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
         self.create_line(title='[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})
         self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
         self.create_line(title='[B][COLOR=yellow][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
-
         if Main.addon.getSetting('adult') == 'true':
             if Main.addon.getSetting('adult_pass') in info.ignor_list:
                 self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
-
         self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -421,12 +441,13 @@ class Main:
         
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         post = ''
-
+        
         if 'xfsearch' in self.params['param']:
             url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], self.params['param'])
 
         if self.params['param'] == 'search_part':
-            url = 'https://as93.online-stars.org/'
+            #url = 'https://as93.online-stars.org/'
+            url = self.site_url
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
                 self.params['page'], self.params['search_string'])
 
@@ -466,6 +487,8 @@ class Main:
                     anime_id = anime_id.replace('index.php?newsid=', '').strip()
                 else:
                     anime_id = anime_id[:anime_id.find('-')]
+                
+                #xbmc.log(str(anime_id), xbmc.LOGNOTICE)
 
                 series = ''
                 if data.find('<p class="reason">') > -1:
