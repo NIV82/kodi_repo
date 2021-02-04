@@ -54,6 +54,9 @@ class Main:
         args = utility.get_params()
         for a in args:
             self.params[a] = urllib.unquote_plus(args[a])
+        
+        if self.params['param'] == 'db':
+            xbmcvfs.delete(os.path.join(self.database_dir, 'anistar.db'))
 
         if Main.addon.getSetting('adult') == 'false':
             try:
@@ -146,7 +149,10 @@ class Main:
 
         from database import DBTools
         if Main.addon.getSetting('database') == 'false':
-            os.remove(os.path.join(self.database_dir, 'anistar.db'))
+            try:
+                os.remove(os.path.join(self.database_dir, 'anistar.db'))
+            except:
+                pass
             Main.addon.setSetting('database', 'true')
         self.database = DBTools(os.path.join(self.database_dir, 'anistar.db'))
         del DBTools
@@ -197,7 +203,7 @@ class Main:
 
     def create_title(self, title, series):
         if series:
-            series = ' - [ {} ]'.format(series)
+            series = ' - [COLOR=gold][ {} ][/COLOR]'.format(series)
         else:
             series = ''
         
@@ -237,9 +243,6 @@ class Main:
                 info['size'] = size
 
             li.setInfo(type='video', infoLabels=info)
-
-        # if self.params['mode'] == 'search_part' and self.params['param'] == '':
-        #     li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.anistar/?mode=clean_part")')])
         
         if self.params['mode'] == 'search_part' and self.params['param'] == '':
             li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.anistar/?mode=clean_part")')])
@@ -253,6 +256,66 @@ class Main:
         url = '{}?{}'.format(sys.argv[0], urllib.urlencode(params))
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+
+    def create_schedule_info(self, anime_id):
+        url = '{}index.php?newsid={}'.format(self.site_url,anime_id)
+        html = self.network.get_html(target_name=url)
+
+        info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot'], '')
+       
+        title_data = html[html.find('<h1'):html.find('</h1>')]        
+        info.update(self.create_title_info(title_data))
+
+        genre = html[html.find('<p class="tags">')+16:html.find('</a></p>')]
+        genre = genre.replace('Новинки(онгоинги)', '').replace('Аниме', '')
+        genre = genre.replace('Категория:', '').replace('Хентай', '')
+        genre = genre.replace('Дорамы', '').replace('></a>,','>')            
+        info['genre'] = utility.tag_list(genre)
+
+        if 'Новости сайта' in info['genre']:
+            return 'advertising'
+
+        data_array = html[html.find('news_text">')+11:html.find('<div class="descripts"')]
+        data_array = data_array.splitlines()
+
+        for line in data_array:
+            if 'Год выпуска:' in line:
+                for year in range(1996, 2030, 1):
+                    if str(year) in line:                        
+                        info['year'] = year
+            if 'Режиссёр:' in line:
+                line = line.replace('Режиссёр:','')
+                info['director'] = utility.tag_list(line)
+            if 'Автор оригинала:' in line:
+                line = line.replace('Автор оригинала:','')
+                info['author'] = utility.tag_list(line)
+
+        plot = html[html.find('description">')+13:html.find('<div class="descripts">')]
+
+        if plot.find('<p class="reason">') > -1:
+            plot = plot[:plot.find('<p class="reason">')]
+        
+        plot = utility.clean_list(plot)
+        plot = utility.rep_list(plot)        
+
+        if plot.find('<div class="title_spoiler">') > -1:
+            spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]
+            spoiler = spoiler.replace('</div>', ' ').replace('"','')
+            spoiler = spoiler.replace('#', '\n#')
+            spoiler = utility.tag_list(spoiler)
+
+            plot = plot[:plot.find('<!--dle_spoiler')]
+            plot = utility.tag_list(plot)
+            info['plot'] = '{}\n\n{}'.format(plot, spoiler)
+        else:
+            info['plot'] = utility.tag_list(plot)
+
+        try:
+            self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['director'], info['author'], info['plot'])
+        except:
+            xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ADD])')
+            return 101
+        return
 
     def create_info(self, anime_id, data):
         info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot'], '')
@@ -346,26 +409,33 @@ class Main:
         if Main.addon.getSetting('auth_mode') == 'true':
             self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=lime][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
-        self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
-        self.create_line(title='[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
-        self.create_line(title='[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})
-        self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
-        self.create_line(title='[B][COLOR=yellow][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
-        if Main.addon.getSetting('adult') == 'true':
-            if Main.addon.getSetting('adult_pass') in info.ignor_list:
-                self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
+        self.create_line(title='[B][COLOR=lime][ Аниме ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
+        self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
         self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
+    def exec_catalog_part(self):
+        self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
+        self.create_line(title='[B][COLOR=white][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
+        self.create_line(title='[B][COLOR=white][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
+        self.create_line(title='[B][COLOR=white][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
+        self.create_line(title='[B][COLOR=white][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})        
+        if Main.addon.getSetting('adult') == 'true':
+            if Main.addon.getSetting('adult_pass') in info.ignor_list:
+                self.create_line(title='[B][COLOR=white][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
     def exec_information_part(self):
         if self.params['param'] == '':
+            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
             self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
             self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
             self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+            self.create_line(title='= = = = = = = = = = = = = = = = = = = =', params={}, folder=False)
+            self.create_line(title='[B][COLOR=white][ Обновление Базы Данных ][/COLOR][/B]', params={'mode': 'main_part', 'param': 'db'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)      
         else:
             txt = info.data
@@ -439,6 +509,72 @@ class Main:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
+    def exec_schedule_part(self):
+        self.progress.create("AniStar", "Инициализация")
+
+        url = '{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html')
+        html = self.network.get_html(target_name=url)
+
+        if type(html) == int:
+            self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
+            return  
+
+        week_title = []
+
+        today_title = html[html.find('<span>[')+7:html.find(']</span>')]
+        today_title = '{} - {}'.format('Сегодня', today_title)
+
+        call_list = html[html.find('<div class=\'cal-list\'>'):html.find('<div id="day1')]
+        call_list = '{}{}'.format(today_title, call_list).replace('<span>',' - ')
+        call_list = utility.tag_list(call_list)
+
+        week_list = call_list.splitlines()
+
+        for day in week_list:
+            week_title.append(day)
+
+        data_array = html[html.find('<div class="news-top">'):html.find('function calanime')]
+        data_array = data_array.replace(call_list, '')
+        data_array = data_array.split('<div id="day')
+
+        w = 0
+        i = 0
+
+        for array in data_array:
+            i = i + 1
+            p = int((float(i) / len(data_array)) * 100)
+
+            array = array.split('<div class="top-w" >')
+            array.pop(0)
+
+            day_title = '{}'.format(week_title[w])
+            self.create_line(title='[B][COLOR=lime]{}[/COLOR][/B]'.format(day_title), params={})
+            
+            if self.progress.iscanceled():
+                break
+            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+
+            for data in array:
+                anime_id = data[data.find(self.site_url):data.find('.html">')].replace(self.site_url, '')
+                anime_id = anime_id[:anime_id.find('-')]                
+                series = ''
+
+                if data.find('<smal>') > -1 :
+                    series = data[data.find('<smal>')+6:data.find('</smal>')]
+                else:
+                    series = data[data.find('<div class="timer_cal">'):]
+                    series = utility.tag_list(series)
+
+                if not self.database.is_anime_in_db(anime_id):
+                    inf = self.create_schedule_info(anime_id)
+
+                label = self.create_title(self.database.get_title(anime_id), series)
+                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+
+            w = w + 1
+        self.progress.close()
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
     def exec_common_part(self):
         self.progress.create("AniStar", "Инициализация")
         
@@ -449,12 +585,9 @@ class Main:
             url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], self.params['param'])
 
         if self.params['param'] == 'search_part':
-            #url = 'https://as93.online-stars.org/'
             url = self.site_url
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
                 self.params['page'], self.params['search_string'])
-
-        xbmc.log(str(url), xbmc.LOGNOTICE)
 
         html = self.network.get_html(target_name=url, post=post)
 
