@@ -7,7 +7,7 @@
     <setting type="sep"/>
   </category>
   <category label="Доступ к сайту">
-    <setting id="mirror" type="text" label="Актуальный адрес:" default="as93.online-stars.org" />
+    <setting id="mirror" type="text" label="Актуальный адрес:" default="as94.online-stars.org" />
     <setting type="sep"/>
     <setting id="unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy"/>
     <setting type="sep"/>

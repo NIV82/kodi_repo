@@ -7,7 +7,6 @@ import urllib
 import time
 
 import xbmc
-import xbmcvfs
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
@@ -54,21 +53,18 @@ class Main:
         args = utility.get_params()
         for a in args:
             self.params[a] = urllib.unquote_plus(args[a])
-        
+#================================================
         if self.params['param'] == 'db':
-            xbmcvfs.delete(os.path.join(self.database_dir, 'anistar.db'))
-
+            try: os.remove(os.path.join(self.database_dir, 'anistar.db'))
+            except: pass
+#================================================
         if Main.addon.getSetting('adult') == 'false':
-            try:
-                Main.addon.setSetting('adult_pass', '')
-            except:
-                pass
-
+            try: Main.addon.setSetting('adult_pass', '')
+            except: pass
+#================================================
         if Main.addon.getSetting('unblock') == '1':
-            try:
-                proxy_time = float(Main.addon.getSetting('proxy_time'))
-            except:
-                proxy_time = 0
+            try: proxy_time = float(Main.addon.getSetting('proxy_time'))
+            except: proxy_time = 0
             
             if time.time() - proxy_time > 36000:
                 Main.addon.setSetting('proxy_time', str(time.time()))
@@ -77,23 +73,17 @@ class Main:
                 Main.addon.setSetting('proxy', proxy)
                 proxy_data = {'https': proxy}
             else:
-                proxy_data = {'https': Main.addon.getSetting('proxy')}                
+                proxy_data = {'https': Main.addon.getSetting('proxy')}
         else:
             proxy_data = None
 #================================================
-        try:
-            session_time = float(Main.addon.getSetting('session_time'))
-        except:
-            session_time = 0
+        try: session_time = float(Main.addon.getSetting('session_time'))
+        except: session_time = 0
 
-        #if time.time() - session_time > 259200:
         if time.time() - session_time > 28800:
             Main.addon.setSetting('session_time', str(time.time()))
-            try:
-                os.remove(self.sid_file)
-            except:
-                pass
-            #xbmcvfs.delete(self.sid_file)
+            try: os.remove(self.sid_file)
+            except: pass
             Main.addon.setSetting('auth', 'false')
 #================================================
         from network import WebTools
@@ -106,7 +96,7 @@ class Main:
                                        'login': 'submit'}
         self.network.sid_file = self.sid_file
         del WebTools
-
+#================================================
         if Main.addon.getSetting('auth_mode') == 'true':
             if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
                 self.params['mode'] = 'addon_setting'
@@ -120,7 +110,7 @@ class Main:
                     return
                 else:
                     Main.addon.setSetting("auth", str(self.network.auth_status).lower())
-
+#================================================
         if not os.path.isfile(os.path.join(self.database_dir, 'anistar.db')):
             db_file = os.path.join(self.database_dir, 'anistar.db')
             db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anistar/anistar.db'
@@ -146,36 +136,17 @@ class Main:
                 xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
                 Main.addon.setSetting('database', 'false')
                 pass
-
+#================================================
         from database import DBTools
         if Main.addon.getSetting('database') == 'false':
-            try:
-                os.remove(os.path.join(self.database_dir, 'anistar.db'))
-            except:
-                pass
+            try: os.remove(os.path.join(self.database_dir, 'anistar.db'))
+            except: pass
             Main.addon.setSetting('database', 'true')
         self.database = DBTools(os.path.join(self.database_dir, 'anistar.db'))
         del DBTools
-
-    def create_adult_content(self):
-        if Main.addon.getSetting('adult') == 'false':
-            return False
-
-        try:
-            content_time = float(Main.addon.getSetting('content_time'))
-        except:
-            content_time = 0
-
-        if time.time() - content_time > 14400:
-            adult_pass = self.dialog.input('Введите код доступа', type=xbmcgui.INPUT_ALPHANUM, option=xbmcgui.ALPHANUM_HIDE_INPUT)
-            if str(adult_pass) == '1111':
-                Main.addon.setSetting('content_time', str(time.time()))
-                return True
-            else:
-                Main.addon.setSetting('adult', 'false')
-                return False
-        else:
-            return True
+#================================================
+    def create_match_ru(self, text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
+        return not alphabet.isdisjoint(text.lower())
 
     def create_title_info(self, title):
         info = dict.fromkeys(['title_ru', 'title_en'], '')
@@ -186,7 +157,11 @@ class Main:
         title = title.replace('\\', '/')
         
         v = title.split('/', 1)
-        
+
+        if not self.create_match_ru(v[0]):
+            if self.create_match_ru(v[1]):
+                v.reverse()
+       
         if len(v) == 1:
             v.append('')
 
@@ -377,10 +352,8 @@ class Main:
 
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
-        try:
-            self.database.end()
-        except:
-            pass
+        try: self.database.end()
+        except: pass
 
     def exec_addon_setting(self):
         Main.addon.openSettings()
@@ -495,7 +468,6 @@ class Main:
         if self.params['param'] == 'years':
             for i in data:
                 label = '{}'.format(i)
-                #self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&xf={}&type=year&r=anime'.format(urllib.quote_plus(i))})
                 self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&type=year&r=anime&xf={}'.format(i)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -525,10 +497,9 @@ class Main:
         today_title = '{} - {}'.format('Сегодня', today_title)
 
         call_list = html[html.find('<div class=\'cal-list\'>'):html.find('<div id="day1')]
-        call_list = '{}{}'.format(today_title, call_list).replace('<span>',' - ')
-        call_list = utility.tag_list(call_list)
-
-        week_list = call_list.splitlines()
+        week_list = '{}{}'.format(today_title, call_list).replace('<span>',' - ')        
+        week_list = utility.tag_list(week_list)
+        week_list = week_list.splitlines()
 
         for day in week_list:
             week_title.append(day)
@@ -614,27 +585,18 @@ class Main:
                     if not Main.addon.getSetting('adult_pass') in info.ignor_list:
                         continue
 
-                # anime_id = data[data.find(self.site_url):].replace(self.site_url, '')
-                # anime_id = anime_id[:anime_id.find('-')]                
-                # series = ''
-
                 anime_id = data[data.find(self.site_url):data.find('">')].replace(self.site_url, '')
                 if 'index.php?newsid=' in anime_id:
                     anime_id = anime_id.replace('index.php?newsid=', '').strip()
                 else:
                     anime_id = anime_id[:anime_id.find('-')]
                 
-                #xbmc.log(str(anime_id), xbmc.LOGNOTICE)
-
                 series = ''
                 if data.find('<p class="reason">') > -1:
                     series = data[data.find('<p class="reason">')+18:data.rfind('</p>')]
 
                 if anime_id in info.ignor_list:
                     continue
-
-                # if data.find('<p class="reason">') > -1:
-                #     series = data[data.find('<p class="reason">')+18:data.rfind('</p>')]
 
                 if self.progress.iscanceled():
                     break
@@ -644,7 +606,6 @@ class Main:
                     inf = self.create_info(anime_id, data)
 
                     if inf == 'advertising':
-                        self.create_line(title='[B][ [COLOR=red]Реклама[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(anime_id), params={})
                         continue
 
                     if type(inf) == int:
