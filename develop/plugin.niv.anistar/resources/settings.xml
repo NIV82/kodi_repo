@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
   <category label="Интерфейс">
-    <!-- <setting id="online_mode" type="bool" label="Смотреть онлайн" default="false" /> -->
+    <setting id="online_mode" type="bool" label="Смотреть онлайн" default="false" />
     <setting id="cover_mode" type="bool" label="Сохранять обложки" default="false" />
     <setting id="title_mode" type="enum" label="Названия аниме" values="Ru|En|Ru-En" default="0" />
     <setting type="sep"/>

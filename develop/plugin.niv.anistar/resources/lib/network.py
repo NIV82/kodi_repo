@@ -37,7 +37,10 @@ class WebTools:
         try:
             url = self.url_opener.open(urllib2.Request(url=target_name, data=post, headers=self.headers))            
             data = url.read()
-            data = data.decode('cp1251').encode('utf8')
+
+            try: data = data.decode('cp1251').encode('utf8')
+            except: pass
+            
             return data
         except urllib2.HTTPError as err:
             return err.code

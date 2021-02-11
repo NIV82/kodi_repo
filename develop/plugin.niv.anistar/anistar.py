@@ -229,6 +229,9 @@ class Main:
                 li.setProperty('isPlayable', 'true')
 
         url = '{}?{}'.format(sys.argv[0], urllib.urlencode(params))
+        
+        if Main.addon.getSetting('online_mode') == 'true':
+            if online: url = urllib.unquote(online)
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
@@ -630,30 +633,75 @@ class Main:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_select_part(self):
-        html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
+        if Main.addon.getSetting('online_mode') == 'false':
+            html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
 
-        if html.find('<div class="title">') > -1:
-            data_array = html[html.find('<div class="title">')+19:html.rfind('<div class="bord_a1">')]
-            data_array = data_array.split('<div class="title">')
+            if html.find('<div class="title">') > -1:
+                data_array = html[html.find('<div class="title">')+19:html.rfind('<div class="bord_a1">')]
+                data_array = data_array.split('<div class="title">')
+
+                for data in data_array:
+                    torrent_url = data[data.find('gettorrent.php?id=')+18:data.find('">')]
+
+                    data = utility.clean_list(data).replace('<b>','|').replace('&nbsp;','')            
+                    data = utility.tag_list(data).split('|')
+
+                    torrent_title = data[0][:data[0].find('(')].strip()
+                    torrent_seed = data[1].replace('Раздают:', '').strip()
+                    torrent_peer = data[2].replace('Качают:', '').strip()
+                    torrent_size = data[4].replace('Размер:', '').strip()
+
+                    label = '{} , [COLOR=yellow]{}[/COLOR], Сидов: [COLOR=green]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
+                        torrent_title, torrent_size, torrent_seed, torrent_peer)
+                    
+                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
+                    
+            else:
+                self.create_line(title='Контент не обнаружен', params={})
+        else:
+            video_url = '{}test/player2/videoas.php?id={}'.format(self.site_url, self.params['id'])
+            html = self.network.get_html(target_name=video_url)
+
+            data_array = html[html.find('playlst=[')+9:html.find('];')]
+            data_array = data_array.split('{')
+            data_array.pop(0)
+
+            sd_multi_voice = []
+            hd_multi_voice = []            
+
+            sd_single_voice = []
+            hd_single_voice = []
 
             for data in data_array:
-                torrent_url = data[data.find('gettorrent.php?id=')+18:data.find('">')]
+                title = data[data.find('title:"')+7:data.find('",')]
+                file_data =  data[data.find('php?360=')+4:data.rfind('",')]
 
-                data = utility.clean_list(data).replace('<b>','|').replace('&nbsp;','')            
-                data = utility.tag_list(data).split('|')
+                sd_url = file_data[file_data.find('360=')+4:file_data.find('.m3u8')+5]
+                hd_url = sd_url.replace('360', '720')
 
-                torrent_title = data[0][:data[0].find('(')].strip()
-                torrent_seed = data[1].replace('Раздают:', '').strip()
-                torrent_peer = data[2].replace('Качают:', '').strip()
-                torrent_size = data[4].replace('Размер:', '').strip()
+                sd_line = '{}|{}'.format(title, sd_url)
+                hd_line = '{}|{}'.format(title, hd_url)
 
-                label = '{} , [COLOR=yellow]{}[/COLOR], Сидов: [COLOR=green]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
-                    torrent_title, torrent_size, torrent_seed, torrent_peer)
-                
-                self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
-                
-        else:
-            self.create_line(title='Контент не обнаружен', params={})
+                if 'Многоголосая озвучка' in title:
+                    sd_multi_voice.append(sd_line)
+                    hd_multi_voice.append(hd_line)
+                else:
+                    sd_single_voice.append(sd_line)
+                    hd_single_voice.append(hd_line)
+
+            if sd_single_voice:
+                label = 'Одноголосая озвучка - Качество: [COLOR=F020F0F0]480p[/COLOR]'
+                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(sd_single_voice)}, anime_id=self.params['id'])
+            if hd_single_voice:
+                label = 'Одноголосая озвучка - Качество: [COLOR=F020F0F0]720p[/COLOR]'
+                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(hd_single_voice)}, anime_id=self.params['id'])
+
+            if sd_multi_voice:
+                label = 'Многоголосая озвучка - Качество: [COLOR=F020F0F0]480p[/COLOR]'
+                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(sd_multi_voice)}, anime_id=self.params['id'])
+            if hd_multi_voice:
+                label = 'Многоголосая озвучка - Качество: [COLOR=F020F0F0]720p[/COLOR]'
+                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(hd_multi_voice)}, anime_id=self.params['id'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
@@ -684,6 +732,16 @@ class Main:
             self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_id}, anime_id=self.params['id'], folder=False, size=info['length'])
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+    def exec_online_part(self):        
+        data_array = self.params['param'].split('|||')
+
+        for data in data_array:
+            data = data.split('|')
+            xbmc.log(str(data[1]), xbmc.LOGNOTICE)
+            self.create_line(title=data[0], params={}, anime_id=self.params['id'], online=data[1], folder=False)
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_play_part(self):
         url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
