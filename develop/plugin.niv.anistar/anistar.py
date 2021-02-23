@@ -62,18 +62,11 @@ class Main:
             try: Main.addon.setSetting('adult_pass', '')
             except: pass
 #================================================
+        if self.params['param'] == 'actual_url':
+            self.create_actual_url()
+#================================================
         if Main.addon.getSetting('unblock') == '1':
-            try: proxy_time = float(Main.addon.getSetting('proxy_time'))
-            except: proxy_time = 0
-            
-            if time.time() - proxy_time > 36000:
-                Main.addon.setSetting('proxy_time', str(time.time()))
-                proxy_pac = urllib.urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                Main.addon.setSetting('proxy', proxy)
-                proxy_data = {'https': proxy}
-            else:
-                proxy_data = {'https': Main.addon.getSetting('proxy')}
+            proxy_data = self.create_proxy_data()
         else:
             proxy_data = None
 #================================================
@@ -145,6 +138,38 @@ class Main:
         self.database = DBTools(os.path.join(self.database_dir, 'anistar.db'))
         del DBTools
 #================================================
+    def create_actual_url(self):
+        proxy_data = self.create_proxy_data()
+
+        from network import WebTools
+        self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=proxy_data, auth_url=None)
+        del WebTools
+            
+        try:
+            ht = self.net.get_html(target_name='https://anistar.org/')                
+            actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
+            actual_url = utility.tag_list(actual_url).lower()
+            self.dialog.ok('AniStar', '[COLOR=lime]Выполнено[/COLOR]: применяем новый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url))
+        except:
+            actual_url = self.site_url
+            self.dialog.ok('AniStar', '[COLOR=red]Ошибка[/COLOR]: применяем старый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url))
+
+        Main.addon.setSetting('mirror', actual_url)
+
+    def create_proxy_data(self):
+        try: proxy_time = float(Main.addon.getSetting('proxy_time'))
+        except: proxy_time = 0
+            
+        if time.time() - proxy_time > 36000:
+            Main.addon.setSetting('proxy_time', str(time.time()))
+            proxy_pac = urllib.urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+            proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+            Main.addon.setSetting('proxy', proxy)
+            proxy_data = {'https': proxy}
+        else:
+            proxy_data = {'https': Main.addon.getSetting('proxy')}
+        return proxy_data
+
     def create_match_ru(self, text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
         return not alphabet.isdisjoint(text.lower())
 
@@ -412,6 +437,7 @@ class Main:
             self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
             self.create_line(title='= = = = = = = = = = = = = = = = = = = =', params={}, folder=False)
             self.create_line(title='[B][COLOR=white][ Обновление Базы Данных ][/COLOR][/B]', params={'mode': 'main_part', 'param': 'db'})
+            self.create_line(title='[B][COLOR=white][ Обновление Актуального Адреса ][/COLOR][/B]', params={'mode': 'main_part', 'param': 'actual_url'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)      
         else:
             txt = info.data
