@@ -144,22 +144,24 @@ class Main:
         from network import WebTools
         self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=proxy_data, auth_url=None)
         del WebTools
-            
+        
         try:
             ht = self.net.get_html(target_name='https://anistar.org/')                
             actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
             actual_url = utility.tag_list(actual_url).lower()
-            self.dialog.ok('AniStar', '[COLOR=lime]Выполнено[/COLOR]: применяем новый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url))
+            self.dialog.ok('AniStar', '[COLOR=lime]Выполнено[/COLOR] - [COLOR=blue]{}[/COLOR]\nПрименяем адрес, Отключаем разблокировку'.format(actual_url))
+            Main.addon.setSetting('unblock', '0')
         except:
-            actual_url = self.site_url
+            actual_url = self.site_url.split('/')
+            actual_url = actual_url[2]
             self.dialog.ok('AniStar', '[COLOR=red]Ошибка[/COLOR]: применяем старый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url))
 
         Main.addon.setSetting('mirror', actual_url)
 
-    def create_proxy_data(self):
+    def create_proxy_data(self):        
         try: proxy_time = float(Main.addon.getSetting('proxy_time'))
         except: proxy_time = 0
-            
+
         if time.time() - proxy_time > 36000:
             Main.addon.setSetting('proxy_time', str(time.time()))
             proxy_pac = urllib.urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
@@ -167,7 +169,13 @@ class Main:
             Main.addon.setSetting('proxy', proxy)
             proxy_data = {'https': proxy}
         else:
-            proxy_data = {'https': Main.addon.getSetting('proxy')}
+            if Main.addon.getSetting('proxy'):
+                proxy_data = {'https': Main.addon.getSetting('proxy')}
+            else:
+                proxy_pac = urllib.urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+                proxy = proxy_pac[proxy_pac.find(b'PROXY ')+6:proxy_pac.find(b'; DIRECT')].strip()
+                Main.addon.setSetting('proxy', proxy)
+                proxy_data = {'https': proxy}
         return proxy_data
 
     def create_match_ru(self, text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
@@ -323,7 +331,7 @@ class Main:
     def create_info(self, anime_id, data):
         info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot'], '')
 
-        title_data = data[data.find('">')+2:data.find('</a>')]
+        title_data = data[data.find('>')+1:data.find('</a>')]
         info.update(self.create_title_info(title_data))
 
         genre = data[data.find('<p class="tags">')+16:data.find('</a></p>')]
@@ -334,7 +342,8 @@ class Main:
         info['genre'] = utility.tag_list(genre)
 
         if 'Новости сайта' in info['genre']:
-            return 'advertising'
+            if data.find('<li><b>Жанр: </b>') > -1: pass
+            else: return 'advertising'
 
         data_array = data[data.find('news_text">')+11:data.find('<div class="descripts"')]
         data_array = data_array.splitlines()
