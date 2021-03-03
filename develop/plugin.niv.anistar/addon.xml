@@ -3,6 +3,9 @@
   <extension point="xbmc.python.pluginsource" library="anistar.py">
     <provides>video</provides>
   </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">AniStar</summary>
     <summary lang="ru">AniStar</summary>
