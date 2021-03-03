@@ -5,6 +5,9 @@
   <extension point="xbmc.python.pluginsource" library="anidub.py">
     <provides>video</provides>
   </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">AniDUB</summary>
     <summary lang="ru">AniDUB</summary>
@@ -22,6 +25,9 @@
   <extension point="xbmc.python.pluginsource" library="anilibria.py">
     <provides>video</provides>
   </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">Anilibria</summary>
     <summary lang="ru">Anilibria</summary>
@@ -39,6 +45,9 @@
   <extension point="xbmc.python.pluginsource" library="animedia.py">
     <provides>video</provides>
   </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">Animedia</summary>
     <summary lang="ru">Animedia</summary>
@@ -56,6 +65,9 @@
   <extension point="xbmc.python.pluginsource" library="anistar.py">
     <provides>video</provides>
   </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">AniStar</summary>
     <summary lang="ru">AniStar</summary>
@@ -73,6 +85,9 @@
   <extension point="xbmc.python.pluginsource" library="shiza.py">
     <provides>video</provides>
   </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">SHIZA Project</summary>
     <summary lang="ru">SHIZA Project</summary>
