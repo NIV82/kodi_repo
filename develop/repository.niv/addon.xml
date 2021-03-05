@@ -1,20 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="repository.niv" name="NIV repo" version="1.0.0" provider-name="NIV">
-	<extension point="xbmc.addon.repository" name="NIV repo">
-		<info>https://raw.githubusercontent.com/NIV82/kodi_repo/main/addons.xml</info>
-		<checksum>https://raw.githubusercontent.com/NIV82/kodi_repo/main/addons.xml.md5</checksum>		
-		<datadir zip="true">https://github.com/NIV82/kodi_repo/raw/main/release/</datadir>
-	</extension>
-	<extension point="xbmc.addon.metadata">
-		<summary lang="en_US">NIV addons</summary>
-    	<summary lang="ru">NIV addons</summary>
-		<description lang="en_US">Plug-ins for Kodi</description>
-    	<description lang="ru">Плагины для Kodi</description>
-    	<disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
-    	<disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
-		<platform>all</platform>
-		<assets>
-        	<icon>icon.jpg</icon>
-    	</assets>
+
+<addon id="repository.niv" name="NIV82 repository" version="1.0.2" provider-name="NIV">
+	<extension point="xbmc.addon.repository" name="NIV82 repository">
+		<dir minversion="1.0.0" maxversion="18.9.0">
+			<info compressed="false">https://raw.githubusercontent.com/NIV82/kodi_repo/main/leia/addons.xml</info>
+			<checksum>https://raw.githubusercontent.com/NIV82/kodi_repo/main/leia/addons.xml.md5</checksum>
+			<datadir zip="true">https://github.com/NIV82/kodi_repo/raw/main/leia/</datadir>
+		</dir>
+		<dir minversion="18.9.701">
+			<info compressed="false">https://raw.githubusercontent.com/NIV82/kodi_repo/main/matrix/addons.xml</info>
+			<checksum>https://raw.githubusercontent.com/NIV82/kodi_repo/main/matrix/addons.xml.md5</checksum>
+			<datadir zip="true">https://github.com/NIV82/kodi_repo/raw/main/matrix/</datadir>
+		</dir>
 	</extension>
 </addon>
