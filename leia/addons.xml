@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
+
 <addon id="plugin.niv.anidub" name="AniDUB" version="1.0.1" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="anidub.py">
     <provides>video</provides>
@@ -19,6 +20,7 @@
     </assets>
   </extension>
 </addon>
+
 <addon id="plugin.niv.anilibria" name="Anilibria" version="1.0.4" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="anilibria.py">
     <provides>video</provides>
@@ -38,6 +40,7 @@
     </assets>
   </extension>
 </addon>
+
 <addon id="plugin.niv.animedia" name="Animedia" version="1.0.1" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="animedia.py">
     <provides>video</provides>
@@ -57,6 +60,7 @@
     </assets>
   </extension>
 </addon>
+
 <addon id="plugin.niv.anistar" name="AniStar" version="0.4.3" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="anistar.py">
     <provides>video</provides>
@@ -76,6 +80,7 @@
     </assets>
   </extension>
 </addon>
+
 <addon id="plugin.niv.shiza" name="SHIZA Project" version="1.0.1" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="shiza.py">
     <provides>video</provides>
@@ -95,4 +100,5 @@
     </assets>
   </extension>
 </addon>
+
 </addons>
