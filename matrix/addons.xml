@@ -16,7 +16,7 @@
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
-        <icon>resources/media/icon.jpg</icon>
+        <icon>icon.jpg</icon>
     </assets>
   </extension>
 </addon>
