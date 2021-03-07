@@ -3,14 +3,16 @@
 import gc
 import os
 import sys
-import urllib
 import time
 
 import xbmc
-import xbmcvfs
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
+import xbmcvfs
+
+from urllib.parse import parse_qs, quote_plus, unquote_plus, urlencode
+from urllib.request import urlopen
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
@@ -25,7 +27,7 @@ class Main:
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
-        self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
+        self.addon_data_dir = xbmcvfs.translatePath(Main.addon.getAddonInfo('profile'))
         if not os.path.exists(self.addon_data_dir):
             os.makedirs(self.addon_data_dir)
 
@@ -44,40 +46,25 @@ class Main:
         self.database_dir = os.path.join(self.addon_data_dir, 'database')
         if not os.path.exists(self.database_dir):
             os.mkdir(self.database_dir)
-        
-        self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'anilibria.sid' ))
 
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'sort':''}
 
-        args = utility.get_params()
+        args = parse_qs(sys.argv[2][1:])
         for a in args:
-            self.params[a] = urllib.unquote_plus(args[a])
+            self.params[a] = args[a][0]
 
-        if Main.addon.getSetting('unblock') == '1':
-            try:
-                proxy_time = float(Main.addon.getSetting('proxy_time'))
-            except:
-                proxy_time = 0
-            
-            if time.time() - proxy_time > 36000:
-                Main.addon.setSetting('proxy_time', str(time.time()))
-                proxy_pac = urllib.urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                Main.addon.setSetting('proxy', proxy)
-                proxy_data = {'https': proxy}
-            else:
-                proxy_data = {'https': Main.addon.getSetting('proxy')}                
-        else:
+        if Main.addon.getSetting('unblock') == '0':
             proxy_data = None
+        else:
+            proxy_data = self.create_proxy_data()
 #================================================
-        try:
-            session_time = float(Main.addon.getSetting('session_time'))
-        except:
-            session_time = 0
+        try: session_time = float(Main.addon.getSetting('session_time'))
+        except: session_time = 0
 
-        if time.time() - session_time > 259200:
+        if time.time() - session_time > 28800:
             Main.addon.setSetting('session_time', str(time.time()))
-            xbmcvfs.delete(self.sid_file)
+            try: os.remove(os.path.join(self.cookies_dir, 'anilibria.sid'))
+            except: pass
             Main.addon.setSetting('auth', 'false')
 #================================================
         from network import WebTools
@@ -85,10 +72,12 @@ class Main:
                                 auth_status=bool(Main.addon.getSetting('auth') == 'true'),
                                 proxy_data=proxy_data)
         self.network.auth_post_data = {'mail': Main.addon.getSetting('login'),
-            'passwd': Main.addon.getSetting('password'), 'fa2code': '', 'csrf': '1'}
-        self.network.sid_file = self.sid_file
+                                       'passwd': Main.addon.getSetting('password'),
+                                       'fa2code': '',
+                                       'csrf': '1'}
+        self.network.sid_file = os.path.join(self.cookies_dir, 'anilibria.sid' )
         del WebTools
-
+#================================================
         if Main.addon.getSetting('auth_mode') == 'true':
             if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
                 self.params['mode'] = 'addon_setting'
@@ -102,39 +91,38 @@ class Main:
                     return
                 else:
                     Main.addon.setSetting("auth", str(self.network.auth_status).lower())
-
+#================================================
         if not os.path.isfile(os.path.join(self.database_dir, 'anilibria.db')):
-            db_file = os.path.join(self.database_dir, 'anilibria.db')
-            db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anilibria/anilibria.db'
-            try:                
-                data = urllib.urlopen(db_url)
-                chunk_size = 8192
-                bytes_read = 0
-                file_size = int(data.info().getheaders("Content-Length")[0])
-                self.progress.create('Загрузка Базы Данных')
-                with open(db_file, 'wb') as write_file:
-                    while True:
-                        chunk = data.read(chunk_size)
-                        bytes_read = bytes_read + len(chunk)
-                        write_file.write(chunk)
-                        if len(chunk) < chunk_size:
-                            break
-                        percent = bytes_read * 100 / file_size
-                        self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                    self.progress.close()
-                xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
-                Main.addon.setSetting('database', 'true')
-            except:
-                xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
-                Main.addon.setSetting('database', 'false')
-                pass
-
+            self.exec_update_part()
+#================================================
         from database import DBTools
         if Main.addon.getSetting('database') == 'false':
             os.remove(os.path.join(self.database_dir, 'anilibria.db'))
             Main.addon.setSetting('database', 'true')
         self.database = DBTools(os.path.join(self.database_dir, 'anilibria.db'))
         del DBTools
+
+    def create_proxy_data(self):
+        try: proxy_time = float(Main.addon.getSetting('proxy_time'))
+        except: proxy_time = 0
+
+        if time.time() - proxy_time > 36000:
+            Main.addon.setSetting('proxy_time', str(time.time()))
+            proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+            proxy = proxy_pac[proxy_pac.find(b'PROXY ')+6:proxy_pac.find(b'; DIRECT')].strip()
+            proxy = str(proxy, encoding='utf-8')
+            Main.addon.setSetting('proxy', proxy)
+            proxy_data = {'https': proxy}
+        else:
+            if Main.addon.getSetting('proxy'):
+                proxy_data = {'https': Main.addon.getSetting('proxy')}
+            else:
+                proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+                proxy = proxy_pac[proxy_pac.find(b'PROXY ')+6:proxy_pac.find(b'; DIRECT')].strip()
+                proxy = str(proxy, encoding='utf-8')
+                Main.addon.setSetting('proxy', proxy)
+                proxy_data = {'https': proxy}
+        return proxy_data
 
     def create_title_info(self, title):
         info = dict.fromkeys(['title_ru', 'title_en'], '')
@@ -143,10 +131,10 @@ class Main:
             title = title.replace('Судьба/', 'Судьба-')
             title = title.replace('fate/', 'fate-')
 
-        title = utility.tag_list(title)
-        title = utility.rep_list(title)
-        title = utility.rbr_list(title)
-        title = utility.sbr_list(title)
+        title = utility.tag(title)
+        title = utility.rep(title)
+        title = utility.rbr(title)
+        title = utility.sbr(title)
 
         v = title.split('/', 1)
 
@@ -160,7 +148,8 @@ class Main:
 
     def create_title(self, title, series):
         if series:            
-            series = series.decode( 'unicode-escape' ).encode( 'utf-8' )
+            #series = series.decode( 'unicode-escape' ).encode( 'utf-8' )
+            series = series.encode().decode("unicode-escape")
             series = series.replace('\/','/')
             series = series.replace('Серия:','').strip()
             series = ' - [ {} ]'.format(series)
@@ -175,57 +164,6 @@ class Main:
             label = '{} / {}{}'.format(title[0], title[1], series)
         return label
 
-    def create_info(self, anime_url):
-        html = self.network.get_html('https://www.anilibria.tv/release/{}.html'.format(anime_url))
-
-        if type(html) == int:
-            return html
-
-        info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'dubbing', 'timing', 'subs', 'plot'], '')
-
-        try:
-            anime_id = html[html.find('/release/350x500/')+17:html.find('.jpg?')].strip()
-        except:
-            xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ID])')
-            return 101
-        
-        title_data = html[html.find('<title>')+7:html.find('</title>')].strip()
-        info.update(self.create_title_info(title_data))
-
-        data_array = html[html.find('<hr class="poloska-detail"'):html.find('<div class="detail_torrent_side">')]
-        data_array = data_array.replace('<p class', 'plot: <p class')
-        data_array = data_array.splitlines()
-
-        for data in data_array:
-            data = utility.tag_list(data)
- 
-            if 'Сезон:' in data:
-                for i in range(1996, 2030, 1):
-                    if str(i) in data:
-                        info['year'] = i
-            if 'Жанры:' in data:
-                data = data.replace('Жанры:', '').strip()
-                info['genre'] = utility.rep_list(data)
-            if 'Озвучка:' in data:
-                data = data.replace('Озвучка:', '').strip()
-                info['dubbing'] = utility.rep_list(data)
-            if 'Тайминг:' in data:
-                data = data.replace('Тайминг:', '').strip()
-                info['timing'] = utility.rep_list(data)
-            if 'Работа над субтитрами:' in data:
-                data = data.replace('Работа над субтитрами:', '').strip()
-                info['subs'] = utility.rep_list(data)
-            if 'plot:' in data:
-                data = data.replace('plot:', '').strip()
-                info['plot'] = utility.rep_list(data)
-        
-        try:
-            self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['dubbing'], info['timing'], info['subs'], info['plot'], anime_url)
-        except:
-            xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ADD])')
-            return 101
-        return
-
     def create_image(self, anime_url):        
         cover = self.database.get_cover(anime_url)
         url = 'https://static.anilibria.tv/upload/release/350x500/{}.jpg'.format(cover)
@@ -235,9 +173,9 @@ class Main:
         else:
             local_img = '{}{}'.format(cover, url[url.rfind('.'):])
             if local_img in os.listdir(self.images_dir):
-                return utility.fs_dec(os.path.join(self.images_dir, local_img))
+                return os.path.join(self.images_dir, local_img)
             else:
-                file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
+                file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
 
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
@@ -264,29 +202,109 @@ class Main:
         if self.params['mode'] == 'search_part' and self.params['param'] == '':
             li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=clean_part")')])
 
-        if Main.addon.getSetting('auth_mode') == 'true':
+        if Main.addon.getSetting('auth_mode') == 'true' and not self.params['param'] == '':
             if self.params['mode'] == 'common_part' or self.params['mode'] == 'search_part':
                 li.addContextMenuItems([('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=favorites_part&id={}")'.format(anime_id)), ('[B]Удалить FAV (сайт)[/B]', 
                                          'Container.Update("plugin://plugin.niv.anilibria/?mode=favorites_part&id={}")'.format(anime_id))])
         if folder==False:
                 li.setProperty('isPlayable', 'true')
 
-        url = '{}?{}'.format(sys.argv[0], urllib.urlencode(params))
+        url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
         if Main.addon.getSetting('online_mode') == 'true':
             if online: url = online
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
+    def create_info(self, anime_url):        
+        html = self.network.get_html('https://www.anilibria.tv/release/{}.html'.format(anime_url))
+
+        if type(html) == int: return html
+
+        info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'dubbing', 'timing', 'subs', 'plot'], '')
+
+        try:
+            anime_id = html[html.find('/release/350x500/')+17:html.find('.jpg?')].strip()
+        except:
+            xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ID])')
+            return 101
+        
+        title_data = html[html.find('<title>')+7:html.find('</title>')].strip()
+        info.update(self.create_title_info(title_data))
+
+        data_array = html[html.find('<hr class="poloska-detail"'):html.find('<div class="detail_torrent_side">')]
+        data_array = data_array.replace('<p class', 'plot: <p class')
+        data_array = data_array.splitlines()
+
+        for data in data_array:
+            data = utility.tag(data)
+ 
+            if 'Сезон:' in data:
+                for i in range(1996, 2030, 1):
+                    if str(i) in data:
+                        info['year'] = i
+            if 'Жанры:' in data:
+                data = data.replace('Жанры:', '').strip()
+                info['genre'] = utility.rep(data)
+            if 'Озвучка:' in data:
+                data = data.replace('Озвучка:', '').strip()
+                info['dubbing'] = utility.rep(data)
+            if 'Тайминг:' in data:
+                data = data.replace('Тайминг:', '').strip()
+                info['timing'] = utility.rep(data)
+            if 'Работа над субтитрами:' in data:
+                data = data.replace('Работа над субтитрами:', '').strip()
+                info['subs'] = utility.rep(data)
+            if 'plot:' in data:
+                data = data.replace('plot:', '').strip()
+                info['plot'] = utility.rep(data)
+
+        try:
+            self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['dubbing'], info['timing'], info['subs'], info['plot'], anime_url)
+        except:            
+            xbmc.executebuiltin('XBMC.Notification(Ошибка парсера, ERROR: 101 - [ADD])')
+            return 101
+        return
+
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
-        try:
-            self.database.end()
-        except:
-            pass
+        try: self.database.end()
+        except: pass
 
     def exec_addon_setting(self):
         Main.addon.openSettings()
+
+    def exec_update_part(self):
+        try: self.database.end()
+        except: pass
+        
+        try: os.remove(os.path.join(self.database_dir, 'anilibria.db'))
+        except: pass        
+
+        db_file = os.path.join(self.database_dir, 'anilibria.db')
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.anilibria/anilibria.db'
+        try:                
+            data = urlopen(db_url)
+            chunk_size = 8192
+            bytes_read = 0
+            file_size = int(data.getheader('Content-Length'))
+            self.progress.create('Загрузка Базы Данных')
+            with open(db_file, 'wb') as write_file:
+                while True:
+                    chunk = data.read(chunk_size)
+                    bytes_read = bytes_read + len(chunk)
+                    write_file.write(chunk)
+                    if len(chunk) < chunk_size:
+                        break
+                    percent = bytes_read * 100 / file_size
+                    self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                self.progress.close()
+            xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
+            Main.addon.setSetting('database', 'true')
+        except:
+            xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+            Main.addon.setSetting('database', 'false')
+            pass
 
     def exec_favorites_part(self):
         url = 'https://www.anilibria.tv/release/{}.html'.format(self.params['id'])
@@ -310,7 +328,8 @@ class Main:
     def exec_clean_part(self):
         try:
             Main.addon.setSetting('search', '')
-            xbmc.executebuiltin('XBMC.Notification(Удаление истории, Успешно выполнено)')
+            self.dialog.ok('Anilibria','Удаление истории успешно выполнено')
+            #xbmc.executebuiltin('XBMC.Notification(Удаление истории, Успешно выполнено)')
         except:
             xbmc.executebuiltin('XBMC.Notification(Удаление истории, [COLOR=yellow]ERROR: 102[/COLOR])')
             pass
@@ -356,18 +375,18 @@ class Main:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': urllib.quote(data)})
+                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote_plus(data)})
 
         if self.params['param'] == 'search':
             skbd = xbmc.Keyboard()
             skbd.setHeading('Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
-                self.params['search_string'] = urllib.quote(skbd.getText())
-                data_array = Main.addon.getSetting('search').split('|')                    
+                self.params['search_string'] = quote_plus(skbd.getText())
+                data_array = Main.addon.getSetting('search').split('|')
                 while len(data_array) >= 10:
                     data_array.pop(0)
-                data_array = '{}|{}'.format('|'.join(data_array), urllib.unquote(self.params['search_string']))
+                data_array = '{}|{}'.format('|'.join(data_array), unquote_plus(self.params['search_string']))
                 Main.addon.setSetting('search', data_array)
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
@@ -488,9 +507,10 @@ class Main:
             for data in data_array:
                 torrent_title = data[data.find('tcol1">')+7:data.find('</td>')]
                 torrent_stat = data[data.find('alt="dl"> ')+10:data.rfind('<td id')]
-                torrent_stat = utility.tag_list(torrent_stat).replace('  ', '|').split('|')
-                torrent_url = data[data.find('TableInfo')+9:data.find('" class="')]
+                torrent_stat = utility.tag(torrent_stat).replace('  ', '|').split('|')
                 
+                torrent_url = data[data.find('TableInfo')+9:data.find('" class="')]
+
                 label = '{} , [COLOR=F0FFD700]{}[/COLOR], Сидов: [COLOR=F000F000]{}[/COLOR] , Пиров: [COLOR=F0F00000]{}[/COLOR]'.format(
                     torrent_title, torrent_stat[0], torrent_stat[1], torrent_stat[2])
                 
@@ -545,20 +565,21 @@ class Main:
 
         with open(torrent_file, 'rb') as read_file:
             torrent_data = read_file.read()
+
         torrent = bencode.bdecode(torrent_data)
 
-        info = torrent['info']
+        info = torrent[b'info']
         series = {}
         size = {}
         
-        if 'files' in info:
-            for i, x in enumerate(info['files']):
-                size[i] = x['length']
-                series[i] = x['path'][-1]
+        if b'files' in info:
+            for i, x in enumerate(info[b'files']):
+                size[i] = x[b'length']
+                series[i] = x[b'path'][-1]
             for i in sorted(series, key=series.get):
                 self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_id}, anime_id=self.params['id'], folder=False, size=size[i])
         else:
-            self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_id}, anime_id=self.params['id'], folder=False, size=info['length'])
+            self.create_line(title=info[b'name'], params={'mode': 'play_part', 'index': 0, 'id': file_id}, anime_id=self.params['id'], folder=False, size=info[b'length'])
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
@@ -578,12 +599,12 @@ class Main:
         if Main.addon.getSetting("Engine") == '0':
             tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
             engine = tam_engine[int(Main.addon.getSetting("TAMengine"))]            
-            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(urllib.quote_plus(url), index, engine)
+            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote_plus(url), index, engine)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
         if Main.addon.getSetting("Engine") == '1':
-            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(urllib.quote_plus(url), index)
+            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote_plus(url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
