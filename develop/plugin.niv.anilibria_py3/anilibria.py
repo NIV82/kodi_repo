@@ -347,10 +347,10 @@ class Main:
     
     def exec_information_part(self):
         if self.params['param'] == '':
+            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
             self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
             self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
             self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
             self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)      
         else:
@@ -490,12 +490,12 @@ class Main:
             Main.addon.setSetting(id='season', value=info.season[result])
 
         if self.params['param'] == 'sort':
-            result = self.dialog.select('Сортировать по:', info.sort.keys())
-            Main.addon.setSetting(id='sort', value=info.sort.keys()[result])
+            result = self.dialog.select('Сортировать по:', tuple(info.sort.keys()))
+            Main.addon.setSetting(id='sort', value=tuple(info.sort.keys())[result])
         
         if self.params['param'] == 'status':
-            result = self.dialog.select('Статус релиза:', info.status.keys())
-            Main.addon.setSetting(id='status', value=info.status.keys()[result])
+            result = self.dialog.select('Статус релиза:', tuple(info.status.keys()))
+            Main.addon.setSetting(id='status', value=tuple(info.status.keys())[result])
 
     def exec_select_part(self):
         html = self.network.get_html('https://www.anilibria.tv/release/{}.html'.format(self.params['id']))

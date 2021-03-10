@@ -31,20 +31,9 @@ data = '[sett]\n\
 - Вся необходимая информация по загрузке и установке этих плагинов находится на форуме [COLOR gold]xbmc.ru[/COLOR]\n\
 [/play]\n\
 [news]\n\
-[COLOR blue]version 1.0.4[/COLOR]\n\
-- Исправлена регулярная ошибка (раз в три дня) при запуске плагина\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.3[/COLOR]\n\
-- Смена парсера с darklibria на anilibria\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.2[/COLOR]\n\
-- Исправлена ошибка авторизации\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.1[/COLOR]\n\
-- Оптимизация системы авторизации\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.0[/COLOR]\n\
-- Release\n\
+[COLOR blue]version 1.0.8[/COLOR]\n\
+- Исправление раздела Каталог (Новое и Все релизы)\n\
+- Мелкие правки в коде\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/news]\n\
 [comp]\n\
@@ -52,9 +41,9 @@ data = '[sett]\n\
 Остальные движки, на данный момент , не проверены\n\
 \n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR blue]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\

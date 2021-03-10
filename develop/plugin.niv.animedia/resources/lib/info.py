@@ -19,11 +19,11 @@ data = '[sett]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/play]\n\
 [news]\n\
+[COLOR blue]version 1.0.2[/COLOR]\n\
+- Исправление раздела Каталог\n\
+[COLOR gray]=========================================================================[/COLOR]\n\
 [COLOR blue]version 1.0.1[/COLOR]\n\
 - Оптимизация системы авторизации\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.0[/COLOR]\n\
-- Release\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/news]\n\
 [comp]\n\
@@ -31,9 +31,9 @@ data = '[sett]\n\
 Остальные движки, на данный момент , не проверены\n\
 \n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]T2HTTP[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR blue]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
@@ -146,7 +146,7 @@ form={
     "ТВ-сериал":"ТВ",
     "Фильмы":"Полнометражный",
     "OVA, ONA, Special":"OVA",
-    "Дорама":"OVA"
+    "Дорама":"Дорама"
     }
 
 status={
