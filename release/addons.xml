@@ -21,7 +21,7 @@
   </extension>
 </addon>
 
-<addon id="plugin.niv.anilibria" name="Anilibria" version="1.0.6" provider-name="NIV">
+<addon id="plugin.niv.anilibria" name="Anilibria" version="1.1.0" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="anilibria.py">
     <provides>video</provides>
   </extension>
@@ -31,8 +31,8 @@
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">Anilibria</summary>
     <summary lang="ru">Anilibria</summary>
-    <description lang="en_US">The plug-in to view the anime from the site anilibria.tv</description>
-    <description lang="ru">Плагин для просмотра аниме с сайта anilibria.tv</description>
+    <description lang="en_US">AniLibria is a non-profit project for dubbing and adapting foreign TV series, cartoons and anime, anime reviews, video blogs, and reviews. Our special feature is a stable and high-quality work on the content that we provide to users ... ©</description>
+    <description lang="ru">AniLibria - некоммерческий проект по озвучиванию и адаптации зарубежных сериалов, мультфильмов и аниме, аниме-обзорам, видеоблогам, рецензиям. Нашей особенностью является стабильная и качественная работа над тем контентом, который мы предоставляем пользователям...©</description>
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
