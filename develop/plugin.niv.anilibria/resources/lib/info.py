@@ -31,20 +31,15 @@ data = '[sett]\n\
 - Вся необходимая информация по загрузке и установке этих плагинов находится на форуме [COLOR gold]xbmc.ru[/COLOR]\n\
 [/play]\n\
 [news]\n\
-[COLOR blue]version 1.0.4[/COLOR]\n\
-- Исправлена регулярная ошибка (раз в три дня) при запуске плагина\n\
+[COLOR blue]version 1.0.9[/COLOR]\n\
+- Исправление и модификация пунктов Контекстного меню\n\
+    * Раздел Поиск - пункт контекстного меню Очистить Историю\n\
+    * Раздел Информация - пункт контекстного меню Обновить Базу\n\
+    * Остальные разделы - пункты Добавить и Удалить Избранное , при наличии авторизации\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.3[/COLOR]\n\
-- Смена парсера с darklibria на anilibria\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.2[/COLOR]\n\
-- Исправлена ошибка авторизации\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.1[/COLOR]\n\
-- Оптимизация системы авторизации\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.0[/COLOR]\n\
-- Release\n\
+[COLOR blue]version 1.0.8[/COLOR]\n\
+- Исправление раздела Каталог (Новое и Все релизы)\n\
+- Мелкие правки в коде\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/news]\n\
 [comp]\n\
@@ -52,9 +47,9 @@ data = '[sett]\n\
 Остальные движки, на данный момент , не проверены\n\
 \n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR blue]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
@@ -105,3 +100,13 @@ season = ("","зима", "весна", "лето", "осень")
 status = {"Все релизы":"1", "Завершенные релизы":"2"}
 
 sort = {"Новое":'1', "Популярное":"2"}
+
+week = {
+    '0': 'Понедельник',
+    '1': 'Вторник',
+    '2': 'Среда',
+    '3': 'Четверг',
+    '4': 'Пятница',
+    '5': 'Суббота',
+    '6': 'Воскресенье'
+    }
