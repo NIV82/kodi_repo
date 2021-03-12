@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+# -*- coding: utf-8 -*-
+import sys
 
 def get_params():
 	param = []
@@ -17,7 +19,7 @@ def get_params():
 			if (len(splitparams)) == 2:
 				param[splitparams[0]] = splitparams[1]
 	return param
-
+    
 def find_all(self, start, end, data):
     array = []        
     while data.find(start) > -1 and data.find(end) > -1:
@@ -34,7 +36,7 @@ def fs_dec(path):
 def fs_enc(path):
     sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
     return path.decode('utf-8').encode(sys_enc)
-        
+
 def clean_list(data):
     clean_list = ['\n', '\t', '\r', '\v', '\f', '  ']
     for value in clean_list:
