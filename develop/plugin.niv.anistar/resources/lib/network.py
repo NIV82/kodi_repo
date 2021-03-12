@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import os
-import urllib
-import urllib2
-import cookielib
+try:
+    from urllib2 import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
+    from cookielib import MozillaCookieJar
+except:
+    from urllib.request import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
+    from http.cookiejar import MozillaCookieJar
 
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, auth_url=None):
@@ -17,46 +19,56 @@ class WebTools:
 
         self.auth_usage = auth_usage
         self.proxy_data = proxy_data
-        self.proxy = urllib2.ProxyHandler(self.proxy_data)
+        self.proxy = ProxyHandler(self.proxy_data)
 
         if self.auth_usage:
-            self.mcj = cookielib.MozillaCookieJar()
-            self.hcp = urllib2.HTTPCookieProcessor(self.mcj)            
-            self.url_opener = urllib2.build_opener(self.hcp, self.proxy)
+            self.mcj = MozillaCookieJar()
+            self.hcp = HTTPCookieProcessor(self.mcj)
+            self.url_opener = build_opener(self.hcp, self.proxy)
             self.auth_status = auth_status
             self.sid_file = ''
             self.search_cookie_name = 'dle_user_id'
             self.auth_url = auth_url
-            self.auth_post_data = {}
+            self.auth_post_data = ''
         else:
-            self.url_opener = urllib2.build_opener(self.proxy)
+            self.url_opener = build_opener(self.proxy)
 
     def get_html(self, target_name, post=None):
         if self.auth_usage and not self.authorization():
             return None
+
+        try: post = bytes(post, encoding='utf-8')
+        except: pass
+
         try:
-            url = self.url_opener.open(urllib2.Request(url=target_name, data=post, headers=self.headers))            
+            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
             data = url.read()
 
             try: data = data.decode('cp1251').encode('utf8')
             except: pass
+
+            try: data = str(data, encoding='utf-8')
+            except: pass
             
             return data
-        except urllib2.HTTPError as err:
-            return err.code
+        except HTTPError as error:
+            return error.code
 
     def get_file(self, target_name, post=None, destination_name=None):
         if self.auth_usage and not self.authorization():
             return None
         try:
-            url = self.url_opener.open(urllib2.Request(url=target_name, data=post, headers=self.headers))
+            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
             with open(destination_name, 'wb') as write_file:
                 write_file.write(url.read())
             return destination_name
-        except urllib2.HTTPError as err:
-            return err.code
+        except HTTPError as error:
+            return error.code
 
     def authorization(self):
+        try: post_data = bytes(self.auth_post_data, encoding='utf-8')
+        except: post_data = self.auth_post_data
+
         if not self.auth_usage or self.sid_file == '' or self.auth_url == '':
             return False
 
@@ -65,11 +77,11 @@ class WebTools:
                 self.mcj.load(self.sid_file)
                 auth = True if not str(self.mcj).find(self.search_cookie_name) == -1 else False
             except:
-                self.url_opener.open(urllib2.Request(self.auth_url, urllib.urlencode(self.auth_post_data), self.headers))
+                self.url_opener.open(Request(self.auth_url, post_data, self.headers))
                 auth = True if not str(self.mcj).find(self.search_cookie_name) == -1 else False
                 self.mcj.save(self.sid_file)
         else:
-            self.url_opener.open(urllib2.Request(self.auth_url, urllib.urlencode(self.auth_post_data), self.headers))
+            self.url_opener.open(Request(self.auth_url, post_data, self.headers))
             auth = True if not str(self.mcj).find(self.search_cookie_name) == -1 else False
             self.mcj.save(self.sid_file)
         self.auth_status = auth
