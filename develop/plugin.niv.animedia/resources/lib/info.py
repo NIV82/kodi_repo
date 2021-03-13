@@ -19,11 +19,13 @@ data = '[sett]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/play]\n\
 [news]\n\
-[COLOR blue]version 1.0.2[/COLOR]\n\
-- Исправление раздела Каталог\n\
-[COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR blue]version 1.0.1[/COLOR]\n\
-- Оптимизация системы авторизации\n\
+[COLOR blue]version 1.1.0[/COLOR]\n\
+- Унификация кода для версий Kodi-18 и Kodi-19\n\
+- Исправление и модификация пунктов Контекстного меню\n\
+    * Раздел Поиск - пункт контекстного меню "Очистить Историю"\n\
+    * Раздел Информация - пункт контекстного меню "Обновить Базу"\n\
+- Обновление Базы Аниме в репозитории\n\
+- Мелкие исправления и дополнения в коде\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [/news]\n\
 [comp]\n\
@@ -31,9 +33,9 @@ data = '[sett]\n\
 Остальные движки, на данный момент , не проверены\n\
 \n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]T2HTTP[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]T2HTTP[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
-[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR blue]Linux[/COLOR] | [COLOR blue]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
+[COLOR orange]Elementum[/COLOR] | [COLOR blue]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
 [COLOR orange]TorrServer[/COLOR] | [COLOR gray]Win10[/COLOR] | [COLOR gray]Linux[/COLOR] | [COLOR gray]Android[/COLOR] | [COLOR gray]MacOS[/COLOR]\n\
 [COLOR gray]=========================================================================[/COLOR]\n\
