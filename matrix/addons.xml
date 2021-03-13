@@ -91,8 +91,8 @@
   <extension point="xbmc.addon.metadata">
     <summary lang="en_US">SHIZA Project</summary>
     <summary lang="ru">SHIZA Project</summary>
-    <description lang="en_US">The plug-in to view the anime from the site shiza-project.com</description>
-    <description lang="ru">Плагин для просмотра аниме с сайта shiza-project.com</description>
+    <description lang="en_US">A crazy team engaged in the adaptation of foreign animation for the Russian-speaking public ... ©</description>
+    <description lang="ru">Безумный коллектив, занимающийся адаптацией зарубежной анимации для русскоязычной публики...©</description>
     <disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
     <assets>
