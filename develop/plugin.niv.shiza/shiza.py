@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import gc
-import os
-import sys
-import urllib
-import time
+import gc, os, sys, time
+import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 
-import xbmc
-import xbmcvfs
-import xbmcgui
-import xbmcplugin
-import xbmcaddon
+try:
+    from urllib import quote_plus, unquote_plus, urlencode, urlopen
+except:
+    from urllib.parse import quote_plus, unquote_plus, urlencode
+    from urllib.request import urlopen
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-import utility
-import info
+import utility, info
 
 class Main:
     addon = xbmcaddon.Addon(id='plugin.niv.shiza')
@@ -25,116 +21,174 @@ class Main:
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
-        self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
-        if not xbmcvfs.exists(self.addon_data_dir):
-            xbmcvfs.mkdir(self.addon_data_dir)
+        try: self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
+        except: self.addon_data_dir = xbmcvfs.translatePath(Main.addon.getAddonInfo('profile'))
+
+        if not os.path.exists(self.addon_data_dir):
+            os.makedirs(self.addon_data_dir)
 
         self.images_dir = os.path.join(self.addon_data_dir, 'images')
-        if not xbmcvfs.exists(self.images_dir):
-            xbmcvfs.mkdir(self.images_dir)
+        if not os.path.exists(self.images_dir):
+            os.mkdir(self.images_dir)
 
         self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
-        if not xbmcvfs.exists(self.torrents_dir):
-            xbmcvfs.mkdir(self.torrents_dir)
+        if not os.path.exists(self.torrents_dir):
+            os.mkdir(self.torrents_dir)
         
         self.cookies_dir = os.path.join(self.addon_data_dir, 'cookies')
-        if not xbmcvfs.exists(self.cookies_dir):
-            xbmcvfs.mkdir(self.cookies_dir)
+        if not os.path.exists(self.cookies_dir):
+            os.mkdir(self.cookies_dir)
 
         self.database_dir = os.path.join(self.addon_data_dir, 'database')
-        if not xbmcvfs.exists(self.database_dir):
-            xbmcvfs.mkdir(self.database_dir)
-
-        self.sid_file = utility.fs_enc(os.path.join(self.cookies_dir, 'shiza.sid' ))
+        if not os.path.exists(self.database_dir):
+            os.mkdir(self.database_dir)
 
         self.params = {'mode': 'main_part', 'param': '', 'page': 1}
+        self.auth_post_data = {'field-email': Main.addon.getSetting('login'),
+                               'field-password': Main.addon.getSetting('password')}
 
         args = utility.get_params()
         for a in args:
-            self.params[a] = urllib.unquote_plus(args[a])
+            self.params[a] = unquote_plus(args[a])
 
-        if Main.addon.getSetting('unblock') == '1':
-            try:
-                proxy_time = float(Main.addon.getSetting('proxy_time'))
-            except:
-                proxy_time = 0
-            
-            if time.time() - proxy_time > 36000:
-                Main.addon.setSetting('proxy_time', str(time.time()))
-                proxy_pac = urllib.urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                Main.addon.setSetting('proxy', proxy)
-                proxy_data = {'https': proxy}
-            else:
-                proxy_data = {'https': Main.addon.getSetting('proxy')}                
-        else:
+        if Main.addon.getSetting('unblock') == '0':
             proxy_data = None
+        else:
+            proxy_data = self.create_proxy_data()
 #================================================
-        try:
-            session_time = float(Main.addon.getSetting('session_time'))
-        except:
-            session_time = 0
+        try: session_time = float(Main.addon.getSetting('session_time'))
+        except: session_time = 0
 
-        if time.time() - session_time > 259200:
+        if time.time() - session_time > 28800:
             Main.addon.setSetting('session_time', str(time.time()))
-            xbmcvfs.delete(self.sid_file)
+            try: os.remove(os.path.join(self.cookies_dir, 'shiza.sid' ))
+            except: pass
             Main.addon.setSetting('auth', 'false')
 #================================================
         from network import WebTools
         self.network = WebTools(auth_usage=True,
                                 auth_status=bool(Main.addon.getSetting("auth").lower() == 'true'),
                                 proxy_data=proxy_data)
-        self.network.auth_post_data = {
-            'field-email': Main.addon.getSetting('login'),
-            'field-password': Main.addon.getSetting('password')}
-        self.network.sid_file = self.sid_file
+        self.network.auth_post_data = urlencode(self.auth_post_data)        
+        self.network.sid_file = os.path.join(self.cookies_dir, 'shiza.sid' )
         del WebTools
-
+#================================================
         if not Main.addon.getSetting("login") or not Main.addon.getSetting("password"):
             self.params['mode'] = 'addon_setting'
-            xbmc.executebuiltin('XBMC.Notification(Авторизация, Укажите логин и пароль)')            
+            self.dialog.ok('Авторизация - Ошибка', 'Укажите логин и пароль')          
             return
 
         if not self.network.auth_status:
             if not self.network.authorization():
                 self.params['mode'] = 'addon_setting'
-                xbmc.executebuiltin('XBMC.Notification(Ошибка, Проверьте логин и пароль)')
+                self.dialog.ok('Авторизация - Ошибка', 'Проверьте логин и пароль')
                 return
             else:
                 Main.addon.setSetting("auth", str(self.network.auth_status).lower())
-
+#================================================
         if not os.path.isfile(os.path.join(self.database_dir, 'shiza.db')):
-            db_file = os.path.join(self.database_dir, 'shiza.db')
-            db_url = 'https://github.com/NIV82/kodi_repo/raw/main/release/plugin.niv.shiza/shiza.db'
-            try:                
-                data = urllib.urlopen(db_url)
-                chunk_size = 8192
-                bytes_read = 0
-                file_size = int(data.info().getheaders("Content-Length")[0])
-                self.progress.create('Загрузка Базы Данных')
-                with open(db_file, 'wb') as write_file:
-                    while True:
-                        chunk = data.read(chunk_size)
-                        bytes_read = bytes_read + len(chunk)
-                        write_file.write(chunk)
-                        if len(chunk) < chunk_size:
-                            break
-                        percent = bytes_read * 100 / file_size
-                        self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                    self.progress.close()
-                xbmc.executebuiltin('XBMC.Notification(База Данных, [B]БД успешно загружена[/B])')
-                Main.addon.setSetting('database', 'true')
-            except:
-                xbmc.executebuiltin('XBMC.Notification(База Данных, Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
-                Main.addon.setSetting('database', 'false')
-                pass
-
+            self.exec_update_part()
+#================================================
         from database import DBTools
         if Main.addon.getSetting('database') == 'false':
-            xbmcvfs.delete(os.path.join(self.database_dir, 'shiza.db'))
+            try: os.remove(os.path.join(self.database_dir, 'shiza.db'))
+            except: pass
             Main.addon.setSetting('database', 'true')
         self.database = DBTools(os.path.join(self.database_dir, 'shiza.db'))
         del DBTools
+
+    def create_proxy_data(self):
+        try: proxy_time = float(Main.addon.getSetting('proxy_time'))
+        except: proxy_time = 0
+
+        if time.time() - proxy_time > 28800:
+            Main.addon.setSetting('proxy_time', str(time.time()))
+            proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+
+            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            except: pass
+
+            proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+            Main.addon.setSetting('proxy', proxy)
+            proxy_data = {'https': proxy}
+        else:
+            if Main.addon.getSetting('proxy'):
+                proxy_data = {'https': Main.addon.getSetting('proxy')}
+            else:
+                proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+                
+                try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                except: pass
+
+                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+                Main.addon.setSetting('proxy', proxy)
+                proxy_data = {'https': proxy}
+        return proxy_data
+
+    def create_title(self, title, series):
+        if series:
+            series = ' - [COLOR=gold][ {} ][/COLOR]'.format(series)
+        else:
+            series = ''
+        
+        if Main.addon.getSetting('title_mode') == '0':
+            label = '{}{}'.format(title[0], series)
+        if Main.addon.getSetting('title_mode') == '1':
+            label = '{}{}'.format(title[1], series)
+        if Main.addon.getSetting('title_mode') == '2':
+            label = '{} / {}{}'.format(title[0], title[1], series)
+        return label
+
+    def create_image(self, anime_id):
+        url = 'http://shiza-project.com/upload/covers/{}/latest.jpg'.format(anime_id)
+
+        if Main.addon.getSetting('cover_mode') == 'false':
+            return url
+        else:
+            local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
+            if local_img in os.listdir(self.images_dir):
+                try: local_path = utility.fs_dec(os.path.join(self.images_dir, local_img))
+                except: local_path = os.path.join(self.images_dir, local_img)
+
+                return local_path
+            else:
+                try: file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
+                except: file_name = os.path.join(self.images_dir, local_img)
+
+                return self.network.get_file(target_name=url, destination_name=file_name)
+
+    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True): 
+        li = xbmcgui.ListItem(title)
+
+        if anime_id:
+            cover = self.create_image(anime_id)
+            art = {'icon': cover, 'thumb': cover, 'poster': cover}
+            li.setArt(art)
+            
+            anime_info = self.database.get_anime(anime_id)
+            
+            info = {'title': title, 'year': anime_info[8], 'genre': anime_info[0], 'plot': anime_info[2],
+                    'director': anime_info[1], 'country': anime_info[6], 'studio': anime_info[7]}
+            
+            info['plot'] = '{}\n\nОзвучивание: {}\nПеревод: {}\nРабота со звуком: {}'.format(
+                info['plot'], anime_info[3], anime_info[4], anime_info[5])
+
+            if size: info['size'] = size
+
+            li.setInfo(type='video', infoLabels=info)
+
+        if self.params['mode'] == 'search_part' and self.params['param'] == '':
+            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.shiza/?mode=clean_part")')])
+        
+        if self.params['mode'] == 'information_part':
+            li.addContextMenuItems([('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.shiza/?mode=update_part")')])
+
+        if folder==False:
+                li.setProperty('isPlayable', 'true')
+
+        url = '{}?{}'.format(sys.argv[0], urlencode(params))
+
+        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
     def create_info(self, anime_id):
         html = self.network.get_html(target_name='http://shiza-project.com/releases/view/{}'.format(anime_id))
@@ -151,14 +205,9 @@ class Main:
 
         html = utility.clean_list(html)
 
-        # title = html[html.find('"alt="')+6:html.find('"title=')]
-        
-        # info['title_ru'] = utility.rep_list(html[html.rfind('<h3>')+4:html.rfind('</h3>')])        
-        # info['title_en'] = utility.rep_list(title[:title.find(',')])        
-
         country = ('Китай','США','Франция','Южная Корея','Япония')
         for value in country:
-            if value in title:
+            if value in title[1]:
                 info['country'] = value
 
         info['plot'] = html[html.find('<div class="desc">')+18:html.find('<article class="card-content">')]
@@ -183,9 +232,9 @@ class Main:
                 translate = inf[inf.find('?t=')+3:inf.find('"><img src')]
                 info['translation'].append(translate)
     
-        info['dubbing'] = urllib.unquote_plus(', '.join(info['dubbing']))
-        info['sound'] = urllib.unquote_plus(', '.join(info['sound']))
-        info['translation'] = urllib.unquote_plus(', '.join(info['translation']))
+        info['dubbing'] = unquote_plus(', '.join(info['dubbing']))
+        info['sound'] = unquote_plus(', '.join(info['sound']))
+        info['translation'] = unquote_plus(', '.join(info['translation']))
 
         data_array = html[html.find('<ul class="params">')+19:html.find('<div class="desc">')]
         data_array = data_array.split('</li>')
@@ -207,14 +256,12 @@ class Main:
 
         if info['year'] == '':
             for i in range(1970, 2026, 1):
-                if str(i) in title:
+                if str(i) in title[1]:
                     info['year'] = i
         try:
             self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['authors'], info['plot'],
                           info['dubbing'], info['translation'], info['sound'], info['country'], info['studio'], info['year'])
-        except:
-            xbmc.executebuiltin("XBMC.Notification(Ошибка парсера, ERROR: 101)")
-            return 101
+        except: return 101
         return
 
     def create_exinfo(self, torr_id, ex_info):
@@ -233,101 +280,82 @@ class Main:
                 peer = seed_peer[1].strip()
 
                 if '<b>Раздел:</b>' in ex:
-                    ts = 'Series: {}'.format(ex[ex.find('<b>Раздел:</b>')+20:ex.find('<br>')].strip())
+                    td = ex[ex.find('<b>Раздел:</b>'):ex.find('<br>')].replace('<b>Раздел:</b>','')
+                    ts = 'Series: {}'.format(td.strip())
                     ex_info = '{}|{}|{}|{}'.format(size, seed, peer, ts)
                 else:
                     ex_info = '{}|{}|{}'.format(size, seed, peer)
         return ex_info
 
-    def create_title(self, title, series):
-        if series:
-            series = ' - [ {} ]'.format(series)
-        else:
-            series = ''
-        
-        if Main.addon.getSetting('title_mode') == '0':
-            label = '{}{}'.format(title[0], series)
-        if Main.addon.getSetting('title_mode') == '1':
-            label = '{}{}'.format(title[1], series)
-        if Main.addon.getSetting('title_mode') == '2':
-            label = '{} / {}{}'.format(title[0], title[1], series)
-        return label
-
-    def create_image(self, anime_id):
-        url = 'http://shiza-project.com/upload/covers/{}/latest.jpg'.format(anime_id)
-
-        if Main.addon.getSetting('cover_mode') == 'false':
-            return url
-        else:
-            local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
-            if local_img in os.listdir(self.images_dir):
-                return utility.fs_dec(os.path.join(self.images_dir, local_img))
-            else:
-                file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
-                return self.network.get_file(target_name=url, destination_name=file_name)
-
-    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True): 
-        li = xbmcgui.ListItem(title)
-
-        if anime_id:
-            cover = self.create_image(anime_id)
-            art = {'icon': cover, 'thumb': cover, 'poster': cover}
-            li.setArt(art)
-            
-            anime_info = self.database.get_anime(anime_id)
-            
-            info = {'title': title, 'year': anime_info[8], 'genre': anime_info[0], 'plot': anime_info[2],
-                    'director': anime_info[1], 'country': anime_info[6], 'studio': anime_info[7]}
-            
-            info['plot'] = '{}\n\nОзвучивание: {}\nПеревод: {}\nРабота со звуком: {}'.format(
-                info['plot'], anime_info[3], anime_info[4], anime_info[5])
-
-            if size:
-                info['size'] = size
-
-            li.setInfo(type='video', infoLabels=info)
-
-        if self.params['mode'] == 'search_part' and self.params['param'] == '':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.shiza/?mode=clean_part")')])
-
-        if folder==False:
-                li.setProperty('isPlayable', 'true')
-
-        url = '{}?{}'.format(sys.argv[0], urllib.urlencode(params))
-
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
-
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
-        try:
-            self.database.end()
-        except:
-            pass
+        try: self.database.end()
+        except: pass
 
     def exec_addon_setting(self):
         Main.addon.openSettings()
 
+    def exec_update_part(self):
+        try: self.database.end()
+        except: pass
+        
+        try: os.remove(os.path.join(self.database_dir, 'shiza.db'))
+        except: pass        
+
+        db_file = os.path.join(self.database_dir, 'shiza.db')
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/shiza.db'
+        try:
+            data = urlopen(db_url)
+            chunk_size = 8192
+            bytes_read = 0
+
+            try: file_size = int(data.info().getheaders("Content-Length")[0])
+            except: file_size = int(data.getheader('Content-Length'))
+
+            self.progress.create('Загрузка Базы Данных')
+            with open(db_file, 'wb') as write_file:
+                while True:
+                    chunk = data.read(chunk_size)
+                    bytes_read = bytes_read + len(chunk)
+                    write_file.write(chunk)
+                    if len(chunk) < chunk_size:
+                        break
+                    percent = bytes_read * 100 / file_size
+                    self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                self.progress.close()
+            self.dialog.ok('ShizaProject - База Данных','БД успешно загружена')
+            Main.addon.setSetting('database', 'true')
+        except:
+            self.dialog.ok('ShizaProject - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+            Main.addon.setSetting('database', 'false')
+            pass
+
     def exec_clean_part(self):
         try:
             Main.addon.setSetting('search', '')
-            xbmc.executebuiltin("XBMC.Notification(Удаление истории, Успешно выполнено)")
+            self.dialog.ok('ShizaProject - Поиск','Удаление истории - Выполнено')
         except:
-            xbmc.executebuiltin("XBMC.Notification(Удаление истории, [COLOR=yellow]ERROR: 102[/COLOR])")
+            self.dialog.ok('ShizaProject - Поиск','Удаление истории - [COLOR=yellow]ERROR: 102[/COLOR]')
             pass
-        xbmc.executebuiltin('Container.Refresh')
 
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/novelty'})
-        self.create_line(title='[B][COLOR=lime][ Все ][/COLOR][/B]', params={'mode': 'common_part', 'param': ''})
-        self.create_line(title='[B][COLOR=lime][ Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/ongoing'})
-        self.create_line(title='[B][COLOR=lime][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/completed'})
-        self.create_line(title='[B][COLOR=lime][ Приостановленные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/suspended'})
-        self.create_line(title='[B][COLOR=lime][ Рекомендуемые ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'releases/top'})
-        self.create_line(title='[B][COLOR=blue][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/completed/category/dorama'})
-        self.create_line(title='[B][COLOR=blue][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/completed/category/film-and-tv'})
+        self.create_line(title='[B][COLOR=lime][ Аниме ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/completed/category/dorama'})
+        self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/completed/category/film-and-tv'})
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/completed/category/cartoon'})
         self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
+        
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+    def exec_catalog_part(self):
+        self.create_line(title='[B][COLOR=white][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/novelty'})
+        self.create_line(title='[B][COLOR=white][ Все ][/COLOR][/B]', params={'mode': 'common_part', 'param': ''})
+        self.create_line(title='[B][COLOR=white][ Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/ongoing'})
+        self.create_line(title='[B][COLOR=white][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/completed'})
+        self.create_line(title='[B][COLOR=white][ Приостановленные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/suspended'})
+        self.create_line(title='[B][COLOR=white][ Рекомендуемые ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'releases/top'})
+
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_common_part(self, url=None, post=None):
@@ -343,8 +371,8 @@ class Main:
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
             return
-        
-        if html.find('class="card-box"') > -1:
+
+        if 'class="card-box"' in html:
             data_array = html[html.find('class="card-box"'):html.rfind('</figure>')]
             data_array = data_array.split('</figure>')
 
@@ -392,10 +420,10 @@ class Main:
     
     def exec_information_part(self):
         if self.params['param'] == '':
+            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
             self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
             self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
             self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
             self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
 
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -429,11 +457,11 @@ class Main:
             skbd.setHeading('Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
-                self.params['search_string'] = urllib.quote(skbd.getText())
+                self.params['search_string'] = quote_plus(skbd.getText())
                 data_array = Main.addon.getSetting('search').split('|')                    
                 while len(data_array) >= 10:
                     data_array.pop(0)
-                data_array = '{}|{}'.format('|'.join(data_array), urllib.unquote(self.params['search_string']))
+                data_array = '{}|{}'.format('|'.join(data_array), unquote_plus(self.params['search_string']))
                 Main.addon.setSetting('search', data_array)
                 self.exec_common_part()
             else:
@@ -442,7 +470,7 @@ class Main:
         if 'releases/search?t=' in self.params['param']:
             for tag in info.tags:
                 label = '{}'.format(tag)
-                self.create_line(title=label, params={'mode': 'common_part', 'param': 'releases/search?t=', 'search_string': urllib.quote(tag)})
+                self.create_line(title=label, params={'mode': 'common_part', 'param': 'releases/search?t=', 'search_string': quote_plus(tag)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
@@ -509,8 +537,10 @@ class Main:
         torrent_file = self.network.get_file(target_name=url, destination_name=file_name)
 
         import bencode
+
         with open(torrent_file, 'rb') as read_file:
             torrent_data = read_file.read()
+
         torrent = bencode.bdecode(torrent_data)
 
         info = torrent['info']
@@ -535,16 +565,14 @@ class Main:
         if Main.addon.getSetting("Engine") == '0':
             tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
             engine = tam_engine[int(Main.addon.getSetting("TAMengine"))]            
-            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(urllib.quote_plus(url), index, engine)
+            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote_plus(url), index, engine)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
         if Main.addon.getSetting("Engine") == '1':
-            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(urllib.quote_plus(url), index)
+            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote_plus(url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-
-        xbmc.executebuiltin("Container.Refresh")
 
 if __name__ == "__main__":    
     shiza = Main()

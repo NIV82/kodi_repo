@@ -12,9 +12,7 @@
     <setting type="sep"/>
   </category>
   <category label="P2P">
-    <setting id="Engine" type="enum" label="Плеер" default="0" values="TAM|Elementum|T2Http"/>
+    <setting id="Engine" type="enum" label="Плеер" default="0" values="TAM|Elementum"/>
     <setting id="TAMengine" type="enum" label="Предпочитаемый TAM-движок"  visible="eq(-1,0)" default="0" values="default|ACE engine|T2Http|YATP|Torrenter|Elementum|XBMCtorrent|ACE proxy|Quasar|TorrServer"/>
-	  <setting id="DownloadDirectory" type="folder" label="Кэш T2Http" visible="eq(-2,2)" default=""/>
-	  <setting id="MetodPlay" type="bool" label="Cовместимость" visible="eq(-3,2)" default="false" />
   </category>
 </settings>
