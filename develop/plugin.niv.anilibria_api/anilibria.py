@@ -3,8 +3,6 @@
 import gc, os, sys, time, json
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 
-
-
 try:
     from urllib import quote_plus, unquote_plus, urlencode, urlopen
 except:
@@ -150,57 +148,12 @@ class Main:
                 proxy_data = {'https': proxy}
         return proxy_data
 
-    def create_title_info(self, title):
-        info = dict.fromkeys(['title_ru', 'title_en'], '')
-        
-        if 'Судьба/' in title or 'fate/' in title:
-            title = title.replace('Судьба/', 'Судьба-')
-            title = title.replace('fate/', 'fate-')
-
-        title = utility.tag_list(title)
-        title = utility.rep_list(title)
-        title = utility.rbr_list(title)
-        title = utility.sbr_list(title)
-
-        v = title.split('/', 1)
-
-        try:
-            info['title_ru'] = v[0].strip().capitalize()
-            info['title_en'] = v[1].strip().capitalize()
-        except:
-            pass
-        
-        return info
-
     def create_title_api(self, title, series):
         if series:
             series = ' - [COLOR=gold][ Серии: {} ][/COLOR]'.format(series)
 
             if self.skin_used == 'skin.aeon.nox.silvo' and self.params['mode'] == 'common_part':
                 series = ' - [ Серии: {} ]'.format(series)                
-        else:
-            series = ''
-
-        if Main.addon.getSetting('title_mode') == '0':
-            label = '{}{}'.format(title[0], series)
-        if Main.addon.getSetting('title_mode') == '1':
-            label = '{}{}'.format(title[1], series)
-        if Main.addon.getSetting('title_mode') == '2':
-            label = '{} / {}{}'.format(title[0], title[1], series)
-        return label
-
-    def create_title(self, title, series, scheldule=False):
-        if series:
-            if not scheldule:
-                try: series = series.decode( 'unicode-escape' ).encode( 'utf-8' )
-                except: series = series.encode().decode("unicode-escape")
-
-            series = series.replace('\/','/')
-            #series = series.replace('Серия:','').strip()
-            if self.skin_used == 'skin.aeon.nox.silvo' and self.params['mode'] == 'common_part':
-                series = ' - [ {} ]'.format(series)
-            else:
-                series = ' - [COLOR=gold][ {} ][/COLOR]'.format(series)
         else:
             series = ''
 
@@ -226,28 +179,6 @@ class Main:
             else:
                 try: file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
                 except: file_name = os.path.join(self.images_dir, local_img)
-                return self.network.get_file(target_name=url, destination_name=file_name)
-
-    def create_image(self, anime_url):
-
-        cover = self.database.get_cover(anime_url)
-
-        url = 'https://static.anilibria.tv/upload/release/350x500/{}.jpg'.format(cover)
-
-        if Main.addon.getSetting('cover_mode') == 'false':
-            return url
-        else:
-            local_img = '{}{}'.format(cover, url[url.rfind('.'):])
-            if local_img in os.listdir(self.images_dir):
-
-                try: local_path = utility.fs_dec(os.path.join(self.images_dir, local_img))                    
-                except: local_path = os.path.join(self.images_dir, local_img)
-
-                return local_path
-            else:
-                try: file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
-                except: file_name = os.path.join(self.images_dir, local_img)
-
                 return self.network.get_file(target_name=url, destination_name=file_name)
 
     def create_line_api(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
@@ -365,22 +296,21 @@ class Main:
         if type(html) == int:
             return html
 
-        data = json.loads(html)
+        data = json.loads(html)        
+
+        title_ru = data['names']['ru']
+        title_en = data['names']['en'],
+        genres = ', '.join(data['genres']),
+        voice = ', '.join(data['team']['voice']),
+        translator = ', '.join(data['team']['translator']),
+        editing = ', '.join(data['team']['editing']),
+        decor = ', '.join(data['team']['decor']),
+        timing = ', '.join(data['team']['timing']),
+        year = data['season']['year'],
+        description = data['description']
 
         try:
-            self.database.add_anime(
-                anime_id,
-                data['names']['ru'],
-                data['names']['en'],
-                ', '.join(data['genres']),
-                ', '.join(data['team']['voice']),
-                ', '.join(data['team']['translator']),
-                ', '.join(data['team']['editing']),
-                ', '.join(data['team']['decor']),
-                ', '.join(data['team']['timing']),
-                data['season']['year'],
-                data['description']
-                )
+            self.database.add_anime(anime_id, title_ru, title_en, genres, voice, translator, editing, decor, timing, year, description)
         except:
             return 101
 
@@ -561,8 +491,13 @@ class Main:
             year = '%20and%20{{season.year}}=={}'.format(Main.addon.getSetting('year')) if Main.addon.getSetting('year') else ''
             genre = '%20and%20"{}"%20in%20{{genres}}'.format(quote_plus(Main.addon.getSetting('genre'))) if Main.addon.getSetting('genre') else ''
             season = '%20and%20{{season.code}}=={}'.format(info.season[Main.addon.getSetting('season')]) if Main.addon.getSetting('season') else ''
+            sort = '&order_by={}&sort_direction=1'.format(info.sort[Main.addon.getSetting('sort')])
+            status = '%20and%20{{status.code}}=={}'.format(info.status[Main.addon.getSetting('status')])
 
-            url = 'http://api.anilibria.tv/v2/advancedSearch?query={{id}}{}{}{}&order_by=updated&filter=id,torrents.series.string&sort_direction=1'.format(year,genre,season)
+            url = 'http://api.anilibria.tv/v2/advancedSearch?query={{id}}{}{}{}{}{}&filter=id,torrents.series.string&limit=24'.format(
+                year, genre, season, status, sort)
+
+            xbmc.log(str(url), xbmc.LOGFATAL)
 
         html = self.network.get_json(target_name=url)
 
@@ -595,7 +530,7 @@ class Main:
 
     def exec_catalog_part(self):
         if Main.addon.getSetting('status') == '':
-            Main.addon.setSetting(id='status', value='Все релизы')
+            Main.addon.setSetting(id='status', value='Все Релизы')
 
         if Main.addon.getSetting('sort') == '':
             Main.addon.setSetting(id='sort', value='Новое')
@@ -616,10 +551,6 @@ class Main:
         if self.params['param'] == 'year':
             result = self.dialog.select('Год:', info.year)
             Main.addon.setSetting(id='year', value=info.year[result])
-        
-        # if self.params['param'] == 'season':
-        #     result = self.dialog.select('Сезон:', info.season)
-        #     Main.addon.setSetting(id='season', value=info.season[result])
 
         if self.params['param'] == 'season':
             result = self.dialog.select('Сезон:', tuple(info.season.keys()))
