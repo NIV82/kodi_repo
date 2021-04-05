@@ -27,10 +27,22 @@ class WebTools:
             self.url_opener = build_opener(self.hcp, self.proxy)
             self.auth_status = auth_status
             self.sid_file = ''
-            self.auth_url = 'https://www.anilibria.tv/public/login.php'
+            self.auth_url = ''
             self.auth_post_data = ''
         else:
             self.url_opener = build_opener(self.proxy)
+
+    def get_html(self, url):
+        try:
+            url = self.url_opener.open(Request(url=url, headers=self.headers))
+            data = url.read()
+
+            try: data = str(data, encoding='utf-8')
+            except: pass
+
+            return data
+        except Exception as e:
+            return(e)
 
     def get_json(self, target_name):
         try:
@@ -38,36 +50,16 @@ class WebTools:
             data = url.read()            
             return data
         except Exception as e:
-            print(e)
-            
-    def get_html(self, target_name, post=None):
-        if self.auth_usage and not self.authorization():
-            return None
+            return(e)
 
-        try: post = bytes(post, encoding='utf-8')
-        except: pass
-
+    def get_file(self, target_name, destination_name=None):
         try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-            data = url.read()
-
-            try: data = str(data, encoding='utf-8')
-            except: pass
-            
-            return data
-        except HTTPError as error:
-            return error.code
-
-    def get_file(self, target_name, post=None, destination_name=None):
-        if self.auth_usage and not self.authorization():
-            return None
-        try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+            url = self.url_opener.open(Request(url=target_name, headers=self.headers))
             with open(destination_name, 'wb') as write_file:
                 write_file.write(url.read())
             return destination_name
-        except HTTPError as error:
-            return error.code
+        except Exception as e:
+            return(e)
 
     def authorization(self):
         if not self.auth_usage or self.sid_file == '':
