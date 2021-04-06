@@ -441,7 +441,7 @@ class Main:
             self.create_line(title='[B][COLOR=lime]{}[/COLOR][/B]'.format(day), params={})
             
             i = i + 1
-            p = int((float(i) / len(data_array)) * 100)
+            p = int((float(i) / len(nodes)) * 100)
 
             for data in data_array:
                 anime_id = data[data.find(':')+1:data.find(',')]
@@ -455,7 +455,7 @@ class Main:
                 
                 if self.progress.iscanceled():
                     break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(nodes)))
 
                 if not self.database.is_anime_in_db(anime_id):
                     inf = self.create_info(anime_id)
