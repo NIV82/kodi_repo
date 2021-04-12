@@ -59,6 +59,12 @@ def tag_list(data):
         end = data.find('>')
     return data
 
+def fix_list(data):
+    fix_list = [('\\n', '\n'),('\\"', '"'),('""', '"'),('<br><b>','<br> <b>')]
+    for value in fix_list:
+        data = data.replace(value[0], value[1])            
+    return data
+
 def rbr_list(data):
     start = data.find('(')
     end = data.find(')')
