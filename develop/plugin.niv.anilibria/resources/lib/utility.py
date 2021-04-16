@@ -17,15 +17,6 @@ def get_params():
 			if (len(splitparams)) == 2:
 				param[splitparams[0]] = splitparams[1]
 	return param
-    
-def find_all(self, start, end, data):
-    array = []        
-    while data.find(start) > -1 and data.find(end) > -1:
-        result = data[data.find(start):data.find(end)]
-        result = result.replace(start, '').strip()
-        data = data[data.find(end)+2:]
-        array.append(result)
-    return array
 
 def fs_dec(path):
     sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
@@ -63,22 +54,4 @@ def fix_list(data):
     fix_list = [('\\n', '\n'),('\\"', '"'),('""', '"'),('<br><b>','<br> <b>')]
     for value in fix_list:
         data = data.replace(value[0], value[1])            
-    return data
-
-def rbr_list(data):
-    start = data.find('(')
-    end = data.find(')')
-    while start < end and start > -1:
-        data = data.replace(data[start:end+1], '').strip()
-        start = data.find('(')
-        end = data.find(')')
-    return data
-
-def sbr_list(data):
-    start = data.find('[')
-    end = data.find(']')
-    while start < end and start > -1:
-        data = data.replace(data[start:end+1], '').strip()
-        start = data.find('[')
-        end = data.find(']')
     return data

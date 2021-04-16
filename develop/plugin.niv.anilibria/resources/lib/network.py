@@ -27,14 +27,13 @@ class WebTools:
             self.url_opener = build_opener(self.hcp, self.proxy)
             self.auth_status = auth_status
             self.sid_file = ''
-            #self.auth_url = 'https://www.anilibria.tv/public/login.php'
             self.auth_url = ''
             self.auth_post_data = ''
         else:
             self.url_opener = build_opener(self.proxy)
 
     def get_html(self, target_name, post=None):
-        if self.auth_usage and not self.authorization_2():
+        if self.auth_usage and not self.authorization():
             return None
 
         try: post = bytes(post, encoding='utf-8')
@@ -52,7 +51,7 @@ class WebTools:
             return error.code
 
     def get_file(self, target_name, post=None, destination_name=None):
-        if self.auth_usage and not self.authorization_2():
+        if self.auth_usage and not self.authorization():
             return None
         try:
             url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
@@ -62,7 +61,7 @@ class WebTools:
         except HTTPError as error:
             return error.code
 
-    def authorization_2(self):
+    def authorization(self):
         if not self.auth_usage or self.sid_file == '':
             return False
 

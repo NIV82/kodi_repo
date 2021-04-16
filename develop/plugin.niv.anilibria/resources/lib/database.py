@@ -21,22 +21,22 @@ class DBTools:
             self.cu.execute('CREATE UNIQUE INDEX i_i ON anime_db (anime_id)')
             self.c.commit()
 
-    def add_anime_2(self, anime_id, title_ru, title_en, genres, voices, year, description):
+    def add_anime(self, anime_id, title_ru, title_en, genres, voices, year, description):
         self.cu.execute('INSERT INTO anime_db (anime_id, title_ru, title_en, genres, voices, year, description) VALUES (?,?,?,?,?,?,?)',
                         (anime_id, title_ru, title_en, genres, voices, year, description))
         self.c.commit()
 
-    def is_anime_in_db_2(self, anime_id):
+    def is_anime_in_db(self, anime_id):
         self.cu.execute('SELECT COUNT(1) FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
         return False if self.cu.fetchone()[0] == 0 else True
     
-    def get_title_2(self, anime_id):
+    def get_title(self, anime_id):
         self.cu.execute('SELECT title_ru, title_en FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
         return self.cu.fetchone()
 
-    def get_anime_2(self, anime_id):
+    def get_anime(self, anime_id):
         self.cu.execute('SELECT genres, voices, year, description FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
         return self.cu.fetchone()
