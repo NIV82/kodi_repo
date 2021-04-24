@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <category label="Интерфейс">
+    <setting id="animeportal_unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy" />
+    <setting type="sep"/>
+    <setting id="animeportal_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" />
+    <setting type="sep"/>
+    <setting id="animeportal_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" />
+  </category>
+
+  <category label="Трекеры">
+
+    <setting label="[B]AniDub[/B] - [COLOR gray][ Требуется Авторизация ][/COLOR]" id="use_anidub" type="bool" default="false" />
+      <setting id="anidub_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anidub_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="anidub_mirror" label="Зеркало" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+
+    <setting type="sep"/>
+    
+    <setting label="[B]Anilibria[/B]" id="use_anilibria" type="bool" default="true" />
+      <setting id="anilibria_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anilibria_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="anilibria_mirror" label="Зеркало" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+
+    <setting type="sep"/>
+
+    <setting label="[B]Animedia[/B]" id="use_animedia" type="bool" default="true" />
+      <setting id="animedia_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="animedia_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="animedia_mirror" label="Зеркало" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+
+    <setting type="sep"/>
+
+    <setting label="[B]Anistar[/B]" id="use_anistar" type="bool" default="true" />
+      <setting id="anistar_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anistar_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="anistar_mirror" label="Зеркало" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+
+    <setting type="sep"/>
+
+    <setting label="[B]Shiza Project[/B] - [COLOR gray][ Требуется Авторизация ][/COLOR]" id="use_shizaproject" type="bool" default="false" />
+      <setting id="shizaproject_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="shizaproject_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="shizaproject_mirror" label="Зеркало" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+
+  </category>
+
+  <!-- <category label="P2P">    
+    <setting id="Engine" type="enum" label="Плеер" default="0" values="TAM|Elementum|T2Http"/>
+    <setting id="TAMengine" type="enum" label="Предпочитаемый TAM-движок"  visible="eq(-1,0)" default="0" values="default|ACE engine|T2Http|YATP|Torrenter|Elementum|XBMCtorrent|ACE proxy|Quasar|TorrServer"/>
+	  <setting id="DownloadDirectory" type="folder" label="Кэш T2Http" visible="eq(-2,2)" default=""/>
+	  <setting id="MetodPlay" type="bool" label="Cовместимость" visible="eq(-3,2)" default="false" />
+  </category> -->
+
+</settings>
