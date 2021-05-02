@@ -85,6 +85,12 @@ class AnimePortal:
             self.anilibria = Anilibria(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
             self.anilibria.execute()
             del Anilibria
+        
+        if 'anidub' in self.params['portal']:
+            from anidub import Anidub
+            self.anidub = Anidub(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
+            self.anidub.execute()
+            del Anidub
 
     def create_proxy_data(self):
         try: proxy_time = float(AnimePortal.addon.getSetting('animeportal_proxy_time'))

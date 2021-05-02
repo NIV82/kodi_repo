@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import gc
 import os
 import sys
 import time
@@ -9,7 +8,7 @@ import xbmc
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
-import xbmcvfs
+#import xbmcvfs
 
 from urllib.parse import urlencode
 from urllib.parse import quote
@@ -32,7 +31,6 @@ class Anilibria:
         self.torrents_dir = torrents_dir
         self.database_dir = database_dir
         self.cookie_dir = cookie_dir
-
         self.params = params
 
         self.auth_post_data = {

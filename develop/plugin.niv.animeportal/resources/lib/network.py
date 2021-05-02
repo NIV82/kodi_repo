@@ -34,8 +34,6 @@ class WebTools:
             self.url_opener = build_opener(self.proxy)
 
     def get_html(self, target_name, post=None):
-        # import xbmc
-        # xbmc.log(str(self.portal), xbmc.LOGFATAL)
         if self.auth_usage and not self.auth_check():
             return None
             
@@ -85,6 +83,8 @@ class WebTools:
             return False
         if self.portal == 'anilibria':
              return self.anilibria_authorization()
+        if self.portal == 'anidub':
+            return self.anidub_authorization()
         return
 
     def anilibria_authorization(self):
@@ -123,5 +123,27 @@ class WebTools:
             else:
                 auth = False
 
+        self.auth_status = auth
+        return auth
+
+    def anidub_authorization(self):
+        try: post_data = bytes(self.auth_post_data, encoding='utf-8')
+        except: post_data = self.auth_post_data
+
+        if not self.auth_usage or self.sid_file == '' or self.auth_url == '':
+            return False
+
+        if self.auth_status:
+            try:
+                self.mcj.load(self.sid_file)
+                auth = True if not str(self.mcj).find('dle_user_id') == -1 else False
+            except:
+                self.url_opener.open(Request(self.auth_url, post_data, self.headers))
+                auth = True if not str(self.mcj).find('dle_user_id') == -1 else False
+                self.mcj.save(self.sid_file)
+        else:
+            self.url_opener.open(Request(self.auth_url, post_data, self.headers))
+            auth = True if not str(self.mcj).find('dle_user_id') == -1 else False
+            self.mcj.save(self.sid_file)
         self.auth_status = auth
         return auth
