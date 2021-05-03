@@ -198,6 +198,7 @@ class Anilibria:
         if folder==False:
                 li.setProperty('isPlayable', 'true')
 
+        params['portal'] = 'anilibria'
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
         if online: url = online
@@ -309,25 +310,25 @@ class Anilibria:
     def exec_clean_part(self):
         try:
             Anilibria.addon.setSetting('anilibria_search', '')
-            self.dialog.ok('Поиск','Удаление истории - Выполнено')
+            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
         except:
-            self.dialog.ok('Поиск','Удаление истории - [COLOR=yellow]ERROR: 102[/COLOR]')
+            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
             pass
 
     def exec_main_part(self):
         if self.auth_mode:
-            self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites','portal':self.params['portal']})
-        self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part','portal':self.params['portal']})
-        self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part','portal':self.params['portal']})
-        self.create_line(title='[B][COLOR=yellow][ Новое ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated','portal':self.params['portal']})
-        self.create_line(title='[B][COLOR=blue][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular','portal':self.params['portal']})
-        self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part','portal':self.params['portal']})
-        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part','portal':self.params['portal']})
+            self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
+        self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
+        self.create_line(title='[B][COLOR=yellow][ Новое ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
+        self.create_line(title='[B][COLOR=blue][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
+        self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_search_part(self):
         if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search', 'portal':'anilibria'})
+            self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
 
             data_array = Anilibria.addon.getSetting('anilibria_search').split('|')
             data_array.reverse()
@@ -335,7 +336,7 @@ class Anilibria:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data),'portal':'anilibria'})
+                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
 
         if self.params['param'] == 'search':
             skbd = xbmc.Keyboard()
@@ -422,13 +423,13 @@ class Anilibria:
                 inf = self.create_info(anime_id)
 
             label = self.create_title(self.database.get_title(anime_id), series, None)
-            self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id, 'portal':self.params['portal']})
+            self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
 
         self.progress.close()
         
         if len(data_array) >= 12:
             self.create_line(title='[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={
-                             'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1), 'portal': self.params['portal']})
+                             'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
@@ -441,16 +442,16 @@ class Anilibria:
 
         if self.params['param'] == '':
             self.create_line(title='Жанр: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_genre')), params={'mode': 'catalog_part', 'param': 'genre','portal':'anilibria'})
+                Anilibria.addon.getSetting('anilibria_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
             self.create_line(title='Год: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_year')), params={'mode': 'catalog_part', 'param': 'year','portal':'anilibria'})
+                Anilibria.addon.getSetting('anilibria_year')), params={'mode': 'catalog_part', 'param': 'year'})
             self.create_line(title='Сезон: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_season')), params={'mode': 'catalog_part', 'param': 'season','portal':'anilibria'})
+                Anilibria.addon.getSetting('anilibria_season')), params={'mode': 'catalog_part', 'param': 'season'})
             self.create_line(title='Сортировка по: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_sort')), params={'mode': 'catalog_part', 'param': 'sort','portal':'anilibria'})
+                Anilibria.addon.getSetting('anilibria_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
             self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_status')), params={'mode': 'catalog_part', 'param': 'status','portal':'anilibria'})
-            self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog','portal':'anilibria'})
+                Anilibria.addon.getSetting('anilibria_status')), params={'mode': 'catalog_part', 'param': 'status'})
+            self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
         if self.params['param'] == 'genre':
@@ -475,11 +476,11 @@ class Anilibria:
 
     def exec_information_part(self):
         if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news','portal':'anilibria'})
-            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett','portal':'anilibria'})
-            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play','portal':'anilibria'})
-            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp','portal':'anilibria'})
-            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs','portal':'anilibria'})
+            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
+            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
+            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
+            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         else:
             txt = info.anilibria_data
@@ -491,8 +492,8 @@ class Anilibria:
         return
 
     def exec_select_part(self):
-        self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id'],'portal':'anilibria'})
-        self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id'],'portal':'anilibria'})        
+        self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
+        self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_online_part(self):
@@ -521,7 +522,7 @@ class Anilibria:
                 if array[i]:
                     array[i].reverse()
                     label = '[B]Качество: {}[/B]'.format(i)
-                    self.create_line(title=label, params={'mode': 'online_part', 'param': ','.join(array[i]), 'id': self.params['id'],'portal':'anilibria'})
+                    self.create_line(title=label, params={'mode': 'online_part', 'param': ','.join(array[i]), 'id': self.params['id']})
         
         if self.params['param']:
             data_array = self.params['param'].split(',')
@@ -549,7 +550,7 @@ class Anilibria:
 
                 label = 'Серии: {} : {} , [COLOR=F0FFD700]{} GB[/COLOR], Сидов: [COLOR=F000F000]{}[/COLOR] , Пиров: [COLOR=F0F00000]{}[/COLOR]'.format(
                     series, quality, torrent_size, seeders, leechers)
-                self.create_line(title=label, params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id'],'portal':'anilibria'})
+                self.create_line(title=label, params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id']})
 
         if self.params['param']:
             host_site = self.site_url.replace('public/api/index.php','')            

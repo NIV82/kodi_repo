@@ -136,14 +136,14 @@ class WebTools:
         if self.auth_status:
             try:
                 self.mcj.load(self.sid_file)
-                auth = True if not str(self.mcj).find('dle_user_id') == -1 else False
+                auth = True if 'dle_user_id' in str(self.mcj) else False
             except:
                 self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-                auth = True if not str(self.mcj).find('dle_user_id') == -1 else False
+                auth = True if 'dle_user_id' in str(self.mcj) else False
                 self.mcj.save(self.sid_file)
         else:
             self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-            auth = True if not str(self.mcj).find('dle_user_id') == -1 else False
+            auth = True if 'dle_user_id' in str(self.mcj) else False
             self.mcj.save(self.sid_file)
         self.auth_status = auth
         return auth
