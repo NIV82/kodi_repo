@@ -33,20 +33,15 @@ class Anilibria:
         self.cookie_dir = cookie_dir
         self.params = params
 
-        self.auth_post_data = {
-            "mail": Anilibria.addon.getSetting('anilibria_username'),
-            "passwd": Anilibria.addon.getSetting('anilibria_password')
-            }
-
-        self.site_url = self.create_site_url()
-        self.auth_mode = bool(Anilibria.addon.getSetting("anilibria_username"))
-       
         if Anilibria.addon.getSetting('anilibria_unblock') == 'false':
             Anilibria.addon.setSetting('animeportal_unblock', '0')
             self.proxy_data = None            
         else:
             Anilibria.addon.setSetting('animeportal_unblock', '1')
             self.proxy_data = proxy_data
+
+        self.site_url = self.create_site_url()
+        self.auth_mode = bool(Anilibria.addon.getSetting("anilibria_username"))
 #================================================
         try: anilibria_session = float(Anilibria.addon.getSetting('anilibria_session'))
         except: anilibria_session = 0
@@ -62,8 +57,11 @@ class Anilibria:
             auth_usage=self.auth_mode,
             auth_status=bool(Anilibria.addon.getSetting('anilibria_auth') == 'true'),
             proxy_data=self.proxy_data,
-            portal='anilibria'
-            )
+            portal='anilibria')
+        self.auth_post_data = {
+            "mail": Anilibria.addon.getSetting('anilibria_username'),
+            "passwd": Anilibria.addon.getSetting('anilibria_password')
+            }
         self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_url = self.site_url.replace('api/index.php','login.php')
         self.network.sid_file = os.path.join(self.cookie_dir, 'anilibria.sid')
@@ -249,7 +247,7 @@ class Anilibria:
 
     def exec_mirror_part(self):
         from network import WebTools
-        self.net = WebTools(auth_usage=False,auth_status=False,proxy_data=None)
+        self.net = WebTools(auth_usage=False,auth_status=False,proxy_data=self.proxy_data)
         del WebTools
 
         html = self.net.get_html(target_name='https://darklibria.it/mirror')

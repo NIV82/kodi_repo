@@ -91,6 +91,12 @@ class AnimePortal:
             self.anidub = Anidub(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
             self.anidub.execute()
             del Anidub
+        
+        if 'anistar' in self.params['portal']:
+            from anistar import Anistar
+            self.anistar = Anistar(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
+            self.anistar.execute()
+            del Anistar
 
     def create_proxy_data(self):
         try: proxy_time = float(AnimePortal.addon.getSetting('animeportal_proxy_time'))
@@ -139,6 +145,9 @@ class AnimePortal:
     def exec_catalog_part(self):
         self.create_checking_portal()
     
+    def exec_categories_part(self):
+        self.create_checking_portal()
+    
     def exec_select_part(self):
         self.create_checking_portal()
     
@@ -153,6 +162,36 @@ class AnimePortal:
     
     def exec_update_part(self):
         self.create_checking_portal()
+        # db_name = '{}.db'.format(self.params['portal'])
+        # db_file = os.path.join(self.database_dir, db_name)
+
+        # try: os.remove(db_file)
+        # except: pass        
+
+        # db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}'.format(db_name)
+        # try:                
+        #     data = urlopen(db_url)
+        #     chunk_size = 8192
+        #     bytes_read = 0
+
+        #     try: file_size = int(data.info().getheaders("Content-Length")[0])
+        #     except: file_size = int(data.getheader('Content-Length'))
+
+        #     self.progress.create('Загрузка Базы Данных')
+        #     with open(db_file, 'wb') as write_file:
+        #         while True:
+        #             chunk = data.read(chunk_size)
+        #             bytes_read = bytes_read + len(chunk)
+        #             write_file.write(chunk)
+        #             if len(chunk) < chunk_size:
+        #                 break
+        #             percent = bytes_read * 100 / file_size
+        #             self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+        #         self.progress.close()
+        #     self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Успешно загружена[/COLOR]')
+        # except:
+        #     self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
+        #     pass
     
     def exec_mirror_part(self):
         self.create_checking_portal()

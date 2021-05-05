@@ -283,10 +283,8 @@ class Anidub:
                     self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                 self.progress.close()
             self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
-            Anidub.addon.setSetting('database', 'true')
         except:
             self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
-            Anidub.addon.setSetting('database', 'false')
             pass
 
     def exec_favorites_part(self):
@@ -310,7 +308,7 @@ class Anidub:
         
     def exec_clean_part(self):
         try:
-            Anidub.addon.setSetting('search', '')
+            Anidub.addon.setSetting('anidub_search', '')
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
         except:
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
@@ -353,8 +351,8 @@ class Anidub:
             return
     
     def exec_search_part(self):
-        if not Anidub.addon.getSetting('search'):
-            Anidub.addon.setSetting('search', '')
+        if not Anidub.addon.getSetting('anidub_search'):
+            Anidub.addon.setSetting('anidub_search', '')
 
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
@@ -362,7 +360,7 @@ class Anidub:
             self.create_line(title='[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
             self.create_line(title='[B][COLOR=red][ Поиск по алфавиту ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
 
-            data_array = Anidub.addon.getSetting('search').split('|')
+            data_array = Anidub.addon.getSetting('anidub_search').split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -376,11 +374,11 @@ class Anidub:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
-                data_array = Anidub.addon.getSetting('search').split('|')                    
+                data_array = Anidub.addon.getSetting('anidub_search').split('|')                    
                 while len(data_array) >= 10:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
-                Anidub.addon.setSetting('search', data_array)
+                Anidub.addon.setSetting('anidub_search', data_array)
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
             else:

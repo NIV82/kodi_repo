@@ -39,11 +39,11 @@ def fix_list(data):
         data = data.replace(value[0], value[1])            
     return data
 
-def rep_list(data):
-    rep_list = [('&amp;', '&'), ('&laquo;', '"'), ('&raquo;', '"'), ('&nbsp;', ' '), ('&mdash;', '-'), ('&ndash;', '-'),
-                ('&hellip;', '...'), ('&copy;', '©'), ('&quot;', '"'), ('&apos;', '\''), ('&gt;', '>'), ('&lt;', '<'),
-                ('&#8217;', '\''), ('&#8220;','"'), ('&#8221;','"'), ('&#039;', '\''), ('&#34;', '"'), ('&#39;', '\''), 
-                ('‑', '-'), ('&ldquo;', '"'), ('&rdquo;', '"')]
-    for value in rep_list:
-        data = data.replace(value[0], value[1])            
-    return data
+# def rep_list(data):
+#     rep_list = [('&amp;', '&'), ('&laquo;', '"'), ('&raquo;', '"'), ('&nbsp;', ' '), ('&mdash;', '-'), ('&ndash;', '-'),
+#                 ('&hellip;', '...'), ('&copy;', '©'), ('&quot;', '"'), ('&apos;', '\''), ('&gt;', '>'), ('&lt;', '<'),
+#                 ('&#8217;', '\''), ('&#8220;','"'), ('&#8221;','"'), ('&#039;', '\''), ('&#34;', '"'), ('&#39;', '\''), 
+#                 ('‑', '-'), ('&ldquo;', '"'), ('&rdquo;', '"')]
+#     for value in rep_list:
+#         data = data.replace(value[0], value[1])            
+#     return data

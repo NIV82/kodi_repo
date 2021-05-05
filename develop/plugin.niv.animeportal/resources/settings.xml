@@ -12,7 +12,7 @@
   </category>
 
   <category label="ANIDUB">
-      <setting label="[B]AniDub[/B]" id="use_anidub" type="bool" default="false" />
+      <setting label="[B]AniDub[/B] - [COLOR=grey][ Требуется Авторизация ][/COLOR]" id="use_anidub" type="bool" default="false" />
       <setting id="anidub_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
       <setting id="anidub_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
       <setting id="anidub_mirror" label="Зеркало:" type="text" default="" subsetting="true" visible="eq(-3,true)" />
@@ -24,11 +24,6 @@
       <setting id="anidub_session" label="session" type="text" default="" visible="false" />
       <setting id="anidub_search" label="status" type="text" default="" visible="false" />
       <setting id="anidub_auth" label="auth" type="bool" default="false" visible="false" />
-      <setting id="anidub_year" label="year" type="text" default="" visible="false" />
-      <setting id="anidub_genre" label="genre" type="text" default="" visible="false" />
-      <setting id="anidub_season" label="season" type="text" default="" visible="false" />
-      <setting id="anidub_sort" label="sort" type="text" default="" visible="false" />
-      <setting id="anidub_status" label="status" type="text" default="" visible="false" />
   </category>
   
   <category label="ANILIBRIA">
@@ -51,4 +46,22 @@
       <setting id="anilibria_status" label="status" type="text" default="" visible="false" />
   </category>
 
+  <category label="ANISTAR">
+      <setting label="[B]AniStar[/B]" id="use_anistar" type="bool" default="true" />
+      <setting id="anistar_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anistar_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="anistar_mirror" label="Зеркало:" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+      <setting type="sep" visible="eq(-4,true)" />
+      <setting id="anistar_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" visible="eq(-5,true)" />
+      <setting id="anistar_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" visible="eq(-6,true)" />
+      <setting type="sep" visible="eq(-7,true)" />
+      <setting id="anistar_unblock" type="bool" label="Разблокировка:" default="true" visible="eq(-8,true)" />
+      <setting type="sep" visible="eq(-9,true)" />
+      <setting id="anistar_adult" type="bool" label="Контент 18+ :" default="false" visible="eq(-10,true)" />
+      <setting id="anistar_adult_pass" label="Пароль 18+ :" type="text" default="" option="hidden" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anistar_session" label="session" type="text" default="" visible="false" />
+      <setting id="anistar_search" label="status" type="text" default="" visible="false" />
+      <setting id="anistar_auth" label="auth" type="bool" default="false" visible="false" />
+  </category>
+  
 </settings>
