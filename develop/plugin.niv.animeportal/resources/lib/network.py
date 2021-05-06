@@ -33,7 +33,7 @@ class WebTools:
         else:
             self.url_opener = build_opener(self.proxy)
 
-    def get_html(self, target_name, post=None):
+    def get_html_2(self, target_name, post=None):
         if self.auth_usage and not self.auth_check():
             return None
             
@@ -46,6 +46,24 @@ class WebTools:
 
             try: data = data.decode('cp1251').encode('utf8')
             except: pass
+
+            try: data = str(data, encoding='utf-8')
+            except: pass
+            
+            return data
+        except HTTPError as error:
+            return error.code
+
+    def get_html(self, target_name, post=None):
+        if self.auth_usage and not self.auth_check():
+            return None
+            
+        try: post = bytes(post, encoding='utf-8')
+        except: pass
+
+        try:
+            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+            data = url.read()
 
             try: data = str(data, encoding='utf-8')
             except: pass

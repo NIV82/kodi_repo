@@ -95,7 +95,7 @@ class Anistar:
         del Anistar_DB
 #================================================
     def create_site_url(self):
-        if not Anistar.addon.getSetting('anistar_mirror'):            
+        if not Anistar.addon.getSetting('anistar_mirror'):
             try:
                 self.exec_mirror_part()
                 site_url = '{}'.format(Anistar.addon.getSetting('anistar_mirror'))
@@ -153,7 +153,7 @@ class Anistar:
     def create_image(self, anime_id):
         url = '{}uploads/posters/{}/original.jpg'.format(self.site_url, anime_id)
 
-        if Anistar.addon.getSetting('anistar_covers') == 'false':
+        if Anistar.addon.getSetting('anistar_covers') == '0':
             return url
         else:
             local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
@@ -182,7 +182,7 @@ class Anistar:
         if self.params['mode'] == 'search_part' and self.params['param'] == '':
             li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anistar")')])
 
-        if Anistar.addon.getSetting('auth_mode') == 'true' and not self.params['param'] == '':
+        if self.auth_mode and not self.params['param'] == '':
             li.addContextMenuItems([
                 ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anistar")'.format(anime_id)),
                 ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anistar")'.format(anime_id))
@@ -198,10 +198,9 @@ class Anistar:
 
         params['portal'] = 'anistar'
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
-#===================================================================== переписать выбор на онлайн или торрент как в anilibria
-        #if Anistar.addon.getSetting('online_mode') == 'true':
-        #    if online: url = unquote(online)
-#===================================================================== переписать выбор на онлайн или торрент как в anilibria
+
+        if online: url = unquote(online)
+
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
     def create_info(self, anime_id, data, schedule=False):
@@ -209,7 +208,7 @@ class Anistar:
 
         if schedule:
             url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
-            data = self.network.get_html(target_name=url)
+            data = self.network.get_html_2(target_name=url)
             title_data = data[data.find('<h1'):data.find('</h1>')]
         else:
             title_data = data[data.find('>')+1:data.find('</a>')]
@@ -335,14 +334,14 @@ class Anistar:
 
         if 'plus' in self.params['node']:
             try:
-                self.network.get_html(target_name=url)
+                self.network.get_html_2(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно добавлено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
 
         if 'minus' in self.params['node']:
             try:
-                self.network.get_html(target_name=url)
+                self.network.get_html_2(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно удалено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
@@ -356,7 +355,7 @@ class Anistar:
             pass
 
     def exec_main_part(self):
-        if Anistar.addon.getSetting('auth_mode') == 'true':
+        if self.auth_mode:
             self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
         self.create_line(title='[B][COLOR=lime][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
@@ -364,25 +363,14 @@ class Anistar:
         self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
         self.create_line(title='[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
         self.create_line(title='[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})        
-        if Anistar.addon.getSetting('adult') == 'true':
-            if Anistar.addon.getSetting('adult_pass') in info.anistar_ignor_list:
+        if Anistar.addon.getSetting('anistar_adult') == 'true':
+            if Anistar.addon.getSetting('anistar_adult_pass') in info.anistar_ignor_list:
                 self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
         self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
         self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
-    # def exec_catalog_part(self):
-    #     self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
-    #     self.create_line(title='[B][COLOR=white][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
-    #     self.create_line(title='[B][COLOR=white][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
-    #     self.create_line(title='[B][COLOR=white][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
-    #     self.create_line(title='[B][COLOR=white][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})        
-    #     if Anistar.addon.getSetting('adult') == 'true':
-    #         if Anistar.addon.getSetting('adult_pass') in info.anistar_ignor_list:
-    #             self.create_line(title='[B][COLOR=white][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
-    #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_information_part(self):
         if self.params['param'] == '':
@@ -471,7 +459,7 @@ class Anistar:
         self.progress.create("AniStar", "Инициализация")
 
         url = '{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html')
-        html = self.network.get_html(target_name=url)
+        html = self.network.get_html_2(target_name=url)
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -546,7 +534,7 @@ class Anistar:
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
                 self.params['page'], self.params['search_string'])
 
-        html = self.network.get_html(target_name=url, post=post)
+        html = self.network.get_html_2(target_name=url, post=post)
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -613,44 +601,20 @@ class Anistar:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_select_part(self):
-        if Anistar.addon.getSetting('online_mode') == 'false':
-            html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
+        self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
+        self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
-            if '<div class="title">' in html:
-                data_array = html[html.find('<div class="title">')+19:html.rfind('<div class="bord_a1">')]
-                data_array = data_array.split('<div class="title">')
-
-                for data in data_array:
-                    torrent_url = data[data.find('gettorrent.php?id=')+18:data.find('">')]
-
-                    data = utility.clean_list(data).replace('<b>','|').replace('&nbsp;','')            
-                    data = utility.tag_list(data).split('|')
-
-                    torrent_title = data[0][:data[0].find('(')].strip()
-                    torrent_seed = data[1].replace('Раздают:', '').strip()
-                    torrent_peer = data[2].replace('Качают:', '').strip()
-                    torrent_size = data[4].replace('Размер:', '').strip()
-
-                    label = '{} , [COLOR=yellow]{}[/COLOR], Сидов: [COLOR=green]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
-                        torrent_title, torrent_size, torrent_seed, torrent_peer)
-                    
-                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
-                    
-            else:
-                self.create_line(title='Контент не обнаружен', params={})
-        else:
+    def exec_online_part(self):
+        if not self.params['param']:
             video_url = '{}test/player2/videoas.php?id={}'.format(self.site_url, self.params['id'])
-            html = self.network.get_html(target_name=video_url)
+            html = self.network.get_html_2(target_name=video_url)
 
             data_array = html[html.find('playlst=[')+9:html.find('];')]
             data_array = data_array.split('{')
             data_array.pop(0)
 
-            sd_multi_voice = []
-            hd_multi_voice = []            
-
-            sd_single_voice = []
-            hd_single_voice = []
+            array = {'480p [multi voice]': [],'720p [multi voice]': [],'480p [single voice]': [],'720p [single voice]': []}
 
             for data in data_array:
                 title = data[data.find('title:"')+7:data.find('",')]
@@ -663,78 +627,79 @@ class Anistar:
                 hd_line = '{}|{}'.format(title, hd_url)
 
                 if 'Многоголосая озвучка' in title:
-                    sd_multi_voice.append(sd_line)
-                    hd_multi_voice.append(hd_line)
+                    array['480p [multi voice]'].append(sd_line)
+                    array['720p [multi voice]'].append(hd_line)
                 else:
-                    sd_single_voice.append(sd_line)
-                    hd_single_voice.append(hd_line)
+                    array['480p [single voice]'].append(sd_line)
+                    array['720p [single voice]'].append(hd_line)
 
-            if sd_single_voice:
-                label = 'Одноголосая озвучка - Качество: [COLOR=F020F0F0]480p[/COLOR]'
-                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(sd_single_voice)}, anime_id=self.params['id'])
-            if hd_single_voice:
-                label = 'Одноголосая озвучка - Качество: [COLOR=F020F0F0]720p[/COLOR]'
-                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(hd_single_voice)}, anime_id=self.params['id'])
+            for i in array.keys():
+                if array[i]:
+                    label = '[B]Качество: {}[/B]'.format(i)
+                    self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(array[i])}, anime_id=self.params['id'])
 
-            if sd_multi_voice:
-                label = 'Многоголосая озвучка - Качество: [COLOR=F020F0F0]480p[/COLOR]'
-                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(sd_multi_voice)}, anime_id=self.params['id'])
-            if hd_multi_voice:
-                label = 'Многоголосая озвучка - Качество: [COLOR=F020F0F0]720p[/COLOR]'
-                self.create_line(title=label, params={'mode': 'online_part', 'id': self.params['id'], 'param': '|||'.join(hd_multi_voice)}, anime_id=self.params['id'])
+        if self.params['param']:
+            data_array = self.params['param'].split('|||')
+
+            for data in data_array:
+                data = data.split('|')
+                self.create_line(title=data[0], params={}, anime_id=self.params['id'], online=data[1], folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_torrent_part(self):
-        url = '{}engine/gettorrent.php?id={}'.format(self.site_url, self.params['torrent_url'])
-        file_id = self.params['torrent_url']
+        if not self.params['param']:
+            html = self.network.get_html_2('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
+
+            if not '<div class="title">' in html:
+                self.create_line(title='Контент не обнаружен', params={})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+
+            data_array = html[html.find('<div class="title">')+19:html.rfind('<div class="bord_a1">')]
+            data_array = data_array.split('<div class="title">')
+
+            for data in data_array:
+                torrent_url = data[data.find('gettorrent.php?id=')+18:data.find('">')]
+
+                data = utility.clean_list(data).replace('<b>','|').replace('&nbsp;','')            
+                data = utility.tag_list(data).split('|')
+
+                torrent_title = data[0][:data[0].find('(')].strip()
+                torrent_seed = data[1].replace('Раздают:', '').strip()
+                torrent_peer = data[2].replace('Качают:', '').strip()
+                torrent_size = data[4].replace('Размер:', '').strip()
+
+                label = '{} , [COLOR=yellow]{}[/COLOR], Сидов: [COLOR=green]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
+                    torrent_title, torrent_size, torrent_seed, torrent_peer)
+                    
+                self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'])
+
+        if self.params['param']:
+            url = '{}engine/gettorrent.php?id={}'.format(self.site_url, self.params['param'])
+            file_id = self.params['param']
         
-        file_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_id))
-        torrent_file = self.network.get_file(target_name=url, destination_name=file_name)
+            file_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_id))
+            torrent_file = self.network.get_file(target_name=url, destination_name=file_name)
 
-        import bencode
+            import bencode
 
-        with open(torrent_file, 'rb') as read_file:
-            torrent_data = read_file.read()
+            with open(torrent_file, 'rb') as read_file:
+                torrent_data = read_file.read()
 
-        torrent = bencode.bdecode(torrent_data)
+            torrent = bencode.bdecode(torrent_data)
 
-        info = torrent['info']
-        series = {}
-        size = {}
-        
-        if 'files' in info:
-            for i, x in enumerate(info['files']):
-                size[i] = x['length']
-                series[i] = x['path'][-1]
-            for i in sorted(series, key=series.get):
-                self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_id}, anime_id=self.params['id'], folder=False, size=size[i])
-        else:
-            self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_id}, anime_id=self.params['id'], folder=False, size=info['length'])
-        
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-
-    def exec_online_part(self):        
-        data_array = self.params['param'].split('|||')
-
-        for data in data_array:
-            data = data.split('|')
-            self.create_line(title=data[0], params={}, anime_id=self.params['id'], online=data[1], folder=False)
+            info = torrent['info']
+            series = {}
+            size = {}
+            
+            if 'files' in info:
+                for i, x in enumerate(info['files']):
+                    size[i] = x['length']
+                    series[i] = x['path'][-1]
+                for i in sorted(series, key=series.get):
+                    self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_id}, anime_id=self.params['id'], folder=False, size=size[i])
+            else:
+                self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_id}, anime_id=self.params['id'], folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
-    def exec_play_part(self):
-        url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
-        index = int(self.params['index'])
-
-        if Anistar.addon.getSetting("Engine") == '0':
-            tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
-            engine = tam_engine[int(Anistar.addon.getSetting("TAMengine"))]            
-            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
-            item = xbmcgui.ListItem(path=purl)
-            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-
-        if Anistar.addon.getSetting("Engine") == '1':
-            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
-            item = xbmcgui.ListItem(path=purl)
-            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
