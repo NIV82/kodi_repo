@@ -109,6 +109,8 @@ class WebTools:
             return self.anidub_authorization()
         if self.portal == 'anistar':
             return self.anistar_authorization()
+        if self.portal == 'animedia':
+            return self.animedia_authorization()
         return
 
     def anilibria_authorization(self):
@@ -191,5 +193,30 @@ class WebTools:
             self.url_opener.open(Request(self.auth_url, post_data, self.headers))
             auth = True if 'dle_user_id' in str(self.mcj) else False
             self.mcj.save(self.sid_file)
+        self.auth_status = auth
+        return auth
+
+    def animedia_authorization(self):
+        if not self.auth_usage or self.sid_file == '':
+            return False
+                
+        if self.auth_status:
+            self.mcj.load(self.sid_file)
+            auth = True if 'anime_sessionid' in str(self.mcj) else False
+        else:
+            self.url_opener.open(Request(url=self.auth_url, headers=self.headers))
+            csrf_token = list(self.mcj)[1].value
+            self.auth_post_data = '{}&csrf_token={}'.format(self.auth_post_data, csrf_token)
+
+            try: post_data = bytes(self.auth_post_data, encoding='utf-8')
+            except: post_data = self.auth_post_data
+
+            try:
+                self.url_opener.open(Request(self.auth_url, post_data, self.headers))
+                auth = True if 'anime_sessionid' in str(self.mcj) else False
+                self.mcj.save(self.sid_file)
+            except:
+                auth = False
+            
         self.auth_status = auth
         return auth

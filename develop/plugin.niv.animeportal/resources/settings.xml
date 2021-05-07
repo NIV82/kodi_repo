@@ -46,6 +46,28 @@
       <setting id="anilibria_status" label="status" type="text" default="" visible="false" />
   </category>
 
+  <category label="ANIMEDIA">
+      <setting label="[B]Animedia[/B]" id="use_animedia" type="bool" default="true" />
+      <setting id="animedia_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="animedia_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="animedia_mirror" label="Зеркало:" type="text" default="https://tt.animedia.tv/" subsetting="true" visible="eq(-3,true)" />
+      <setting type="sep" visible="eq(-4,true)" />
+      <setting id="animedia_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" visible="eq(-5,true)" />
+      <setting id="animedia_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" visible="eq(-6,true)" />
+      <setting type="sep" visible="eq(-7,true)" />
+      <setting id="animedia_unblock" type="bool" label="Разблокировка:" default="true" visible="eq(-8,true)" />
+      <setting id="animedia_session" label="session" type="text" default="" visible="false" />
+      <setting id="animedia_search" label="status" type="text" default="" visible="false" />
+      <setting id="animedia_auth" label="auth" type="bool" default="false" visible="false" />
+      <setting id="animedia_genre" label="genre" type="text" default="" visible="false" />
+      <setting id="animedia_year" label="year" type="text" default="" visible="false" />
+      <setting id="animedia_form" label="form" type="text" default="" visible="false" />
+      <setting id="animedia_status" label="status" type="text" default="" visible="false" />
+      <setting id="animedia_sort" label="sort" type="text" default="Дате добавления" visible="false" />
+      <setting id="animedia_studio" label="studio" type="text" default="" visible="false" />
+      <setting id="animedia_voice" label="studio" type="text" default="" visible="false" />
+  </category>
+
   <category label="ANISTAR">
       <setting label="[B]AniStar[/B]" id="use_anistar" type="bool" default="true" />
       <setting id="anistar_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
@@ -63,5 +85,5 @@
       <setting id="anistar_search" label="status" type="text" default="" visible="false" />
       <setting id="anistar_auth" label="auth" type="bool" default="false" visible="false" />
   </category>
-  
+
 </settings>

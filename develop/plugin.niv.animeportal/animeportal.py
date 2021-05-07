@@ -97,6 +97,12 @@ class AnimePortal:
             self.anistar = Anistar(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
             self.anistar.execute()
             del Anistar
+        
+        if 'animedia' in self.params['portal']:
+            from animedia import Animedia
+            self.animedia = Animedia(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
+            self.animedia.execute()
+            del Animedia
 
     def create_proxy_data(self):
         try: proxy_time = float(AnimePortal.addon.getSetting('animeportal_proxy_time'))

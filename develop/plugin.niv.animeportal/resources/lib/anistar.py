@@ -623,15 +623,12 @@ class Anistar:
                 sd_url = file_data[file_data.find('360=')+4:file_data.find('.m3u8')+5]
                 hd_url = sd_url.replace('360', '720')
 
-                sd_line = '{}|{}'.format(title, sd_url)
-                hd_line = '{}|{}'.format(title, hd_url)
-
                 if 'Многоголосая озвучка' in title:
-                    array['480p [multi voice]'].append(sd_line)
-                    array['720p [multi voice]'].append(hd_line)
+                    array['480p [multi voice]'].append('{}|{}'.format(title, sd_url))
+                    array['720p [multi voice]'].append('{}|{}'.format(title, hd_url))
                 else:
-                    array['480p [single voice]'].append(sd_line)
-                    array['720p [single voice]'].append(hd_line)
+                    array['480p [single voice]'].append('{}|{}'.format(title, sd_url))
+                    array['720p [single voice]'].append('{}|{}'.format(title, hd_url))
 
             for i in array.keys():
                 if array[i]:
