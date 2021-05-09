@@ -298,7 +298,6 @@ class Animedia:
 
         #url = 'https://tt.animedia.tv/P{}'.format(self.params['page'])
         url = 'https://tt.animedia.tv/P{}'.format(int(self.params['page'])-1)
-        #xbmc.log(str(url), xbmc.LOGFATAL)
 
         if self.params['param'] == 'search_part':
             url = 'https://tt.animedia.tv/ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.params['search_string'])
