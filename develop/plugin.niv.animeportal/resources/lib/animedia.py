@@ -167,7 +167,8 @@ class Animedia:
 
         info['cover'] = html[html.rfind('<a href="https://static.animedia.tv/uploads/')+44:html.rfind('" class="zoomLink">')]
 
-        data_array = html[html.find('post__header">')+14:html.find('<!--Media post End-->')]
+        #data_array = html[html.find('post__header">')+14:html.find('<!--Media post End-->')]
+        data_array = html[html.find('post__header">')+14:html.find('</article>')]
 
         info['plot'] = data_array[data_array.find('<p>'):data_array.rfind('</p>')]
         info['plot'] = utility.tag_list(info['plot'])

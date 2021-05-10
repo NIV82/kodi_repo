@@ -315,7 +315,7 @@ class Anistar:
         del WebTools
 
         try:            
-            ht = self.net.get_html(target_name='https://anistar.org/')                
+            ht = self.net.get_html_2(target_name='https://anistar.org/')
             actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
             actual_url = utility.tag_list(actual_url).lower()
             actual_url = 'https://{}/'.format(actual_url)
