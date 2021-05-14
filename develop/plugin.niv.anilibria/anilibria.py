@@ -99,14 +99,14 @@ class Main:
                 else:
                     Main.addon.setSetting("auth", str(self.network.auth_status).lower())
 #================================================
-        if not os.path.isfile(os.path.join(self.database_dir, 'anilibria_v1.db')):
+        if not os.path.isfile(os.path.join(self.database_dir, 'anilibria.db')):
             self.exec_update_part()
 #================================================
         from database import DBTools
         if Main.addon.getSetting('database') == 'false':
-            os.remove(os.path.join(self.database_dir, 'anilibria_v1.db'))
+            os.remove(os.path.join(self.database_dir, 'anilibria.db'))
             Main.addon.setSetting('database', 'true')
-        self.database = DBTools(os.path.join(self.database_dir, 'anilibria_v1.db'))
+        self.database = DBTools(os.path.join(self.database_dir, 'anilibria.db'))
         del DBTools
 #================================================
         if not Main.addon.getSetting('mirror_1'):
@@ -317,11 +317,11 @@ class Main:
         try: self.database.end()
         except: pass
         
-        try: os.remove(os.path.join(self.database_dir, 'anilibria_v1.db'))
+        try: os.remove(os.path.join(self.database_dir, 'anilibria.db'))
         except: pass        
 
-        db_file = os.path.join(self.database_dir, 'anilibria_v1.db')        
-        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anilibria_v1.db'
+        db_file = os.path.join(self.database_dir, 'anilibria.db')        
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anilibria.db'
         try:                
             data = urlopen(db_url)
             chunk_size = 8192
