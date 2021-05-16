@@ -12,18 +12,25 @@ import xbmcaddon
 import xbmcvfs
 
 from urllib.parse import urlencode
-from urllib.parse import parse_qs
 from urllib.parse import quote
 from urllib.parse import unquote
 from urllib.request import urlopen
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
+from utility import get_params
+
 class AnimePortal:
     addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
     def __init__(self):
+        self.icon = xbmcvfs.translatePath(AnimePortal.addon.getAddonInfo('icon'))
+        self.fanart = xbmcvfs.translatePath(AnimePortal.addon.getAddonInfo('fanart'))
+
+        self.progress = xbmcgui.DialogProgress()
+        self.dialog = xbmcgui.Dialog()
+
         self.addon_data_dir = xbmcvfs.translatePath(AnimePortal.addon.getAddonInfo('profile'))
         if not os.path.exists(self.addon_data_dir):
             os.makedirs(self.addon_data_dir)
@@ -53,31 +60,45 @@ class AnimePortal:
             'portal': 'animeportal'
             }
 
-        args = parse_qs(sys.argv[2][1:])
+        args = get_params()
         for a in args:
-            self.params[a] = args[a][0]
-        
+            self.params[a] = unquote(args[a])
+
         if not os.path.isfile(os.path.join(self.addon_data_dir, 'settings.xml')):
             AnimePortal.addon.setSetting('animeportal_engine', '2')
 
         self.proxy_data = self.create_proxy_data()
 
+    #def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None):
+    def create_line(self, title=None, params=None, folder=True):
+        from info import animeportal_plot
+
+        li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(title.upper()))
+        li.setArt({"fanart": self.fanart,"icon": self.icon.replace('icon', title)})
+        info = {'plot': animeportal_plot[title], 'title': title.upper(), 'tvshowtitle': title.upper()}
+        li.setInfo(type='video', infoLabels=info)
+
+        li.addContextMenuItems([
+            ('[B]{} - Обновить DB[/B]'.format(title.capitalize()), 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal={}")'.format(title))
+            ])
+
+        # li.addContextMenuItems([
+        #     ('[B]AniDub - Обновить DB[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anidub")'),
+        #     ('[B]Anilibria - Обновить DB[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anilibria")'),
+        #     ('[B]Anistar - Обновить DB[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anistar")'),
+        #     ('[B]Animedia - Обновить DB[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=animedia")')
+        #     ])
+
+        url = '{}?{}'.format(sys.argv[0], urlencode(params))
+        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+
     def create_checking_portal(self):
         if 'animeportal' in self.params['portal']:
-            with open(os.path.join(self.addon_data_dir, 'settings.xml'), 'rb') as read_file:
-                data_array = read_file.read()
+            portal_list = ('anidub','anilibria','animedia','anistar')
 
-            data_array = str(data_array, encoding='utf-8')
-            data_array = data_array.splitlines()
-
-            for data in data_array:
-                if 'id="use_' in data and '">true</setting>' in data:
-                    data = data.replace('<setting id="use_','').strip()
-                    portal = data[:data.find('"')]
-                    label = '[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper())
-
-                    xbmcplugin.addDirectoryItem(int(sys.argv[1]), '{}?{}'.format(sys.argv[0], urlencode(
-                        {'mode': 'main_part', 'portal': portal})), xbmcgui.ListItem(label), isFolder=True)
+            for portal in portal_list:
+                if AnimePortal.addon.getSetting('use_{}'.format(portal)) == 'true':
+                    self.create_line(title=portal, params={'mode': 'main_part', 'portal': portal})
             xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
         if 'anilibria' in self.params['portal']:
@@ -168,7 +189,7 @@ class AnimePortal:
     
     def exec_update_part(self):
         self.create_checking_portal()
-        # db_name = '{}.db'.format(self.params['portal'])
+        # db_name = '{}.db'.format(self.params['node'])
         # db_file = os.path.join(self.database_dir, db_name)
 
         # try: os.remove(db_file)

@@ -21,7 +21,6 @@ import utility
 
 class Anilibria:
     addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
     def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, proxy_data):
         self.progress = xbmcgui.DialogProgress()
@@ -81,11 +80,11 @@ class Anilibria:
                 else:
                     Anilibria.addon.setSetting("anilibria_auth", str(self.network.auth_status).lower())
 #================================================
-        if not os.path.isfile(os.path.join(self.database_dir, 'anilibria_v1.db')):
+        if not os.path.isfile(os.path.join(self.database_dir, 'anilibria.db')):
             self.exec_update_part()
 #================================================
         from database import Anilibria_DB
-        self.database = Anilibria_DB(os.path.join(self.database_dir, 'anilibria_v1.db'))
+        self.database = Anilibria_DB(os.path.join(self.database_dir, 'anilibria.db'))
         del Anilibria_DB
 #================================================
     def create_site_url(self):
@@ -260,11 +259,11 @@ class Anilibria:
         try: self.database.end()
         except: pass
         
-        try: os.remove(os.path.join(self.database_dir, 'anilibria_v1.db'))
+        try: os.remove(os.path.join(self.database_dir, 'anilibria.db'))
         except: pass        
 
-        db_file = os.path.join(self.database_dir, 'anilibria_v1.db')        
-        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anilibria_v1.db'
+        db_file = os.path.join(self.database_dir, 'anilibria.db')        
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anilibria.db'
         try:                
             data = urlopen(db_url)
             chunk_size = 8192
@@ -291,6 +290,7 @@ class Anilibria:
 
     def exec_favorites_part(self):
         html = self.network.get_html(self.site_url, self.create_post())
+
         label = self.create_title(self.database.get_title(self.params['id']), None)
 
         if 'status":false' in html:
@@ -357,8 +357,7 @@ class Anilibria:
 
     def exec_schedule_part(self):
         self.progress.create("Anilibria", "Инициализация")
-
-        html = self.network.get_html(self.site_url, self.create_post())
+        html = self.network.get_html(self.site_url, self.create_post())        
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})

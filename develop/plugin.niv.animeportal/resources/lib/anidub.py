@@ -164,7 +164,9 @@ class Anidub:
             info = {'title': title, 'year': anime_info[9], 'genre': anime_info[0], 'director': anime_info[1], 'writer': anime_info[2],
                     'plot': anime_info[3], 'country': anime_info[7], 'studio': anime_info[8], 'year': anime_info[9]}
 
-            info['plot'] = '{}\n\nОзвучивание: {}\nПеревод: {}\nРабота со звуком: {}'.format(info['plot'], anime_info[4], anime_info[5], anime_info[6])
+            info['plot'] = '{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(info['plot'], anime_info[4])
+            info['plot'] = '{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(info['plot'], anime_info[5])
+            info['plot'] = '{}\n[COLOR=steelblue]Работа со звуком[/COLOR]: {}'.format(info['plot'], anime_info[6])
 
             if size: info['size'] = size
 
@@ -178,7 +180,7 @@ class Anidub:
                                     ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id))])
         
         if self.params['mode'] == 'information_part':
-            li.addContextMenuItems([('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part")')])
+            li.addContextMenuItems([('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anidub")')])
 
         if folder==False:
             li.setProperty('isPlayable', 'true')

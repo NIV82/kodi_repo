@@ -11,10 +11,12 @@ class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None):
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
-            'Accept': '*/*',
-            'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-            'Accept-Charset': 'utf-8',
-            'Accept-Encoding': 'identity'
+            # 'Accept': '*/*',
+            # 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+            # 'Accept-Charset': 'utf-8',
+            'Accept-Encoding': 'identity',
+            #'Content-Type': 'application/json'
+            #'Content-Type': 'application/x-www-form-urlencoded'
             }
 
         self.auth_usage = auth_usage
@@ -33,37 +35,24 @@ class WebTools:
         else:
             self.url_opener = build_opener(self.proxy)
 
-    def get_html_2(self, target_name, post=None):
-        if self.auth_usage and not self.auth_check():
-            return None
-            
-        try: post = bytes(post, encoding='utf-8')
-        except: pass
-
-        try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-            data = url.read()
-
-            try: data = data.decode('cp1251').encode('utf8')
-            except: pass
-
-            try: data = str(data, encoding='utf-8')
-            except: pass
-            
-            return data
-        except HTTPError as error:
-            return error.code
-
     def get_html(self, target_name, post=None):
         if self.auth_usage and not self.auth_check():
             return None
-            
+
+        # if self.portal == 'anilibria':
+        #     self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+
         try: post = bytes(post, encoding='utf-8')
         except: pass
 
         try:
             url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+            charset = url.headers.get_content_charset()
             data = url.read()
+
+            if charset:
+                if not 'utf-8' in charset:
+                    data = data.decode(charset).encode('utf8')
 
             try: data = str(data, encoding='utf-8')
             except: pass
@@ -71,6 +60,24 @@ class WebTools:
             return data
         except HTTPError as error:
             return error.code
+
+    # def get_html(self, target_name, post=None):
+    #     if self.auth_usage and not self.auth_check():
+    #         return None
+            
+    #     try: post = bytes(post, encoding='utf-8')
+    #     except: pass
+
+    #     try:
+    #         url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+    #         data = url.read()
+
+    #         try: data = str(data, encoding='utf-8')
+    #         except: pass
+            
+    #         return data
+    #     except HTTPError as error:
+    #         return error.code
 
 
     def get_file(self, target_name, post=None, destination_name=None):
@@ -94,8 +101,7 @@ class WebTools:
 
         try:
             url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-            data = url.read()
-            
+            data = url.read()            
             return data
         except HTTPError as error:
             return error.code

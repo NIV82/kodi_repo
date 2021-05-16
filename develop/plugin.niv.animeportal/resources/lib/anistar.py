@@ -208,7 +208,7 @@ class Anistar:
 
         if schedule:
             url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
-            data = self.network.get_html_2(target_name=url)
+            data = self.network.get_html(target_name=url)
             title_data = data[data.find('<h1'):data.find('</h1>')]
         else:
             title_data = data[data.find('>')+1:data.find('</a>')]
@@ -334,14 +334,14 @@ class Anistar:
 
         if 'plus' in self.params['node']:
             try:
-                self.network.get_html_2(target_name=url)
+                self.network.get_html(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно добавлено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
 
         if 'minus' in self.params['node']:
             try:
-                self.network.get_html_2(target_name=url)
+                self.network.get_html(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно удалено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
@@ -459,7 +459,7 @@ class Anistar:
         self.progress.create("AniStar", "Инициализация")
 
         url = '{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html')
-        html = self.network.get_html_2(target_name=url)
+        html = self.network.get_html(target_name=url)
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -534,7 +534,7 @@ class Anistar:
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
                 self.params['page'], self.params['search_string'])
 
-        html = self.network.get_html_2(target_name=url, post=post)
+        html = self.network.get_html(target_name=url, post=post)
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -608,7 +608,7 @@ class Anistar:
     def exec_online_part(self):
         if not self.params['param']:
             video_url = '{}test/player2/videoas.php?id={}'.format(self.site_url, self.params['id'])
-            html = self.network.get_html_2(target_name=video_url)
+            html = self.network.get_html(target_name=video_url)
 
             data_array = html[html.find('playlst=[')+9:html.find('];')]
             data_array = data_array.split('{')
@@ -646,7 +646,7 @@ class Anistar:
 
     def exec_torrent_part(self):
         if not self.params['param']:
-            html = self.network.get_html_2('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
+            html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
 
             if not '<div class="title">' in html:
                 self.create_line(title='Контент не обнаружен', params={})
