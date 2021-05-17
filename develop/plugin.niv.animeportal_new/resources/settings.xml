@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+  <category label="НАСТРОЙКИ">
+    <setting id="animeportal_engine" type="enum" label="Плеер" default="2" values="TAM|Elementum|T2Http"/>
+    <setting id="animeportal_tam" type="enum" label="Предпочитаемый TAM-движок"  visible="eq(-1,0)" default="2" values="default|ACE engine|T2Http|YATP|Torrenter|Elementum|XBMCtorrent|ACE proxy|Quasar|TorrServer"/>
+    <setting type="sep" />
+    <setting label="[B]Установить T2HTTP[/B]" type="action" action="InstallAddon(script.module.torrent2http)" />
+    <setting id="animeportal_proxy" label="proxy" type="text" default="" visible="false" />
+    <setting id="animeportal_proxy_time" label="proxy_time" type="text" default="" visible="false" />
+  </category>
+
+  <category label="ANIDUB">
+      <setting label="[B]AniDub[/B] - [COLOR=grey][ Требуется Авторизация ][/COLOR]" id="use_anidub" type="bool" default="false" />
+      <setting id="anidub_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anidub_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="anidub_mirror" label="Зеркало:" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+      <setting type="sep" visible="eq(-4,true)" />
+      <setting id="anidub_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" visible="eq(-5,true)" />
+      <setting id="anidub_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" visible="eq(-6,true)" />
+      <setting type="sep" visible="eq(-7,true)" />
+      <setting id="anidub_unblock" type="bool" label="Разблокировка:" default="false" visible="eq(-8,true)" />
+      <setting id="anidub_session" label="session" type="text" default="" visible="false" />
+      <setting id="anidub_search" label="status" type="text" default="" visible="false" />
+      <setting id="anidub_auth" label="auth" type="bool" default="false" visible="false" />
+  </category>
+  
+    <!-- <category label="ANILIBRIA">
+      <setting label="[B]Anilibria[/B]" id="use_anilibria" type="bool" default="true" />
+      <setting type="sep" visible="eq(-1,true)" />
+      <setting id="anilibria_auth_mode" label="Авторизация:" type="enum" default="0" values="Отключена|Включена" visible="eq(-2,true)"/>
+      <setting id="anilibria_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-3,true)" enable="eq(-1,1)"/>
+      <setting id="anilibria_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-4,true)" enable="eq(-2,1)"/>
+      <setting type="sep" visible="eq(-5,true)" />
+      <setting id="anilibria_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" visible="eq(-6,true)" />
+      <setting id="anilibria_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" visible="eq(-7,true)" />
+      <setting type="sep" visible="eq(-8,true)" />
+      <setting id="anilibria_mirror_mode" label="Зеркало:" type="enum" default="0" values="anilibria.tv|Зеркало-1|Зеркало-2" visible="eq(-9,true)" />
+      <setting id="anilibria_mirror" label="Адрес:" type="text" default="https://www.anilibria.tv/" visible="eq(-10,true)" enable="eq(-1,1)"/>
+      <setting type="sep" visible="eq(-11,true)" />
+      <setting id="anilibria_unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy" visible="eq(-12,true)"/>
+      <setting id="anilibria_session" label="session" type="text" default="" visible="false" />
+      <setting id="anilibria_search" label="status" type="text" default="" visible="false" />
+      <setting id="anilibria_auth" label="auth" type="bool" default="false" visible="false" />
+      <setting id="anilibria_year" label="year" type="text" default="" visible="false" />
+      <setting id="anilibria_genre" label="genre" type="text" default="" visible="false" />
+      <setting id="anilibria_season" label="season" type="text" default="" visible="false" />
+      <setting id="anilibria_sort" label="sort" type="text" default="" visible="false" />
+      <setting id="anilibria_status" label="status" type="text" default="" visible="false" />
+  </category> -->
+  
+      <category label="ANILIBRIA">
+      <setting label="[B]Anilibria[/B]" id="use_anilibria" type="bool" default="true"/>
+      <setting type="sep"/>
+      <setting id="anilibria_auth_mode" label="Авторизация:" type="enum" default="0" values="Отключена|Включена" enable="eq(-2,true)"/>
+      <setting id="anilibria_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
+      <setting id="anilibria_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
+      <setting type="sep"/>
+      <setting id="anilibria_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-6,true)"/>
+      <setting id="anilibria_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-7,true)"/>
+      <setting type="sep"/>
+      <setting id="anilibria_mirror_mode" label="Зеркало:" type="enum" default="2" values="anilibria.tv|Зеркало-1|Зеркало-2" enable="eq(-9,true)"/>
+      <setting id="anilibria_mirror_0" label="Адрес:" type="text" default="https://www.anilibria.tv/" subsetting="true" visible="eq(-1,0)"/>
+      <setting id="anilibria_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
+      <setting id="anilibria_mirror_2" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-3,2)"/>
+      <setting type="sep"/>
+      <setting id="anilibria_unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy" enable="eq(-14,true)"/>
+      <setting id="anilibria_session" label="session" type="text" default="" visible="false" />
+      <setting id="anilibria_search" label="status" type="text" default="" visible="false" />
+      <setting id="anilibria_auth" label="auth" type="bool" default="false" visible="false" />
+      <setting id="anilibria_year" label="year" type="text" default="" visible="false" />
+      <setting id="anilibria_genre" label="genre" type="text" default="" visible="false" />
+      <setting id="anilibria_season" label="season" type="text" default="" visible="false" />
+      <setting id="anilibria_sort" label="sort" type="text" default="" visible="false" />
+      <setting id="anilibria_status" label="status" type="text" default="" visible="false" />
+  </category>
+
+  <category label="ANIMEDIA">
+      <setting label="[B]Animedia[/B]" id="use_animedia" type="bool" default="true" />
+      <setting id="animedia_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="animedia_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="animedia_mirror" label="Зеркало:" type="text" default="https://tt.animedia.tv/" subsetting="true" visible="eq(-3,true)" />
+      <setting type="sep" visible="eq(-4,true)" />
+      <setting id="animedia_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" visible="eq(-5,true)" />
+      <setting id="animedia_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" visible="eq(-6,true)" />
+      <setting type="sep" visible="eq(-7,true)" />
+      <setting id="animedia_unblock" type="bool" label="Разблокировка:" default="true" visible="eq(-8,true)" />
+      <setting id="animedia_session" label="session" type="text" default="" visible="false" />
+      <setting id="animedia_search" label="status" type="text" default="" visible="false" />
+      <setting id="animedia_auth" label="auth" type="bool" default="false" visible="false" />
+      <setting id="animedia_genre" label="genre" type="text" default="" visible="false" />
+      <setting id="animedia_year" label="year" type="text" default="" visible="false" />
+      <setting id="animedia_form" label="form" type="text" default="" visible="false" />
+      <setting id="animedia_status" label="status" type="text" default="" visible="false" />
+      <setting id="animedia_sort" label="sort" type="text" default="Дате добавления" visible="false" />
+      <setting id="animedia_studio" label="studio" type="text" default="" visible="false" />
+      <setting id="animedia_voice" label="studio" type="text" default="" visible="false" />
+  </category>
+
+  <category label="ANISTAR">
+      <setting label="[B]AniStar[/B]" id="use_anistar" type="bool" default="true" />
+      <setting id="anistar_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anistar_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,true)" />
+      <setting id="anistar_mirror" label="Зеркало:" type="text" default="" subsetting="true" visible="eq(-3,true)" />
+      <setting type="sep" visible="eq(-4,true)" />
+      <setting id="anistar_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" visible="eq(-5,true)" />
+      <setting id="anistar_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" visible="eq(-6,true)" />
+      <setting type="sep" visible="eq(-7,true)" />
+      <setting id="anistar_unblock" type="bool" label="Разблокировка:" default="true" visible="eq(-8,true)" />
+      <setting type="sep" visible="eq(-9,true)" />
+      <setting id="anistar_adult" type="bool" label="Контент 18+ :" default="false" visible="eq(-10,true)" />
+      <setting id="anistar_adult_pass" label="Пароль 18+ :" type="text" default="" option="hidden" subsetting="true" visible="eq(-1,true)" />
+      <setting id="anistar_session" label="session" type="text" default="" visible="false" />
+      <setting id="anistar_search" label="status" type="text" default="" visible="false" />
+      <setting id="anistar_auth" label="auth" type="bool" default="false" visible="false" />
+  </category>
+
+</settings>
