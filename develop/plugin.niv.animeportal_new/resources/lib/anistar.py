@@ -21,11 +21,8 @@ import utility
 
 class Anistar:
     addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, proxy_data):
-        
-
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
@@ -39,15 +36,9 @@ class Anistar:
             try: Anistar.addon.setSetting('anistar_adult_pass', '')
             except: pass
 
-        if Anistar.addon.getSetting('anistar_unblock') == 'false':
-            Anistar.addon.setSetting('animeportal_unblock', '0')
-            self.proxy_data = None
-        else:
-            Anistar.addon.setSetting('animeportal_unblock', '1')
-            self.proxy_data = proxy_data
-        
+        self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-        self.auth_mode = bool(Anistar.addon.getSetting("anistar_username"))
+        self.auth_mode = bool(Anistar.addon.getSetting('anistar_auth_mode') == '1')
 #================================================
         try: anistar_session = float(Anistar.addon.getSetting('anistar_session'))
         except: anistar_session = 0
@@ -62,7 +53,7 @@ class Anistar:
         self.network = WebTools(
             auth_usage=self.auth_mode,
             auth_status=bool(Anistar.addon.getSetting('anistar_auth') == 'true'),
-            proxy_data=proxy_data,
+            proxy_data=self.proxy_data,
             portal='anistar')
         self.auth_post_data = {
             'login_name': Anistar.addon.getSetting('anistar_username'),
@@ -94,15 +85,50 @@ class Anistar:
         self.database = Anistar_DB(os.path.join(self.database_dir, 'anistar.db'))
         del Anistar_DB
 #================================================
+    def create_proxy_data(self):
+        if Anistar.addon.getSetting('anistar_unblock') == '0':
+            return None
+
+        try: proxy_time = float(Anistar.addon.getSetting('animeportal_proxy_time'))
+        except: proxy_time = 0
+
+        if time.time() - proxy_time > 86400:
+            Anistar.addon.setSetting('animeportal_proxy_time', str(time.time()))
+            proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+                
+            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            except: pass
+                
+            proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+            Anistar.addon.setSetting('animeportal_proxy', proxy)
+            proxy_data = {'https': proxy}
+        else:
+            if Anistar.addon.getSetting('animeportal_proxy'):
+                proxy_data = {'https': Anistar.addon.getSetting('animeportal_proxy')}
+            else:
+                proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+
+                try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                except: pass
+
+                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+                Anistar.addon.setSetting('animeportal_proxy', proxy)
+                proxy_data = {'https': proxy}
+
+        return proxy_data
+#================================================
     def create_site_url(self):
-        if not Anistar.addon.getSetting('anistar_mirror'):
+        site_url = Anistar.addon.getSetting('anistar_mirror_0')
+        current_mirror = 'anistar_mirror_{}'.format(Anistar.addon.getSetting('anistar_mirror_mode'))        
+
+        if not Anistar.addon.getSetting(current_mirror):
             try:
                 self.exec_mirror_part()
                 site_url = '{}'.format(Anistar.addon.getSetting('anistar_mirror'))
             except:
-                site_url = "https://anistar.org/"
+                site_url = Anistar.addon.getSetting('anistar_mirror_0')
         else:
-            site_url = '{}'.format(Anistar.addon.getSetting('anistar_mirror'))
+            site_url = '{}'.format(Anistar.addon.getSetting(current_mirror))
         return site_url
 
     def create_title_info(self, title):
@@ -156,7 +182,8 @@ class Anistar:
         if Anistar.addon.getSetting('anistar_covers') == '0':
             return url
         else:
-            local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
+            #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
+            local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
             if local_img in os.listdir(self.images_dir):
                 local_path = os.path.join(self.images_dir, local_img)
                 return local_path
@@ -314,19 +341,24 @@ class Anistar:
         self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=self.proxy_data)
         del WebTools
 
+        current_mirror = 'anistar_mirror_{}'.format(Anistar.addon.getSetting('anistar_mirror_mode'))
+        site_url = Anistar.addon.getSetting('anistar_mirror_0')
+
         try:            
-            ht = self.net.get_html_2(target_name='https://anistar.org/')
+            #ht = self.net.get_html(target_name='https://anistar.org/')
+            ht = self.net.get_html(target_name=site_url)
             actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
             actual_url = utility.tag_list(actual_url).lower()
             actual_url = 'https://{}/'.format(actual_url)
-            Anistar.addon.setSetting('anistar_unblock', 'false')
+            Anistar.addon.setSetting('anistar_unblock', '0')
             self.dialog.ok('AniStar', '[COLOR=lime]Выполнено[/COLOR]: Применяем новый адрес:\n[COLOR=blue]{}[/COLOR], Отключаем разблокировку'.format(actual_url))            
         except:
-            actual_url = 'https://anistar.org/'
-            Anistar.addon.setSetting('anistar_unblock', 'true')
+            #actual_url = 'https://anistar.org/'
+            actual_url = site_url
+            Anistar.addon.setSetting('anistar_unblock', '1')
             self.dialog.ok('AniStar', '[COLOR=red]Ошибка[/COLOR]: Применяем базовый адрес:\n[COLOR=blue]{}[/COLOR], Включаем разблокировку'.format(actual_url))
 
-        Anistar.addon.setSetting('anistar_mirror', actual_url)
+        Anistar.addon.setSetting(current_mirror, actual_url)
 
     def exec_favorites_part(self):
         url = '{}engine/ajax/favorites.php?fav_id={}&action={}&skin=new36'.format(self.site_url, self.params['id'], self.params['node'])

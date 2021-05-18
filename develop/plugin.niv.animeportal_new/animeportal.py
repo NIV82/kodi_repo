@@ -64,10 +64,9 @@ class AnimePortal:
         for a in args:
             self.params[a] = unquote(args[a])
 
-        if not os.path.isfile(os.path.join(self.addon_data_dir, 'settings.xml')):
-            AnimePortal.addon.setSetting('animeportal_engine', '2')
-
-        #self.proxy_data = self.create_proxy_data()
+        if not AnimePortal.addon.getSetting('animeportal_proxy'):
+            AnimePortal.addon.setSetting('animeportal_proxy', '')
+            AnimePortal.addon.setSetting('animeportal_proxy_time', '')
 
     def create_line(self, title=None, params=None, folder=True):
         from info import animeportal_plot
@@ -104,68 +103,40 @@ class AnimePortal:
 
             if 'anidub' in self.params['portal']:
                 from anidub import Anidub
-                self.anidub = Anidub(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
+                self.anidub = Anidub(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params)
                 self.anidub.execute()
                 del Anidub
             
             if 'anistar' in self.params['portal']:
                 from anistar import Anistar
-                self.anistar = Anistar(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
+                self.anistar = Anistar(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params)
                 self.anistar.execute()
                 del Anistar
             
             if 'animedia' in self.params['portal']:
                 from animedia import Animedia
-                self.animedia = Animedia(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params, self.proxy_data)
+                self.animedia = Animedia(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params)
                 self.animedia.execute()
                 del Animedia
-
-    # def create_proxy_data(self):
-    #     try: proxy_time = float(AnimePortal.addon.getSetting('animeportal_proxy_time'))
-    #     except: proxy_time = 0
-
-    #     if time.time() - proxy_time > 86400:
-    #         AnimePortal.addon.setSetting('animeportal_proxy_time', str(time.time()))
-    #         proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-                
-    #         try: proxy_pac = str(proxy_pac, encoding='utf-8')
-    #         except: pass
-                
-    #         proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #         AnimePortal.addon.setSetting('animeportal_proxy', proxy)
-    #         proxy_data = {'https': proxy}
-    #     else:
-    #         if AnimePortal.addon.getSetting('animeportal_proxy'):
-    #             proxy_data = {'https': AnimePortal.addon.getSetting('animeportal_proxy')}
-    #         else:
-    #             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-    #             try: proxy_pac = str(proxy_pac, encoding='utf-8')
-    #             except: pass
-
-    #             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #             AnimePortal.addon.setSetting('animeportal_proxy', proxy)
-    #             proxy_data = {'https': proxy}
-
-    #     return proxy_data
 
     def play_part(self):
         url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
         index = int(self.params['index'])
+        portal_engine = '{}_engine'.format(self.params['portal'])
 
-        if AnimePortal.addon.getSetting("animeportal_engine") == '0':
+        if AnimePortal.addon.getSetting(portal_engine) == '0':
             tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
-            engine = tam_engine[int(AnimePortal.addon.getSetting("animeportal_tam"))]            
+            engine = tam_engine[int(AnimePortal.addon.getSetting('{}_tam'.format(self.params['portal'])))]
             purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
-        if AnimePortal.addon.getSetting("animeportal_engine") == '1':
+        if AnimePortal.addon.getSetting(portal_engine) == '1':
             purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
         
-        if AnimePortal.addon.getSetting("animeportal_engine") == '2':
+        if AnimePortal.addon.getSetting(portal_engine) == '2':
             url = 'file:///{}'.format(url.replace('\\','/'))
 
             import player

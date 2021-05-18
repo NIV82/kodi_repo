@@ -34,7 +34,7 @@ class Anilibria:
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-        self.auth_mode = bool(Anilibria.addon.getSetting("anilibria_auth_mode") == '1')
+        self.auth_mode = bool(Anilibria.addon.getSetting('anilibria_auth_mode') == '1')
 #================================================
         try: anilibria_session = float(Anilibria.addon.getSetting('anilibria_session'))
         except: anilibria_session = 0
@@ -114,8 +114,8 @@ class Anilibria:
         return proxy_data
 #================================================
     def create_site_url(self):
-        current_mirror = 'anilibria_mirror_{}'.format(Anilibria.addon.getSetting('anilibria_mirror_mode'))
         site_url = Anilibria.addon.getSetting('anilibria_mirror_0')
+        current_mirror = 'anilibria_mirror_{}'.format(Anilibria.addon.getSetting('anilibria_mirror_mode'))        
 
         if not Anilibria.addon.getSetting(current_mirror):
             try:

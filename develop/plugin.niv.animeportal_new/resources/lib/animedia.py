@@ -21,9 +21,8 @@ import utility
 
 class Animedia:
     addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, proxy_data):
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
@@ -33,15 +32,9 @@ class Animedia:
         self.cookie_dir = cookie_dir
         self.params = params
 
-        if Animedia.addon.getSetting('animedia_unblock') == 'false':
-            Animedia.addon.setSetting('animeportal_unblock', '0')
-            self.proxy_data = None
-        else:
-            Animedia.addon.setSetting('animeportal_unblock', '1')
-            self.proxy_data = proxy_data
-
-        self.site_url = Animedia.addon.getSetting('animedia_mirror')
-        self.auth_mode = bool(Animedia.addon.getSetting('animedia_username'))
+        self.proxy_data = self.create_proxy_data()
+        self.site_url = self.create_site_url()
+        self.auth_mode = bool(Animedia.addon.getSetting('animedia') == '1')
 #================================================
         try: animedia_session = float(Animedia.addon.getSetting('animedia_session'))
         except: animedia_session = 0
@@ -55,7 +48,7 @@ class Animedia:
         from network import WebTools
         self.network = WebTools(auth_usage=self.auth_mode,
                                 auth_status=bool(Animedia.addon.getSetting('animedia_auth') == 'true'),
-                                proxy_data=proxy_data,
+                                proxy_data=self.proxy_data,
                                 portal='animedia')
         self.network.sid_file = os.path.join(self.cookie_dir, 'animedia.sid' )
         self.auth_post_data = {
@@ -87,6 +80,49 @@ class Animedia:
         self.database = Animedia_DB(os.path.join(self.database_dir, 'animedia.db'))
         del Animedia_DB
 #================================================
+    def create_proxy_data(self):
+        if Animedia.addon.getSetting('animedia_unblock') == '0':
+            return None
+
+        try: proxy_time = float(Animedia.addon.getSetting('animeportal_proxy_time'))
+        except: proxy_time = 0
+
+        if time.time() - proxy_time > 86400:
+            Animedia.addon.setSetting('animeportal_proxy_time', str(time.time()))
+            proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+                
+            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            except: pass
+                
+            proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+            Animedia.addon.setSetting('animeportal_proxy', proxy)
+            proxy_data = {'https': proxy}
+        else:
+            if Animedia.addon.getSetting('animeportal_proxy'):
+                proxy_data = {'https': Animedia.addon.getSetting('animeportal_proxy')}
+            else:
+                proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+
+                try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                except: pass
+
+                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+                Animedia.addon.setSetting('animeportal_proxy', proxy)
+                proxy_data = {'https': proxy}
+
+        return proxy_data
+#================================================
+    def create_site_url(self):
+        site_url = Animedia.addon.getSetting('animedia_mirror_0')
+        #current_mirror = 'animedia_mirror_{}'.format(Animedia.addon.getSetting('animedia_mirror_mode'))
+
+        # if not Animedia.addon.getSetting(current_mirror):
+        #     pass
+        # else:
+        #     site_url = Animedia.addon.getSetting(current_mirror)
+
+        return site_url
+#================================================
     def create_title(self, anime_id, series):
         title = self.database.get_title(anime_id)
 
@@ -114,7 +150,8 @@ class Animedia:
         if Animedia.addon.getSetting('animedia_covers') == '0':
             return url
         else:
-            local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
+            #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
+            local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
 
             if local_img in os.listdir(self.images_dir):
                 local_path = os.path.join(self.images_dir, local_img)
@@ -157,7 +194,7 @@ class Animedia:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
     def create_info(self, anime_id):
-        url = 'https://tt.animedia.tv/anime/{}'.format(anime_id)
+        url = '{}anime/{}'.format(self.site_url, anime_id)
 
         html = self.network.get_html(target_name=url)
 
@@ -297,14 +334,13 @@ class Animedia:
     def exec_common_part(self, url=None):
         self.progress.create("Animedia", "Инициализация")
 
-        #url = 'https://tt.animedia.tv/P{}'.format(self.params['page'])
-        url = 'https://tt.animedia.tv/P{}'.format(int(self.params['page'])-1)
+        url = '{}P{}'.format(self.site_url, int(self.params['page'])-1)
 
         if self.params['param'] == 'search_part':
-            url = 'https://tt.animedia.tv/ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.params['search_string'])
+            url = '{}ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.site_url, self.params['search_string'])
 
         if self.params['param'] == 'popular':
-            url = 'https://tt.animedia.tv/ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'
+            url = '{}ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'.format(self.site_url)
 
         if self.params['param'] == 'catalog':
             genre = '&category={}'.format(info.animedia_genre[Animedia.addon.getSetting('animedia_genre')]) if info.animedia_genre[Animedia.addon.getSetting('animedia_genre')] else ''
@@ -315,7 +351,7 @@ class Animedia:
             form = '&search:type={}'.format(quote(info.animedia_form[Animedia.addon.getSetting('animedia_form')])) if info.animedia_form[Animedia.addon.getSetting('animedia_form')] else ''
             ongoing = '&search:ongoing={}'.format(info.animedia_status[Animedia.addon.getSetting('animedia_status')]) if info.animedia_status[Animedia.addon.getSetting('animedia_status')] else ''
 
-            url = 'https://tt.animedia.tv/ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(genre, voice, studio, year, form, ongoing, sort)
+            url = '{}ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(self.site_url, genre, voice, studio, year, form, ongoing, sort)
 
         html = self.network.get_html(target_name=url)
         
@@ -427,7 +463,7 @@ class Animedia:
         return
 
     def exec_select_part(self):
-        html = self.network.get_html(target_name='https://tt.animedia.tv/anime/{}'.format(self.params['id']))
+        html = self.network.get_html(target_name='{}anime/{}'.format(self.site_url, self.params['id']))
 
         ex_info = dict.fromkeys(['series', 'quality', 'size', 'container', 'video', 'audio', 'translate', 'timing'], '')
 
