@@ -7,7 +7,7 @@ import time
 import xbmc
 import xbmcgui
 import xbmcplugin
-import xbmcaddon
+#import xbmcaddon
 #import xbmcvfs
 
 from urllib.parse import urlencode
@@ -19,13 +19,11 @@ from html import unescape
 import info
 import utility
 
-class Anidub:
-    addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-        
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params):
+class Anidub:        
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
-
+        self.addon = addon
         self.images_dir = images_dir
         self.torrents_dir = torrents_dir
         self.database_dir = database_dir
@@ -34,25 +32,25 @@ class Anidub:
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-        self.auth_mode = bool(Anidub.addon.getSetting('anidub_auth_mode') == '1')
+        self.auth_mode = bool(self.addon.getSetting('anidub_auth_mode') == '1')
 #================================================
-        try: anidub_session = float(Anidub.addon.getSetting('anidub_session'))
+        try: anidub_session = float(self.addon.getSetting('anidub_session'))
         except: anidub_session = 0
 
         if time.time() - anidub_session > 28800:
-            Anidub.addon.setSetting('anidub_session', str(time.time()))
+            self.addon.setSetting('anidub_session', str(time.time()))
             try: os.remove(os.path.join(self.cookie_dir, 'anidub.sid'))
             except: pass
-            Anidub.addon.setSetting('anidub_auth', 'false')
+            self.addon.setSetting('anidub_auth', 'false')
 #================================================
         from network import WebTools
         self.network = WebTools(
             auth_usage=self.auth_mode,
-            auth_status=bool(Anidub.addon.getSetting('anidub_auth') == 'true'),
+            auth_status=bool(self.addon.getSetting('anidub_auth') == 'true'),
             proxy_data=self.proxy_data, portal='anidub')
         self.auth_post_data = {
-            'login_name': Anidub.addon.getSetting('anidub_username'),
-            'login_password': Anidub.addon.getSetting('anidub_password'),
+            'login_name': self.addon.getSetting('anidub_username'),
+            'login_password': self.addon.getSetting('anidub_password'),
             'login': 'submit'}
         self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_url = self.site_url
@@ -60,7 +58,7 @@ class Anidub:
         del WebTools
 #================================================
         if self.auth_mode:
-            if not Anidub.addon.getSetting("anidub_username") or not Anidub.addon.getSetting("anidub_password"):
+            if not self.addon.getSetting("anidub_username") or not self.addon.getSetting("anidub_password"):
                 self.params['mode'] = 'addon_setting'
                 self.dialog.ok('Авторизация','Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                 return
@@ -71,7 +69,7 @@ class Anidub:
                     self.dialog.ok('Авторизация','Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                     return
                 else:
-                    Anidub.addon.setSetting("anidub_auth", str(self.network.auth_status).lower())
+                    self.addon.setSetting("anidub_auth", str(self.network.auth_status).lower())
 #================================================
         if not os.path.isfile(os.path.join(self.database_dir, 'anidub.db')):
             self.exec_update_part()
@@ -81,25 +79,25 @@ class Anidub:
         del Anidub_DB
 #================================================
     def create_proxy_data(self):
-        if Anidub.addon.getSetting('anidub_unblock') == '0':
+        if self.addon.getSetting('anidub_unblock') == '0':
             return None
 
-        try: proxy_time = float(Anidub.addon.getSetting('animeportal_proxy_time'))
+        try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
         except: proxy_time = 0
 
         if time.time() - proxy_time > 86400:
-            Anidub.addon.setSetting('animeportal_proxy_time', str(time.time()))
+            self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
             try: proxy_pac = str(proxy_pac, encoding='utf-8')
             except: pass
                 
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-            Anidub.addon.setSetting('animeportal_proxy', proxy)
+            self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
         else:
-            if Anidub.addon.getSetting('animeportal_proxy'):
-                proxy_data = {'https': Anidub.addon.getSetting('animeportal_proxy')}
+            if self.addon.getSetting('animeportal_proxy'):
+                proxy_data = {'https': self.addon.getSetting('animeportal_proxy')}
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
@@ -107,18 +105,18 @@ class Anidub:
                 except: pass
 
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                Anidub.addon.setSetting('animeportal_proxy', proxy)
+                self.addon.setSetting('animeportal_proxy', proxy)
                 proxy_data = {'https': proxy}
 
         return proxy_data
 #================================================
     def create_site_url(self):
-        current_mirror = 'anidub_mirror_{}'.format(Anidub.addon.getSetting('anidub_mirror_mode'))
+        current_mirror = 'anidub_mirror_{}'.format(self.addon.getSetting('anidub_mirror_mode'))
 
-        if not Anidub.addon.getSetting(current_mirror):
-            site_url = Anidub.addon.getSetting('anidub_mirror_0')
+        if not self.addon.getSetting(current_mirror):
+            site_url = self.addon.getSetting('anidub_mirror_0')
         else:
-            site_url = Anidub.addon.getSetting(current_mirror)
+            site_url = self.addon.getSetting(current_mirror)
 
         return site_url
 #================================================
@@ -167,11 +165,11 @@ class Anidub:
         else:
             series = ''
        
-        if Anidub.addon.getSetting('anidub_titles') == '0':
+        if self.addon.getSetting('anidub_titles') == '0':
             label = '{}{}'.format(title[0], series)
-        if Anidub.addon.getSetting('anidub_titles') == '1':
+        if self.addon.getSetting('anidub_titles') == '1':
             label = '{}{}'.format(title[1], series)
-        if Anidub.addon.getSetting('anidub_titles') == '2':
+        if self.addon.getSetting('anidub_titles') == '2':
             label = '{} / {}{}'.format(title[0], title[1], series)
 
         return label
@@ -179,7 +177,7 @@ class Anidub:
     def create_image(self, anime_id):
         url = '{}'.format(self.database.get_cover(anime_id))
 
-        if Anidub.addon.getSetting('anidub_covers') == '0':
+        if self.addon.getSetting('anidub_covers') == '0':
             return url
         else:
             #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
@@ -292,7 +290,7 @@ class Anidub:
         except: pass
 
     def exec_addon_setting(self):
-        Anidub.addon.openSettings()
+        self.addon.openSettings()
 
     def exec_update_part(self):
         try: self.database.end()
@@ -348,7 +346,7 @@ class Anidub:
         
     def exec_clean_part(self):
         try:
-            Anidub.addon.setSetting('anidub_search', '')
+            self.addon.setSetting('anidub_search', '')
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
         except:
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
@@ -388,8 +386,8 @@ class Anidub:
             return
     
     def exec_search_part(self):
-        if not Anidub.addon.getSetting('anidub_search'):
-            Anidub.addon.setSetting('anidub_search', '')
+        if not self.addon.getSetting('anidub_search'):
+            self.addon.setSetting('anidub_search', '')
 
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
@@ -397,7 +395,7 @@ class Anidub:
             self.create_line(title='[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
             self.create_line(title='[B][COLOR=red][ Поиск по алфавиту ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
 
-            data_array = Anidub.addon.getSetting('anidub_search').split('|')
+            data_array = self.addon.getSetting('anidub_search').split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -411,11 +409,11 @@ class Anidub:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
-                data_array = Anidub.addon.getSetting('anidub_search').split('|')                    
+                data_array = self.addon.getSetting('anidub_search').split('|')                    
                 while len(data_array) >= 10:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
-                Anidub.addon.setSetting('anidub_search', data_array)
+                self.addon.setSetting('anidub_search', data_array)
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
             else:

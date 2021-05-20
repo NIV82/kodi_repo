@@ -7,7 +7,7 @@ import time
 import xbmc
 import xbmcgui
 import xbmcplugin
-import xbmcaddon
+#import xbmcaddon
 #import xbmcvfs
 
 from urllib.parse import urlencode
@@ -20,12 +20,10 @@ import info
 import utility
 
 class Animedia:
-    addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params):
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
-
+        self.addon = addon
         self.images_dir = images_dir
         self.torrents_dir = torrents_dir
         self.database_dir = database_dir
@@ -34,33 +32,33 @@ class Animedia:
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-        self.auth_mode = bool(Animedia.addon.getSetting('animedia_auth_mode') == '1')
+        self.auth_mode = bool(self.addon.getSetting('animedia_auth_mode') == '1')
 #================================================
-        try: animedia_session = float(Animedia.addon.getSetting('animedia_session'))
+        try: animedia_session = float(self.addon.getSetting('animedia_session'))
         except: animedia_session = 0
 
         if time.time() - animedia_session > 28800:
-            Animedia.addon.setSetting('animedia_session', str(time.time()))
+            self.addon.setSetting('animedia_session', str(time.time()))
             try: os.remove(os.path.join(self.cookie_dir, 'animedia.sid'))
             except: pass
-            Animedia.addon.setSetting('animedia_auth', 'false')
+            self.addon.setSetting('animedia_auth', 'false')
 #================================================
         from network import WebTools
         self.network = WebTools(auth_usage=self.auth_mode,
-                                auth_status=bool(Animedia.addon.getSetting('animedia_auth') == 'true'),
+                                auth_status=bool(self.addon.getSetting('animedia_auth') == 'true'),
                                 proxy_data=self.proxy_data,
                                 portal='animedia')
         self.network.sid_file = os.path.join(self.cookie_dir, 'animedia.sid' )
         self.auth_post_data = {
             'ACT': '14', 'RET': '/', 'site_id': '4',
-            'username': Animedia.addon.getSetting('animedia_username'),
-            'password': Animedia.addon.getSetting('animedia_password')}
+            'username': self.addon.getSetting('animedia_username'),
+            'password': self.addon.getSetting('animedia_password')}
         self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_url = self.site_url
         del WebTools
 #================================================
         if self.auth_mode:
-            if not Animedia.addon.getSetting("animedia_username") or not Animedia.addon.getSetting("animedia_password"):
+            if not self.addon.getSetting("animedia_username") or not self.addon.getSetting("animedia_password"):
                 self.params['mode'] = 'addon_setting'
                 self.dialog.ok('Авторизация','Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                 return
@@ -71,7 +69,7 @@ class Animedia:
                     self.dialog.ok('Авторизация','Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                     return
                 else:
-                    Animedia.addon.setSetting("animedia_auth", str(self.network.auth_status).lower())
+                    self.addon.setSetting("animedia_auth", str(self.network.auth_status).lower())
 #================================================
         if not os.path.isfile(os.path.join(self.database_dir, 'animedia.db')):
             self.exec_update_part()
@@ -81,25 +79,25 @@ class Animedia:
         del Animedia_DB
 #================================================
     def create_proxy_data(self):
-        if Animedia.addon.getSetting('animedia_unblock') == '0':
+        if self.addon.getSetting('animedia_unblock') == '0':
             return None
 
-        try: proxy_time = float(Animedia.addon.getSetting('animeportal_proxy_time'))
+        try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
         except: proxy_time = 0
 
         if time.time() - proxy_time > 86400:
-            Animedia.addon.setSetting('animeportal_proxy_time', str(time.time()))
+            self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
             try: proxy_pac = str(proxy_pac, encoding='utf-8')
             except: pass
                 
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-            Animedia.addon.setSetting('animeportal_proxy', proxy)
+            self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
         else:
-            if Animedia.addon.getSetting('animeportal_proxy'):
-                proxy_data = {'https': Animedia.addon.getSetting('animeportal_proxy')}
+            if self.addon.getSetting('animeportal_proxy'):
+                proxy_data = {'https': self.addon.getSetting('animeportal_proxy')}
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
@@ -107,19 +105,19 @@ class Animedia:
                 except: pass
 
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                Animedia.addon.setSetting('animeportal_proxy', proxy)
+                self.addon.setSetting('animeportal_proxy', proxy)
                 proxy_data = {'https': proxy}
 
         return proxy_data
 #================================================
     def create_site_url(self):
-        site_url = Animedia.addon.getSetting('animedia_mirror_0')
-        #current_mirror = 'animedia_mirror_{}'.format(Animedia.addon.getSetting('animedia_mirror_mode'))
+        site_url = self.addon.getSetting('animedia_mirror_0')
+        #current_mirror = 'animedia_mirror_{}'.format(self.addon.getSetting('animedia_mirror_mode'))
 
-        # if not Animedia.addon.getSetting(current_mirror):
+        # if not self.addon.getSetting(current_mirror):
         #     pass
         # else:
-        #     site_url = Animedia.addon.getSetting(current_mirror)
+        #     site_url = self.addon.getSetting(current_mirror)
 
         return site_url
 #================================================
@@ -133,11 +131,11 @@ class Animedia:
         else:
             series = ''
        
-        if Animedia.addon.getSetting('animedia_titles') == '0':
+        if self.addon.getSetting('animedia_titles') == '0':
             label = '{}{}'.format(title[0], series)
-        if Animedia.addon.getSetting('animedia_titles') == '1':
+        if self.addon.getSetting('animedia_titles') == '1':
             label = '{}{}'.format(title[1], series)
-        if Animedia.addon.getSetting('animedia_titles') == '2':
+        if self.addon.getSetting('animedia_titles') == '2':
             label = '{} / {}{}'.format(title[0], title[1], series)
 
         return label
@@ -147,7 +145,7 @@ class Animedia:
 ###========================================================  quote(cover[0])
         url = 'https://static.animedia.tv/uploads/{}'.format(quote(cover[0]))
 
-        if Animedia.addon.getSetting('animedia_covers') == '0':
+        if self.addon.getSetting('animedia_covers') == '0':
             return url
         else:
             #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
@@ -247,7 +245,7 @@ class Animedia:
         except: pass
 
     def exec_addon_setting(self):
-        Animedia.addon.openSettings()
+        self.addon.openSettings()
 
     def exec_update_part(self):
         try: self.database.end()
@@ -284,7 +282,7 @@ class Animedia:
 
     def exec_clean_part(self):
         try:
-            Animedia.addon.setSetting('animedia_search', '')
+            self.addon.setSetting('animedia_search', '')
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
         except:
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
@@ -299,13 +297,13 @@ class Animedia:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
     
     def exec_search_part(self):
-        # if not Animedia.addon.getSetting('animedia_search'):
-        #     Animedia.addon.setSetting('animedia_search', '')
+        # if not self.addon.getSetting('animedia_search'):
+        #     self.addon.setSetting('animedia_search', '')
 
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
 
-            data_array = Animedia.addon.getSetting('animedia_search').split('|')
+            data_array = self.addon.getSetting('animedia_search').split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -319,11 +317,11 @@ class Animedia:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
-                data_array = Animedia.addon.getSetting('animedia_search').split('|')                    
+                data_array = self.addon.getSetting('animedia_search').split('|')                    
                 while len(data_array) >= 10:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
-                Animedia.addon.setSetting('animedia_search', data_array)
+                self.addon.setSetting('animedia_search', data_array)
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
             else:
@@ -343,13 +341,13 @@ class Animedia:
             url = '{}ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'.format(self.site_url)
 
         if self.params['param'] == 'catalog':
-            genre = '&category={}'.format(info.animedia_genre[Animedia.addon.getSetting('animedia_genre')]) if info.animedia_genre[Animedia.addon.getSetting('animedia_genre')] else ''
-            voice = '&search:voiced={}'.format(quote(Animedia.addon.getSetting('animedia_voice'))) if Animedia.addon.getSetting('animedia_voice') else ''
-            studio = '&search:studies={}'.format(quote(Animedia.addon.getSetting('animedia_studio'))) if Animedia.addon.getSetting('animedia_studio') else ''
-            sort = '&orderby_sort={}'.format(info.animedia_sort[Animedia.addon.getSetting('animedia_sort')]) if info.animedia_sort[Animedia.addon.getSetting('animedia_sort')] else ''
-            year = '&search:datetime={}'.format(info.animedia_year[Animedia.addon.getSetting('animedia_year')]) if info.animedia_year[Animedia.addon.getSetting('animedia_year')] else ''
-            form = '&search:type={}'.format(quote(info.animedia_form[Animedia.addon.getSetting('animedia_form')])) if info.animedia_form[Animedia.addon.getSetting('animedia_form')] else ''
-            ongoing = '&search:ongoing={}'.format(info.animedia_status[Animedia.addon.getSetting('animedia_status')]) if info.animedia_status[Animedia.addon.getSetting('animedia_status')] else ''
+            genre = '&category={}'.format(info.animedia_genre[self.addon.getSetting('animedia_genre')]) if info.animedia_genre[self.addon.getSetting('animedia_genre')] else ''
+            voice = '&search:voiced={}'.format(quote(self.addon.getSetting('animedia_voice'))) if self.addon.getSetting('animedia_voice') else ''
+            studio = '&search:studies={}'.format(quote(self.addon.getSetting('animedia_studio'))) if self.addon.getSetting('animedia_studio') else ''
+            sort = '&orderby_sort={}'.format(info.animedia_sort[self.addon.getSetting('animedia_sort')]) if info.animedia_sort[self.addon.getSetting('animedia_sort')] else ''
+            year = '&search:datetime={}'.format(info.animedia_year[self.addon.getSetting('animedia_year')]) if info.animedia_year[self.addon.getSetting('animedia_year')] else ''
+            form = '&search:type={}'.format(quote(info.animedia_form[self.addon.getSetting('animedia_form')])) if info.animedia_form[self.addon.getSetting('animedia_form')] else ''
+            ongoing = '&search:ongoing={}'.format(info.animedia_status[self.addon.getSetting('animedia_status')]) if info.animedia_status[self.addon.getSetting('animedia_status')] else ''
 
             url = '{}ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(self.site_url, genre, voice, studio, year, form, ongoing, sort)
 
@@ -402,47 +400,47 @@ class Animedia:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_catalog_part(self):
-        # if Animedia.addon.getSetting('animedia_sort') == '':
-        #     Animedia.addon.setSetting(id='animedia_sort', value='Дате добавления')
+        # if self.addon.getSetting('animedia_sort') == '':
+        #     self.addon.setSetting(id='animedia_sort', value='Дате добавления')
 
         if self.params['param'] == '':
-            self.create_line(title='Форма выпуска: [COLOR=yellow]{}[/COLOR]'.format(Animedia.addon.getSetting('animedia_form')), params={'mode': 'catalog_part', 'param': 'form'})
-            self.create_line(title='Жанр аниме: [COLOR=yellow]{}[/COLOR]'.format(Animedia.addon.getSetting('animedia_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
-            self.create_line(title='Озвучивал: [COLOR=yellow]{}[/COLOR]'.format(Animedia.addon.getSetting('animedia_voice')), params={'mode': 'catalog_part', 'param': 'voice'})
-            self.create_line(title='Студия: [COLOR=yellow]{}[/COLOR]'.format(Animedia.addon.getSetting('animedia_studio')), params={'mode': 'catalog_part', 'param': 'studio'})
-            self.create_line(title='Год выпуска: [COLOR=yellow]{}[/COLOR]'.format(Animedia.addon.getSetting('animedia_year')), params={'mode': 'catalog_part', 'param': 'year'})
-            self.create_line(title='Статус раздачи: [COLOR=yellow]{}[/COLOR]'.format(Animedia.addon.getSetting('animedia_status')), params={'mode': 'catalog_part', 'param': 'status'})
-            self.create_line(title='Сортировка по: [COLOR=yellow]{}[/COLOR]'.format(Animedia.addon.getSetting('animedia_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
+            self.create_line(title='Форма выпуска: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_form')), params={'mode': 'catalog_part', 'param': 'form'})
+            self.create_line(title='Жанр аниме: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
+            self.create_line(title='Озвучивал: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_voice')), params={'mode': 'catalog_part', 'param': 'voice'})
+            self.create_line(title='Студия: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_studio')), params={'mode': 'catalog_part', 'param': 'studio'})
+            self.create_line(title='Год выпуска: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_year')), params={'mode': 'catalog_part', 'param': 'year'})
+            self.create_line(title='Статус раздачи: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_status')), params={'mode': 'catalog_part', 'param': 'status'})
+            self.create_line(title='Сортировка по: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
             self.create_line(title='[COLOR=yellow][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         
         if self.params['param'] == 'form':
             result = self.dialog.select('Выберите Тип:', tuple(info.animedia_form.keys()))
-            Animedia.addon.setSetting(id='animedia_form', value=tuple(info.animedia_form.keys())[result])
+            self.addon.setSetting(id='animedia_form', value=tuple(info.animedia_form.keys())[result])
         
         if self.params['param'] == 'genre':
             result = self.dialog.select('Выберите Жанр:', tuple(info.animedia_genre.keys()))
-            Animedia.addon.setSetting(id='animedia_genre', value=tuple(info.animedia_genre.keys())[result])
+            self.addon.setSetting(id='animedia_genre', value=tuple(info.animedia_genre.keys())[result])
 
         if self.params['param'] == 'voice':
             result = self.dialog.select('Выберите Войсера:', info.animedia_voice)
-            Animedia.addon.setSetting(id='animedia_voice', value=info.animedia_voice[result])
+            self.addon.setSetting(id='animedia_voice', value=info.animedia_voice[result])
 
         if self.params['param'] == 'studio':
             result = self.dialog.select('Выберите Студию:', info.animedia_studio)
-            Animedia.addon.setSetting(id='animedia_studio', value=info.animedia_studio[result])
+            self.addon.setSetting(id='animedia_studio', value=info.animedia_studio[result])
 
         if self.params['param'] == 'year':
             result = self.dialog.select('Выберите Год:', tuple(info.animedia_year.keys()))
-            Animedia.addon.setSetting(id='animedia_year', value=tuple(info.animedia_year.keys())[result])
+            self.addon.setSetting(id='animedia_year', value=tuple(info.animedia_year.keys())[result])
         
         if self.params['param'] == 'status':
             result = self.dialog.select('Выберите статус:', tuple(info.animedia_status.keys()))
-            Animedia.addon.setSetting(id='animedia_status', value=tuple(info.animedia_status.keys())[result])
+            self.addon.setSetting(id='animedia_status', value=tuple(info.animedia_status.keys())[result])
         
         if self.params['param'] == 'sort':
             result = self.dialog.select('Сортировать по:', tuple(info.animedia_sort.keys()))
-            Animedia.addon.setSetting(id='animedia_sort', value=tuple(info.animedia_sort.keys())[result])
+            self.addon.setSetting(id='animedia_sort', value=tuple(info.animedia_sort.keys())[result])
 
     def exec_information_part(self):
         if self.params['param'] == '':

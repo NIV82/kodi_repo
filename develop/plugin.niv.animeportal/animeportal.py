@@ -14,137 +14,129 @@ import xbmcvfs
 from urllib.parse import urlencode
 from urllib.parse import quote
 from urllib.parse import unquote
-from urllib.request import urlopen
+#from urllib.request import urlopen
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
 from utility import get_params
 
-class AnimePortal:
-    addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
+xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
+fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
 
-    def __init__(self):
-        self.icon = xbmcvfs.translatePath(AnimePortal.addon.getAddonInfo('icon'))
-        self.fanart = xbmcvfs.translatePath(AnimePortal.addon.getAddonInfo('fanart'))
+addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+if not os.path.exists(addon_data_dir):
+    os.makedirs(addon_data_dir)
 
-        self.progress = xbmcgui.DialogProgress()
-        self.dialog = xbmcgui.Dialog()
+images_dir = os.path.join(addon_data_dir, 'images')
+if not os.path.exists(images_dir):
+    os.mkdir(images_dir)
 
-        self.addon_data_dir = xbmcvfs.translatePath(AnimePortal.addon.getAddonInfo('profile'))
-        if not os.path.exists(self.addon_data_dir):
-            os.makedirs(self.addon_data_dir)
+torrents_dir = os.path.join(addon_data_dir, 'torrents')
+if not os.path.exists(torrents_dir):
+    os.mkdir(torrents_dir)
 
-        self.images_dir = os.path.join(self.addon_data_dir, 'images')
-        if not os.path.exists(self.images_dir):
-            os.mkdir(self.images_dir)
+database_dir = os.path.join(addon_data_dir, 'database')
+if not os.path.exists(database_dir):
+    os.mkdir(database_dir)
 
-        self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
-        if not os.path.exists(self.torrents_dir):
-            os.mkdir(self.torrents_dir)
+cookie_dir = os.path.join(addon_data_dir, 'cookie')
+if not os.path.exists(cookie_dir):
+    os.mkdir(cookie_dir)
 
-        self.database_dir = os.path.join(self.addon_data_dir, 'database')
-        if not os.path.exists(self.database_dir):
-            os.mkdir(self.database_dir)
+params = {
+    'mode': 'main_part',
+    'param': '',
+    'page': '1',
+    'sort':'',
+    'node': '',
+    'portal': 'animeportal'
+    }
 
-        self.cookie_dir = os.path.join(self.addon_data_dir, 'cookie')
-        if not os.path.exists(self.cookie_dir):
-            os.mkdir(self.cookie_dir)
+args = get_params()
+for a in args:
+    params[a] = unquote(args[a])
 
-        self.params = {
-            'mode': 'main_part',
-            'param': '',
-            'page': '1',
-            'sort':'',
-            'node': '',
-            'portal': 'animeportal'
-            }
+if not addon.getSetting('animeportal_proxy'):
+    addon.setSetting('animeportal_proxy', '')
+    addon.setSetting('animeportal_proxy_time', '')
 
-        args = get_params()
-        for a in args:
-            self.params[a] = unquote(args[a])
+def create_line(title=None, params=None, folder=True):
+    from info import animeportal_plot
 
-        if not AnimePortal.addon.getSetting('animeportal_proxy'):
-            AnimePortal.addon.setSetting('animeportal_proxy', '')
-            AnimePortal.addon.setSetting('animeportal_proxy_time', '')
+    li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(title.upper()))
+    li.setArt({"fanart": fanart,"icon": icon.replace('icon', title)})
+    info = {'plot': animeportal_plot[title], 'title': title.upper(), 'tvshowtitle': title.upper()}
+    li.setInfo(type='video', infoLabels=info)
 
-    def create_line(self, title=None, params=None, folder=True):
-        from info import animeportal_plot
+    # li.addContextMenuItems([
+    #     ('[B]{} - Обновить DB[/B]'.format(title.capitalize()), 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal={}")'.format(title))
+    #     ])
 
-        li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(title.upper()))
-        li.setArt({"fanart": self.fanart,"icon": self.icon.replace('icon', title)})
-        info = {'plot': animeportal_plot[title], 'title': title.upper(), 'tvshowtitle': title.upper()}
-        li.setInfo(type='video', infoLabels=info)
+    url = '{}?{}'.format(sys.argv[0], urlencode(params))
+    xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
-        li.addContextMenuItems([
-            ('[B]{} - Обновить DB[/B]'.format(title.capitalize()), 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal={}")'.format(title))
-            ])
+def create_portals():
+    if 'play_part' in params['mode']:
+        play_part()
+    else:
+        if 'animeportal' in params['portal']:
+            portal_list = ('anidub','anilibria','animedia','anistar')
 
-        url = '{}?{}'.format(sys.argv[0], urlencode(params))
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+            for portal in portal_list:
+                if addon.getSetting('use_{}'.format(portal)) == 'true':
+                    create_line(title=portal, params={'mode': 'main_part', 'portal': portal})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-    def create_portals(self):
-        if 'play_part' in self.params['mode']:
-            self.play_part()
-        else:
-            if 'animeportal' in self.params['portal']:
-                portal_list = ('anidub','anilibria','animedia','anistar')
+        if 'anidub' in params['portal']:
+            from anidub import Anidub
+            anidub = Anidub(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            anidub.execute()
+            del Anidub
 
-                for portal in portal_list:
-                    if AnimePortal.addon.getSetting('use_{}'.format(portal)) == 'true':
-                        self.create_line(title=portal, params={'mode': 'main_part', 'portal': portal})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]))
-
-            if 'anilibria' in self.params['portal']:
-                from anilibria import Anilibria
-                self.anilibria = Anilibria(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params)
-                self.anilibria.execute()
-                del Anilibria
-
-            if 'anidub' in self.params['portal']:
-                from anidub import Anidub
-                self.anidub = Anidub(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params)
-                self.anidub.execute()
-                del Anidub
+        if 'anilibria' in params['portal']:
+            from anilibria import Anilibria
+            anilibria = Anilibria(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            anilibria.execute()
+            del Anilibria
             
-            if 'anistar' in self.params['portal']:
-                from anistar import Anistar
-                self.anistar = Anistar(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params)
-                self.anistar.execute()
-                del Anistar
+        if 'anistar' in params['portal']:
+            from anistar import Anistar
+            anistar = Anistar(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            anistar.execute()
+            del Anistar
             
-            if 'animedia' in self.params['portal']:
-                from animedia import Animedia
-                self.animedia = Animedia(self.images_dir, self.torrents_dir, self.database_dir, self.cookie_dir, self.params)
-                self.animedia.execute()
-                del Animedia
+        if 'animedia' in params['portal']:
+            from animedia import Animedia
+            animedia = Animedia(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            animedia.execute()
+            del Animedia
 
-    def play_part(self):
-        url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
-        index = int(self.params['index'])
-        portal_engine = '{}_engine'.format(self.params['portal'])
+def play_part():
+    url = os.path.join(torrents_dir, '{}.torrent'.format(params['id']))
+    index = int(params['index'])
+    portal_engine = '{}_engine'.format(params['portal'])
 
-        if AnimePortal.addon.getSetting(portal_engine) == '0':
-            tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
-            engine = tam_engine[int(AnimePortal.addon.getSetting('{}_tam'.format(self.params['portal'])))]
-            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
-            item = xbmcgui.ListItem(path=purl)
-            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+    if addon.getSetting(portal_engine) == '0':
+        tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
+        engine = tam_engine[int(addon.getSetting('{}_tam'.format(params['portal'])))]
+        purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
+        item = xbmcgui.ListItem(path=purl)
+        xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
-        if AnimePortal.addon.getSetting(portal_engine) == '1':
-            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
-            item = xbmcgui.ListItem(path=purl)
-            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+    if addon.getSetting(portal_engine) == '1':
+        purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
+        item = xbmcgui.ListItem(path=purl)
+        xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
         
-        if AnimePortal.addon.getSetting(portal_engine) == '2':
-            url = 'file:///{}'.format(url.replace('\\','/'))
+    if addon.getSetting(portal_engine) == '2':
+        url = 'file:///{}'.format(url.replace('\\','/'))
 
-            import player
-            player.play_t2h(int(sys.argv[1]), 15, url, index, self.addon_data_dir)
+        import player
+        player.play_t2h(int(sys.argv[1]), 15, url, index, addon_data_dir)
 
 if __name__ == "__main__":
-    animeportal = AnimePortal()
-    animeportal.create_portals()
-    del AnimePortal
+    create_portals()
 
 gc.collect()

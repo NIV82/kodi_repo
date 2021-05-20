@@ -7,7 +7,7 @@ import time
 import xbmc
 import xbmcgui
 import xbmcplugin
-import xbmcaddon
+#import xbmcaddon
 #import xbmcvfs
 
 from urllib.parse import urlencode
@@ -20,12 +20,10 @@ import info
 import utility
 
 class Anilibria:
-    addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params):
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
-
+        self.addon = addon
         self.images_dir = images_dir
         self.torrents_dir = torrents_dir
         self.database_dir = database_dir
@@ -34,26 +32,26 @@ class Anilibria:
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-        self.auth_mode = bool(Anilibria.addon.getSetting('anilibria_auth_mode') == '1')
+        self.auth_mode = bool(self.addon.getSetting('anilibria_auth_mode') == '1')
 #================================================
-        try: anilibria_session = float(Anilibria.addon.getSetting('anilibria_session'))
+        try: anilibria_session = float(self.addon.getSetting('anilibria_session'))
         except: anilibria_session = 0
 
         if time.time() - anilibria_session > 28800:
-            Anilibria.addon.setSetting('anilibria_session', str(time.time()))
+            self.addon.setSetting('anilibria_session', str(time.time()))
             try: os.remove(os.path.join(self.cookie_dir, 'anilibria.sid'))
             except: pass
-            Anilibria.addon.setSetting('anilibria_auth', 'false')
+            self.addon.setSetting('anilibria_auth', 'false')
 #================================================
         from network import WebTools
         self.network = WebTools(
             auth_usage=self.auth_mode,
-            auth_status=bool(Anilibria.addon.getSetting('anilibria_auth') == 'true'),
+            auth_status=bool(self.addon.getSetting('anilibria_auth') == 'true'),
             proxy_data=self.proxy_data,
             portal='anilibria')
         self.auth_post_data = {
-            "mail": Anilibria.addon.getSetting('anilibria_username'),
-            "passwd": Anilibria.addon.getSetting('anilibria_password')
+            "mail": self.addon.getSetting('anilibria_username'),
+            "passwd": self.addon.getSetting('anilibria_password')
             }
         self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_url = self.site_url.replace('api/index.php','login.php')
@@ -61,7 +59,7 @@ class Anilibria:
         del WebTools
 #================================================  
         if self.auth_mode:
-            if not Anilibria.addon.getSetting("anilibria_username") or not Anilibria.addon.getSetting("anilibria_password"):
+            if not self.addon.getSetting("anilibria_username") or not self.addon.getSetting("anilibria_password"):
                 self.params['mode'] = 'addon_setting'
                 self.dialog.ok('Авторизация','Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                 return
@@ -72,7 +70,7 @@ class Anilibria:
                     self.dialog.ok('Авторизация','Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                     return
                 else:
-                    Anilibria.addon.setSetting("anilibria_auth", str(self.network.auth_status).lower())
+                    self.addon.setSetting("anilibria_auth", str(self.network.auth_status).lower())
 #================================================
         if not os.path.isfile(os.path.join(self.database_dir, 'anilibria.db')):
             self.exec_update_part()
@@ -82,25 +80,25 @@ class Anilibria:
         del Anilibria_DB
 #================================================
     def create_proxy_data(self):
-        if Anilibria.addon.getSetting('anilibria_unblock') == '0':
+        if self.addon.getSetting('anilibria_unblock') == '0':
             return None
 
-        try: proxy_time = float(Anilibria.addon.getSetting('animeportal_proxy_time'))
+        try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
         except: proxy_time = 0
 
         if time.time() - proxy_time > 86400:
-            Anilibria.addon.setSetting('animeportal_proxy_time', str(time.time()))
+            self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
             try: proxy_pac = str(proxy_pac, encoding='utf-8')
             except: pass
                 
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-            Anilibria.addon.setSetting('animeportal_proxy', proxy)
+            self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
         else:
-            if Anilibria.addon.getSetting('animeportal_proxy'):
-                proxy_data = {'https': Anilibria.addon.getSetting('animeportal_proxy')}
+            if self.addon.getSetting('animeportal_proxy'):
+                proxy_data = {'https': self.addon.getSetting('animeportal_proxy')}
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
@@ -108,23 +106,23 @@ class Anilibria:
                 except: pass
 
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                Anilibria.addon.setSetting('animeportal_proxy', proxy)
+                self.addon.setSetting('animeportal_proxy', proxy)
                 proxy_data = {'https': proxy}
 
         return proxy_data
 #================================================
     def create_site_url(self):
-        site_url = Anilibria.addon.getSetting('anilibria_mirror_0')
-        current_mirror = 'anilibria_mirror_{}'.format(Anilibria.addon.getSetting('anilibria_mirror_mode'))        
+        site_url = self.addon.getSetting('anilibria_mirror_0')
+        current_mirror = 'anilibria_mirror_{}'.format(self.addon.getSetting('anilibria_mirror_mode'))        
 
-        if not Anilibria.addon.getSetting(current_mirror):
+        if not self.addon.getSetting(current_mirror):
             try:
                 self.exec_mirror_part()
-                site_url = '{}public/api/index.php'.format(Anilibria.addon.getSetting(current_mirror))
+                site_url = '{}public/api/index.php'.format(self.addon.getSetting(current_mirror))
             except:
                 site_url = "{}public/api/index.php".format(site_url)
         else:
-            site_url = '{}public/api/index.php'.format(Anilibria.addon.getSetting(current_mirror))
+            site_url = '{}public/api/index.php'.format(self.addon.getSetting(current_mirror))
         return site_url
   
     def create_post(self):
@@ -144,9 +142,9 @@ class Anilibria:
             post = urlencode({"query":"catalog","page":self.params['page'],"xpage":"catalog","sort":"2","filter":"id,series,announce"})
         if self.params['param'] == 'catalog':
             post = urlencode({"query": "catalog", "page": self.params['page'], "filter":"id,series,announce", "xpage": "catalog",
-                    "search": {"year": Anilibria.addon.getSetting('anilibria_year'),"genre": Anilibria.addon.getSetting('anilibria_genre'),
-                    "season": Anilibria.addon.getSetting('anilibria_season')},"sort": info.anilibria_sort[Anilibria.addon.getSetting('anilibria_sort')],
-                    "finish":info.anilibria_status[Anilibria.addon.getSetting('anilibria_status')]})
+                    "search": {"year": self.addon.getSetting('anilibria_year'),"genre": self.addon.getSetting('anilibria_genre'),
+                    "season": self.addon.getSetting('anilibria_season')},"sort": info.anilibria_sort[self.addon.getSetting('anilibria_sort')],
+                    "finish":info.anilibria_status[self.addon.getSetting('anilibria_status')]})
         if self.params['mode'] == 'online_part':
             post = urlencode({"query":"release","id":self.params['id'],"filter":"playlist"})
         if self.params['mode'] == 'torrent_part':
@@ -164,11 +162,11 @@ class Anilibria:
         else:
             series = ''
 
-        if Anilibria.addon.getSetting('anilibria_titles') == '0':
+        if self.addon.getSetting('anilibria_titles') == '0':
             label = '{}{}'.format(title[0], series)
-        if Anilibria.addon.getSetting('anilibria_titles') == '1':
+        if self.addon.getSetting('anilibria_titles') == '1':
             label = '{}{}'.format(title[1], series)
-        if Anilibria.addon.getSetting('anilibria_titles') == '2':
+        if self.addon.getSetting('anilibria_titles') == '2':
             label = '{} / {}{}'.format(title[0], title[1], series)
         return label
 
@@ -176,7 +174,7 @@ class Anilibria:
         site_url = self.site_url.replace('public/api/index.php','')
         url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
 
-        if Anilibria.addon.getSetting('anilibria_covers') == '0':
+        if self.addon.getSetting('anilibria_covers') == '0':
             return url
         else:
             #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
@@ -272,7 +270,7 @@ class Anilibria:
         except: pass
 
     def exec_addon_setting(self):
-        Anilibria.addon.openSettings()
+        self.addon.openSettings()
 
     def exec_mirror_part(self):
         from network import WebTools
@@ -285,8 +283,8 @@ class Anilibria:
         mirror_1 = mirror[:mirror.find('" target=')]
         mirror_2 = mirror[mirror.rfind('href="')+6:]
 
-        Anilibria.addon.setSetting('anilibria_mirror_1', mirror_1)
-        Anilibria.addon.setSetting('anilibria_mirror_2', mirror_2)
+        self.addon.setSetting('anilibria_mirror_1', mirror_1)
+        self.addon.setSetting('anilibria_mirror_2', mirror_2)
         return
 
     def exec_update_part(self):
@@ -341,7 +339,7 @@ class Anilibria:
 
     def exec_clean_part(self):
         try:
-            Anilibria.addon.setSetting('anilibria_search', '')
+            self.addon.setSetting('anilibria_search', '')
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
         except:
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
@@ -362,7 +360,7 @@ class Anilibria:
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
 
-            data_array = Anilibria.addon.getSetting('anilibria_search').split('|')
+            data_array = self.addon.getSetting('anilibria_search').split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -376,11 +374,11 @@ class Anilibria:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
-                data_array = Anilibria.addon.getSetting('anilibria_search').split('|')
+                data_array = self.addon.getSetting('anilibria_search').split('|')
                 while len(data_array) >= 10:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
-                Anilibria.addon.setSetting('anilibria_search', data_array)
+                self.addon.setSetting('anilibria_search', data_array)
 
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
@@ -465,45 +463,45 @@ class Anilibria:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_catalog_part(self):
-        if Anilibria.addon.getSetting('anilibria_status') == '':
-            Anilibria.addon.setSetting(id='anilibria_status', value='Все релизы')
+        if self.addon.getSetting('anilibria_status') == '':
+            self.addon.setSetting(id='anilibria_status', value='Все релизы')
 
-        if Anilibria.addon.getSetting('anilibria_sort') == '':
-            Anilibria.addon.setSetting(id='anilibria_sort', value='Новое')
+        if self.addon.getSetting('anilibria_sort') == '':
+            self.addon.setSetting(id='anilibria_sort', value='Новое')
 
         if self.params['param'] == '':
             self.create_line(title='Жанр: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
+                self.addon.getSetting('anilibria_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
             self.create_line(title='Год: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_year')), params={'mode': 'catalog_part', 'param': 'year'})
+                self.addon.getSetting('anilibria_year')), params={'mode': 'catalog_part', 'param': 'year'})
             self.create_line(title='Сезон: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_season')), params={'mode': 'catalog_part', 'param': 'season'})
+                self.addon.getSetting('anilibria_season')), params={'mode': 'catalog_part', 'param': 'season'})
             self.create_line(title='Сортировка по: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
+                self.addon.getSetting('anilibria_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
             self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
-                Anilibria.addon.getSetting('anilibria_status')), params={'mode': 'catalog_part', 'param': 'status'})
+                self.addon.getSetting('anilibria_status')), params={'mode': 'catalog_part', 'param': 'status'})
             self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
         if self.params['param'] == 'genre':
             result = self.dialog.select('Жанр:', info.anilibria_genre)
-            Anilibria.addon.setSetting(id='anilibria_genre', value=info.anilibria_genre[result])
+            self.addon.setSetting(id='anilibria_genre', value=info.anilibria_genre[result])
         
         if self.params['param'] == 'year':
             result = self.dialog.select('Год:', info.anilibria_year)
-            Anilibria.addon.setSetting(id='anilibria_year', value=info.anilibria_year[result])
+            self.addon.setSetting(id='anilibria_year', value=info.anilibria_year[result])
         
         if self.params['param'] == 'season':
             result = self.dialog.select('Сезон:', info.anilibria_season)
-            Anilibria.addon.setSetting(id='anilibria_season', value=info.anilibria_season[result])
+            self.addon.setSetting(id='anilibria_season', value=info.anilibria_season[result])
 
         if self.params['param'] == 'sort':
             result = self.dialog.select('Сортировать по:', tuple(info.anilibria_sort.keys()))
-            Anilibria.addon.setSetting(id='anilibria_sort', value=tuple(info.anilibria_sort.keys())[result])
+            self.addon.setSetting(id='anilibria_sort', value=tuple(info.anilibria_sort.keys())[result])
         
         if self.params['param'] == 'status':
             result = self.dialog.select('Статус релиза:', tuple(info.anilibria_status.keys()))
-            Anilibria.addon.setSetting(id='anilibria_status', value=tuple(info.anilibria_status.keys())[result])
+            self.addon.setSetting(id='anilibria_status', value=tuple(info.anilibria_status.keys())[result])
 
     def exec_information_part(self):
         if self.params['param'] == '':
