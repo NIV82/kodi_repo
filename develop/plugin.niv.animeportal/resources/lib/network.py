@@ -41,6 +41,8 @@ class WebTools:
 
         # if self.portal == 'anilibria':
         #     self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        if self.portal == 'shiza':
+            self.headers['Content-Type'] = 'application/json'
 
         try: post = bytes(post, encoding='utf-8')
         except: pass
@@ -117,6 +119,8 @@ class WebTools:
             return self.anistar_authorization()
         if self.portal == 'animedia':
             return self.animedia_authorization()
+        # if self.portal == 'shiza':
+        #     return self.shiza_authorization()
         return
 
     def anilibria_authorization(self):

@@ -82,7 +82,7 @@ def create_portals():
         play_part()
     else:
         if 'animeportal' in params['portal']:
-            portal_list = ('anidub','anilibria','animedia','anistar')
+            portal_list = ('anidub','anilibria','animedia','anistar','shizaproject')
 
             for portal in portal_list:
                 if addon.getSetting('use_{}'.format(portal)) == 'true':
@@ -112,6 +112,12 @@ def create_portals():
             animedia = Animedia(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
             animedia.execute()
             del Animedia
+        
+        if 'shizaproject' in params['portal']:
+            from shizaproject import Shiza
+            shiza = Shiza(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            shiza.execute()
+            del Shiza
 
 def play_part():
     url = os.path.join(torrents_dir, '{}.torrent'.format(params['id']))
