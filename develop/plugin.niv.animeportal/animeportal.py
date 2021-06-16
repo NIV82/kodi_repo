@@ -124,6 +124,9 @@ def play_part():
     index = int(params['index'])
     portal_engine = '{}_engine'.format(params['portal'])
 
+    import xbmc
+    xbmc.log(str(addon.getSetting(portal_engine)), xbmc.LOGFATAL)
+
     if addon.getSetting(portal_engine) == '0':
         tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
         engine = tam_engine[int(addon.getSetting('{}_tam'.format(params['portal'])))]
@@ -138,6 +141,8 @@ def play_part():
         
     if addon.getSetting(portal_engine) == '2':
         url = 'file:///{}'.format(url.replace('\\','/'))
+
+
 
         import player
         player.play_t2h(int(sys.argv[1]), 15, url, index, addon_data_dir)

@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-import xbmc
+#import xbmc
 import xbmcgui
 import xbmcplugin
 #import xbmcaddon
@@ -33,9 +33,6 @@ class Shiza:
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
         
-        import xbmc
-        xbmc.log(str(self.site_url), xbmc.LOGFATAL)
-
         self.auth_mode = bool(self.addon.getSetting('shiza_auth_mode') == '1')
 #================================================
         try: shiza_session = float(self.addon.getSetting('shiza_session'))
@@ -83,24 +80,43 @@ class Shiza:
         self.database = ShizaProject_DB(os.path.join(self.database_dir, 'shizaproject.db'))
         del ShizaProject_DB
 #================================================
-    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
+    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
         li = xbmcgui.ListItem(title)
 
-        # if anime_id:
-        #     cover = self.create_image(anime_id)
+        if metadata:
+            li.setInfo(type='video', infoLabels={'plot':metadata})
 
-        #     li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
-        #                "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
+        if anime_id:
+            cover = cover
 
-        #     anime_info = self.database.get_anime(anime_id)
+            li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
+                       "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
 
-        #     info = {'genre': anime_info[0],'year': anime_info[2],'plot': anime_info[3],'title': title, 'tvshowtitle': title}
-        #     info['plot'] = '{}\n\n[COLOR=steelblue]Над релизом работали[/COLOR]: {}'.format(info['plot'], anime_info[1])
+            anime_info = self.database.get_anime(anime_id)
+            #plot, countries, aired, studios, genres, authors, dubbing, mastering, timing, other, translation
 
-        #     if size:
-        #         info['size'] = size
+            info = {
+                'plot': anime_info[0],
+                'country': anime_info[1],
+                'year': anime_info[2],
+                'premiered': anime_info[2],
+                'studio': anime_info[3],
+                'genre': anime_info[4],
+                'writer': anime_info[5],
+                'director': anime_info[5],
+                'title': title, 
+                'tvshowtitle': title}
+            
+            info['plot'] = '{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(info['plot'], anime_info[6])
+            info['plot'] = '{}\n[COLOR=steelblue]Работа со звуком[/COLOR]: {}'.format(info['plot'], anime_info[7])
+            info['plot'] = '{}\n[COLOR=steelblue]Работа над таймингом[/COLOR]: {}'.format(info['plot'], anime_info[8])
+            info['plot'] = '{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(info['plot'], anime_info[10])
+            info['plot'] = '{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(info['plot'], anime_info[9])
 
-        #     li.setInfo(type='video', infoLabels=info)
+            if size:
+                info['size'] = size
+
+            li.setInfo(type='video', infoLabels=info)
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -235,7 +251,58 @@ class Shiza:
         post = str(post).replace('\'','"').replace('None','null')
         return post
 
+    def create_episodes(self, episodes):
+        online_array = []        
+        episodes = episodes.split('},{')
 
+        for ep in episodes:
+            if not '"name"' or not 'embedUrl' in ep:
+                continue
+            episode_name = ep[ep.find('"name":"')+8:ep.find('","number"')]
+            episode_num = ep[ep.find('"number":')+9:ep.find(',"videos')]
+            episode_url = ep[ep.find('embedUrl":"')+11:ep.rfind('"}')]
+
+            if not episode_url:
+                continue
+            
+            online_array.append('{}||{}||{}'.format(episode_name,episode_num,episode_url))
+        
+        episodes_data = '|||'.join(online_array)
+
+        return episodes_data
+
+    def create_torrent(self, torrent):
+        seed = torrent[torrent.find('seeders":')+9:torrent.find(',"leechers')]
+        leech = torrent[torrent.find('leechers":')+10:torrent.find(',"size')]
+        size = torrent[torrent.find('size":"')+7:torrent.find('","metadata')]
+
+        metadata = torrent[torrent.find('metadata":"')+11:torrent.find('","videoFormat')]
+        metadata = metadata.replace('Автор рипа','[COLOR=steelblue]Автор рипа[/COLOR]')
+        metadata = metadata.replace('Видео','[COLOR=steelblue]Видео[/COLOR]')
+        metadata = metadata.replace('Аудио','[COLOR=steelblue]Аудио[/COLOR]')
+        metadata = metadata.replace('Субтитры','[COLOR=steelblue]Субтитры[/COLOR]')
+        
+        video_format = torrent[torrent.find('videoFormat":"')+14:torrent.find('","videoQualities')]
+        quality = torrent[torrent.find('videoQualities":["')+18:torrent.find('"],"file')]
+        #quality = quality.replace('","','||')
+        url = torrent[torrent.find('url":"')+6:torrent.find('?filename=')]
+
+        torrent_data = '{}||{}||{}||{}||{}||{}||{}'.format(seed,leech,size,metadata,video_format,quality,url)
+        return torrent_data
+
+    def create_title(self, anime_id, episodes_count, episodes_aired):        
+        title = self.database.get_title(anime_id)
+
+        series = ' - [COLOR=gold][ Серии: 1-{} из {} ][/COLOR]'.format(episodes_aired, episodes_count)
+      
+        if self.addon.getSetting('shiza_titles') == '0':
+            label = '{}{}'.format(title[0], series)
+        if self.addon.getSetting('shiza_titles') == '1':
+            label = '{}{}'.format(title[1], series)
+        if self.addon.getSetting('shiza_titles') == '2':
+            label = '{} / {}{}'.format(title[0], title[1], series)
+
+        return label
         
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
@@ -298,53 +365,6 @@ class Shiza:
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
     
-    def create_episodes(self, episodes):
-        online_array = []        
-        episodes = episodes.split('},{')
-
-        for ep in episodes:
-            if not '"name"' in ep:
-                continue
-            episode_name = ep[ep.find('"name":"')+8:ep.find('","number"')]
-            episode_num = ep[ep.find('"number":')+9:ep.find(',"videos')]
-            episode_url = ep[ep.find('embedUrl":"'):ep.rfind('"}')]
-
-            if not episode_url:
-                continue
-            
-            online_array.append('{}||{}||{}'.format(episode_name,episode_num,episode_url))
-        
-        episodes_data = '|||'.join(online_array)
-
-        return episodes_data
-
-    def create_torrent(self, torrent):
-        seed = torrent[torrent.find('seeders":')+9:torrent.find(',"leechers')]
-        leech = torrent[torrent.find('leechers":')+10:torrent.find(',"size')]
-        size = torrent[torrent.find('size":"')+7:torrent.find('","metadata')]
-        metadata = torrent[torrent.find('metadata":"')+11:torrent.find('","videoFormat')]
-        video_format = torrent[torrent.find('videoFormat":"')+14:torrent.find('","videoQualities')]
-        quality = torrent[torrent.find('videoQualities":["')+18:torrent.find('"],"file')]
-        quality = quality.replace('","','||')
-        url = torrent[torrent.find('url":"')+6:torrent.find('?filename=')]
-
-        torrent_data = '{}||{}||{}||{}||{}||{}||{}'.format(seed,leech,size,metadata,video_format,quality,url)
-        return torrent_data
-
-    def create_title(self, anime_id, episodes_count, episodes_aired):        
-        title = self.database.get_title(anime_id)
-
-        series = ' - [COLOR=gold][ Серии: 1-{} из {} ][/COLOR]'.format(episodes_aired, episodes_count)
-      
-        if self.addon.getSetting('shiza_titles') == '0':
-            label = '{}{}'.format(title[0], series)
-        if self.addon.getSetting('shiza_titles') == '1':
-            label = '{}{}'.format(title[1], series)
-        if self.addon.getSetting('shiza_titles') == '2':
-            label = '{} / {}{}'.format(title[0], title[1], series)
-
-        return label
-
     def exec_common_part(self):
         self.progress.create("ShizaProject", "Инициализация")
         post = self.create_post()
@@ -387,8 +407,105 @@ class Shiza:
                 continue
 
             label = self.create_title(anime_id, episodes_count, episodes_aired)
-            self.create_line(label,params={})
+
+            if self.addon.getSetting('shiza_covers_qulity') == '0':
+                cover = poster_preview
+            else:
+                cover = poster_original
+
+            series = '1-{} / {}'.format(episodes_aired, episodes_count)
+
+            self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id, 'cover':cover, 'episodes':episodes, 'torrent':torrent, 'series':series})
 
         self.progress.close()
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+    def exec_select_part(self):
+        self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id'], 'episodes':self.params['episodes'], 'cover': self.params['cover']})
+        self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent':self.params['torrent'], 'cover': self.params['cover'], 'series':self.params['series']})
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    
+    def exec_online_part(self):
+        if not self.params['param']:
+            data_array = self.params['episodes'].split('|||')
+            cover = self.params['cover']
+
+            for data in data_array:
+                data = data.split('||')
+                episode_title = data[0]
+                episode_num = data[1]
+                episode_url = data[2]
+
+                label = '{} - {}'.format(episode_num, episode_title)
+                self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': data[2], 'title':label, 'cover': cover})
+
+        if self.params['param']:
+            html = self.network.get_html(target_name=self.params['param'])
+            
+            cover = html[html.find('og:image" content="')+19:html.find('"/><meta property="og:description')]
+            
+            if html.find('player.src') > -1:
+                video_src = html[html.find('player.src([{src: "')+19:html.find(';player.persistvolume')]
+                video_src = video_src[:video_src.find('"')]
+                play_url = 'https://video.sibnet.ru{}|referer={}'.format(video_src, self.params['param'])
+
+            if html.find('<div class=videostatus><p>') > -1:
+                pass
+
+            self.create_line(title=self.params['title'], cover=cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+    def exec_torrent_part(self):
+        if not self.params['param']:
+            data = self.params['torrent'].split('||')
+#['9', '1', '4124886078', 'Автор рипа: SOFCJ-Raws\\nВидео: x264 (10bit), 1920x1080, ≈4000 kbps, 23,976 fps\\nАудио RUS: AAC, 192 kbps, 48 kHz, 2 ch', 'MP4', 'WEB_RIP', 'RESOLUTION_1080P', 'https://cdn.shiza-project.com/files/a50d9602477df591beb032bcdfef24752812307f.torrent']
+#torrent_data = '{}||{}||{}||{}||{}||{}||{}'.format(seed,leech,size,metadata,video_format,quality,url)
+        # import xbmc
+        # xbmc.log(str(data), xbmc.LOGFATAL)
+
+            seeders = data[0]
+            leechers = data[1]
+            torrent_size = '{:.2f}'.format(float(data[2]) / 1024 / 1024 / 1024)
+
+            metadata = data[3].replace('\\n','\n\n')
+            #metadata = metadata.replace('Автор рипа:','[COLOR=steelblue]Автор рипа:[/COLOR]')
+
+            video_format = data[4]
+            quality = data[5].replace('","',' - ').replace('RESOLUTION_','')
+            torrent_url = data[6]
+
+            label = 'Серии: {} - {}, {} , [COLOR=F0FFD700]{} GB[/COLOR], Сидов: [COLOR=F000F000]{}[/COLOR] , Пиров: [COLOR=F0F00000]{}[/COLOR]'.format(
+                self.params['series'], video_format, quality, torrent_size, seeders, leechers)
+
+            self.create_line(title=label, metadata=metadata, params={'mode': 'torrent_part', 'param': torrent_url, 'id': self.params['id'],'cover':self.params['cover']})
+        
+        if self.params['param']:
+            full_url = self.params['param']
+            file_name = '{}_{}'.format(self.params['portal'], full_url[full_url.rfind('/')+1:full_url.rfind('.')])
+            full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+           
+            torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+
+            import bencode
+            
+            with open(torrent_file, 'rb') as read_file:
+                torrent_data = read_file.read()
+
+            torrent = bencode.bdecode(torrent_data)
+
+            info = torrent['info']
+            series = {}
+            size = {}
+
+            if 'files' in info:
+                for i, x in enumerate(info['files']):
+                    size[i] = x['length']
+                    series[i] = x['path'][-1]
+                for i in sorted(series, key=series.get):
+                    self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], cover=self.params['cover'], folder=False, size=size[i])
+            else:
+                self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], cover=self.params['cover'], folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)

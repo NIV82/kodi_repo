@@ -600,7 +600,6 @@ class Anilibria:
             info = torrent['info']
             series = {}
             size = {}
-
             if 'files' in info:
                 for i, x in enumerate(info['files']):
                     size[i] = x['length']
@@ -611,3 +610,4 @@ class Anilibria:
                 self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
+        
