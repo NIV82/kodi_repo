@@ -80,54 +80,6 @@ class Shiza:
         self.database = ShizaProject_DB(os.path.join(self.database_dir, 'shizaproject.db'))
         del ShizaProject_DB
 #================================================
-    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
-        li = xbmcgui.ListItem(title)
-
-        if metadata:
-            li.setInfo(type='video', infoLabels={'plot':metadata})
-
-        if anime_id:
-            cover = cover
-
-            li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
-                       "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
-
-            anime_info = self.database.get_anime(anime_id)
-            #plot, countries, aired, studios, genres, authors, dubbing, mastering, timing, other, translation
-
-            info = {
-                'plot': anime_info[0],
-                'country': anime_info[1],
-                'year': anime_info[2],
-                'premiered': anime_info[2],
-                'studio': anime_info[3],
-                'genre': anime_info[4],
-                'writer': anime_info[5],
-                'director': anime_info[5],
-                'title': title, 
-                'tvshowtitle': title}
-            
-            info['plot'] = '{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(info['plot'], anime_info[6])
-            info['plot'] = '{}\n[COLOR=steelblue]Работа со звуком[/COLOR]: {}'.format(info['plot'], anime_info[7])
-            info['plot'] = '{}\n[COLOR=steelblue]Работа над таймингом[/COLOR]: {}'.format(info['plot'], anime_info[8])
-            info['plot'] = '{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(info['plot'], anime_info[10])
-            info['plot'] = '{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(info['plot'], anime_info[9])
-
-            if size:
-                info['size'] = size
-
-            li.setInfo(type='video', infoLabels=info)
-
-        if folder==False:
-                li.setProperty('isPlayable', 'true')
-
-        params['portal'] = 'shizaproject'
-        url = '{}?{}'.format(sys.argv[0], urlencode(params))
-
-        if online: url = online
-
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
-
     def create_proxy_data(self):
         if self.addon.getSetting('shiza_unblock') == '0':
             return None
@@ -252,19 +204,18 @@ class Shiza:
         return post
 
     def create_episodes(self, episodes):
-        online_array = []        
-        episodes = episodes.split('},{')
+        online_array = []
+        episodes = episodes.split('}]},{')
 
         for ep in episodes:
-            if not '"name"' or not 'embedUrl' in ep:
-                continue
             episode_name = ep[ep.find('"name":"')+8:ep.find('","number"')]
             episode_num = ep[ep.find('"number":')+9:ep.find(',"videos')]
-            episode_url = ep[ep.find('embedUrl":"')+11:ep.rfind('"}')]
+            episode_url = ep[ep.find('SIBNET","embedUrl":"')+20:]
+            episode_url = episode_url[:episode_url.find('"')]
 
-            if not episode_url:
+            if not 'https://' in episode_url:
                 continue
-            
+
             online_array.append('{}||{}||{}'.format(episode_name,episode_num,episode_url))
         
         episodes_data = '|||'.join(online_array)
@@ -303,7 +254,186 @@ class Shiza:
             label = '{} / {}{}'.format(title[0], title[1], series)
 
         return label
+# ===========================================================================================
+    # def create_image(self, anime_id):
+    #     site_url = self.site_url.replace('public/api/index.php','')
+    #     url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
+
+    #     if self.addon.getSetting('anilibria_covers') == '0':
+    #         return url
+    #     else:
+    #         #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
+    #         local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
+    #         if local_img in os.listdir(self.images_dir):
+    #             local_path = os.path.join(self.images_dir, local_img)
+    #             return local_path
+    #         else:
+    #             file_name = os.path.join(self.images_dir, local_img)
+    #             return self.network.get_file(target_name=url, destination_name=file_name)
+#===========================================================================================
+    def create_contributors(self, data):
+        info = {'VOICE_ACTING':[],'EDITING':[], 'MASTERING':[],'TIMING':[],'TRANSLATION':[], 'OTHER':[]}
+
+        data = data.replace(',{"tasks":','|').replace('{"tasks":[','')
+
+        clean_item = ('"type":"','"user":{"','FEMALE_','MALE_','"','{',']','\n','}},','}','[')
+
+        for item in clean_item:
+            data = data.replace(item,'')
+
+        data = data.split('|')
         
+        if len(data) == 1:
+            i = data[0]
+            user = i[i.find('username:')+9:]
+
+            if 'VOICE_ACTING' in i or 'EDITING' in i or 'MASTERING' in i or 'TIMING' in i or 'TRANSLATION' in i:
+                for val in ('VOICE_ACTING', 'EDITING','MASTERING', 'TIMING', 'TRANSLATION'):
+                    if val in i:
+                        info[val].append(user)
+            else:
+                info['OTHER'].append(user)
+        else:
+            for i in data:                
+                user = i[i.find('username:')+9:]
+
+                if 'VOICE_ACTING' in i or 'EDITING' in i or 'MASTERING' in i or 'TIMING' in i or 'TRANSLATION' in i:
+                    for val in ('VOICE_ACTING', 'EDITING','MASTERING', 'TIMING', 'TRANSLATION'):
+                        if val in i:
+                            info[val].append(user)
+                            i = i.replace(val,'')
+                else:
+                    info['OTHER'].append(user)
+            
+        return info
+
+    def create_info(self, slug=''):        
+        post = {
+            "operationName":"fetchRelease",
+            "variables":{"slug":"{}".format(slug)},
+            "query":"query fetchRelease($slug: String!) {\
+                release(slug: $slug) {\
+                slug\
+                malId\
+                name\
+                originalName\
+                description\
+                descriptionSource\
+                countries\
+                airedOn\
+                studios { name }\
+                genres { name }\
+                staff { person { name } }\
+                contributors { tasks { type } user { username } }}}"
+                }
+        
+        post = str(post).replace('\'','"').replace('None','null')
+        html = self.network.get_html(self.site_url, post)
+
+        html = html.replace('\\n', '\n').replace('\\"', '"')
+
+        data = unescape(html).replace('null','""')
+
+        anime_id = data[data.find('"slug":"')+8:data.find('","malId"')]
+        shiki_id = data[data.find('"malId":"')+9:data.find('","name"')]
+
+        title_ru = data[data.find('"name":"')+8:data.find('","originalName"')]
+        title_en = data[data.find('"originalName":"')+16:data.find('","description"')]
+
+        plot = data[data.find('"description":"')+15:data.find('","descriptionSource"')]
+        plot_source = data[data.find('"descriptionSource":"')+21:data.find('","countries"')]
+        if plot_source:
+            plot = '{}\n© {}'.format(plot, plot_source)
+
+        countries = data[data.find('"countries":[')+13:data.find('],"airedOn"')]
+        countries = countries.replace('"','')
+
+        aired = data[data.find('"airedOn":"')+11:data.find('","studios"')]
+            
+        studios = data[data.find('"studios":[')+11:data.find('],"genres"')]
+        studios = studios.replace('"person":','').replace('"name":','').replace('"','').replace('{','').replace('}','')
+
+        genres = data[data.find('"genres":[')+10:data.find('],"staff"')]
+        genres = genres.replace('"person":','').replace('"name":','').replace('"','').replace('{','').replace('}','')
+
+        staff = data[data.find('"staff":[')+9:data.find('],"contributors"')]
+        staff = staff.replace('"person":','').replace('"name":','').replace('"','').replace('{','').replace('}','')
+
+        contributors = data[data.find('"contributors":')+15:]
+        contributors = self.create_contributors(contributors)
+
+        try:
+            self.database.add_anime(
+                anime_id = anime_id,
+                shiki_id = shiki_id,
+                title_ru = title_ru,
+                title_en = title_en,
+                plot = plot,
+                countries = countries,
+                aired = aired,
+                studios = studios,
+                genres = genres,
+                authors = staff,
+                dubbing = ', '.join(contributors['VOICE_ACTING']),
+                mastering = ', '.join(contributors['MASTERING']),
+                timing = ', '.join(contributors['TIMING']),
+                other = ', '.join(contributors['OTHER']),
+                translation = ', '.join(contributors['TRANSLATION']),
+                editing = ', '.join(contributors['EDITING'])
+                )
+        except:
+            return 101
+        return
+
+    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
+        li = xbmcgui.ListItem(title)
+
+        if metadata:
+            li.setInfo(type='video', infoLabels={'plot':metadata})
+
+        if anime_id:
+            cover = cover
+
+            li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
+                       "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
+
+            anime_info = self.database.get_anime(anime_id)
+            #plot, countries, aired, studios, genres, authors, dubbing, mastering, timing, other, translation
+
+            info = {
+                'plot': anime_info[0],
+                'country': anime_info[1],
+                'year': anime_info[2],
+                'premiered': anime_info[2],
+                'studio': anime_info[3],
+                'genre': anime_info[4],
+                'writer': anime_info[5],
+                'director': anime_info[5],
+                'title': title, 
+                'tvshowtitle': title}
+            
+            info['plot'] = '{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(info['plot'], anime_info[6])
+            info['plot'] = '{}\n[COLOR=steelblue]Работа со звуком[/COLOR]: {}'.format(info['plot'], anime_info[7])
+            info['plot'] = '{}\n[COLOR=steelblue]Работа над таймингом[/COLOR]: {}'.format(info['plot'], anime_info[8])
+            info['plot'] = '{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(info['plot'], anime_info[10])
+            info['plot'] = '{}\n[COLOR=steelblue]Редактура[/COLOR]: {}'.format(info['plot'], anime_info[11])
+            info['plot'] = '{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(info['plot'], anime_info[9])
+
+            if size:
+                info['size'] = size
+
+            li.setInfo(type='video', infoLabels=info)
+
+        if folder==False:
+                li.setProperty('isPlayable', 'true')
+
+        params['portal'] = 'shizaproject'
+        url = '{}?{}'.format(sys.argv[0], urlencode(params))
+
+        if online: url = online
+
+        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
         try: self.database.end()
@@ -401,10 +531,7 @@ class Shiza:
             self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
             
             if not self.database.is_anime_in_db(anime_id):
-                #inf = self.create_info(anime_id)
-                label = '[B][COLOR=red][ {} ][/COLOR] - not in base[/B]'.format(anime_id)
-                self.create_line(label, params={})
-                continue
+                inf = self.create_info(anime_id)
 
             label = self.create_title(anime_id, episodes_count, episodes_aired)
 
