@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-#import xbmc
+import xbmc
 import xbmcgui
 import xbmcplugin
 #import xbmcaddon
@@ -123,60 +123,187 @@ class Shiza:
         #site_url = '{}graphql'.format(site_url)
         return site_url
 
+    # def create_post(self):
+    #     query_fetch_releases = 'query fetchReleases(\
+    #         $first: Int,\
+    #         $airedOn: ReleaseAiredOnRangeFilter,\
+    #         $query: String,\
+    #         $orderBy: ReleaseOrder,\
+    #         $type: ReleaseTypeFilter,\
+    #         $status: ReleaseStatusFilter,\
+    #         $activity: ReleaseActivityFilter,\
+    #         $rating: ReleaseRatingFilter,\
+    #         $season: ReleaseSeasonFilter,\
+    #         $genre: ReleaseIDFilter,\
+    #         $category: ReleaseIDFilter,\
+    #         $tag: ReleaseIDFilter,\
+    #         $studio: ReleaseIDFilter,\
+    #         $staff: ReleaseIDFilter,\
+    #         $contributor: ReleaseIDFilter,\
+    #         $after: String)'
+
+    #     query_releases = '{releases(\
+    #         first: $first\
+    #         airedOn: $airedOn\
+    #         query: $query\
+    #         orderBy: $orderBy\
+    #         type: $type\
+    #         status: $status\
+    #         activity: $activity\
+    #         rating: $rating\
+    #         season: $season\
+    #         genre: $genre\
+    #         category: $category\
+    #         tag: $tag\
+    #         studio: $studio\
+    #         staff: $staff\
+    #         contributor: $contributor\
+    #         after: $after)'
+
+    #     query_edges = '{edges {node {slug\
+    #             episodesCount\
+    #             episodesAired\
+    #             posters {\
+    #                 preview: resize(width: 360, height: 500) { width height url }\
+    #                 original { width height url }}\
+    #             episodes {name number videos { embedSource embedUrl }}\
+    #             torrents {seeders leechers size metadata videoFormat videoQualities file { url }}}}'
+
+    #     query_page_info = 'pageInfo {startCursor endCursor}}}'
+
+    #     post = {
+    #         "operationName":"fetchReleases",
+    #         "variables": {
+    #             "first": 3, 
+    #             "airedOn": None, 
+    #             "query": "", 
+    #             "orderBy":     {"field": "PUBLISHED_AT","direction":"DESC"},
+    #             "type":        {"include":[],"exclude":[]},
+    #             "status":      {"include":[],"exclude":["DRAFT"]},
+    #             "activity":    {"include":[],"exclude":[]},
+    #             "rating":      {"include":[],"exclude":[]},
+    #             "season":      {"include":[],"exclude":[]},
+    #             "genre":       {"include":[],"exclude":[]},
+    #             "category":    {"include":[],"exclude":[]},
+    #             "tag":         {"include":[],"exclude":[]},
+    #             "studio":      {"include":[],"exclude":[]},
+    #             "staff":       {"include":[],"exclude":[]},
+    #             "contributor": {"include":[],"exclude":[]}
+    #             },
+    #         "query":'{}{}{}{}'.format(query_fetch_releases,query_releases,query_edges,query_page_info)
+    #         }
+
+    #     if self.params['param'] in ('ANNOUNCE','ONGOING','RELEASED','SUSPENDED'):
+    #         post['variables']['status']['include'] = [self.params['param']]
+    #     if self.params['param'] in ('WISH','FROZEN','WORK_IN_PROGRESS','COMPLETED','DROPPED'):
+    #         post['variables']['activity']['include'] = [self.params['param']]
+    #     if self.params['param'] in info.shiza_categories.values():
+    #         post['variables']['category']['include'] = [self.params['param']]
+
+    #     post = str(post).replace('\'','"').replace('None','null')
+    #     return post
+
+
+    # def create_post(self, slug=None):
+    #     release_card = "fragment ReleaseCard on Release {\
+    #                 slug\
+    #                 episodesCount\
+    #                 episodesAired\
+    #                 posters {\
+    #                     preview: resize(width: 360, height: 500) { width height url }\
+    #                     original { width height url }}\
+    #                 episodes {name number videos { embedSource embedUrl }}\
+    #                 torrents {seeders leechers size metadata videoFormat videoQualities file { url }}}"
+
+    #     if self.params['param'] == 'search_part':
+    #         post = {
+    #             "operationName":"search",
+    #             "variables":{"query": unquote(self.params['search_string']),"type":"RELEASE"},
+    #             "query":"query search($query: String!, $type: SearchType!) {{\
+    #                 search(query: $query, type: $type, first: 18) {{\
+    #                     edges {{ node {{ ...ReleaseCard }} }}\
+    #                     pageInfo {{ hasNextPage hasPreviousPage startCursor endCursor }} }}}}\
+    #                 {}".format(release_card)}
+    #     else:
+    #         post = {
+    #             "operationName":"fetchReleases",
+    #             "variables":{
+    #                 "first": 18,
+    #                 "airedOn": None, 
+    #                 "query": "",
+    #                 "orderBy":     {"field": "PUBLISHED_AT","direction":"DESC"},
+    #                 "type":        {"include":[],"exclude":[]},
+    #                 "status":      {"include":[],"exclude":["DRAFT"]},
+    #                 "activity":    {"include":[],"exclude":[]},
+    #                 "rating":      {"include":[],"exclude":[]},
+    #                 "season":      {"include":[],"exclude":[]},
+    #                 "genre":       {"include":[],"exclude":[]},
+    #                 "category":    {"include":[],"exclude":[]},
+    #                 "tag":         {"include":[],"exclude":[]},
+    #                 "studio":      {"include":[],"exclude":[]},
+    #                 "staff":       {"include":[],"exclude":[]},
+    #                 "contributor": {"include":[],"exclude":[]}
+    #                 },
+    #             "query":"query fetchReleases(\
+    #                 $first: Int,\
+    #                 $airedOn: ReleaseAiredOnRangeFilter,\
+    #                 $query: String,\
+    #                 $orderBy: ReleaseOrder,\
+    #                 $type: ReleaseTypeFilter,\
+    #                 $status: ReleaseStatusFilter,\
+    #                 $activity: ReleaseActivityFilter,\
+    #                 $rating: ReleaseRatingFilter,\
+    #                 $season: ReleaseSeasonFilter,\
+    #                 $genre: ReleaseIDFilter,\
+    #                 $category: ReleaseIDFilter,\
+    #                 $tag: ReleaseIDFilter,\
+    #                 $studio: ReleaseIDFilter,\
+    #                 $staff: ReleaseIDFilter,\
+    #                 $contributor: ReleaseIDFilter,\
+    #                 $after: String\
+    #                 ) {{\
+    #             releases(\
+    #                 first: $first\
+    #                 airedOn: $airedOn\
+    #                 query: $query\
+    #                 orderBy: $orderBy\
+    #                 type: $type\
+    #                 status: $status\
+    #                 activity: $activity\
+    #                 rating: $rating\
+    #                 season: $season\
+    #                 genre: $genre\
+    #                 category: $category\
+    #                 tag: $tag\
+    #                 studio: $studio\
+    #                 staff: $staff\
+    #                 contributor: $contributor\
+    #                 after: $after\
+    #             ) {{\
+    #                 edges {{ node {{ ...ReleaseCard }} }}\
+    #                 pageInfo {{ hasNextPage hasPreviousPage startCursor endCursor }} }}}}\
+    #                     {}".format(release_card)}
+
+    #         if self.params['param'] in ('ANNOUNCE','ONGOING','RELEASED','SUSPENDED'):
+    #             post['variables']['status']['include'] = [self.params['param']]
+    #         if self.params['param'] in ('WISH','FROZEN','WORK_IN_PROGRESS','COMPLETED','DROPPED'):
+    #             post['variables']['activity']['include'] = [self.params['param']]
+    #         if self.params['param'] in info.shiza_categories.values():
+    #             post['variables']['category']['include'] = [self.params['param']]
+        
+    #     post = str(post).replace('\'','"').replace('None','null')
+
+    #     xbmc.log(str(post), xbmc.LOGFATAL)
+        
+    #     return post
+
     def create_post(self):
-        query_fetch_releases = 'query fetchReleases(\
-            $first: Int,\
-            $airedOn: ReleaseAiredOnRangeFilter,\
-            $query: String,\
-            $orderBy: ReleaseOrder,\
-            $type: ReleaseTypeFilter,\
-            $status: ReleaseStatusFilter,\
-            $activity: ReleaseActivityFilter,\
-            $rating: ReleaseRatingFilter,\
-            $season: ReleaseSeasonFilter,\
-            $genre: ReleaseIDFilter,\
-            $category: ReleaseIDFilter,\
-            $tag: ReleaseIDFilter,\
-            $studio: ReleaseIDFilter,\
-            $staff: ReleaseIDFilter,\
-            $contributor: ReleaseIDFilter,\
-            $after: String)'
-
-        query_releases = '{releases(\
-            first: $first\
-            airedOn: $airedOn\
-            query: $query\
-            orderBy: $orderBy\
-            type: $type\
-            status: $status\
-            activity: $activity\
-            rating: $rating\
-            season: $season\
-            genre: $genre\
-            category: $category\
-            tag: $tag\
-            studio: $studio\
-            staff: $staff\
-            contributor: $contributor\
-            after: $after)'
-
-        query_edges = '{edges {node {slug\
-                episodesCount\
-                episodesAired\
-                posters {\
-                    preview: resize(width: 360, height: 500) { width height url }\
-                    original { width height url }}\
-                episodes {name number videos { embedSource embedUrl }}\
-                torrents {seeders leechers size metadata videoFormat videoQualities file { url }}}}'
-
-        query_page_info = 'pageInfo {startCursor endCursor}}}'
-
         post = {
             "operationName":"fetchReleases",
-            "variables": {
-                "first": 3, 
+            "variables":{
+                "first": 3,
                 "airedOn": None, 
-                "query": "", 
+                "query": "",
                 "orderBy":     {"field": "PUBLISHED_AT","direction":"DESC"},
                 "type":        {"include":[],"exclude":[]},
                 "status":      {"include":[],"exclude":["DRAFT"]},
@@ -188,10 +315,62 @@ class Shiza:
                 "tag":         {"include":[],"exclude":[]},
                 "studio":      {"include":[],"exclude":[]},
                 "staff":       {"include":[],"exclude":[]},
-                "contributor": {"include":[],"exclude":[]}
+                "contributor": {"include":[],"exclude":[]},
+                "after":""
                 },
-            "query":'{}{}{}{}'.format(query_fetch_releases,query_releases,query_edges,query_page_info)
-            }
+            "query":"query fetchReleases(\
+                $first: Int,\
+                $airedOn: ReleaseAiredOnRangeFilter,\
+                $query: String,\
+                $orderBy: ReleaseOrder,\
+                $type: ReleaseTypeFilter,\
+                $status: ReleaseStatusFilter,\
+                $activity: ReleaseActivityFilter,\
+                $rating: ReleaseRatingFilter,\
+                $season: ReleaseSeasonFilter,\
+                $genre: ReleaseIDFilter,\
+                $category: ReleaseIDFilter,\
+                $tag: ReleaseIDFilter,\
+                $studio: ReleaseIDFilter,\
+                $staff: ReleaseIDFilter,\
+                $contributor: ReleaseIDFilter,\
+                $after: String\
+                ) {\
+            releases(\
+                first: $first\
+                airedOn: $airedOn\
+                query: $query\
+                orderBy: $orderBy\
+                type: $type\
+                status: $status\
+                activity: $activity\
+                rating: $rating\
+                season: $season\
+                genre: $genre\
+                category: $category\
+                tag: $tag\
+                studio: $studio\
+                staff: $staff\
+                contributor: $contributor\
+                after: $after\
+            ) {\
+                edges { node { ...ReleaseCard } }\
+                pageInfo { hasNextPage hasPreviousPage startCursor endCursor } }}\
+                fragment ReleaseCard on Release {\
+                    slug\
+                    episodesCount\
+                    episodesAired\
+                    posters {\
+                        preview: resize(width: 360, height: 500) { width height url }\
+                        original { width height url }}\
+                    episodes {name number videos { embedSource embedUrl }}\
+                    torrents {seeders leechers size metadata videoFormat videoQualities file { url }}}"}
+
+        if 'after' in self.params:
+            post['variables']['after'] = self.params['after']
+
+        if 'search_string' in self.params:
+            post['variables']['query'] = unquote(self.params['search_string'])
 
         if self.params['param'] in ('ANNOUNCE','ONGOING','RELEASED','SUSPENDED'):
             post['variables']['status']['include'] = [self.params['param']]
@@ -199,8 +378,9 @@ class Shiza:
             post['variables']['activity']['include'] = [self.params['param']]
         if self.params['param'] in info.shiza_categories.values():
             post['variables']['category']['include'] = [self.params['param']]
-
+        
         post = str(post).replace('\'','"').replace('None','null')
+        
         return post
 
     def create_episodes(self, episodes):
@@ -398,7 +578,6 @@ class Shiza:
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
 
             anime_info = self.database.get_anime(anime_id)
-            #plot, countries, aired, studios, genres, authors, dubbing, mastering, timing, other, translation
 
             info = {
                 'plot': anime_info[0],
@@ -494,14 +673,49 @@ class Shiza:
         #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-    
+
+    def exec_search_part(self):
+        if self.params['param'] == '':
+            self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+
+            data_array = self.addon.getSetting('shiza_search').split('|')
+            data_array.reverse()
+
+            for data in data_array:
+                if data == '':
+                    continue
+                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
+
+        if self.params['param'] == 'search':
+            skbd = xbmc.Keyboard()
+            skbd.setHeading('Поиск:')
+            skbd.doModal()
+            if skbd.isConfirmed():
+                self.params['search_string'] = quote(skbd.getText())
+                data_array = self.addon.getSetting('shiza_search').split('|')
+                while len(data_array) >= 10:
+                    data_array.pop(0)
+                data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
+                self.addon.setSetting('shiza_search', data_array)
+
+                self.params['param'] = 'search_part'
+                self.exec_common_part()
+            else:
+                return False
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
     def exec_common_part(self):
         self.progress.create("ShizaProject", "Инициализация")
         post = self.create_post()
 
         html = self.network.get_html(self.site_url, post)
-
-        after = html[html.find('endCursor":"')+12:html.rfind('"}')]
+        
+        # if 'hasNextPage":true' in html:
+        #     after = html[html.find('endCursor":"')+12:html.rfind('"}')]
+        # else:
+        #     after = False
+        #after = html[html.find('endCursor":"')+12:html.rfind('"}')]
 
         data_array = html.split('{"node":{"slug":"')
         data_array.pop(0)
@@ -545,6 +759,12 @@ class Shiza:
             self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id, 'cover':cover, 'episodes':episodes, 'torrent':torrent, 'series':series})
 
         self.progress.close()
+
+        if 'hasNextPage":true' in html:
+            after = html[html.find('endCursor":"')+12:html.rfind('"}')]
+            self.create_line(title='[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={
+                             'mode': self.params['mode'], 'param': self.params['param'], 'after': after})
+        #else: after = False
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
