@@ -123,185 +123,11 @@ class Shiza:
         #site_url = '{}graphql'.format(site_url)
         return site_url
 
-    # def create_post(self):
-    #     query_fetch_releases = 'query fetchReleases(\
-    #         $first: Int,\
-    #         $airedOn: ReleaseAiredOnRangeFilter,\
-    #         $query: String,\
-    #         $orderBy: ReleaseOrder,\
-    #         $type: ReleaseTypeFilter,\
-    #         $status: ReleaseStatusFilter,\
-    #         $activity: ReleaseActivityFilter,\
-    #         $rating: ReleaseRatingFilter,\
-    #         $season: ReleaseSeasonFilter,\
-    #         $genre: ReleaseIDFilter,\
-    #         $category: ReleaseIDFilter,\
-    #         $tag: ReleaseIDFilter,\
-    #         $studio: ReleaseIDFilter,\
-    #         $staff: ReleaseIDFilter,\
-    #         $contributor: ReleaseIDFilter,\
-    #         $after: String)'
-
-    #     query_releases = '{releases(\
-    #         first: $first\
-    #         airedOn: $airedOn\
-    #         query: $query\
-    #         orderBy: $orderBy\
-    #         type: $type\
-    #         status: $status\
-    #         activity: $activity\
-    #         rating: $rating\
-    #         season: $season\
-    #         genre: $genre\
-    #         category: $category\
-    #         tag: $tag\
-    #         studio: $studio\
-    #         staff: $staff\
-    #         contributor: $contributor\
-    #         after: $after)'
-
-    #     query_edges = '{edges {node {slug\
-    #             episodesCount\
-    #             episodesAired\
-    #             posters {\
-    #                 preview: resize(width: 360, height: 500) { width height url }\
-    #                 original { width height url }}\
-    #             episodes {name number videos { embedSource embedUrl }}\
-    #             torrents {seeders leechers size metadata videoFormat videoQualities file { url }}}}'
-
-    #     query_page_info = 'pageInfo {startCursor endCursor}}}'
-
-    #     post = {
-    #         "operationName":"fetchReleases",
-    #         "variables": {
-    #             "first": 3, 
-    #             "airedOn": None, 
-    #             "query": "", 
-    #             "orderBy":     {"field": "PUBLISHED_AT","direction":"DESC"},
-    #             "type":        {"include":[],"exclude":[]},
-    #             "status":      {"include":[],"exclude":["DRAFT"]},
-    #             "activity":    {"include":[],"exclude":[]},
-    #             "rating":      {"include":[],"exclude":[]},
-    #             "season":      {"include":[],"exclude":[]},
-    #             "genre":       {"include":[],"exclude":[]},
-    #             "category":    {"include":[],"exclude":[]},
-    #             "tag":         {"include":[],"exclude":[]},
-    #             "studio":      {"include":[],"exclude":[]},
-    #             "staff":       {"include":[],"exclude":[]},
-    #             "contributor": {"include":[],"exclude":[]}
-    #             },
-    #         "query":'{}{}{}{}'.format(query_fetch_releases,query_releases,query_edges,query_page_info)
-    #         }
-
-    #     if self.params['param'] in ('ANNOUNCE','ONGOING','RELEASED','SUSPENDED'):
-    #         post['variables']['status']['include'] = [self.params['param']]
-    #     if self.params['param'] in ('WISH','FROZEN','WORK_IN_PROGRESS','COMPLETED','DROPPED'):
-    #         post['variables']['activity']['include'] = [self.params['param']]
-    #     if self.params['param'] in info.shiza_categories.values():
-    #         post['variables']['category']['include'] = [self.params['param']]
-
-    #     post = str(post).replace('\'','"').replace('None','null')
-    #     return post
-
-
-    # def create_post(self, slug=None):
-    #     release_card = "fragment ReleaseCard on Release {\
-    #                 slug\
-    #                 episodesCount\
-    #                 episodesAired\
-    #                 posters {\
-    #                     preview: resize(width: 360, height: 500) { width height url }\
-    #                     original { width height url }}\
-    #                 episodes {name number videos { embedSource embedUrl }}\
-    #                 torrents {seeders leechers size metadata videoFormat videoQualities file { url }}}"
-
-    #     if self.params['param'] == 'search_part':
-    #         post = {
-    #             "operationName":"search",
-    #             "variables":{"query": unquote(self.params['search_string']),"type":"RELEASE"},
-    #             "query":"query search($query: String!, $type: SearchType!) {{\
-    #                 search(query: $query, type: $type, first: 18) {{\
-    #                     edges {{ node {{ ...ReleaseCard }} }}\
-    #                     pageInfo {{ hasNextPage hasPreviousPage startCursor endCursor }} }}}}\
-    #                 {}".format(release_card)}
-    #     else:
-    #         post = {
-    #             "operationName":"fetchReleases",
-    #             "variables":{
-    #                 "first": 18,
-    #                 "airedOn": None, 
-    #                 "query": "",
-    #                 "orderBy":     {"field": "PUBLISHED_AT","direction":"DESC"},
-    #                 "type":        {"include":[],"exclude":[]},
-    #                 "status":      {"include":[],"exclude":["DRAFT"]},
-    #                 "activity":    {"include":[],"exclude":[]},
-    #                 "rating":      {"include":[],"exclude":[]},
-    #                 "season":      {"include":[],"exclude":[]},
-    #                 "genre":       {"include":[],"exclude":[]},
-    #                 "category":    {"include":[],"exclude":[]},
-    #                 "tag":         {"include":[],"exclude":[]},
-    #                 "studio":      {"include":[],"exclude":[]},
-    #                 "staff":       {"include":[],"exclude":[]},
-    #                 "contributor": {"include":[],"exclude":[]}
-    #                 },
-    #             "query":"query fetchReleases(\
-    #                 $first: Int,\
-    #                 $airedOn: ReleaseAiredOnRangeFilter,\
-    #                 $query: String,\
-    #                 $orderBy: ReleaseOrder,\
-    #                 $type: ReleaseTypeFilter,\
-    #                 $status: ReleaseStatusFilter,\
-    #                 $activity: ReleaseActivityFilter,\
-    #                 $rating: ReleaseRatingFilter,\
-    #                 $season: ReleaseSeasonFilter,\
-    #                 $genre: ReleaseIDFilter,\
-    #                 $category: ReleaseIDFilter,\
-    #                 $tag: ReleaseIDFilter,\
-    #                 $studio: ReleaseIDFilter,\
-    #                 $staff: ReleaseIDFilter,\
-    #                 $contributor: ReleaseIDFilter,\
-    #                 $after: String\
-    #                 ) {{\
-    #             releases(\
-    #                 first: $first\
-    #                 airedOn: $airedOn\
-    #                 query: $query\
-    #                 orderBy: $orderBy\
-    #                 type: $type\
-    #                 status: $status\
-    #                 activity: $activity\
-    #                 rating: $rating\
-    #                 season: $season\
-    #                 genre: $genre\
-    #                 category: $category\
-    #                 tag: $tag\
-    #                 studio: $studio\
-    #                 staff: $staff\
-    #                 contributor: $contributor\
-    #                 after: $after\
-    #             ) {{\
-    #                 edges {{ node {{ ...ReleaseCard }} }}\
-    #                 pageInfo {{ hasNextPage hasPreviousPage startCursor endCursor }} }}}}\
-    #                     {}".format(release_card)}
-
-    #         if self.params['param'] in ('ANNOUNCE','ONGOING','RELEASED','SUSPENDED'):
-    #             post['variables']['status']['include'] = [self.params['param']]
-    #         if self.params['param'] in ('WISH','FROZEN','WORK_IN_PROGRESS','COMPLETED','DROPPED'):
-    #             post['variables']['activity']['include'] = [self.params['param']]
-    #         if self.params['param'] in info.shiza_categories.values():
-    #             post['variables']['category']['include'] = [self.params['param']]
-        
-    #     post = str(post).replace('\'','"').replace('None','null')
-
-    #     xbmc.log(str(post), xbmc.LOGFATAL)
-        
-    #     return post
-
     def create_post(self):
         post = {
             "operationName":"fetchReleases",
             "variables":{
-                "first": 3,
+                "first": 15,
                 "airedOn": None, 
                 "query": "",
                 "orderBy":     {"field": "PUBLISHED_AT","direction":"DESC"},
@@ -385,7 +211,8 @@ class Shiza:
 
     def create_episodes(self, episodes):
         online_array = []
-        episodes = episodes.split('}]},{')
+        #episodes = episodes.split('}]},{')
+        episodes = episodes.split(']},{')
 
         for ep in episodes:
             episode_name = ep[ep.find('"name":"')+8:ep.find('","number"')]
@@ -603,6 +430,18 @@ class Shiza:
 
             li.setInfo(type='video', infoLabels=info)
 
+        if self.params['mode'] == 'search_part' and self.params['param'] == '':
+            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=shizaproject")')])
+
+        # if self.auth_mode and self.params['mode'] == 'common_part':
+        #     li.addContextMenuItems([
+        #         ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal=shizaproject")'.format(anime_id)),
+        #         ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal=shizaproject")'.format(anime_id))
+        #         ])
+
+        if self.params['mode'] == 'information_part':
+            li.addContextMenuItems([('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=shizaproject")')])
+
         if folder==False:
                 li.setProperty('isPlayable', 'true')
 
@@ -654,6 +493,14 @@ class Shiza:
             self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
             pass
 
+    def exec_clean_part(self):
+        try:
+            self.addon.setSetting('shiza_search', '')
+            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
+        except:
+            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
+            pass
+
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
 
@@ -663,15 +510,11 @@ class Shiza:
         self.create_line(title='[B][COLOR=lime][ В работе ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'WORK_IN_PROGRESS'}) #https://shiza-project.com/releases?activities=WORK_IN_PROGRESS
         self.create_line(title='[B][COLOR=lime][ Запланированные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'WISH'}) #https://shiza-project.com/releases?activities=WISH
         self.create_line(title='[B][COLOR=lime][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'COMPLETED'}) #https://shiza-project.com/releases?activities=COMPLETED
-        #self.create_line(title='[B][COLOR=lime][ Приостановленные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'status/suspended'})
-        #self.create_line(title='[B][COLOR=lime][ Рекомендуемые ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'releases/top'})
-
         self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI%3D
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM%3D
-        self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ%3D        
+        self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ%3D
         
-        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
-        
+        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_search_part(self):
@@ -731,9 +574,10 @@ class Shiza:
             poster_preview = poster_data[poster_data.find('https://'):poster_data.find('"},"original')]
             poster_original = poster_data[poster_data.rfind('https://'):]
 
-            episodes = data[data.find('"episodes":[{')+13:data.find('],"torrents')]
+            #episodes = data[data.find('"episodes":[{')+13:data.find('],"torrents')]
+            episodes = data[data.find('"episodes":[')+12:data.find('],"torrents')]
             episodes = self.create_episodes(episodes)
-
+            
             torrent = data[data.find('torrents":[{')+12:data.find('"}}]}}')]
             torrent = self.create_torrent(torrent)
 
@@ -756,7 +600,7 @@ class Shiza:
 
             series = '1-{} / {}'.format(episodes_aired, episodes_count)
 
-            self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id, 'cover':cover, 'episodes':episodes, 'torrent':torrent, 'series':series})
+            self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part','id': anime_id,'cover':cover,'episodes':episodes,'torrent':torrent,'series':series})
 
         self.progress.close()
 
@@ -768,9 +612,28 @@ class Shiza:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
+    def exec_information_part(self):
+        if self.params['param'] == '':
+            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
+            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
+            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
+            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        else:
+            txt = info.shiza_data
+            start = '[{}]'.format(self.params['param'])
+            end = '[/{}]'.format(self.params['param'])
+            data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+            self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]shiza-project.com[/COLOR]', data)
+        return
+
     def exec_select_part(self):
-        self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id'], 'episodes':self.params['episodes'], 'cover': self.params['cover']})
-        self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent':self.params['torrent'], 'cover': self.params['cover'], 'series':self.params['series']})
+        if 'episodes' in self.params:
+            self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id'], 'episodes':self.params['episodes'], 'cover': self.params['cover']})
+        if 'torrent' in self.params:
+            self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent':self.params['torrent'], 'cover': self.params['cover'], 'series':self.params['series']})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
     
     def exec_online_part(self):
