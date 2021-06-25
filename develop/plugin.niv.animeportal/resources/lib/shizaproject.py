@@ -262,21 +262,18 @@ class Shiza:
 
         return label
 # ===========================================================================================
-    # def create_image(self, anime_id):
-    #     site_url = self.site_url.replace('public/api/index.php','')
-    #     url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
+    def create_image(self, anime_id, url):
+        if self.addon.getSetting('shiza_covers') == '0':
+            return url
+        else:
+            local_img = '{}_{}'.format(self.params['portal'], url[url.rfind('/')+1:])
 
-    #     if self.addon.getSetting('anilibria_covers') == '0':
-    #         return url
-    #     else:
-    #         #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
-    #         local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
-    #         if local_img in os.listdir(self.images_dir):
-    #             local_path = os.path.join(self.images_dir, local_img)
-    #             return local_path
-    #         else:
-    #             file_name = os.path.join(self.images_dir, local_img)
-    #             return self.network.get_file(target_name=url, destination_name=file_name)
+            if local_img in os.listdir(self.images_dir):
+                local_path = os.path.join(self.images_dir, local_img)
+                return local_path
+            else:
+                file_name = os.path.join(self.images_dir, local_img)
+                return self.network.get_file(target_name=url, destination_name=file_name)
 #===========================================================================================
     def create_contributors(self, data):
         info = {'VOICE_ACTING':[],'EDITING':[], 'MASTERING':[],'TIMING':[],'TRANSLATION':[], 'OTHER':[]}
@@ -399,7 +396,8 @@ class Shiza:
             li.setInfo(type='video', infoLabels={'plot':metadata})
 
         if anime_id:
-            cover = cover
+            #cover = cover
+            cover = self.create_image(anime_id, cover)
 
             li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
@@ -554,12 +552,6 @@ class Shiza:
 
         html = self.network.get_html(self.site_url, post)
         
-        # if 'hasNextPage":true' in html:
-        #     after = html[html.find('endCursor":"')+12:html.rfind('"}')]
-        # else:
-        #     after = False
-        #after = html[html.find('endCursor":"')+12:html.rfind('"}')]
-
         data_array = html.split('{"node":{"slug":"')
         data_array.pop(0)
 
@@ -593,7 +585,7 @@ class Shiza:
 
             label = self.create_title(anime_id, episodes_count, episodes_aired)
 
-            if self.addon.getSetting('shiza_covers_qulity') == '0':
+            if self.addon.getSetting('shiza_covers_quality') == '0':
                 cover = poster_preview
             else:
                 cover = poster_original
@@ -608,7 +600,6 @@ class Shiza:
             after = html[html.find('endCursor":"')+12:html.rfind('"}')]
             self.create_line(title='[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={
                              'mode': self.params['mode'], 'param': self.params['param'], 'after': after})
-        #else: after = False
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
@@ -655,33 +646,30 @@ class Shiza:
             
             cover = html[html.find('og:image" content="')+19:html.find('"/><meta property="og:description')]
             
-            if html.find('player.src') > -1:
+            if 'player.src' in html:
                 video_src = html[html.find('player.src([{src: "')+19:html.find(';player.persistvolume')]
                 video_src = video_src[:video_src.find('"')]
                 play_url = 'https://video.sibnet.ru{}|referer={}'.format(video_src, self.params['param'])
 
-            if html.find('<div class=videostatus><p>') > -1:
-                pass
+                label = self.params['title']
 
-            self.create_line(title=self.params['title'], cover=cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
+            if 'class=videostatus><p>' in html:
+                status = html[html.find('class=videostatus><p>')+21:html.find('</p></div><script')]
+                label = '[COLOR=red][B][ {} ][/B][/COLOR]'.format(status.replace('.',''))
+                play_url = ''
+
+            self.create_line(title=label, cover=cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_torrent_part(self):
         if not self.params['param']:
             data = self.params['torrent'].split('||')
-#['9', '1', '4124886078', 'Автор рипа: SOFCJ-Raws\\nВидео: x264 (10bit), 1920x1080, ≈4000 kbps, 23,976 fps\\nАудио RUS: AAC, 192 kbps, 48 kHz, 2 ch', 'MP4', 'WEB_RIP', 'RESOLUTION_1080P', 'https://cdn.shiza-project.com/files/a50d9602477df591beb032bcdfef24752812307f.torrent']
-#torrent_data = '{}||{}||{}||{}||{}||{}||{}'.format(seed,leech,size,metadata,video_format,quality,url)
-        # import xbmc
-        # xbmc.log(str(data), xbmc.LOGFATAL)
 
             seeders = data[0]
             leechers = data[1]
             torrent_size = '{:.2f}'.format(float(data[2]) / 1024 / 1024 / 1024)
-
             metadata = data[3].replace('\\n','\n\n')
-            #metadata = metadata.replace('Автор рипа:','[COLOR=steelblue]Автор рипа:[/COLOR]')
-
             video_format = data[4]
             quality = data[5].replace('","',' - ').replace('RESOLUTION_','')
             torrent_url = data[6]
