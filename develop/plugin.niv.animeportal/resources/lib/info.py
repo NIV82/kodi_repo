@@ -621,28 +621,48 @@ shiza_data = '[sett]\n\
 [/bugs]'
 
 
-shiza_years = (
-    '1970', '1971', '1972', '1973', '1974', '1975', '1976', '1977', '1978', '1979', '1980', 
+shiza_year = (
+    '','1970', '1971', '1972', '1973', '1974', '1975', '1976', '1977', '1978', '1979', '1980', 
     '1981', '1982', '1983', '1984', '1985', '1986', '1987', '1988', '1989', '1990', '1991', 
     '1992', '1993', '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', 
     '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', 
     '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021')
 
-shiza_direction = {
-    'По Убыванию':'DESC',
-    'По Возрастанию':'ASC'
+shiza_season = {
+    '':'',
+    'Весна':'SPRING',
+    'Лето':'SUMMER',
+    'Осень':'FALL',
+    'Зима':'WINTER'
     }
 
-shiza_sort = {
-    'По Дате публикации':'PUBLISHED_AT',
-    'По Дате обновление':'UPDATED_AT',
-    'По Просмотрам':'VIEW_COUNT',
-    'По названию [A-Z]':'ORIGINAL_NAME',
-    'По названию [А-Я]':'NAME',
-    'По рейтингу':'SCORE'
+shiza_categories = {
+    '':'',
+    'Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=',
+    'Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=',
+    'Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=',
+    'Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='
+    }
+
+shiza_status = {
+    '':'',
+    'Анонс':'ANNOUNCE',
+    'Онгоинг':'ONGOING',
+    'Выпущено':'RELEASED',
+    'Приостановлено':'SUSPENDED'
+    }
+
+shiza_voice_stat = {
+    '':'',
+    'Хочучка':'WISH',
+    'Заморожено':'FROZEN',
+    'В работе':'WORK_IN_PROGRESS',
+    'Звершено':'COMPLETED',
+    'Брошено':'DROPPED'
     }
 
 shiza_form = {
+    '':'',
     'ТВ':'TV',
     'ТВ-спешл':'TV_SPECIAL',
     'Остальное':'OTHER',
@@ -653,33 +673,10 @@ shiza_form = {
     'Музыкальный':'MUSIC'
     }
 
-shiza_status = {
-    'Анонс':'ANNOUNCE',
-    'Онгоинг':'ONGOING',
-    'Выпущено':'RELEASED',
-    'Приостановлено':'SUSPENDED'
-    }
+shiza_rating = ('','G','PG','PG_13','R','R_PLUS','RX')
 
-shiza_activity = {
-    'Хочучка':'WISH',
-    'Заморожено':'FROZEN',
-    'В работе':'WORK_IN_PROGRESS',
-    'Звершено':'COMPLETED',
-    'Брошено':'DROPPED'
-    }
-
-shiza_rating = (
-    'G','PG','PG_13','R','R_PLUS','RX'
-    )
-    
-shiza_season = {
-    'Весна':'SPRING',
-    'Лето':'SUMMER',
-    'Осень':'FALL',
-    'Зима':'WINTER'
-    }
-
-shiza_genres = {
+shiza_genre = {
+    '':'',
     'экшен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzM=',
     'комедия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzQ=',
     'романтика':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODc=',
@@ -715,11 +712,18 @@ shiza_genres = {
     'полиция':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzY='
     }
 
-shiza_categories = {
-    'Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=',
-    'Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=',
-    'Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=',
-    'Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='
+shiza_direction = {
+    'По убыванию':'DESC',
+    'По возрастанию':'ASC'
+    }
+
+shiza_sort = {
+    'По дате публикации':'PUBLISHED_AT',
+    'По дате обновление':'UPDATED_AT',
+    'По просмотрам':'VIEW_COUNT',
+    'По названию EN':'ORIGINAL_NAME',
+    'По названию RU':'NAME',
+    'По рейтингу':'SCORE'
     }
 
 shiza_tags = {

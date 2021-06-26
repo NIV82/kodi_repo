@@ -511,7 +511,7 @@ class Shiza:
         self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI%3D
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM%3D
         self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ%3D
-        
+        self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
         self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
@@ -602,6 +602,67 @@ class Shiza:
                              'mode': self.params['mode'], 'param': self.params['param'], 'after': after})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+    def exec_catalog_part(self):        
+        if not self.params['param']:# == '':
+            self.create_line(title='Год (начало отрезка): [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_year_start')), params={'mode': 'catalog_part', 'param': 'shiza_year_start'})
+            self.create_line(title='Год (конец отрезка): [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_year_end')), params={'mode': 'catalog_part', 'param': 'shiza_year_end'})  
+            self.create_line(title='Сезон: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_season')), params={'mode': 'catalog_part', 'param': 'shiza_season'})            
+            self.create_line(title='Категория: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_categories')), params={'mode': 'catalog_part', 'param': 'shiza_categories'})
+            self.create_line(title='Статус тайтла: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_status')), params={'mode': 'catalog_part', 'param': 'shiza_status'})
+            self.create_line(title='Статус озвучки: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_voice_stat')), params={'mode': 'catalog_part', 'param': 'shiza_voice_stat'})            
+            self.create_line(title='Тип: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_form')), params={'mode': 'catalog_part', 'param': 'shiza_form'})            
+            self.create_line(title='Возрастное ограничение: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_rating')), params={'mode': 'catalog_part', 'param': 'shiza_rating'})
+            self.create_line(title='Жанр: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_genre')), params={'mode': 'catalog_part', 'param': 'shiza_genre'})
+            self.create_line(title='Сортировка по: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_sort')), params={'mode': 'catalog_part', 'param': 'shiza_sort'})
+            self.create_line(title='Направление сортировки: [COLOR=gold]{}[/COLOR]'.format(
+                self.addon.getSetting('shiza_direction')), params={'mode': 'catalog_part', 'param': 'shiza_direction'})
+            
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)            
+        
+        if 'shiza_year_start' in self.params['param']:
+            result = self.dialog.select('Начало отрезка:', info.shiza_year)
+            self.addon.setSetting(id='shiza_year_start', value=info.shiza_year[result])        
+        if 'shiza_year_end' in self.params['param']:
+            result = self.dialog.select('Конец отрезка:', info.shiza_year)
+            self.addon.setSetting(id='shiza_year_end', value=info.shiza_year[result])
+        if 'shiza_season' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', tuple(info.shiza_season.keys()))
+            self.addon.setSetting(id='shiza_season', value=tuple(info.shiza_season.keys())[result])
+        if 'shiza_categories' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', tuple(info.shiza_categories.keys()))
+            self.addon.setSetting(id='shiza_categories', value=tuple(info.shiza_categories.keys())[result])
+        if 'shiza_status' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', tuple(info.shiza_status.keys()))
+            self.addon.setSetting(id='shiza_status', value=tuple(info.shiza_status.keys())[result])
+        if 'shiza_voice_stat' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', tuple(info.shiza_voice_stat.keys()))
+            self.addon.setSetting(id='shiza_voice_stat', value=tuple(info.shiza_voice_stat.keys())[result])
+        if 'shiza_form' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', tuple(info.shiza_form.keys()))
+            self.addon.setSetting(id='shiza_form', value=tuple(info.shiza_form.keys())[result])
+        if 'shiza_rating' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', info.shiza_rating)
+            self.addon.setSetting(id='shiza_rating', value=info.shiza_rating[result])
+        if 'shiza_genre' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', tuple(info.shiza_genre.keys()))
+            self.addon.setSetting(id='shiza_genre', value=tuple(info.shiza_genre.keys())[result])
+        if 'shiza_sort' in self.params['param']:
+            result = self.dialog.select('Сортировка по:', tuple(info.shiza_sort.keys()))
+            self.addon.setSetting(id='shiza_sort', value=tuple(info.shiza_sort.keys())[result])        
+        if 'shiza_direction' in self.params['param']:
+            result = self.dialog.select('Направление сортировки:', tuple(info.shiza_direction.keys()))
+            self.addon.setSetting(id='shiza_direction', value=tuple(info.shiza_direction.keys())[result])
 
     def exec_information_part(self):
         if self.params['param'] == '':

@@ -135,6 +135,18 @@
     <setting id="shiza_session" label="session" type="text" default="" visible="false"/>
     <setting id="shiza_search" label="status" type="text" default="" visible="false"/>
     <setting id="shiza_auth" label="auth" type="bool" default="false" visible="false"/>
+    
+    <setting id="shiza_year_start" label="year" type="text" default="" visible="false"/>
+    <setting id="shiza_year_end" label="year" type="text" default="" visible="false"/>
+    <setting id="shiza_season" label="season" type="text" default="" visible="false"/>
+    <setting id="shiza_categories" label="categories" type="text" default="" visible="false"/>
+    <setting id="shiza_status" label="status" type="text" default="" visible="false"/>
+    <setting id="shiza_voice_stat" label="voice_stat" type="text" default="" visible="false"/>
+    <setting id="shiza_form" label="form" type="text" default="" visible="false"/>
+    <setting id="shiza_rating" label="rating" type="text" default="" visible="false"/>    
+    <setting id="shiza_genre" label="genre" type="text" default="" visible="false"/>
+    <setting id="shiza_sort" label="sort" type="text" default="Дате публикации" visible="false"/>
+    <setting id="shiza_direction" label="direction" type="text" default="По убыванию" visible="false"/>
   </category>
   
 </settings>
