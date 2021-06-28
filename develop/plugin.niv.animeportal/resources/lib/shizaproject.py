@@ -128,7 +128,6 @@ class Shiza:
             "operationName":"fetchReleases",
             "variables":{
                 "first": 15,
-                #"airedOn": None,
                 "airedOn":{"startYear":int(self.addon.getSetting('shiza_year_start')),"endYear":int(self.addon.getSetting('shiza_year_end'))},
                 "query": "",
                 "orderBy":     {"field": "PUBLISHED_AT","direction":"DESC"},
@@ -193,26 +192,6 @@ class Shiza:
                     episodes {name number videos { embedSource embedUrl }}\
                     torrents {seeders leechers size metadata videoFormat videoQualities file { url }}}"}
 
-        if 'catalog' in self.params['param']:
-            post['variables']['orderBy'] = {
-                "field":info.shiza_sort[self.addon.getSetting('shiza_sort')],
-                "direction":info.shiza_direction[self.addon.getSetting('shiza_direction')]}
-
-            xbmc.log(str(post['variables']['orderBy']), xbmc.LOGFATAL)
-
-#         "orderBy":{"field":"PUBLISHED_AT","direction":"DESC"},
-#         "type":{"include":["TV","TV_SPECIAL","OTHER","MOVIE","SHORT_MOVIE","OVA","ONA","MUSIC"],"exclude":[]},
-#         "status":{"include":["ANNOUNCE","ONGOING","RELEASED","SUSPENDED"],"exclude":["DRAFT"]},
-#         "activity":{"include":["WISH","FROZEN","WORK_IN_PROGRESS","COMPLETED","DROPPED"],"exclude":[]},
-#         "rating":{"include":["G","PG","PG_13","R","R_PLUS","RX"],"exclude":[]},
-#         "season":{"include":["SPRING","SUMMER","FALL","WINTER"],"exclude":[]},
-#         "watchlist":{"include":[],"exclude":[]},
-#         "genre":{"include":["R2VucmU6NDU4OTE0MjEzMzIzMDc5NzM=","R2VucmU6NDU4OTE0MjEzMzIzMDc5NzQ=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODc=","R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzk=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMDE=","R2VucmU6NDU4OTE0MjEzMzIzMDc5Njg=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODg=","R2VucmU6NDU4OTE0MjEzMzIzMDc5OTk=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODk=","R2VucmU6NDU4OTE0MjEzMzIzMDc5NzE=","R2VucmU6NDU4OTE0MjEzMzIzMDc5OTY=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMTA=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMDU=","R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzg=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODM=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODQ=","R2VucmU6NDU4OTE0MjEzMzIzMDc5OTQ=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMDQ=","R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzc=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMDA=","R2VucmU6NDU4OTE0MjEzMzIzMDc5Njk=","R2VucmU6NDU4OTE0MjEzMzIzMDc5NzI=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMDM=","R2VucmU6NDU4OTE0MjEzMzIzMDc5NzA=","R2VucmU6NDU4OTE0MjEzMzIzMDc5NzU=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODI=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMDI=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODE=","R2VucmU6NDU4OTE0MjEzMzIzMDc5OTA=","R2VucmU6NDU4OTE0MjEzMzIzMDc5OTE=","R2VucmU6NDU4OTE0MjEzMzIzMDc5ODU=","R2VucmU6NDU4OTE0MjEzMzIzMDgwMDg=","R2VucmU6NDU4OTE0MjEzMzIzMDc5NzY="],"exclude":[]},
-#         "category":{"include":["Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=","Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=","Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=","Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ="],"exclude":[]},
-#         "tag":{"include":["VGFnOjQ1ODkxNDE0ODg1NjYyNzI0","VGFnOjQ1ODkxNDE0ODg1NjYyODA3","VGFnOjQ1ODkxNDE0ODg1NjYyODk2","VGFnOjQ1ODkxNDE0ODg5ODU3MDI5","VGFnOjQ1ODkxNDE0ODgxNDY4NDE4","VGFnOjQ1ODkxNDE0ODg1NjYyODAw","VGFnOjQ1ODkxNDE0ODg1NjYyNzM2","VGFnOjQ1ODkxNDE0ODg1NjYyNzY1","VGFnOjQ1ODkxNDE0ODg1NjYyNzk5","VGFnOjQ1ODkxNDE0ODg5ODU3MDM0","VGFnOjQ1ODkxNDE0ODg1NjYyNzQ5","VGFnOjQ1ODkxNDE0ODg1NjYyODAy","VGFnOjQ1ODkxNDE0ODg1NjYyNzcz","VGFnOjQ1ODkxNDE0ODg1NjYyNzI4","VGFnOjQ1ODkxNDE0ODg1NjYyODU0","VGFnOjQ1ODkxNDE0ODg1NjYyNzMy","VGFnOjQ1ODkxNDE0ODg1NjYyNzMz"],"exclude":[]},
-#         "studio":{"include":[],"exclude":[]},"staff":{"include":[],"exclude":[]},
-#         "contributor":{"include":[],"exclude":[]}
-
         if 'after' in self.params:
             post['variables']['after'] = self.params['after']
 
@@ -225,7 +204,29 @@ class Shiza:
             post['variables']['activity']['include'] = [self.params['param']]
         if self.params['param'] in ('Аниме','Дорамы','Мультфильмы','Разное'):
             post['variables']['category']['include'] = [info.shiza_categories[self.params['param']]]
-        
+
+        if 'catalog' in self.params['param']:
+            if self.addon.getSetting('shiza_season'):
+                post['variables']['season']['include'] = info.shiza_season[self.addon.getSetting('shiza_season')]
+            if self.addon.getSetting('shiza_categories'):
+                post['variables']['category']['include'] = info.shiza_categories[self.addon.getSetting('shiza_categories')]
+            if self.addon.getSetting('shiza_status'):
+                post['variables']['status']['include'] = info.shiza_status[self.addon.getSetting('shiza_status')]
+            if self.addon.getSetting('shiza_voice_stat'):
+                post['variables']['activity']['include'] = info.shiza_voice_stat[self.addon.getSetting('shiza_voice_stat')]
+            if self.addon.getSetting('shiza_form'):
+                post['variables']['type']['include'] = info.shiza_form[self.addon.getSetting('shiza_form')]
+            if self.addon.getSetting('shiza_rating'):
+                post['variables']['rating']['include'] = self.addon.getSetting('shiza_rating')
+            if self.addon.getSetting('shiza_genre'):
+                post['variables']['genre']['include'] = info.shiza_genre[self.addon.getSetting('shiza_genre')]
+            if self.addon.getSetting('shiza_tags'):
+                post['variables']['tag']['include'] = info.shiza_tags[self.addon.getSetting('shiza_tags')]
+            
+            post['variables']['orderBy'] = {
+                "field":info.shiza_sort[self.addon.getSetting('shiza_sort')],
+                "direction":info.shiza_direction[self.addon.getSetting('shiza_direction')]}
+
         post = str(post).replace('\'','"').replace('None','null')
         
         return post
@@ -522,27 +523,20 @@ class Shiza:
 
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-
-        self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part'}) #https://shiza-project.com/releases?orderBy=PUBLISHED_AT
-        #self.create_line(title='[B][COLOR=lime][ Все ][/COLOR][/B]', params={'mode': 'common_part', 'param': ''})
-        self.create_line(title='[B][COLOR=lime][ Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'ONGOING'}) #https://shiza-project.com/releases?statuses=ONGOING
-        self.create_line(title='[B][COLOR=lime][ В работе ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'WORK_IN_PROGRESS'}) #https://shiza-project.com/releases?activities=WORK_IN_PROGRESS
-        self.create_line(title='[B][COLOR=lime][ Запланированные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'WISH'}) #https://shiza-project.com/releases?activities=WISH
-        self.create_line(title='[B][COLOR=lime][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'COMPLETED'}) #https://shiza-project.com/releases?activities=COMPLETED
-
-        #self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI%3D
+        self.create_line(title='[B][COLOR=lime][ Аниме ][/COLOR][/B]', params={'mode': 'anime_part'})
         self.create_line(title='[B][COLOR=yellow][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Дорамы'})
-
-        #self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM%3D
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Мультфильмы'})
-
-        #self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}) #https://shiza-project.com/releases?statuses=%21DRAFT&categories=Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ%3D
         self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Разное'})
-
         self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
         self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
-
-        #('Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=','Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=','Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=','Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ=')
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    
+    def exec_anime_part(self):
+        self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part'})
+        self.create_line(title='[B][COLOR=lime][ Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'ONGOING'})
+        self.create_line(title='[B][COLOR=lime][ В работе ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'WORK_IN_PROGRESS'})
+        self.create_line(title='[B][COLOR=lime][ Запланированные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'WISH'})
+        self.create_line(title='[B][COLOR=lime][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'COMPLETED'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_search_part(self):
