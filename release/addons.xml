@@ -97,8 +97,8 @@
     <disclaimer lang="en">The author of the plugin is not responsible for the content on the sites</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайтах</disclaimer>
     <assets>
-        <icon>resources/media/icon.png</icon>
-        <fanart>resources/media/fanart.jpg</fanart>
+        <icon>icon.png</icon>
+        <fanart>fanart.jpg</fanart>
     </assets>
   </extension>
 </addon>
