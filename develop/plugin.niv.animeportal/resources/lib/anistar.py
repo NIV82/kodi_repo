@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import time
+import os, sys, time
+import xbmc, xbmcgui, xbmcplugin
 
-import xbmc
-import xbmcgui
-import xbmcplugin
-#import xbmcaddon
-#import xbmcvfs
-
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-from urllib.request import urlopen
-from html import unescape
+try:
+    from urllib import urlencode, urlopen, quote, unquote
+except:
+    from urllib.parse import urlencode, quote, unquote
+    from urllib.request import urlopen
 
 import info
 import utility
@@ -134,7 +127,7 @@ class Anistar:
 
         alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
 
-        title = unescape(title)
+        title = utility.unescape(title)
         title = utility.tag_list(title)
         title = title.replace('|', '/')
         title = title.replace('\\', '/')
@@ -189,6 +182,29 @@ class Anistar:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
 
+    def create_context(self, anime_id):
+        context_menu = []
+        
+        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anistar")'))
+        context_menu.append(('[B][COLOR=darkorange]Обновить Зеркала[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anistar")'))
+
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B][COLOR=red]Очистить историю[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anistar")'))
+
+        if self.auth_mode and not self.params['param'] == '':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B][COLOR=white]Добавить FAV (сайт)[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anistar")'.format(anime_id)))
+            context_menu.append(('[B][COLOR=white]Удалить FAV (сайт)[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anistar")'.format(anime_id)))
+
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anistar")'))
+        context_menu.append(('[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anistar")'))
+        context_menu.append(('[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anistar")'))
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+
+        return context_menu
+
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
         li = xbmcgui.ListItem(title)
 
@@ -204,19 +220,20 @@ class Anistar:
 
             li.setInfo(type='video', infoLabels=info)
 
-        if self.params['mode'] == 'search_part' and self.params['param'] == '':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anistar")')])
+        li.addContextMenuItems(self.create_context(anime_id))
+        # if self.params['mode'] == 'search_part' and self.params['param'] == '':
+        #     li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anistar")')])
 
-        if self.auth_mode and not self.params['param'] == '':
-            li.addContextMenuItems([
-                ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anistar")'.format(anime_id)),
-                ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anistar")'.format(anime_id))
-                ])
-        if self.params['mode'] == 'information_part':
-            li.addContextMenuItems([
-                ('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anistar")'),
-                ('[B]Обновить Зеркала[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anistar")')
-                ])
+        # if self.auth_mode and not self.params['param'] == '':
+        #     li.addContextMenuItems([
+        #         ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anistar")'.format(anime_id)),
+        #         ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anistar")'.format(anime_id))
+        #         ])
+        # if self.params['mode'] == 'information_part':
+        #     li.addContextMenuItems([
+        #         ('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anistar")'),
+        #         ('[B]Обновить Зеркала[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anistar")')
+        #         ])
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -274,7 +291,7 @@ class Anistar:
             plot = plot[:plot.find('<p class="reason">')]
 
         plot = utility.clean_list(plot)
-        plot = unescape(plot)
+        plot = utility.unescape(plot)
 
         if '<div class="title_spoiler">' in plot:
             spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]
@@ -398,26 +415,36 @@ class Anistar:
                 self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
         self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
-        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
+        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_information_part(self):
-        if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
-            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)      
-        else:
-            txt = info.anistar_data
-            start = '[{}]'.format(self.params['param'])
-            end = '[/{}]'.format(self.params['param'])
-            data = txt[txt.find(start)+6:txt.find(end)].strip()
+        txt = info.animeportal_data
+        
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = txt[txt.find(start)+6:txt.find(end)].strip()
 
-            self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]anistar.org[/COLOR]', data)
+        self.dialog.textviewer('Информация', data)
         return
+
+    # def exec_information_part(self):
+    #     if self.params['param'] == '':
+    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
+    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
+    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)      
+    #     else:
+    #         txt = info.anistar_data
+    #         start = '[{}]'.format(self.params['param'])
+    #         end = '[/{}]'.format(self.params['param'])
+    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]anistar.org[/COLOR]', data)
+    #     return
 
     def exec_search_part(self):
         if not self.addon.getSetting('anistar_search'):

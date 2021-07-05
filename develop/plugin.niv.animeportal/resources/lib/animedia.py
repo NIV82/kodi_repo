@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import time
+import os, sys, time
+import xbmc, xbmcgui, xbmcplugin
 
-import xbmc
-import xbmcgui
-import xbmcplugin
-#import xbmcaddon
-#import xbmcvfs
-
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-from urllib.request import urlopen
-from html import unescape
+try:
+    from urllib import urlencode, urlopen, quote, unquote
+except:
+    from urllib.parse import urlencode, quote, unquote
+    from urllib.request import urlopen
 
 import info
 import utility
@@ -158,6 +151,23 @@ class Animedia:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
 
+    def create_context(self, anime_id):
+        context_menu = []
+
+        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=animedia")'))
+
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=animedia")'))
+
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=animedia")'))
+        context_menu.append(('[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=animedia")'))
+        context_menu.append(('[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=animedia")'))
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+
+        return context_menu
+
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, ex_info=None): 
         li = xbmcgui.ListItem(title)
 
@@ -176,12 +186,8 @@ class Animedia:
             if size: info['size'] = size
 
             li.setInfo(type='video', infoLabels=info)
-            
-        if self.params['mode'] == 'search_part':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=animedia")')])
-        
-        if self.params['mode'] == 'information_part':
-            li.addContextMenuItems([('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=animedia")')])
+
+        li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -208,7 +214,7 @@ class Animedia:
         info['plot'] = data_array[data_array.find('<p>'):data_array.rfind('</p>')]
         info['plot'] = utility.tag_list(info['plot'])
         info['plot'] = utility.clean_list(info['plot'])
-        info['plot'] = unescape(info['plot'])
+        info['plot'] = utility.unescape(info['plot'])
         
         data_array = data_array.splitlines()
 
@@ -227,7 +233,7 @@ class Animedia:
                         info['year'] = year
             if 'Студия:' in data:
                 info['studio'] = data[data.find('<span>')+6:data.find('</span>')]
-                info['studio'] = unescape(info['studio'])
+                info['studio'] = utility.unescape(info['studio'])
             if 'Режисер:' in data:
                 info['director'] = data[data.find('<span>')+6:data.find('</span>')]
             if 'Автор оригинала:' in data:
@@ -293,7 +299,7 @@ class Animedia:
         self.create_line(title='[B][COLOR=blue][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
         self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part'})      
         self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
-        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
+        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
     
     def exec_search_part(self):
@@ -443,22 +449,32 @@ class Animedia:
             self.addon.setSetting(id='animedia_sort', value=tuple(info.animedia_sort.keys())[result])
 
     def exec_information_part(self):
-        if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
-            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+        txt = info.animeportal_data
+        
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = txt[txt.find(start)+6:txt.find(end)].strip()
 
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        else:
-            txt = info.animedia_data
-            start = '[{}]'.format(self.params['param'])
-            end = '[/{}]'.format(self.params['param'])
-            data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-            self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]Animedia.tv[/COLOR]', data)
+        self.dialog.textviewer('Информация', data)
         return
+
+    # def exec_information_part(self):
+    #     if self.params['param'] == '':
+    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
+    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
+    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+
+    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #     else:
+    #         txt = info.animedia_data
+    #         start = '[{}]'.format(self.params['param'])
+    #         end = '[/{}]'.format(self.params['param'])
+    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]Animedia.tv[/COLOR]', data)
+    #     return
 
     def exec_select_part(self):
         html = self.network.get_html(target_name='{}anime/{}'.format(self.site_url, self.params['id']))

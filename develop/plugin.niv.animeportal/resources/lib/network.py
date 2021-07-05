@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 
-from urllib.request import ProxyHandler
-from urllib.request import HTTPCookieProcessor
-from urllib.request import build_opener
-from urllib.request import Request
-from urllib.request import HTTPError
-from http.cookiejar import MozillaCookieJar
+# from urllib.request import ProxyHandler
+# from urllib.request import HTTPCookieProcessor
+# from urllib.request import build_opener
+# from urllib.request import Request
+# from urllib.request import HTTPError
+# from http.cookiejar import MozillaCookieJar
+
+try:
+    from urllib2 import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
+    from cookielib import MozillaCookieJar
+except:
+    from urllib.request import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
+    from http.cookiejar import MozillaCookieJar
 
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None):
@@ -13,7 +20,7 @@ class WebTools:
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
             # 'Accept': '*/*',
             # 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-            # 'Accept-Charset': 'utf-8',
+            #'Accept-Charset': 'utf-8',
             'Accept-Encoding': 'identity',
             #'Content-Type': 'application/json'
             #'Content-Type': 'application/x-www-form-urlencoded'
@@ -49,11 +56,14 @@ class WebTools:
 
         try:
             url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-            charset = url.headers.get_content_charset()
+
+            try: charset = url.headers.getparam('charset')
+            except: charset = url.headers.get_content_charset()
+
             data = url.read()
 
             if charset:
-                if not 'utf-8' in charset:
+                if not 'utf-8' in charset.lower():
                     data = data.decode(charset).encode('utf8')
 
             try: data = str(data, encoding='utf-8')

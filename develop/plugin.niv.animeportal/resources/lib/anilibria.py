@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import time
+import os, sys, time
+import xbmc, xbmcgui, xbmcplugin
 
-import xbmc
-import xbmcgui
-import xbmcplugin
-#import xbmcaddon
-#import xbmcvfs
-
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-from urllib.request import urlopen
-from html import unescape
+try:
+    from urllib import urlencode, urlopen, quote, unquote
+except:
+    from urllib.parse import urlencode, quote, unquote
+    from urllib.request import urlopen
 
 import info
 import utility
@@ -151,7 +144,7 @@ class Anilibria:
             post = urlencode({"query":"release","id":self.params['id'],"filter":"torrents"})
         return post.replace('%27','%22')
 
-    def create_title(self, title, series, announce=None):
+    def create_title(self, title, series, announce=None):        
         if series:
             res = 'Серии: {}'.format(series)
             if announce:
@@ -186,6 +179,29 @@ class Anilibria:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
 
+    def create_context(self, anime_id):
+        context_menu = []
+        
+        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anilibria")'))
+        context_menu.append(('[B][COLOR=darkorange]Обновить Зеркала[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anilibria")'))
+
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anilibria")'))
+
+        if self.auth_mode and 'common_part' in self.params['mode'] or self.auth_mode and 'schedule_part' in self.params['mode']:
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B][COLOR=white]Добавить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal=anilibria")'.format(anime_id)))
+            context_menu.append(('[B][COLOR=white]Удалить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal=anilibria")'.format(anime_id)))
+        
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anilibria")'))
+        context_menu.append(('[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anilibria")'))
+        context_menu.append(('[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anilibria")'))
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+
+        return context_menu
+
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
         li = xbmcgui.ListItem(title)
 
@@ -205,20 +221,7 @@ class Anilibria:
 
             li.setInfo(type='video', infoLabels=info)
 
-        if self.params['mode'] == 'search_part' and self.params['param'] == '':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anilibria")')])
-
-        if self.auth_mode and self.params['mode'] == 'common_part' or self.params['mode'] == 'schedule_part':
-            li.addContextMenuItems([
-                ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal=anilibria")'.format(anime_id)),
-                ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal=anilibria")'.format(anime_id))
-                ])
-
-        if self.params['mode'] == 'information_part':
-            li.addContextMenuItems([
-                ('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anilibria")'),
-                ('[B]Обновить Зеркала[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anilibria")')
-                ])
+        li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -238,7 +241,7 @@ class Anilibria:
 
         anime_id = html[html.find('id":')+4:html.find(',"names')]
         names = html[html.find('names":["')+9:html.find('"],"statusCode')]
-        names = unescape(names).split('","')
+        names = utility.unescape(names).split('","')
         genres = html[html.find('genres":["')+10:html.find('"],"voices')]
         genres = genres.split('","')            
         voices = html[html.find('voices":["')+10:html.find('"],"year')]
@@ -247,7 +250,7 @@ class Anilibria:
 
         description = html[html.find('description":"')+14:html.find('","blockedInfo')]
         description = utility.tag_list(description)
-        description = unescape(description)
+        description = utility.unescape(description)
         description = utility.fix_list(description)
         
         try:
@@ -353,7 +356,7 @@ class Anilibria:
         self.create_line(title='[B][COLOR=yellow][ Новое ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
         self.create_line(title='[B][COLOR=blue][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
         self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
-        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
+        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_search_part(self):
@@ -389,7 +392,8 @@ class Anilibria:
 
     def exec_schedule_part(self):
         self.progress.create("Anilibria", "Инициализация")
-        html = self.network.get_html(self.site_url, self.create_post())        
+
+        html = self.network.get_html(self.site_url, self.create_post())
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -432,7 +436,7 @@ class Anilibria:
     def exec_common_part(self):
         self.progress.create("Anilibria", "Инициализация")
         html = self.network.get_html(self.site_url, self.create_post())
-
+        
         data_array = html[html.find('"id"'):].split('},{')
 
         i = 0
@@ -502,23 +506,32 @@ class Anilibria:
         if self.params['param'] == 'status':
             result = self.dialog.select('Статус релиза:', tuple(info.anilibria_status.keys()))
             self.addon.setSetting(id='anilibria_status', value=tuple(info.anilibria_status.keys())[result])
-
+            
     def exec_information_part(self):
-        if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
-            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        else:
-            txt = info.anilibria_data
-            start = '[{}]'.format(self.params['param'])
-            end = '[/{}]'.format(self.params['param'])
-            data = txt[txt.find(start)+6:txt.find(end)].strip()
+        txt = info.animeportal_data
+        
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = txt[txt.find(start)+6:txt.find(end)].strip()
 
-            self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]anilibria.tv[/COLOR]', data)
+        self.dialog.textviewer('Информация', data)
         return
+    # def exec_information_part(self):
+    #     if self.params['param'] == '':
+    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
+    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
+    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #     else:
+    #         txt = info.anilibria_data
+    #         start = '[{}]'.format(self.params['param'])
+    #         end = '[/{}]'.format(self.params['param'])
+    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]anilibria.tv[/COLOR]', data)
+    #     return
 
     def exec_select_part(self):
         self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})

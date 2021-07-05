@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import time
+import os, sys, time
+import xbmc, xbmcgui, xbmcplugin
 
-import xbmc
-import xbmcgui
-import xbmcplugin
-#import xbmcaddon
-#import xbmcvfs
-
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-from urllib.request import urlopen
-from html import unescape
+try:
+    from urllib import urlencode, urlopen, quote, unquote
+except:
+    from urllib.parse import urlencode, quote, unquote
+    from urllib.request import urlopen
 
 import info
 import utility
@@ -195,8 +188,8 @@ class Shiza:
         if 'after' in self.params:
             post['variables']['after'] = self.params['after']
 
-        if 'search_string' in self.params:
-            post['variables']['query'] = unquote(self.params['search_string'])
+        # if 'search_string' in self.params:
+        #     post['variables']['query'] = unquote(self.params['search_string'])
 
         if self.params['param'] in ('ANNOUNCE','ONGOING','RELEASED','SUSPENDED'):
             post['variables']['status']['include'] = [self.params['param']]
@@ -229,6 +222,9 @@ class Shiza:
 
         post = str(post).replace('\'','"').replace('None','null')
         
+        if 'search_string' in self.params:
+            post = post.replace('"query": ""','"query": "{}"'.format(unquote(self.params['search_string'])))
+            #post['variables']['query'] = unquote(self.params['search_string'])
         return post
 
     def create_episodes(self, episodes):
@@ -358,7 +354,7 @@ class Shiza:
 
         html = html.replace('\\n', '\n').replace('\\"', '"')
 
-        data = unescape(html).replace('null','""')
+        data = utility.unescape(html).replace('null','""')
 
         anime_id = data[data.find('"slug":"')+8:data.find('","malId"')]
         shiki_id = data[data.find('"malId":"')+9:data.find('","name"')]
@@ -411,6 +407,23 @@ class Shiza:
             return 101
         return
 
+
+    def create_context(self, anime_id):
+        context_menu = []
+        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=shizaproject")'))
+
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B][COLOR=red]Очистить историю[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=shizaproject")'))
+
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=shizaproject")'))
+        context_menu.append(('[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=shizaproject")'))
+        context_menu.append(('[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=shizaproject")'))
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))        
+
+        return context_menu
+
     def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
         li = xbmcgui.ListItem(title)
 
@@ -450,17 +463,7 @@ class Shiza:
 
             li.setInfo(type='video', infoLabels=info)
 
-        if self.params['mode'] == 'search_part' and self.params['param'] == '':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=shizaproject")')])
-
-        # if self.auth_mode and self.params['mode'] == 'common_part':
-        #     li.addContextMenuItems([
-        #         ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal=shizaproject")'.format(anime_id)),
-        #         ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal=shizaproject")'.format(anime_id))
-        #         ])
-
-        if self.params['mode'] == 'information_part':
-            li.addContextMenuItems([('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=shizaproject")')])
+        li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -528,7 +531,7 @@ class Shiza:
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Мультфильмы'})
         self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Разное'})
         self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
-        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
+        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
     
     def exec_anime_part(self):
@@ -696,21 +699,31 @@ class Shiza:
             self.addon.setSetting(id='shiza_direction', value=tuple(info.shiza_direction.keys())[result])
 
     def exec_information_part(self):
-        if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
-            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        else:
-            txt = info.shiza_data
-            start = '[{}]'.format(self.params['param'])
-            end = '[/{}]'.format(self.params['param'])
-            data = txt[txt.find(start)+6:txt.find(end)].strip()
+        txt = info.animeportal_data
+        
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = txt[txt.find(start)+6:txt.find(end)].strip()
 
-            self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]shiza-project.com[/COLOR]', data)
+        self.dialog.textviewer('Информация', data)
         return
+
+    # def exec_information_part(self):
+    #     if self.params['param'] == '':
+    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
+    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
+    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
+    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #     else:
+    #         txt = info.shiza_data
+    #         start = '[{}]'.format(self.params['param'])
+    #         end = '[/{}]'.format(self.params['param'])
+    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]shiza-project.com[/COLOR]', data)
+    #     return
 
     def exec_select_part(self):
         if 'episodes' in self.params:

@@ -1,31 +1,30 @@
 # -*- coding: utf-8 -*-
 
-import gc
-import os
-import sys
-import time
+import gc, os, sys, time
+import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 
-#import xbmc
-import xbmcgui
-import xbmcplugin
-import xbmcaddon
-import xbmcvfs
-
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-#from urllib.request import urlopen
+try:
+    from urllib import urlencode, urlopen, quote, unquote
+except:
+    from urllib.parse import urlencode, quote, unquote
+    #from urllib.request import urlopen
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-from utility import get_params
+from utility import get_params, fs_dec, fs_enc
 
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
-fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
 
-addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+try:
+    addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
+    icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
+    fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
+except:
+    addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+    icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
+    fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
+
 if not os.path.exists(addon_data_dir):
     os.makedirs(addon_data_dir)
 
@@ -123,9 +122,6 @@ def play_part():
     url = os.path.join(torrents_dir, '{}.torrent'.format(params['id']))
     index = int(params['index'])
     portal_engine = '{}_engine'.format(params['portal'])
-
-    import xbmc
-    xbmc.log(str(addon.getSetting(portal_engine)), xbmc.LOGFATAL)
 
     if addon.getSetting(portal_engine) == '0':
         tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')

@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-import time
+import os, sys, time
+import xbmc, xbmcgui, xbmcplugin
 
-import xbmc
-import xbmcgui
-import xbmcplugin
-#import xbmcaddon
-#import xbmcvfs
-
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-from urllib.request import urlopen
-from html import unescape
+try:
+    from urllib import urlencode, urlopen, quote, unquote
+except:
+    from urllib.parse import urlencode, quote, unquote
+    from urllib.request import urlopen
 
 import info
 import utility
@@ -121,6 +114,7 @@ class Anidub:
         return site_url
 #================================================
     def create_title_info(self, title):
+        title = utility.unescape(title)
         info = dict.fromkeys(['series', 'title_ru', 'title_en'], '')
 
         title = utility.tag_list(title).replace('...','')
@@ -150,8 +144,8 @@ class Anidub:
 
         try:
             info['series'] = v[0]
-            info['title_ru'] = unescape(v[1]).capitalize()
-            info['title_en'] = unescape(v[2]).capitalize()
+            info['title_ru'] = v[1].capitalize()
+            info['title_en'] = v[2].capitalize()
         except:
             pass
         return info
@@ -189,6 +183,27 @@ class Anidub:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
 
+    def create_context(self, anime_id):
+        context_menu = []
+        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anidub")'))
+
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
+
+        if self.auth_mode:
+            if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+                context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+                context_menu.append(('[B][COLOR=white]Добавить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append(('[B][COLOR=white]Удалить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
+        
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
+        context_menu.append(('[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anidub")'))
+        context_menu.append(('[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anidub")'))
+        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        return context_menu
+
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True):        
         li = xbmcgui.ListItem(title)
 
@@ -210,15 +225,7 @@ class Anidub:
 
             li.setInfo(type='video', infoLabels=info)
 
-        if self.params['mode'] == 'search_part' and self.params['param'] == '':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")')])
-
-        if self.params['mode'] == 'common_part' or self.params['param'] == 'search_part':
-            li.addContextMenuItems([('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)), 
-                                    ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id))])
-        
-        if self.params['mode'] == 'information_part':
-            li.addContextMenuItems([('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anidub")')])
+        li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
             li.setProperty('isPlayable', 'true')
@@ -229,7 +236,7 @@ class Anidub:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
     def create_info(self, anime_id):
-        html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url,anime_id))
+        html = self.network.get_html('https://tr.anidub.com/index.php?newsid={}'.format(anime_id))
 
         info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'writer', 'plot', 'dubbing',
                       'translation', 'sound', 'country', 'studio', 'year', 'cover'], '')
@@ -249,7 +256,7 @@ class Anidub:
                         info['year'] = year
             if 'Жанр: </b>' in data:
                 genre = utility.tag_list(data.replace('Жанр: </b>', ''))
-                info['genre'] = unescape(genre).lower()
+                info['genre'] = utility.unescape(genre).lower()
             if 'Страна: </b>' in data:
                 info['country'] = utility.tag_list(data.replace('Страна: </b>', ''))
             if 'Дата выпуска: </b>' in data:
@@ -259,25 +266,25 @@ class Anidub:
                             info['year'] = year
             if '<b itemprop="director"' in data:
                 director = utility.tag_list(data.replace('Режиссер: </b>', ''))
-                info['director'] = unescape(director)
+                info['director'] = utility.unescape(director)
             if '<b itemprop="author"' in data:
                 writer = utility.tag_list(data.replace('Автор оригинала / Сценарист: </b>', ''))
-                info['writer'] = unescape(writer)
+                info['writer'] = utility.unescape(writer)
             if 'Озвучивание: </b>' in data:
                 dubbing = utility.tag_list(data.replace('Озвучивание: </b>', ''))
-                info['dubbing'] = unescape(dubbing)
+                info['dubbing'] = utility.unescape(dubbing)
             if 'Перевод: </b>' in data:
                 translation = utility.tag_list(data.replace('Перевод: </b>', ''))
-                info['translation'] = unescape(translation)
+                info['translation'] = utility.unescape(translation)
             if 'Тайминг и работа со звуком: </b>' in data:
                 sound = utility.tag_list(data.replace('Тайминг и работа со звуком: </b>', ''))
-                info['sound'] = unescape(sound)
+                info['sound'] = utility.unescape(sound)
             if 'Студия:</b>' in data:
                 studio = data[data.find('xfsearch/')+9:data.find('/">')]
-                info['studio'] = unescape(studio)
+                info['studio'] = utility.unescape(studio)
             if 'Описание:</b>' in data:
                 plot = utility.tag_list(data.replace('Описание:</b>', ''))
-                info['plot'] = unescape(plot)
+                info['plot'] = utility.unescape(plot)
         try:
             self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['director'], info['writer'], info['plot'],
                           info['dubbing'], info['translation'], info['sound'], info['country'], info['studio'], info['year'], info['cover'])
@@ -364,26 +371,17 @@ class Anidub:
         self.create_line(title='[B][COLOR=lime][ Аниме OVA ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
         self.create_line(title='[B][COLOR=lime][ Аниме фильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
         self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
-        self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})            
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_information_part(self):
-        if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-            self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-            self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-            self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
-            self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
+        txt = info.animeportal_data
+        
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = txt[txt.find(start)+6:txt.find(end)].strip()
 
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        else:
-            txt = info.anidub_data
-            start = '[{}]'.format(self.params['param'])
-            end = '[/{}]'.format(self.params['param'])
-            data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-            self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]tr.anidub.com[/COLOR]', data)
-            return
+        self.dialog.textviewer('Информация', data)
+        return
     
     def exec_search_part(self):
         if not self.addon.getSetting('anidub_search'):
@@ -475,6 +473,9 @@ class Anidub:
                 url = ai[:ai.find('.html')]
                 title = ai[ai.find('>')+1:]
                 anime_id = url[url.rfind('/')+1:url.find('-')]
+
+                if '11310' in anime_id:
+                    continue
 
                 info = self.create_title_info(title)
 
