@@ -4,14 +4,14 @@ import gc, os, sys, time
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 
 try:
-    from urllib import urlencode, urlopen, quote, unquote
+    from urllib import urlencode, quote, unquote
 except:
     from urllib.parse import urlencode, quote, unquote
-    #from urllib.request import urlopen
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
 from utility import get_params, fs_dec, fs_enc
+from info import animeportal_data, animeportal_plot
 
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
@@ -62,16 +62,10 @@ if not addon.getSetting('animeportal_proxy'):
     addon.setSetting('animeportal_proxy_time', '')
 
 def create_line(title=None, params=None, folder=True):
-    from info import animeportal_plot
-
     li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(title.upper()))
     li.setArt({"fanart": fanart,"icon": icon.replace('icon', title)})
     info = {'plot': animeportal_plot[title], 'title': title.upper(), 'tvshowtitle': title.upper()}
     li.setInfo(type='video', infoLabels=info)
-
-    # li.addContextMenuItems([
-    #     ('[B]{} - Обновить DB[/B]'.format(title.capitalize()), 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal={}")'.format(title))
-    #     ])
 
     url = '{}?{}'.format(sys.argv[0], urlencode(params))
     xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
@@ -79,6 +73,8 @@ def create_line(title=None, params=None, folder=True):
 def create_portals():
     if 'play_part' in params['mode']:
         play_part()
+    elif 'information_part' in params['mode']:
+        information_part()
     else:
         if 'animeportal' in params['portal']:
             portal_list = ('anidub','anilibria','animedia','anistar','shizaproject')
@@ -118,6 +114,17 @@ def create_portals():
             shiza.execute()
             del Shiza
 
+def information_part():
+    txt = animeportal_data
+        
+    start = '[{}]'.format(params['param'])
+    end = '[/{}]'.format(params['param'])
+    data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+    dialog = xbmcgui.Dialog()
+    dialog.textviewer('Информация', data)
+    return
+
 def play_part():
     url = os.path.join(torrents_dir, '{}.torrent'.format(params['id']))
     index = int(params['index'])
@@ -137,8 +144,6 @@ def play_part():
         
     if addon.getSetting(portal_engine) == '2':
         url = 'file:///{}'.format(url.replace('\\','/'))
-
-
 
         import player
         player.play_t2h(int(sys.argv[1]), 15, url, index, addon_data_dir)

@@ -9,8 +9,8 @@ except:
     from urllib.parse import urlencode, quote, unquote
     from urllib.request import urlopen
 
-import info
-import utility
+from info import animeportal_data
+from utility import unescape, tag_list, clean_list
 
 class Anidub:        
     def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon):
@@ -114,10 +114,10 @@ class Anidub:
         return site_url
 #================================================
     def create_title_info(self, title):
-        title = utility.unescape(title)
+        title = unescape(title)
         info = dict.fromkeys(['series', 'title_ru', 'title_en'], '')
 
-        title = utility.tag_list(title).replace('...','')
+        title = tag_list(title).replace('...','')
         title = title.replace('/ ', ' / ').replace('  ', ' ')
         title = title.replace(' ', ' ').replace('|', '/')
         title = title.replace('  [', ' [').replace ('\\', '/')
@@ -247,7 +247,7 @@ class Anidub:
         info.update(self.create_title_info(title_data))
 
         data_array = html[html.find('<div class="xfinfodata">')+24:html.find('<div class="story_b clr">')]
-        data_array = utility.clean_list(data_array).split('<br>')
+        data_array = clean_list(data_array).split('<br>')
 
         for data in data_array:
             if 'Год: </b>' in data:
@@ -255,36 +255,36 @@ class Anidub:
                     if str(year) in data:
                         info['year'] = year
             if 'Жанр: </b>' in data:
-                genre = utility.tag_list(data.replace('Жанр: </b>', ''))
-                info['genre'] = utility.unescape(genre).lower()
+                genre = tag_list(data.replace('Жанр: </b>', ''))
+                info['genre'] = unescape(genre).lower()
             if 'Страна: </b>' in data:
-                info['country'] = utility.tag_list(data.replace('Страна: </b>', ''))
+                info['country'] = tag_list(data.replace('Страна: </b>', ''))
             if 'Дата выпуска: </b>' in data:
                 if info['year'] == '':
                     for year in range(1975, 2030, 1):
                         if str(year) in data:
                             info['year'] = year
             if '<b itemprop="director"' in data:
-                director = utility.tag_list(data.replace('Режиссер: </b>', ''))
-                info['director'] = utility.unescape(director)
+                director = tag_list(data.replace('Режиссер: </b>', ''))
+                info['director'] = unescape(director)
             if '<b itemprop="author"' in data:
-                writer = utility.tag_list(data.replace('Автор оригинала / Сценарист: </b>', ''))
-                info['writer'] = utility.unescape(writer)
+                writer = tag_list(data.replace('Автор оригинала / Сценарист: </b>', ''))
+                info['writer'] = unescape(writer)
             if 'Озвучивание: </b>' in data:
-                dubbing = utility.tag_list(data.replace('Озвучивание: </b>', ''))
-                info['dubbing'] = utility.unescape(dubbing)
+                dubbing = tag_list(data.replace('Озвучивание: </b>', ''))
+                info['dubbing'] = unescape(dubbing)
             if 'Перевод: </b>' in data:
-                translation = utility.tag_list(data.replace('Перевод: </b>', ''))
-                info['translation'] = utility.unescape(translation)
+                translation = tag_list(data.replace('Перевод: </b>', ''))
+                info['translation'] = unescape(translation)
             if 'Тайминг и работа со звуком: </b>' in data:
-                sound = utility.tag_list(data.replace('Тайминг и работа со звуком: </b>', ''))
-                info['sound'] = utility.unescape(sound)
+                sound = tag_list(data.replace('Тайминг и работа со звуком: </b>', ''))
+                info['sound'] = unescape(sound)
             if 'Студия:</b>' in data:
                 studio = data[data.find('xfsearch/')+9:data.find('/">')]
-                info['studio'] = utility.unescape(studio)
+                info['studio'] = unescape(studio)
             if 'Описание:</b>' in data:
-                plot = utility.tag_list(data.replace('Описание:</b>', ''))
-                info['plot'] = utility.unescape(plot)
+                plot = tag_list(data.replace('Описание:</b>', ''))
+                info['plot'] = unescape(plot)
         try:
             self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['director'], info['writer'], info['plot'],
                           info['dubbing'], info['translation'], info['sound'], info['country'], info['studio'], info['year'], info['cover'])
@@ -373,16 +373,6 @@ class Anidub:
         self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
-    def exec_information_part(self):
-        txt = info.animeportal_data
-        
-        start = '[{}]'.format(self.params['param'])
-        end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-        self.dialog.textviewer('Информация', data)
-        return
-    
     def exec_search_part(self):
         if not self.addon.getSetting('anidub_search'):
             self.addon.setSetting('anidub_search', '')
@@ -418,10 +408,14 @@ class Anidub:
                 return False
 
         if self.params['param'] == 'genres':
-            data = info.anidub_genres
+            data = ('сёнэн', 'романтика', 'драма', 'комедия', 'этти', 'меха', 'фантастика', 'фэнтези', 
+                    'повседневность', 'школа', 'война', 'сёдзё', 'детектив', 'ужасы', 'история', 'триллер',
+                    'приключения', 'киберпанк', 'мистика', 'музыкальный', 'спорт', 'пародия', 'для детей', 
+                    'махо-сёдзё', 'сказка', 'сёдзё-ай', 'сёнэн-ай', 'боевые искусства', 'самурайский боевик')
 
         if self.params['param'] == 'years':
-            data = reversed(info.anidub_years)
+            data = ['{}'.format(year) for year in range(1970,2022)]
+            data.reverse()
             data = tuple(data)
 
         if self.params['param'] == 'genres' or self.params['param'] == 'years':
@@ -429,7 +423,9 @@ class Anidub:
                 self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'xfsearch/{}/'.format(quote(i))})  
 
         if self.params['param'] == 'alphabet':
-            data = info.anidub_alphabet
+            data = ('а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н',
+                    'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'э', 'ю', 'я')
+            
             for i in data:
                 self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'catalog/{}/'.format(quote(i))})  
         
@@ -527,7 +523,7 @@ class Anidub:
                 quality = qa[len(qa) - 1]
                 if 'Серии в торренте:' in data:
                     series = data[data.find('Серии в торренте:')+17:data.find('Раздают')]
-                    series = utility.tag_list(series)
+                    series = tag_list(series)
                    
                     qid = '{} - [ {} ]'.format(quality, series)
                 else:
