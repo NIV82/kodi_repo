@@ -13,9 +13,9 @@ import info
 import utility
 
 class Animedia:
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon):
-        self.progress = xbmcgui.DialogProgress()
-        self.dialog = xbmcgui.Dialog()
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
+        self.progress = progress
+        self.dialog = dialog
         self.addon = addon
         self.images_dir = images_dir
         self.torrents_dir = torrents_dir

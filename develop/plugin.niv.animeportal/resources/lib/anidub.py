@@ -9,13 +9,12 @@ except:
     from urllib.parse import urlencode, quote, unquote
     from urllib.request import urlopen
 
-from info import animeportal_data
 from utility import unescape, tag_list, clean_list
 
-class Anidub:        
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon):
-        self.progress = xbmcgui.DialogProgress()
-        self.dialog = xbmcgui.Dialog()
+class Anidub:
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
+        self.progress = progress
+        self.dialog = dialog
         self.addon = addon
         self.images_dir = images_dir
         self.torrents_dir = torrents_dir

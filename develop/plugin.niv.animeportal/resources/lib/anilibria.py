@@ -9,13 +9,12 @@ except:
     from urllib.parse import urlencode, quote, unquote
     from urllib.request import urlopen
 
-import info
-import utility
+from utility import unescape, tag_list, fix_list
 
 class Anilibria:
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon):
-        self.progress = xbmcgui.DialogProgress()
-        self.dialog = xbmcgui.Dialog()
+    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
+        self.progress = progress
+        self.dialog = dialog
         self.addon = addon
         self.images_dir = images_dir
         self.torrents_dir = torrents_dir
@@ -119,30 +118,33 @@ class Anilibria:
         return site_url
   
     def create_post(self):
+        anilibria_status = {"Все релизы":"1", "Завершенные релизы":"2"}
+        anilibria_sort = {"Новое":'1', "Популярное":"2"}
+
         if self.params['param'] == 'fav_add':
-            post = urlencode({"query":"favorites","id":self.params['id'],"action":"add","filter":"id,series,announce"})
+            post = 'query=favorites&id={}&action=add&filter=id%2Cseries%2Cannounce'.format(self.params['id'])
         if self.params['param'] == 'fav_del':
-            post = urlencode({"query":"favorites","id":self.params['id'],"action":"delete","filter":"id,series,announce"})
+            post = 'query=favorites&id={}&action=delete&filter=id%2Cseries%2Cannounce'.format(self.params['id'])
         if self.params['param'] == 'favorites':
-            post = urlencode({"query":"favorites","filter":"id,series,announce"})
+            post = 'query=favorites&filter=id%2Cseries%2Cannounce'
         if self.params['param'] == 'search_part':
-            post = urlencode({"query":"search","search":unquote(self.params['search_string']),"filter":"id,series,announce"})
-        if self.params['mode'] == 'schedule_part':            
-            post = urlencode({"query":"schedule","filter":"id,series,announce"})
+            post = 'query=search&search={}&filter=id%2Cseries%2Cannounce'.format(self.params['search_string'])
+        if self.params['mode'] == 'schedule_part':
+            post = 'query=schedule&filter=id%2Cseries%2Cannounce'
         if self.params['param'] == 'updated':
-            post = urlencode({"query":"catalog","page":self.params['page'],"xpage":"catalog","sort":"1","filter":"id,series,announce"})
+            post = 'query=catalog&page={}&xpage=catalog&sort=1&filter=id%2Cseries%2Cannounce'.format(self.params['page'])
         if self.params['param'] == 'popular':
-            post = urlencode({"query":"catalog","page":self.params['page'],"xpage":"catalog","sort":"2","filter":"id,series,announce"})
+            post = 'query=catalog&page={}&xpage=catalog&sort=2&filter=id%2Cseries%2Cannounce'.format(self.params['page'])
         if self.params['param'] == 'catalog':
-            post = urlencode({"query": "catalog", "page": self.params['page'], "filter":"id,series,announce", "xpage": "catalog",
-                    "search": {"year": self.addon.getSetting('anilibria_year'),"genre": self.addon.getSetting('anilibria_genre'),
-                    "season": self.addon.getSetting('anilibria_season')},"sort": info.anilibria_sort[self.addon.getSetting('anilibria_sort')],
-                    "finish":info.anilibria_status[self.addon.getSetting('anilibria_status')]})
+            post = 'query=catalog&page={}&filter=id%2Cseries%2Cannounce&xpage=catalog&search=%7B%22year%22%3A%22{}%22%2C%22genre%22%3A%22{}%22%2C%22season%22%3A%22{}%22%7D&sort={}&finish={}'.format(
+                self.params['page'],self.addon.getSetting('anilibria_year'),self.addon.getSetting('anilibria_genre'),self.addon.getSetting('anilibria_season'),
+                anilibria_sort[self.addon.getSetting('anilibria_sort')],anilibria_status[self.addon.getSetting('anilibria_status')])
         if self.params['mode'] == 'online_part':
-            post = urlencode({"query":"release","id":self.params['id'],"filter":"playlist"})
+            post = 'query=release&id={}&filter=playlist'.format(self.params['id'])
         if self.params['mode'] == 'torrent_part':
-            post = urlencode({"query":"release","id":self.params['id'],"filter":"torrents"})
-        return post.replace('%27','%22')
+            post = 'query=release&id={}&filter=torrents'.format(self.params['id'])
+      
+        return post
 
     def create_title(self, title, series, announce=None):        
         if series:
@@ -234,14 +236,12 @@ class Anilibria:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
     def create_info(self, anime_id):
-        post = urlencode({"query":"release","id":anime_id,"filter":"id,names,genres,voices,year,description"})
-        post = post.replace('%27','%22')
-
+        post = 'query=release&id={}&filter=id%2Cnames%2Cgenres%2Cvoices%2Cyear%2Cdescription'.format(anime_id)
         html = self.network.get_html(self.site_url, post)
 
         anime_id = html[html.find('id":')+4:html.find(',"names')]
         names = html[html.find('names":["')+9:html.find('"],"statusCode')]
-        names = utility.unescape(names).split('","')
+        names = unescape(names).split('","')
         genres = html[html.find('genres":["')+10:html.find('"],"voices')]
         genres = genres.split('","')            
         voices = html[html.find('voices":["')+10:html.find('"],"year')]
@@ -249,9 +249,9 @@ class Anilibria:
         year = html[html.find('year":"')+7:html.find('","season')]
 
         description = html[html.find('description":"')+14:html.find('","blockedInfo')]
-        description = utility.tag_list(description)
-        description = utility.unescape(description)
-        description = utility.fix_list(description)
+        description = tag_list(description)
+        description = unescape(description)
+        description = fix_list(description)
         
         try:
             self.database.add_anime(
@@ -405,7 +405,7 @@ class Anilibria:
 
         for data in data_array:
             data = data[data.find('"id"'):].split('},{')
-            week_day = info.anilibria_week[i]
+            week_day = ('Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье')[i]
 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
@@ -467,6 +467,16 @@ class Anilibria:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_catalog_part(self):
+        anilibria_year = ("", "2021", "2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012",
+                "2011", "2010", "2009", "2008", "2007", "2006", "2005", "2004", "2003", "2001", "1998", "1996")
+        anilibria_season = ("","зима", "весна", "лето", "осень")
+        anilibria_genre = ("","экшен","фэнтези","комедия","приключения","романтика","сёнен","драма","школа",
+                "сверхъестественное","фантастика","сейнен","магия","этти","детектив","повседневность","ужасы",
+                "супер сила","психологическое","исторический","меха","мистика","демоны","игры","сёдзе","триллер",
+                "вампиры","спорт","боевые искусства","музыка")
+        anilibria_status = {"Все релизы":"1", "Завершенные релизы":"2"}
+        anilibria_sort = {"Новое":'1', "Популярное":"2"}
+
         if self.addon.getSetting('anilibria_status') == '':
             self.addon.setSetting(id='anilibria_status', value='Все релизы')
 
@@ -488,51 +498,25 @@ class Anilibria:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
         if self.params['param'] == 'genre':
-            result = self.dialog.select('Жанр:', info.anilibria_genre)
-            self.addon.setSetting(id='anilibria_genre', value=info.anilibria_genre[result])
+            result = self.dialog.select('Жанр:', anilibria_genre)
+            self.addon.setSetting(id='anilibria_genre', value=anilibria_genre[result])
         
         if self.params['param'] == 'year':
-            result = self.dialog.select('Год:', info.anilibria_year)
-            self.addon.setSetting(id='anilibria_year', value=info.anilibria_year[result])
+            result = self.dialog.select('Год:', anilibria_year)
+            self.addon.setSetting(id='anilibria_year', value=anilibria_year[result])
         
         if self.params['param'] == 'season':
-            result = self.dialog.select('Сезон:', info.anilibria_season)
-            self.addon.setSetting(id='anilibria_season', value=info.anilibria_season[result])
+            result = self.dialog.select('Сезон:', anilibria_season)
+            self.addon.setSetting(id='anilibria_season', value=anilibria_season[result])            
 
         if self.params['param'] == 'sort':
-            result = self.dialog.select('Сортировать по:', tuple(info.anilibria_sort.keys()))
-            self.addon.setSetting(id='anilibria_sort', value=tuple(info.anilibria_sort.keys())[result])
+            result = self.dialog.select('Сортировать по:', tuple(anilibria_sort.keys()))
+            self.addon.setSetting(id='anilibria_sort', value=tuple(anilibria_sort.keys())[result])
         
         if self.params['param'] == 'status':
-            result = self.dialog.select('Статус релиза:', tuple(info.anilibria_status.keys()))
-            self.addon.setSetting(id='anilibria_status', value=tuple(info.anilibria_status.keys())[result])
+            result = self.dialog.select('Статус релиза:', tuple(anilibria_status.keys()))
+            self.addon.setSetting(id='anilibria_status', value=tuple(anilibria_status.keys())[result])
             
-    def exec_information_part(self):
-        txt = info.animeportal_data
-        
-        start = '[{}]'.format(self.params['param'])
-        end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-        self.dialog.textviewer('Информация', data)
-        return
-    # def exec_information_part(self):
-    #     if self.params['param'] == '':
-    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
-    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
-    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-    #     else:
-    #         txt = info.anilibria_data
-    #         start = '[{}]'.format(self.params['param'])
-    #         end = '[/{}]'.format(self.params['param'])
-    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]anilibria.tv[/COLOR]', data)
-    #     return
-
     def exec_select_part(self):
         self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
         self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        

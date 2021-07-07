@@ -25,6 +25,9 @@ except:
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
 
+progress = xbmcgui.DialogProgress()
+dialog = xbmcgui.Dialog()
+
 if not os.path.exists(addon_data_dir):
     os.makedirs(addon_data_dir)
 
@@ -86,31 +89,31 @@ def create_portals():
 
         if 'anidub' in params['portal']:
             from anidub import Anidub
-            anidub = Anidub(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            anidub = Anidub(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
             anidub.execute()
             del Anidub
 
         if 'anilibria' in params['portal']:
             from anilibria import Anilibria
-            anilibria = Anilibria(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            anilibria = Anilibria(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
             anilibria.execute()
             del Anilibria
             
         if 'anistar' in params['portal']:
             from anistar import Anistar
-            anistar = Anistar(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            anistar = Anistar(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
             anistar.execute()
             del Anistar
             
         if 'animedia' in params['portal']:
             from animedia import Animedia
-            animedia = Animedia(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            animedia = Animedia(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
             animedia.execute()
             del Animedia
         
         if 'shizaproject' in params['portal']:
             from shizaproject import Shiza
-            shiza = Shiza(images_dir, torrents_dir, database_dir, cookie_dir, params, addon)
+            shiza = Shiza(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
             shiza.execute()
             del Shiza
 
@@ -121,7 +124,6 @@ def information_part():
     end = '[/{}]'.format(params['param'])
     data = txt[txt.find(start)+6:txt.find(end)].strip()
 
-    dialog = xbmcgui.Dialog()
     dialog.textviewer('Информация', data)
     return
 
