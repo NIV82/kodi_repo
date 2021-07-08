@@ -71,6 +71,14 @@ class Animedia:
         self.database = Animedia_DB(os.path.join(self.database_dir, 'animedia.db'))
         del Animedia_DB
 #================================================
+        self.animedia_genre = {"":"","Комедия":"1","Этти":"2","Школа":"3","Мистика":"4","Приключения":"5","Фантастика":"6","Боевые искусства":"7","Война":"9","Детектив":"11","Дзёсэй":"12","Драма":"13","Исторический":"14","Киберпанк":"15","Криминал":"17","Махо-сёдзё":"18","Медицина":"19","Меха":"21","Музыка":"23","Пародия":"25","По игре":"26","Повседневность":"27","Постапокалиптика":"29","Психология":"30","Романтика":"31","Самурайский боевик":"32","Сёдзе":"33","Сёнэн":"34","Сёнэн-ай":"35","Спорт":"37","Сэйнэн":"38","Триллер":"39","Трэш":"40","Ужасы":"41","Фэнтези":"42","Вампиры":"43","Подкасты":"47","Дорамы":"48","История":"49","Лайв-экшн":"50","Сёдзё-ай":"51","Экшен":"52","Сверхъестественное":"53","Гарем":"98"}
+        self.animedia_year = {"":"","2020":"2020","2019":"2019","2018":"2018","2017":"2017","2016":"2016","2015":"2015","2014":"2014","2013":"2013","2012":"2012","2011":"2011","2010":"2010","2009":"2009","2008":"2008","2007":"2007","2006":"2006","2005":"2005","2004":"2004","2003":"2003","2002":"2002","2001":"2001","2000":"2000","1990-e":"199","1980-e":"198"}
+        self.animedia_form = {"":"","ТВ-сериал":"ТВ","Фильмы":"Полнометражный","OVA, ONA, Special":"OVA","Дорама":"Дорама"}
+        self.animedia_status = {"":"","Сейчас выходит":"0","Вышедшие":"1"}
+        self.animedia_sort = {"Популярности":"view_count_one|desc","Дате добавления":"entry_date|desc"}
+        self.animedia_studio = ("","8bit","A-1 Pictures","A.C.G.T","ACTAS"," Inc.","AIC","AIC A.S.T.A.","AIC PLUS","Ajia-do","AKOM","Animac","ANIMATE","Aniplex","ARMS","Artland","ARTMIC Studios","Asahi Production","asread","Ashi Productions","Aubeck","Bandai Visual","Barnum Studio","Bee Train","BeSTACK","Bones","Brain's Base","EMT²","Chaos Project","Cherry Lips","CLAMP","CoMix Wave Inc.","CJ Entertainment","Cinema Citrus","Daume","David Production","Dax International","Digital Frontier","Digital Works","Diomedea","DLE","Dogakobo","Dong Woo Animation","Doumu","DR Movie","Easyfilm","Eiken","EMation","Feel","Five Ways","Foursome","Fuji TV / KTV","FUNimation Entertainment","Frontier Works","G&G Entertainment","Gainax","Gallop","GANSIS","Gathering","Geneon Universal Entertainment","GoHands","Gonzino","Gonzo Digimation","Green Bunny","Group TAC","Hal Film Maker","Hangar-18","Hoods Entertainment","Idea Factory","Imagin","J.C.Staff","Jinni`s Animation Studios","Kaname Production","Khara","Kitty Films","Knack","Kokusai Eigasha","KSS","Kids Station","Kyoto Animation","Lemon Heart","Madhouse","Manpuku Jinja","Magic Bus","Magic Capsule","Manglobe","Mappa","Media Factory","MediaNet","Milky","Minamimachi Bugyosho","Mook Animation","Moonrock","MOVIC","Mystery","Nickelodeon","Mushi Production","Nippon Animation","Nippon Animedia","Nippon Columbia","Nomad","NAZ","NUT","Lantis","Lerche","Liden Films","OB Planning","Office AO","Oh! Production","OLM"," Inc.","Ordet","Oriental Light and Magic","P Production","P.A. Works","Palm Studio","Pastel","Phoenix Entertainment","Picture Magic","Pink Pineapple","Planet","Plum","Production I.G","Production Reed","Project No.9","Primastea","Pony Canyon","Polygon Pictures","Rising Force","Radix","Rikuentai","Robot","Rooster Teeth","FUNimation Entertainment","Satelight","Sanzigen","Seven Arcs","SHAFT","Shirogumi Inc.","Shin-Ei Animation","Shogakukan Music & Digital Entertainment","Soft Garage","Soft on Demand","Starchild Records","Studio 4°C","Studio Rikka","Studio APPP","Studio Blanc","Studio Comet","Studio DEEN","Studio Fantasia","Studio Flag","Studio Gallop","Studio Ghibli","Studio Guts","Studio Hibari","Studio Junio","Studio Live","Studio Pierrot","Studio Gokumi","Studio Barcelona","Sunrise","Silver Link","SynergySP","Tatsunoko Productions","Telecom Animation Film","Tezuka Productions","TMS Entertainment","TNK","The Answer Studio","The Klock Worx","Toei Animation","TV Tokyo","Tokyo Kids","Tokyo Broadcasting System","Tokyo Movie Shinsha","Top Craft","Transarts","Triangle Staff","Trinet Entertainment","Trigger","TYO Animations","UFO Table","Victor Entertainment","Viewworks","White Fox","Wonder Farm","Wit Studio","Xebec","XEBEC-M2","Zexcs","Zuiyo","Hoods Drifters Studio")
+        self.animedia_voice = ("","Amails","Agzy","4a4i","Matorian","aZon","ArtLight","BlackVlastelin","Demetra","Derenn","DEMIKS","Rikku","ABSURD95","AMELIA","ANGEL","ANIMAN","Andry B","AriannaFray","AXLt","BLACK_VLASTELIN","ELADIEL","ENEMY","ENILOU","ERINANT","EneerGy","Egoist","Eugene","FaSt","FREYA","FRUKT","FUEGOALMA","FUUROU","GFT","GKONKOV","GOMER","GREH","HHANZO","HUNTER26","ITLM","JAM","JEPT","JULIABLACK","KovarnyBober","KIARA_LAINE","Kleo Rin","KUCLIA","KASHI","Kansai","Kobayashi","Kona-chan","LISEK","LINOKK","L'Roy","LUNIFERA","LUPIN","LeXar","Lyxor","MACHAON","MEISEI","MIRIKU","MisterX","MIRONA","MOONY","MULYA","MUNYA","MUSTADIO","MyDuck","MezIdA","NAZEL","NASTR","NEAR","N_O_I_R","NIKIRI","Nuriko","Neonoir","Kabrok","Komuro","LolAlice","ORIKO","OZIRIST","PERSONA99","Phoenix","RYC99","RUBY","REZAN","Riddle","Reewayvs","Railgun","Revi_Kim","Rizz_Fisher","SAHAWK","SAJURI","SANDEL","SAY","SCREAM","SHACHIBURI","SHALU","SILV","STEFAN","Soer","TDUBOVIC","TINDA","TicTac","TRAY","TRINAD","TROUBLE","Televizor","TSUMI","VIKI","VINS","YUKIO","ZACK_FAIR","ZART","ZENDOS","VULPES VUPLES","Wicked_Wayfarer","Григорий Коньков","NRG Film Distribution","Tina","ВИКТОР БОЛГОВ","Mega Anime","Пифагор","Реанимедия","Ruscico","MC Entertainment","Симбад","Ruri","Odissey","Акварелька","Garison","zaShunina","Sad_Kit","Milirina","Leo Tail","Satsuki","SilverTatsu","Sabadaher","Morin","KingMaster","Каркас")
+#================================================
     def create_proxy_data(self):
         if self.addon.getSetting('animedia_unblock') == '0':
             return None
@@ -113,6 +121,27 @@ class Animedia:
         #     site_url = self.addon.getSetting(current_mirror)
 
         return site_url
+
+    def create_url(self):
+        url = '{}P{}'.format(self.site_url, int(self.params['page'])-1)
+
+        if self.params['param'] == 'search_part':
+            url = '{}ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.site_url, self.params['search_string'])
+
+        if self.params['param'] == 'popular':
+            url = '{}ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'.format(self.site_url)
+
+        if self.params['param'] == 'catalog':
+            genre = '&category={}'.format(self.animedia_genre[self.addon.getSetting('animedia_genre')]) if self.animedia_genre[self.addon.getSetting('animedia_genre')] else ''
+            voice = '&search:voiced={}'.format(quote(self.addon.getSetting('animedia_voice'))) if self.addon.getSetting('animedia_voice') else ''
+            studio = '&search:studies={}'.format(quote(self.addon.getSetting('animedia_studio'))) if self.addon.getSetting('animedia_studio') else ''
+            sort = '&orderby_sort={}'.format(self.animedia_sort[self.addon.getSetting('animedia_sort')]) if self.animedia_sort[self.addon.getSetting('animedia_sort')] else ''
+            year = '&search:datetime={}'.format(self.animedia_year[self.addon.getSetting('animedia_year')]) if self.animedia_year[self.addon.getSetting('animedia_year')] else ''
+            form = '&search:type={}'.format(quote(self.animedia_form[self.addon.getSetting('animedia_form')])) if self.animedia_form[self.addon.getSetting('animedia_form')] else ''
+            ongoing = '&search:ongoing={}'.format(self.animedia_status[self.addon.getSetting('animedia_status')]) if self.animedia_status[self.addon.getSetting('animedia_status')] else ''
+
+            url = '{}ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(self.site_url, genre, voice, studio, year, form, ongoing, sort)
+        return url
 #================================================
     def create_title(self, anime_id, series):
         title = self.database.get_title(anime_id)
@@ -299,13 +328,9 @@ class Animedia:
         self.create_line(title='[B][COLOR=blue][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
         self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part'})      
         self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
-        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
     
     def exec_search_part(self):
-        # if not self.addon.getSetting('animedia_search'):
-        #     self.addon.setSetting('animedia_search', '')
-
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
 
@@ -338,25 +363,7 @@ class Animedia:
     def exec_common_part(self, url=None):
         self.progress.create("Animedia", "Инициализация")
 
-        url = '{}P{}'.format(self.site_url, int(self.params['page'])-1)
-
-        if self.params['param'] == 'search_part':
-            url = '{}ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.site_url, self.params['search_string'])
-
-        if self.params['param'] == 'popular':
-            url = '{}ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'.format(self.site_url)
-
-        if self.params['param'] == 'catalog':
-            genre = '&category={}'.format(info.animedia_genre[self.addon.getSetting('animedia_genre')]) if info.animedia_genre[self.addon.getSetting('animedia_genre')] else ''
-            voice = '&search:voiced={}'.format(quote(self.addon.getSetting('animedia_voice'))) if self.addon.getSetting('animedia_voice') else ''
-            studio = '&search:studies={}'.format(quote(self.addon.getSetting('animedia_studio'))) if self.addon.getSetting('animedia_studio') else ''
-            sort = '&orderby_sort={}'.format(info.animedia_sort[self.addon.getSetting('animedia_sort')]) if info.animedia_sort[self.addon.getSetting('animedia_sort')] else ''
-            year = '&search:datetime={}'.format(info.animedia_year[self.addon.getSetting('animedia_year')]) if info.animedia_year[self.addon.getSetting('animedia_year')] else ''
-            form = '&search:type={}'.format(quote(info.animedia_form[self.addon.getSetting('animedia_form')])) if info.animedia_form[self.addon.getSetting('animedia_form')] else ''
-            ongoing = '&search:ongoing={}'.format(info.animedia_status[self.addon.getSetting('animedia_status')]) if info.animedia_status[self.addon.getSetting('animedia_status')] else ''
-
-            url = '{}ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(self.site_url, genre, voice, studio, year, form, ongoing, sort)
-
+        url = self.create_url()
         html = self.network.get_html(target_name=url)
         
         if type(html) == int:
@@ -406,9 +413,6 @@ class Animedia:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_catalog_part(self):
-        # if self.addon.getSetting('animedia_sort') == '':
-        #     self.addon.setSetting(id='animedia_sort', value='Дате добавления')
-
         if self.params['param'] == '':
             self.create_line(title='Форма выпуска: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_form')), params={'mode': 'catalog_part', 'param': 'form'})
             self.create_line(title='Жанр аниме: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
@@ -421,60 +425,32 @@ class Animedia:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         
         if self.params['param'] == 'form':
-            result = self.dialog.select('Выберите Тип:', tuple(info.animedia_form.keys()))
-            self.addon.setSetting(id='animedia_form', value=tuple(info.animedia_form.keys())[result])
+            result = self.dialog.select('Выберите Тип:', tuple(self.animedia_form.keys()))
+            self.addon.setSetting(id='animedia_form', value=tuple(self.animedia_form.keys())[result])
         
         if self.params['param'] == 'genre':
-            result = self.dialog.select('Выберите Жанр:', tuple(info.animedia_genre.keys()))
-            self.addon.setSetting(id='animedia_genre', value=tuple(info.animedia_genre.keys())[result])
+            result = self.dialog.select('Выберите Жанр:', tuple(self.animedia_genre.keys()))
+            self.addon.setSetting(id='animedia_genre', value=tuple(self.animedia_genre.keys())[result])
 
         if self.params['param'] == 'voice':
-            result = self.dialog.select('Выберите Войсера:', info.animedia_voice)
-            self.addon.setSetting(id='animedia_voice', value=info.animedia_voice[result])
+            result = self.dialog.select('Выберите Войсера:', self.animedia_voice)
+            self.addon.setSetting(id='animedia_voice', value=self.animedia_voice[result])
 
         if self.params['param'] == 'studio':
-            result = self.dialog.select('Выберите Студию:', info.animedia_studio)
-            self.addon.setSetting(id='animedia_studio', value=info.animedia_studio[result])
+            result = self.dialog.select('Выберите Студию:', self.animedia_studio)
+            self.addon.setSetting(id='animedia_studio', value=self.animedia_studio[result])
 
         if self.params['param'] == 'year':
-            result = self.dialog.select('Выберите Год:', tuple(info.animedia_year.keys()))
-            self.addon.setSetting(id='animedia_year', value=tuple(info.animedia_year.keys())[result])
+            result = self.dialog.select('Выберите Год:', tuple(self.animedia_year.keys()))
+            self.addon.setSetting(id='animedia_year', value=tuple(self.animedia_year.keys())[result])
         
         if self.params['param'] == 'status':
-            result = self.dialog.select('Выберите статус:', tuple(info.animedia_status.keys()))
-            self.addon.setSetting(id='animedia_status', value=tuple(info.animedia_status.keys())[result])
+            result = self.dialog.select('Выберите статус:', tuple(self.animedia_status.keys()))
+            self.addon.setSetting(id='animedia_status', value=tuple(self.animedia_status.keys())[result])
         
         if self.params['param'] == 'sort':
-            result = self.dialog.select('Сортировать по:', tuple(info.animedia_sort.keys()))
-            self.addon.setSetting(id='animedia_sort', value=tuple(info.animedia_sort.keys())[result])
-
-    def exec_information_part(self):
-        txt = info.animeportal_data
-        
-        start = '[{}]'.format(self.params['param'])
-        end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-        self.dialog.textviewer('Информация', data)
-        return
-
-    # def exec_information_part(self):
-    #     if self.params['param'] == '':
-    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
-    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
-
-    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-    #     else:
-    #         txt = info.animedia_data
-    #         start = '[{}]'.format(self.params['param'])
-    #         end = '[/{}]'.format(self.params['param'])
-    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]Animedia.tv[/COLOR]', data)
-    #     return
+            result = self.dialog.select('Сортировать по:', tuple(self.animedia_sort.keys()))
+            self.addon.setSetting(id='animedia_sort', value=tuple(self.animedia_sort.keys())[result])
 
     def exec_select_part(self):
         html = self.network.get_html(target_name='{}anime/{}'.format(self.site_url, self.params['id']))
