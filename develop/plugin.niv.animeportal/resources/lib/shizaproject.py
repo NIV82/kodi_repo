@@ -10,7 +10,7 @@ except:
     from urllib.request import urlopen
 
 import info
-import utility
+from utility import unescape
 
 class Shiza:
     def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
@@ -72,6 +72,17 @@ class Shiza:
         from database import ShizaProject_DB
         self.database = ShizaProject_DB(os.path.join(self.database_dir, 'shizaproject.db'))
         del ShizaProject_DB
+#================================================
+        self.shiza_season = {'':'','Весна':'SPRING','Лето':'SUMMER','Осень':'FALL','Зима':'WINTER'}
+        self.shiza_categories = {'':'','Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=','Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=','Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=','Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}
+        self.shiza_status = {'':'','Анонс':'ANNOUNCE','Онгоинг':'ONGOING','Выпущено':'RELEASED','Приостановлено':'SUSPENDED'}
+        self.shiza_voice_stat = {'':'','Хочучка':'WISH','Заморожено':'FROZEN','В работе':'WORK_IN_PROGRESS','Звершено':'COMPLETED','Брошено':'DROPPED'}
+        self.shiza_form = {'':'','ТВ':'TV','ТВ-спешл':'TV_SPECIAL','Остальное':'OTHER','Фильм':'MOVIE','Короткий Фильм':'SHORT_MOVIE','OVA':'OVA','ONA':'ONA','Музыкальный':'MUSIC'}
+        self.shiza_rating = ('','G','PG','PG_13','R','R_PLUS','RX')
+        self.shiza_genre = {'':'','экшен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzM=','комедия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzQ=','романтика':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODc=','фэнтези':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzk=','фантастика':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDE=','драма':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njg=','школа':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODg=','сверхъестественное':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTk=','сёнен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODk=','приключения':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzE=','повседневность':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTY=','сейнен':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMTA=','детектив':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDU=','этти':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzg=','магия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODM=','меха':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODQ=','гарем':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTQ=','военное':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDQ=','космос':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzc=','триллер':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDA=','игры':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njk=','музыка':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzI=','супер сила':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDM=','психологическое':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzA=','демоны':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzU=','ужасы':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODI=','сёдзё':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDI=','исторический':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODE=','спорт':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTA=','вампиры':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTE=','пародия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODU=','боевые искусства':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDg=','полиция':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzY='}
+        self.shiza_direction = {'По убыванию':'DESC','По возрастанию':'ASC'}
+        self.shiza_sort = {'Дате публикации':'PUBLISHED_AT','Дате обновление':'UPDATED_AT','Просмотрам':'VIEW_COUNT','Названию EN':'ORIGINAL_NAME','Названию RU':'NAME','Рейтингу':'SCORE'}
+        self.shiza_tags = {'':'','Дружба':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI0','Повседневность':'VGFnOjQ1ODkxNDE0ODg1NjYyODA3','Кровь':'VGFnOjQ1ODkxNDE0ODg1NjYyODk2','Будущее':'VGFnOjQ1ODkxNDE0ODg5ODU3MDI5','bdrip':'VGFnOjQ1ODkxNDE0ODgxNDY4NDE4','webrip':'VGFnOjQ1ODkxNDE0ODg1NjYyODAw','Школа':'VGFnOjQ1ODkxNDE0ODg1NjYyNzM2','Олдскул':'VGFnOjQ1ODkxNDE0ODg1NjYyNzY1','Магия':'VGFnOjQ1ODkxNDE0ODg1NjYyNzk5','hdtvrip':'VGFnOjQ1ODkxNDE0ODg5ODU3MDM0','Демоны':'VGFnOjQ1ODkxNDE0ODg1NjYyNzQ5','Война':'VGFnOjQ1ODkxNDE0ODg1NjYyODAy','Роботы':'VGFnOjQ1ODkxNDE0ODg1NjYyNzcz','Космос':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI4','Любовь':'VGFnOjQ1ODkxNDE0ODg1NjYyODU0','Вампиры':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMy','Оружие':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMz'}
 #================================================
     def create_proxy_data(self):
         if self.addon.getSetting('shiza_unblock') == '0':
@@ -188,37 +199,34 @@ class Shiza:
         if 'after' in self.params:
             post['variables']['after'] = self.params['after']
 
-        # if 'search_string' in self.params:
-        #     post['variables']['query'] = unquote(self.params['search_string'])
-
         if self.params['param'] in ('ANNOUNCE','ONGOING','RELEASED','SUSPENDED'):
             post['variables']['status']['include'] = [self.params['param']]
         if self.params['param'] in ('WISH','FROZEN','WORK_IN_PROGRESS','COMPLETED','DROPPED'):
             post['variables']['activity']['include'] = [self.params['param']]
         if self.params['param'] in ('Аниме','Дорамы','Мультфильмы','Разное'):
-            post['variables']['category']['include'] = [info.shiza_categories[self.params['param']]]
+            post['variables']['category']['include'] = [self.shiza_categories[self.params['param']]]
 
         if 'catalog' in self.params['param']:
             if self.addon.getSetting('shiza_season'):
-                post['variables']['season']['include'] = info.shiza_season[self.addon.getSetting('shiza_season')]
+                post['variables']['season']['include'] = self.shiza_season[self.addon.getSetting('shiza_season')]
             if self.addon.getSetting('shiza_categories'):
-                post['variables']['category']['include'] = info.shiza_categories[self.addon.getSetting('shiza_categories')]
+                post['variables']['category']['include'] = self.shiza_categories[self.addon.getSetting('shiza_categories')]
             if self.addon.getSetting('shiza_status'):
-                post['variables']['status']['include'] = info.shiza_status[self.addon.getSetting('shiza_status')]
+                post['variables']['status']['include'] = self.shiza_status[self.addon.getSetting('shiza_status')]
             if self.addon.getSetting('shiza_voice_stat'):
-                post['variables']['activity']['include'] = info.shiza_voice_stat[self.addon.getSetting('shiza_voice_stat')]
+                post['variables']['activity']['include'] = self.shiza_voice_stat[self.addon.getSetting('shiza_voice_stat')]
             if self.addon.getSetting('shiza_form'):
-                post['variables']['type']['include'] = info.shiza_form[self.addon.getSetting('shiza_form')]
+                post['variables']['type']['include'] = self.shiza_form[self.addon.getSetting('shiza_form')]
             if self.addon.getSetting('shiza_rating'):
                 post['variables']['rating']['include'] = self.addon.getSetting('shiza_rating')
             if self.addon.getSetting('shiza_genre'):
-                post['variables']['genre']['include'] = info.shiza_genre[self.addon.getSetting('shiza_genre')]
+                post['variables']['genre']['include'] = self.shiza_genre[self.addon.getSetting('shiza_genre')]
             if self.addon.getSetting('shiza_tags'):
-                post['variables']['tag']['include'] = info.shiza_tags[self.addon.getSetting('shiza_tags')]
+                post['variables']['tag']['include'] = self.shiza_tags[self.addon.getSetting('shiza_tags')]
             
             post['variables']['orderBy'] = {
-                "field":info.shiza_sort[self.addon.getSetting('shiza_sort')],
-                "direction":info.shiza_direction[self.addon.getSetting('shiza_direction')]}
+                "field":self.shiza_sort[self.addon.getSetting('shiza_sort')],
+                "direction":self.shiza_direction[self.addon.getSetting('shiza_direction')]}
 
         post = str(post).replace('\'','"').replace('None','null')
         
@@ -354,7 +362,7 @@ class Shiza:
 
         html = html.replace('\\n', '\n').replace('\\"', '"')
 
-        data = utility.unescape(html).replace('null','""')
+        data = unescape(html).replace('null','""')
 
         anime_id = data[data.find('"slug":"')+8:data.find('","malId"')]
         shiki_id = data[data.find('"malId":"')+9:data.find('","name"')]
@@ -531,7 +539,6 @@ class Shiza:
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Мультфильмы'})
         self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Разное'})
         self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
-        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
     
     def exec_anime_part(self):
@@ -630,7 +637,9 @@ class Shiza:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
-    def exec_catalog_part(self):        
+    def exec_catalog_part(self):
+        shiza_year = ['{}'.format(year) for year in range(1970,2022)]
+
         if not self.params['param']:
             self.create_line(title='Год (начало отрезка): [COLOR=gold]{}[/COLOR]'.format(
                 self.addon.getSetting('shiza_year_start')), params={'mode': 'catalog_part', 'param': 'shiza_year_start'})
@@ -662,68 +671,41 @@ class Shiza:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)            
         
         if 'shiza_year_start' in self.params['param']:
-            result = self.dialog.select('Начало отрезка:', info.shiza_year)
-            self.addon.setSetting(id='shiza_year_start', value=info.shiza_year[result])        
+            result = self.dialog.select('Начало отрезка:', tuple(shiza_year))
+            self.addon.setSetting(id='shiza_year_start', value=tuple(shiza_year)[result])        
         if 'shiza_year_end' in self.params['param']:
-            result = self.dialog.select('Конец отрезка:', info.shiza_year)
-            self.addon.setSetting(id='shiza_year_end', value=info.shiza_year[result])
+            result = self.dialog.select('Конец отрезка:', tuple(shiza_year))
+            self.addon.setSetting(id='shiza_year_end', value=tuple(shiza_year)[result])
         if 'shiza_season' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_season.keys()))
-            self.addon.setSetting(id='shiza_season', value=tuple(info.shiza_season.keys())[result])
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_season.keys()))
+            self.addon.setSetting(id='shiza_season', value=tuple(self.shiza_season.keys())[result])
         if 'shiza_categories' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_categories.keys()))
-            self.addon.setSetting(id='shiza_categories', value=tuple(info.shiza_categories.keys())[result])
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_categories.keys()))
+            self.addon.setSetting(id='shiza_categories', value=tuple(self.shiza_categories.keys())[result])
         if 'shiza_status' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_status.keys()))
-            self.addon.setSetting(id='shiza_status', value=tuple(info.shiza_status.keys())[result])
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_status.keys()))
+            self.addon.setSetting(id='shiza_status', value=tuple(self.shiza_status.keys())[result])
         if 'shiza_voice_stat' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_voice_stat.keys()))
-            self.addon.setSetting(id='shiza_voice_stat', value=tuple(info.shiza_voice_stat.keys())[result])
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_voice_stat.keys()))
+            self.addon.setSetting(id='shiza_voice_stat', value=tuple(self.shiza_voice_stat.keys())[result])
         if 'shiza_form' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_form.keys()))
-            self.addon.setSetting(id='shiza_form', value=tuple(info.shiza_form.keys())[result])
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_form.keys()))
+            self.addon.setSetting(id='shiza_form', value=tuple(self.shiza_form.keys())[result])
         if 'shiza_rating' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', info.shiza_rating)
-            self.addon.setSetting(id='shiza_rating', value=info.shiza_rating[result])
+            result = self.dialog.select('Сортировка по:', self.shiza_rating)
+            self.addon.setSetting(id='shiza_rating', value=self.shiza_rating[result])
         if 'shiza_genre' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_genre.keys()))
-            self.addon.setSetting(id='shiza_genre', value=tuple(info.shiza_genre.keys())[result])
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_genre.keys()))
+            self.addon.setSetting(id='shiza_genre', value=tuple(self.shiza_genre.keys())[result])
         if 'shiza_tags' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_tags.keys()))
-            self.addon.setSetting(id='shiza_tags', value=tuple(info.shiza_tags.keys())[result])
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_tags.keys()))
+            self.addon.setSetting(id='shiza_tags', value=tuple(self.shiza_tags.keys())[result])
         if 'shiza_sort' in self.params['param']:
-            result = self.dialog.select('Сортировка по:', tuple(info.shiza_sort.keys()))
-            self.addon.setSetting(id='shiza_sort', value=tuple(info.shiza_sort.keys())[result])        
+            result = self.dialog.select('Сортировка по:', tuple(self.shiza_sort.keys()))
+            self.addon.setSetting(id='shiza_sort', value=tuple(self.shiza_sort.keys())[result])        
         if 'shiza_direction' in self.params['param']:
-            result = self.dialog.select('Направление сортировки:', tuple(info.shiza_direction.keys()))
-            self.addon.setSetting(id='shiza_direction', value=tuple(info.shiza_direction.keys())[result])
-
-    def exec_information_part(self):
-        txt = info.animeportal_data
-        
-        start = '[{}]'.format(self.params['param'])
-        end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-        self.dialog.textviewer('Информация', data)
-        return
-
-    # def exec_information_part(self):
-    #     if self.params['param'] == '':
-    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})
-    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
-    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-    #     else:
-    #         txt = info.shiza_data
-    #         start = '[{}]'.format(self.params['param'])
-    #         end = '[/{}]'.format(self.params['param'])
-    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]shiza-project.com[/COLOR]', data)
-    #     return
+            result = self.dialog.select('Направление сортировки:', tuple(self.shiza_direction.keys()))
+            self.addon.setSetting(id='shiza_direction', value=tuple(self.shiza_direction.keys())[result])
 
     def exec_select_part(self):
         if 'episodes' in self.params:

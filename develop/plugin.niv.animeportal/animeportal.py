@@ -10,8 +10,8 @@ except:
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
+from info import animeportal_plot, animeportal_data
 from utility import get_params, fs_dec, fs_enc
-from info import animeportal_data, animeportal_plot
 
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')

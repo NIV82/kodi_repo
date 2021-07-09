@@ -9,8 +9,7 @@ except:
     from urllib.parse import urlencode, quote, unquote
     from urllib.request import urlopen
 
-import info
-import utility
+from utility import tag_list, clean_list, unescape
 
 class Animedia:
     def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
@@ -241,9 +240,9 @@ class Animedia:
         data_array = html[html.find('post__header">')+14:html.find('</article>')]
 
         info['plot'] = data_array[data_array.find('<p>'):data_array.rfind('</p>')]
-        info['plot'] = utility.tag_list(info['plot'])
-        info['plot'] = utility.clean_list(info['plot'])
-        info['plot'] = utility.unescape(info['plot'])
+        info['plot'] = tag_list(info['plot'])
+        info['plot'] = clean_list(info['plot'])
+        info['plot'] = unescape(info['plot'])
         
         data_array = data_array.splitlines()
 
@@ -252,17 +251,17 @@ class Animedia:
                 info['title_ru'] = data[data.find('title">')+7:data.find('</h1>')].strip()
             if 'Жанр:' in data:
                 data = data.replace('Жанр: ','').replace('</a>', ', ')
-                info['genre'] = utility.tag_list(data)[:-1]
+                info['genre'] = tag_list(data)[:-1]
             if 'Английское название:' in data:
                 info['title_en'] = data[data.find('<span>')+6:data.find('</span>')].strip()
             if 'Дата выпуска:' in data:
-                data = utility.tag_list(data)
+                data = tag_list(data)
                 for year in range(1975, 2030, 1):
                     if str(year) in data:
                         info['year'] = year
             if 'Студия:' in data:
                 info['studio'] = data[data.find('<span>')+6:data.find('</span>')]
-                info['studio'] = utility.unescape(info['studio'])
+                info['studio'] = unescape(info['studio'])
             if 'Режисер:' in data:
                 info['director'] = data[data.find('<span>')+6:data.find('</span>')]
             if 'Автор оригинала:' in data:
@@ -493,7 +492,7 @@ class Animedia:
                         ex_info['quality'] = line[line.find('</h3>')+5:]
                         ex_info['quality'] = ex_info['quality'].replace('Качество','').strip()
                     if '>Размер:' in line:
-                        ex_info['size'] = utility.tag_list(line[line.find('<span>'):])
+                        ex_info['size'] = tag_list(line[line.find('<span>'):])
                     if 'Контейнер:' in line:
                         ex_info['container'] = line[line.find('<span>')+6:line.find('</span>')]
                     if 'Видео:' in line:
@@ -514,7 +513,7 @@ class Animedia:
             tabs_content = tabs_content.split('<li class="tracker_info_pop_left">')
 
             for content in tabs_content:
-                content = utility.clean_list(content)
+                content = clean_list(content)
                 title = content[content.find('left_top">')+10:content.find('</span>')]
                 title = title.replace('Серии ','').replace('Серия ','').strip()
                 
@@ -522,7 +521,7 @@ class Animedia:
                 quality = quality.replace('р', 'p').strip()
 
                 torr_inf = content[content.find('left_op">')+9:content.rfind(';</span></span></p>')]
-                torr_inf = utility.tag_list(torr_inf)
+                torr_inf = tag_list(torr_inf)
                 torr_inf = torr_inf.replace('Размер: ','').replace('Сидов: ','').replace('Пиров: ','')
                 torr_inf = torr_inf.split(';')
 

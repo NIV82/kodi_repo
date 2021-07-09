@@ -10,7 +10,7 @@ except:
     from urllib.request import urlopen
 
 import info
-import utility
+from utility import tag_list, unescape, clean_list
 
 class Anistar:
     def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
@@ -76,6 +76,9 @@ class Anistar:
         self.database = Anistar_DB(os.path.join(self.database_dir, 'anistar.db'))
         del Anistar_DB
 #================================================
+        self.anistar_categories=[('thriller/','Боевик'),('vampires/','Вампиры'),('ani-garem/','Гарем'),('detective/','Детектив'),('drama/','Драма'),('history/','История'),('cyberpunk/','Киберпанк'),('comedy/','Комедия'),('maho-shoujo/','Махо-седзе'),('fur/','Меха'),('parodies/','Пародии'),('senen/','Сёнен'),('sports/','Спорт'),('mysticism/','Мистика'),('music/','Музыкальное'),('everyday-life/','Повседневность'),('adventures/','Приключения'),('romance/','Романтика'),('shoujo/','Сёдзе'),('senen-ay/','Сёнен-ай'),('horror/','Триллер'),('horor/','Ужасы'),('fantasy/','Фантастика'),('fentezi/','Фэнтези'),('school/','Школа'),('echchi-erotic/','Эччи'),('action/','Экшен'),('metty/','Этти'),('seinen/','Сейнен'),('demons/','Демоны'),('magic/','Магия'),('super-power/','Супер сила'),('military/','Военное'),('kids/','Детское'),('supernatural/','Сверхъестественное'),('psychological/','Психологическое'),('historical/','Исторический'),('samurai/','Самураи'),('martial-arts/','Боевые искусства'),('police/','Полиция'),('space/','Космос'),('game/','Игры'),('josei/','Дзёсэй'),('shoujo-ai/','Сёдзе Ай')]
+        self.anistar_ignor_list = ['7013','6930','6917','6974','6974','4106','1704','1229','1207','1939','1954','2282','4263','4284','4288','4352','4362','4422','4931','5129','5130','5154','5155','6917','6928','6930','6932','6936','6968','6994','7013','7055','3999','4270','4282','4296','4300','4314','4348','4349','4364','4365','4366','4367','4368','4369','4374','4377','4480','4493','4556','6036','3218','3943','3974','4000','4091']
+#================================================
     def create_proxy_data(self):
         if self.addon.getSetting('anistar_unblock') == '0':
             return None
@@ -127,8 +130,8 @@ class Anistar:
 
         alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
 
-        title = utility.unescape(title)
-        title = utility.tag_list(title)
+        title = unescape(title)
+        title = tag_list(title)
         title = title.replace('|', '/')
         title = title.replace('\\', '/')
         
@@ -221,19 +224,6 @@ class Anistar:
             li.setInfo(type='video', infoLabels=info)
 
         li.addContextMenuItems(self.create_context(anime_id))
-        # if self.params['mode'] == 'search_part' and self.params['param'] == '':
-        #     li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anistar")')])
-
-        # if self.auth_mode and not self.params['param'] == '':
-        #     li.addContextMenuItems([
-        #         ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anistar")'.format(anime_id)),
-        #         ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anistar")'.format(anime_id))
-        #         ])
-        # if self.params['mode'] == 'information_part':
-        #     li.addContextMenuItems([
-        #         ('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anistar")'),
-        #         ('[B]Обновить Зеркала[/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anistar")')
-        #         ])
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -261,7 +251,7 @@ class Anistar:
         genre = genre.replace('Новинки(онгоинги)', '').replace('Аниме', '')
         genre = genre.replace('Категория:', '').replace('Хентай', '')
         genre = genre.replace('Дорамы', '').replace('></a>,','>')
-        info['genre'] = utility.tag_list(genre)
+        info['genre'] = tag_list(genre)
 
         if 'Новости сайта' in info['genre']:
             if '<li><b>Жанр: </b>' in data: pass
@@ -277,10 +267,10 @@ class Anistar:
                         info['year'] = year
             if 'Режиссёр:' in line:
                 line = line.replace('Режиссёр:','')
-                info['director'] = utility.tag_list(line)
+                info['director'] = tag_list(line)
             if 'Автор оригинала:' in line:
                 line = line.replace('Автор оригинала:','')
-                info['author'] = utility.tag_list(line)
+                info['author'] = tag_list(line)
 
         if schedule:
             plot = data[data.find('description">')+13:data.find('<div class="descripts">')]
@@ -290,20 +280,20 @@ class Anistar:
         if '<p class="reason">' in plot:
             plot = plot[:plot.find('<p class="reason">')]
 
-        plot = utility.clean_list(plot)
-        plot = utility.unescape(plot)
+        plot = clean_list(plot)
+        plot = unescape(plot)
 
         if '<div class="title_spoiler">' in plot:
             spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]
             spoiler = spoiler.replace('</div>', ' ').replace('"','')
             spoiler = spoiler.replace('#', '\n#')
-            spoiler = utility.tag_list(spoiler)
+            spoiler = tag_list(spoiler)
 
             plot = plot[:plot.find('<!--dle_spoiler')]
-            plot = utility.tag_list(plot)
+            plot = tag_list(plot)
             info['plot'] = '{}\n\n{}'.format(plot, spoiler)
         else:
-            info['plot'] = utility.tag_list(plot)
+            info['plot'] = tag_list(plot)
         
         try:
             self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['director'], info['author'], info['plot'])
@@ -363,7 +353,7 @@ class Anistar:
             #ht = self.net.get_html(target_name='https://anistar.org/')
             ht = self.net.get_html(target_name=site_url)
             actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
-            actual_url = utility.tag_list(actual_url).lower()
+            actual_url = tag_list(actual_url).lower()
             actual_url = 'https://{}/'.format(actual_url)
             self.addon.setSetting('anistar_unblock', '0')
             self.dialog.ok('AniStar', '[COLOR=lime]Выполнено[/COLOR]: Применяем новый адрес:\n[COLOR=blue]{}[/COLOR], Отключаем разблокировку'.format(actual_url))            
@@ -411,40 +401,12 @@ class Anistar:
         self.create_line(title='[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
         self.create_line(title='[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})        
         if self.addon.getSetting('anistar_adult') == '1':
-            if self.addon.getSetting('anistar_adult_pass') in info.anistar_ignor_list:
+            if self.addon.getSetting('anistar_adult_pass') in self.anistar_ignor_list:
                 self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
         self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
         self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
-        #self.create_line(title='[B][COLOR=white][ Информация ][/COLOR][/B]', params={'mode': 'information_part'})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
-    def exec_information_part(self):
-        txt = info.animeportal_data
-        
-        start = '[{}]'.format(self.params['param'])
-        end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-        self.dialog.textviewer('Информация', data)
-        return
-
-    # def exec_information_part(self):
-    #     if self.params['param'] == '':
-    #         self.create_line(title='[B][COLOR=white][ Новости обновлений ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'news'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'sett'})
-    #         self.create_line(title='[B][COLOR=white][ Настройки воспроизведения ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'play'})
-    #         self.create_line(title='[B][COLOR=white][ Совместимость с движками ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'comp'})            
-    #         self.create_line(title='[B][COLOR=white][ Описание ошибок плагина ][/COLOR][/B]', params={'mode': 'information_part', 'param': 'bugs'})
-    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)      
-    #     else:
-    #         txt = info.anistar_data
-    #         start = '[{}]'.format(self.params['param'])
-    #         end = '[/{}]'.format(self.params['param'])
-    #         data = txt[txt.find(start)+6:txt.find(end)].strip()
-
-    #         self.dialog.textviewer('Плагин для просмотра аниме с ресурса [COLOR orange]anistar.org[/COLOR]', data)
-    #     return
 
     def exec_search_part(self):
         if not self.addon.getSetting('anistar_search'):
@@ -486,10 +448,14 @@ class Anistar:
                 return False
 
         if self.params['param'] == 'genres':
-            data = info.anistar_categories
+            data = self.anistar_categories
 
         if self.params['param'] == 'years':
-            data = info.anistar_years
+            data = ['2021', '2020', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011',
+                    '2010', '2009', '2008', '2007', '2006', '2005', '2004', '2003', '2002', '2001', '2000',
+                    '1999', '1998', '1997', '1996', '1995', '1994', '1993', '1992', '1991', '1990', '1989',
+                    '1988', '1987', '1986', '1985', '1984', '1983', '1982', '1981', '1980', '1979', '1978',
+                    '1976', '1975', '1972', '1969', '1968']
 
         if self.params['param'] == 'genres':
             for i in data:
@@ -504,7 +470,7 @@ class Anistar:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_categories_part(self):
-        data_array = info.anistar_categories
+        data_array = self.anistar_categories
 
         for data in data_array:
             label = '[B][COLOR=white]{}[/COLOR][/B]'.format(data[1])
@@ -529,7 +495,7 @@ class Anistar:
 
         call_list = html[html.find('<div class=\'cal-list\'>'):html.find('<div id="day1')]
         week_list = '{}{}'.format(today_title, call_list).replace('<span>',' - ')        
-        week_list = utility.tag_list(week_list)
+        week_list = tag_list(week_list)
         week_list = week_list.splitlines()
 
         for day in week_list:
@@ -565,7 +531,7 @@ class Anistar:
                     series = data[data.find('<smal>')+6:data.find('</smal>')]
                 else:
                     series = data[data.find('<div class="timer_cal">'):]
-                    series = utility.tag_list(series)
+                    series = tag_list(series)
 
                 if not self.database.is_anime_in_db(anime_id):
                     inf = self.create_info(anime_id, data=None, schedule=True)
@@ -617,7 +583,7 @@ class Anistar:
             if '/m/">Манга</a>' in data: continue
 
             if '/hentai/">Хентай</a>' in data:
-                if not self.addon.getSetting('anistar_adult_pass') in info.anistar_ignor_list:
+                if not self.addon.getSetting('anistar_adult_pass') in self.anistar_ignor_list:
                     continue
 
             anime_id = data[data.find(self.site_url):data.find('">')].replace(self.site_url, '')
@@ -627,7 +593,7 @@ class Anistar:
             if '<p class="reason">' in data:
                 series = data[data.find('<p class="reason">')+18:data.rfind('</p>')]
 
-            if anime_id in info.anistar_ignor_list:
+            if anime_id in self.anistar_ignor_list:
                 continue
 
             if self.progress.iscanceled():
@@ -716,8 +682,8 @@ class Anistar:
             for data in data_array:
                 torrent_url = data[data.find('gettorrent.php?id=')+18:data.find('">')]
 
-                data = utility.clean_list(data).replace('<b>','|').replace('&nbsp;','')            
-                data = utility.tag_list(data).split('|')
+                data = clean_list(data).replace('<b>','|').replace('&nbsp;','')            
+                data = tag_list(data).split('|')
 
                 torrent_title = data[0][:data[0].find('(')].strip()
                 torrent_seed = data[1].replace('Раздают:', '').strip()
