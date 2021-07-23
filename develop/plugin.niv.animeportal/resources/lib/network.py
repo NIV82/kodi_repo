@@ -73,24 +73,38 @@ class WebTools:
         except HTTPError as error:
             return error.code
 
-    # def get_html(self, target_name, post=None):
-    #     if self.auth_usage and not self.auth_check():
-    #         return None
-            
-    #     try: post = bytes(post, encoding='utf-8')
-    #     except: pass
+    def get_html2(self, target_name, post=None):
+        if self.auth_usage and not self.auth_check():
+            return None
 
-    #     try:
-    #         url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-    #         data = url.read()
+        # if self.portal == 'anilibria':
+        #     self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+        if self.portal == 'shiza':
+            self.headers['Content-Type'] = 'application/json'
 
-    #         try: data = str(data, encoding='utf-8')
-    #         except: pass
-            
-    #         return data
-    #     except HTTPError as error:
-    #         return error.code
+        try: post = bytes(post, encoding='utf-8')
+        except: pass
 
+        try:
+            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+
+            try: charset = url.headers.getparam('charset')
+            except: charset = url.headers.get_content_charset()
+
+            data = url.read()
+
+            if charset:
+                if not 'utf-8' in charset.lower():
+                    data = data.decode(charset).encode('utf8')
+
+            # try: data = str(data, encoding='utf-8')
+            # except: pass
+            try: data = data.decode('utf-8')
+            except: pass
+
+            return data
+        except HTTPError as error:
+            return error.code
 
     def get_file(self, target_name, post=None, destination_name=None):
         if self.auth_usage and not self.auth_check():

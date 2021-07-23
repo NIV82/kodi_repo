@@ -47,7 +47,7 @@ class Anidub_DB:
     def __init__(self, data_file):
         import sqlite3 as db
         self.c = db.connect(database=data_file)
-        self.c.text_factory = str
+        #self.c.text_factory = str
         del db
         self.cu = self.c.cursor()
         self.create_tables()

@@ -5,22 +5,29 @@ import xbmc, xbmcgui, xbmcplugin
 
 try:
     from urllib import urlencode, urlopen, quote, unquote
+    import HTMLParser
+    unescape = HTMLParser.HTMLParser().unescape
 except:
     from urllib.parse import urlencode, quote, unquote
     from urllib.request import urlopen
+    from html import unescape
 
-from utility import unescape, tag_list, clean_list
+from utility import tag_list, clean_list
 
 class Anidub:
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
-        self.progress = progress
-        self.dialog = dialog
-        self.addon = addon
-        self.images_dir = images_dir
-        self.torrents_dir = torrents_dir
-        self.database_dir = database_dir
-        self.cookie_dir = cookie_dir
+    #def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
+    def __init__(self, addon_data_dir, params, addon, icon):
+        self.progress = xbmcgui.DialogProgress()
+        self.dialog = xbmcgui.Dialog()
+
         self.params = params
+        self.addon = addon
+        self.icon = icon
+
+        self.images_dir = os.path.join(addon_data_dir, 'images')
+        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
+        self.database_dir = os.path.join(addon_data_dir, 'database')
+        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
@@ -113,12 +120,12 @@ class Anidub:
         return site_url
 #================================================
     def create_title_info(self, title):
-        title = unescape(title)
         info = dict.fromkeys(['series', 'title_ru', 'title_en'], '')
 
         title = tag_list(title).replace('...','')
         title = title.replace('/ ', ' / ').replace('  ', ' ')
-        title = title.replace(' ', ' ').replace('|', '/')
+        #title = title.replace(' ', ' ')
+        title = title.replace('|', '/')
         title = title.replace('  [', ' [').replace ('\\', '/')
 
         v = title.split(' / ', 1)
@@ -154,16 +161,19 @@ class Anidub:
 
         if series:
             series = series.strip()
-            series = ' - [COLOR=gold][ {} ][/COLOR]'.format(series)
+            series = u' - [COLOR=gold][ {} ][/COLOR]'.format(series)
         else:
             series = ''
        
-        if self.addon.getSetting('anidub_titles') == '0':
-            label = '{}{}'.format(title[0], series)
-        if self.addon.getSetting('anidub_titles') == '1':
-            label = '{}{}'.format(title[1], series)
-        if self.addon.getSetting('anidub_titles') == '2':
-            label = '{} / {}{}'.format(title[0], title[1], series)
+        #if self.addon.getSetting('anidub_titles') == '0':
+        if '0' in self.addon.getSetting('anidub_titles'):
+            label = u'{}{}'.format(title[0], series)
+        #if self.addon.getSetting('anidub_titles') == '1':
+        if '1' in self.addon.getSetting('anidub_titles'):
+            label = u'{}{}'.format(title[1], series)
+        #if self.addon.getSetting('anidub_titles') == '2':
+        if '2' in self.addon.getSetting('anidub_titles'):
+            label = u'{} / {}{}'.format(title[0], title[1], series)
 
         return label
 
@@ -216,9 +226,9 @@ class Anidub:
             info = {'title': title, 'year': anime_info[9], 'genre': anime_info[0], 'director': anime_info[1], 'writer': anime_info[2],
                     'plot': anime_info[3], 'country': anime_info[7], 'studio': anime_info[8], 'year': anime_info[9]}
 
-            info['plot'] = '{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(info['plot'], anime_info[4])
-            info['plot'] = '{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(info['plot'], anime_info[5])
-            info['plot'] = '{}\n[COLOR=steelblue]Работа со звуком[/COLOR]: {}'.format(info['plot'], anime_info[6])
+            info['plot'] = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(info['plot'], anime_info[4])
+            info['plot'] = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(info['plot'], anime_info[5])
+            info['plot'] = u'{}\n[COLOR=steelblue]Работа со звуком[/COLOR]: {}'.format(info['plot'], anime_info[6])
 
             if size: info['size'] = size
 
@@ -235,7 +245,8 @@ class Anidub:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
     def create_info(self, anime_id):
-        html = self.network.get_html('https://tr.anidub.com/index.php?newsid={}'.format(anime_id))
+        html = self.network.get_html2('https://tr.anidub.com/index.php?newsid={}'.format(anime_id))
+        html = unescape(html)
 
         info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'writer', 'plot', 'dubbing',
                       'translation', 'sound', 'country', 'studio', 'year', 'cover'], '')
@@ -249,41 +260,33 @@ class Anidub:
         data_array = clean_list(data_array).split('<br>')
 
         for data in data_array:
-            if 'Год: </b>' in data:
+            if u'Год: </b>' in data:
                 for year in range(1950, 2030, 1):
                     if str(year) in data:
                         info['year'] = year
-            if 'Жанр: </b>' in data:
-                genre = tag_list(data.replace('Жанр: </b>', ''))
-                info['genre'] = unescape(genre).lower()
-            if 'Страна: </b>' in data:
-                info['country'] = tag_list(data.replace('Страна: </b>', ''))
-            if 'Дата выпуска: </b>' in data:
+            if u'Жанр: </b>' in data:
+                info['genre'] = tag_list(data.replace(u'Жанр: </b>', '')).lower()
+            if u'Страна: </b>' in data:
+                info['country'] = tag_list(data.replace(u'Страна: </b>', ''))
+            if u'Дата выпуска: </b>' in data:
                 if info['year'] == '':
                     for year in range(1975, 2030, 1):
                         if str(year) in data:
                             info['year'] = year
-            if '<b itemprop="director"' in data:
-                director = tag_list(data.replace('Режиссер: </b>', ''))
-                info['director'] = unescape(director)
-            if '<b itemprop="author"' in data:
-                writer = tag_list(data.replace('Автор оригинала / Сценарист: </b>', ''))
-                info['writer'] = unescape(writer)
-            if 'Озвучивание: </b>' in data:
-                dubbing = tag_list(data.replace('Озвучивание: </b>', ''))
-                info['dubbing'] = unescape(dubbing)
-            if 'Перевод: </b>' in data:
-                translation = tag_list(data.replace('Перевод: </b>', ''))
-                info['translation'] = unescape(translation)
-            if 'Тайминг и работа со звуком: </b>' in data:
-                sound = tag_list(data.replace('Тайминг и работа со звуком: </b>', ''))
-                info['sound'] = unescape(sound)
-            if 'Студия:</b>' in data:
-                studio = data[data.find('xfsearch/')+9:data.find('/">')]
-                info['studio'] = unescape(studio)
-            if 'Описание:</b>' in data:
-                plot = tag_list(data.replace('Описание:</b>', ''))
-                info['plot'] = unescape(plot)
+            if u'<b itemprop="director"' in data:
+                info['director'] = tag_list(data.replace(u'Режиссер: </b>', ''))
+            if u'<b itemprop="author"' in data:
+                info['writer'] = tag_list(data.replace(u'Автор оригинала / Сценарист: </b>', ''))
+            if u'Озвучивание: </b>' in data:
+                info['dubbing'] = tag_list(data.replace(u'Озвучивание: </b>', ''))
+            if u'Перевод: </b>' in data:
+                info['translation'] = tag_list(data.replace(u'Перевод: </b>', ''))
+            if u'Тайминг и работа со звуком: </b>' in data:
+                info['sound'] = tag_list(data.replace(u'Тайминг и работа со звуком: </b>', ''))
+            if u'Студия:</b>' in data:
+                info['studio'] = data[data.find('xfsearch/')+9:data.find('/">')]
+            if u'Описание:</b>' in data:
+                info['plot'] = tag_list(data.replace(u'Описание:</b>', ''))
         try:
             self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['director'], info['writer'], info['plot'],
                           info['dubbing'], info['translation'], info['sound'], info['country'], info['studio'], info['year'], info['cover'])
@@ -302,11 +305,14 @@ class Anidub:
         try: self.database.end()
         except: pass
         
-        try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
-        except: pass        
+        #try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
+        try: os.remove(os.path.join(self.database_dir, '{}.db'.format(self.params['portal'])))
+        except: pass
 
-        db_file = os.path.join(self.database_dir, 'anidub.db')
-        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
+        #db_file = os.path.join(self.database_dir, 'anidub.db')
+        db_file = os.path.join(self.database_dir, '{}.db'.format(self.params['portal']))
+        #db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}.db'.format(self.params['portal'])
         try:                
             data = urlopen(db_url)
             chunk_size = 8192
@@ -326,9 +332,15 @@ class Anidub:
                     percent = bytes_read * 100 / file_size
                     self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                 self.progress.close()
-            self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
+            #label_1 = '{} - База Данных'.format(self.params['portal'].upper())
+            #label_2 = 'База Данных [COLOR=lime]успешно загружена[/COLOR]'
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
+                self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
+            #self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
         except:
-            self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
+                self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
+            #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
             pass
 
     def exec_favorites_part(self):
@@ -338,14 +350,14 @@ class Anidub:
 
         if 'plus' in self.params['node']:
             try:
-                self.network.get_html(target_name=url)
+                self.network.get_html2(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно добавлено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
 
         if 'minus' in self.params['node']:
             try:
-                self.network.get_html(target_name=url)
+                self.network.get_html2(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно удалено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
@@ -357,6 +369,17 @@ class Anidub:
         except:
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
             pass
+
+    def exec_information_part(self):
+        from info import animeportal_data
+        txt = animeportal_data
+            
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+        self.dialog.textviewer('Информация', data)
+        return
 
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
@@ -440,11 +463,11 @@ class Anidub:
             url = '{}index.php?do=search'.format(self.site_url)
             post = 'do=search&story={}&subaction=search&search_start={}&full_search=0'.format(quote(self.params['search_string']), self.params['page'])
         
-        html = self.network.get_html(url, post=post)
+        html = self.network.get_html2(url, post=post)
 
-        if type(html) == int:
-            self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
-            return
+        # if type(html) == int:
+        #     self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
+        #     return
 
         if '<h2>' in html:         
             if self.params['node'] == 'popular':
@@ -457,20 +480,22 @@ class Anidub:
             i = 0
 
             for data in data_array:
+                data = unescape(data)
+
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
 
                 ai = data[data.find('<a href="')+9:data.find('</a>')]
 
-                if '/manga/' in ai or '/ost/' in ai or '/podcast/' in ai or '/anons_ongoing/' in ai or '/games/' in ai:
+                if '/manga/' in ai or '/ost/' in ai or '/podcast/' in ai or '/anons_ongoing/' in ai or '/games/' in ai or '11310' in ai:
                     continue
 
                 url = ai[:ai.find('.html')]
                 title = ai[ai.find('>')+1:]
                 anime_id = url[url.rfind('/')+1:url.find('-')]
 
-                if '11310' in anime_id:
-                    continue
+                # if '11310' in anime_id:
+                #     continue
 
                 info = self.create_title_info(title)
 
@@ -503,7 +528,7 @@ class Anidub:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_select_part(self):
-        html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
+        html = self.network.get_html2('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
         html = html[html.find('<div class="torrent_c">')+23:html.rfind('Управление')]
 
         data_array = html.split('</ul-->')
@@ -573,3 +598,20 @@ class Anidub:
             self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+    def exec_play_part(self):
+        url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
+        index = int(self.params['index'])
+        portal_engine = '{}_engine'.format(self.params['portal'])
+
+        if self.addon.getSetting(portal_engine) == '0':
+            tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
+            engine = tam_engine[int(self.addon.getSetting('{}_tam'.format(self.params['portal'])))]
+            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
+            item = xbmcgui.ListItem(path=purl)
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+
+        if self.addon.getSetting(portal_engine) == '1':
+            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
+            item = xbmcgui.ListItem(path=purl)
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)

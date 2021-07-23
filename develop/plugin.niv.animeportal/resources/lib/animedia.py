@@ -5,22 +5,29 @@ import xbmc, xbmcgui, xbmcplugin
 
 try:
     from urllib import urlencode, urlopen, quote, unquote
+    import HTMLParser
+    unescape = HTMLParser.HTMLParser().unescape
 except:
     from urllib.parse import urlencode, quote, unquote
     from urllib.request import urlopen
+    from html import unescape
 
 from utility import tag_list, clean_list, unescape
 
 class Animedia:
-    def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
-        self.progress = progress
-        self.dialog = dialog
-        self.addon = addon
-        self.images_dir = images_dir
-        self.torrents_dir = torrents_dir
-        self.database_dir = database_dir
-        self.cookie_dir = cookie_dir
+    #def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
+    def __init__(self, addon_data_dir, params, addon, icon):
+        self.progress = xbmcgui.DialogProgress()
+        self.dialog = xbmcgui.Dialog()
+
         self.params = params
+        self.addon = addon
+        self.icon = icon
+
+        self.images_dir = os.path.join(addon_data_dir, 'images')
+        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
+        self.database_dir = os.path.join(addon_data_dir, 'database')
+        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
@@ -285,11 +292,14 @@ class Animedia:
         try: self.database.end()
         except: pass
         
-        try: os.remove(os.path.join(self.database_dir, 'animedia.db'))
-        except: pass        
+        #try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
+        try: os.remove(os.path.join(self.database_dir, '{}.db'.format(self.params['portal'])))
+        except: pass
 
-        db_file = os.path.join(self.database_dir, 'animedia.db')
-        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/animedia.db'        
+        #db_file = os.path.join(self.database_dir, 'anidub.db')
+        db_file = os.path.join(self.database_dir, '{}.db'.format(self.params['portal']))
+        #db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}.db'.format(self.params['portal'])
         try:                
             data = urlopen(db_url)
             chunk_size = 8192
@@ -309,10 +319,49 @@ class Animedia:
                     percent = bytes_read * 100 / file_size
                     self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                 self.progress.close()
-            self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Успешно загружена[/COLOR]')
+            #label_1 = '{} - База Данных'.format(self.params['portal'].upper())
+            #label_2 = 'База Данных [COLOR=lime]успешно загружена[/COLOR]'
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
+                self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
+            #self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
         except:
-            self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
+                self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
+            #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
             pass
+        
+    # def exec_update_part(self):
+    #     try: self.database.end()
+    #     except: pass
+        
+    #     try: os.remove(os.path.join(self.database_dir, 'animedia.db'))
+    #     except: pass        
+
+    #     db_file = os.path.join(self.database_dir, 'animedia.db')
+    #     db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/animedia.db'        
+    #     try:                
+    #         data = urlopen(db_url)
+    #         chunk_size = 8192
+    #         bytes_read = 0
+
+    #         try: file_size = int(data.info().getheaders("Content-Length")[0])
+    #         except: file_size = int(data.getheader('Content-Length'))
+
+    #         self.progress.create('Загрузка Базы Данных')
+    #         with open(db_file, 'wb') as write_file:
+    #             while True:
+    #                 chunk = data.read(chunk_size)
+    #                 bytes_read = bytes_read + len(chunk)
+    #                 write_file.write(chunk)
+    #                 if len(chunk) < chunk_size:
+    #                     break
+    #                 percent = bytes_read * 100 / file_size
+    #                 self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+    #             self.progress.close()
+    #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Успешно загружена[/COLOR]')
+    #     except:
+    #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
+    #         pass
 
     def exec_clean_part(self):
         try:
@@ -321,6 +370,17 @@ class Animedia:
         except:
             self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
             pass
+
+    def exec_information_part(self):
+        from info import animeportal_data
+        txt = animeportal_data
+            
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = txt[txt.find(start)+6:txt.find(end)].strip()
+
+        self.dialog.textviewer('Информация', data)
+        return
 
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
@@ -563,3 +623,20 @@ class Animedia:
             self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+    def exec_play_part(self):
+        url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
+        index = int(self.params['index'])
+        portal_engine = '{}_engine'.format(self.params['portal'])
+
+        if self.addon.getSetting(portal_engine) == '0':
+            tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
+            engine = tam_engine[int(self.addon.getSetting('{}_tam'.format(self.params['portal'])))]
+            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
+            item = xbmcgui.ListItem(path=purl)
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+
+        if self.addon.getSetting(portal_engine) == '1':
+            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
+            item = xbmcgui.ListItem(path=purl)
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
