@@ -15,7 +15,6 @@ except:
 from utility import tag_list, clean_list
 
 class Anidub:
-    #def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
@@ -124,7 +123,6 @@ class Anidub:
 
         title = tag_list(title).replace('...','')
         title = title.replace('/ ', ' / ').replace('  ', ' ')
-        #title = title.replace(' ', ' ')
         title = title.replace('|', '/')
         title = title.replace('  [', ' [').replace ('\\', '/')
 
@@ -165,13 +163,10 @@ class Anidub:
         else:
             series = ''
        
-        #if self.addon.getSetting('anidub_titles') == '0':
         if '0' in self.addon.getSetting('anidub_titles'):
             label = u'{}{}'.format(title[0], series)
-        #if self.addon.getSetting('anidub_titles') == '1':
         if '1' in self.addon.getSetting('anidub_titles'):
             label = u'{}{}'.format(title[1], series)
-        #if self.addon.getSetting('anidub_titles') == '2':
         if '2' in self.addon.getSetting('anidub_titles'):
             label = u'{} / {}{}'.format(title[0], title[1], series)
 
@@ -194,23 +189,23 @@ class Anidub:
 
     def create_context(self, anime_id):
         context_menu = []
-        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anidub")'))
+        context_menu.append((u'[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anidub")'))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append(('[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
+            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append((u'[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
 
         if self.auth_mode:
             if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-                context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-                context_menu.append(('[B][COLOR=white]Добавить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
-                context_menu.append(('[B][COLOR=white]Удалить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+                context_menu.append((u'[B][COLOR=white]Добавить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append((u'[B][COLOR=white]Удалить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
         
-        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-        context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
-        context_menu.append(('[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anidub")'))
-        context_menu.append(('[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anidub")'))
-        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append((u'[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
+        context_menu.append((u'[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anidub")'))
+        context_menu.append((u'[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anidub")'))
+        context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
         return context_menu
 
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True):        
@@ -305,13 +300,10 @@ class Anidub:
         try: self.database.end()
         except: pass
         
-        #try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
         try: os.remove(os.path.join(self.database_dir, '{}.db'.format(self.params['portal'])))
         except: pass
 
-        #db_file = os.path.join(self.database_dir, 'anidub.db')
         db_file = os.path.join(self.database_dir, '{}.db'.format(self.params['portal']))
-        #db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
         db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}.db'.format(self.params['portal'])
         try:                
             data = urlopen(db_url)
@@ -332,42 +324,37 @@ class Anidub:
                     percent = bytes_read * 100 / file_size
                     self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                 self.progress.close()
-            #label_1 = '{} - База Данных'.format(self.params['portal'].upper())
-            #label_2 = 'База Данных [COLOR=lime]успешно загружена[/COLOR]'
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
-            #self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
         except:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
-            #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
             pass
 
     def exec_favorites_part(self):
         url = '{}engine/ajax/favorites.php?fav_id={}&action={}&size=small&skin=Anidub'.format(self.site_url, self.params['id'], self.params['node'])        
         label = self.database.get_title(self.params['id'])[0]
-        #self.create_title(self.params['id'], None)
 
         if 'plus' in self.params['node']:
             try:
                 self.network.get_html2(target_name=url)
-                self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно добавлено[/COLOR]'.format(label))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
             except:
-                self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
 
         if 'minus' in self.params['node']:
             try:
                 self.network.get_html2(target_name=url)
-                self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно удалено[/COLOR]'.format(label))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
             except:
-                self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
         
     def exec_clean_part(self):
         try:
-            self.addon.setSetting('anidub_search', '')
-            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
+            self.addon.setSetting('{}_search'.format(self.params['portal']), '')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=lime]успешно выполнено[/COLOR]', 5000, self.icon))
         except:
-            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=yellow]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
 
     def exec_information_part(self):
@@ -382,40 +369,36 @@ class Anidub:
         return
 
     def exec_main_part(self):
-        self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title=u'[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
         if self.auth_mode:
-            self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})        
-        self.create_line(title='[B][COLOR=lime][ Популярное за неделю ][/COLOR][/B]', params={'mode': 'common_part', 'node': 'popular'})
-        self.create_line(title='[B][COLOR=lime][ Новое ][/COLOR][/B]', params={'mode': 'common_part'})      
-        self.create_line(title='[B][COLOR=lime][ TV Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/anime_ongoing/'})
-        self.create_line(title='[B][COLOR=lime][ TV 100+ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/shonen/'})
-        self.create_line(title='[B][COLOR=lime][ TV Законченные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/full/'})
-        self.create_line(title='[B][COLOR=lime][ Аниме OVA ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
-        self.create_line(title='[B][COLOR=lime][ Аниме фильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
-        self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
+            self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})        
+        self.create_line(title=u'[B][COLOR=lime][ Популярное за неделю ][/COLOR][/B]', params={'mode': 'common_part', 'node': 'popular'})
+        self.create_line(title=u'[B][COLOR=lime][ Новое ][/COLOR][/B]', params={'mode': 'common_part'})      
+        self.create_line(title=u'[B][COLOR=lime][ TV Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/anime_ongoing/'})
+        self.create_line(title=u'[B][COLOR=lime][ TV 100+ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/shonen/'})
+        self.create_line(title=u'[B][COLOR=lime][ TV Законченные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/full/'})
+        self.create_line(title=u'[B][COLOR=lime][ Аниме OVA ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
+        self.create_line(title=u'[B][COLOR=lime][ Аниме фильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
+        self.create_line(title=u'[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
     def exec_search_part(self):
-        if not self.addon.getSetting('anidub_search'):
-            self.addon.setSetting('anidub_search', '')
-
-        if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
-            self.create_line(title='[B][COLOR=red][ Поиск по жанрам ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
-            self.create_line(title='[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
-            self.create_line(title='[B][COLOR=red][ Поиск по алфавиту ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
+        if not self.params['param']:
+            self.create_line(title=u'[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+            self.create_line(title=u'[B][COLOR=red][ Поиск по жанрам ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
+            self.create_line(title=u'[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
+            self.create_line(title=u'[B][COLOR=red][ Поиск по алфавиту ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
 
             data_array = self.addon.getSetting('anidub_search').split('|')
             data_array.reverse()
 
             for data in data_array:
-                if data == '':
-                    continue
+                if not data: continue
                 self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
 
-        if self.params['param'] == 'search':
+        if 'search' in self.params['param']:
             skbd = xbmc.Keyboard()
-            skbd.setHeading('Поиск:')
+            skbd.setHeading(u'Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
@@ -429,26 +412,20 @@ class Anidub:
             else:
                 return False
 
-        if self.params['param'] == 'genres':
-            data = ('сёнэн', 'романтика', 'драма', 'комедия', 'этти', 'меха', 'фантастика', 'фэнтези', 
-                    'повседневность', 'школа', 'война', 'сёдзё', 'детектив', 'ужасы', 'история', 'триллер',
-                    'приключения', 'киберпанк', 'мистика', 'музыкальный', 'спорт', 'пародия', 'для детей', 
-                    'махо-сёдзё', 'сказка', 'сёдзё-ай', 'сёнэн-ай', 'боевые искусства', 'самурайский боевик')
+        if 'genres' in self.params['param']:
+            from info import anidub_genres
+            for i in anidub_genres:
+                self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'xfsearch/{}/'.format(quote(i))})
 
-        if self.params['param'] == 'years':
-            data = ['{}'.format(year) for year in range(1970,2022)]
-            data.reverse()
-            data = tuple(data)
+        if 'years' in self.params['param']:
+            from info import anidub_years
+            for i in anidub_years:
+                self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'xfsearch/{}/'.format(quote(i))})
 
-        if self.params['param'] == 'genres' or self.params['param'] == 'years':
-            for i in data:
-                self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'xfsearch/{}/'.format(quote(i))})  
-
-        if self.params['param'] == 'alphabet':
-            data = ('а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н',
-                    'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'э', 'ю', 'я')
+        if 'alphabet' in self.params['param']:
+            from info import anidub_alphabet
             
-            for i in data:
+            for i in anidub_alphabet:
                 self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'catalog/{}/'.format(quote(i))})  
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -529,7 +506,7 @@ class Anidub:
 
     def exec_select_part(self):
         html = self.network.get_html2('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
-        html = html[html.find('<div class="torrent_c">')+23:html.rfind('Управление')]
+        html = html[html.find('<div class="torrent_c">')+23:html.rfind(u'Управление')]
 
         data_array = html.split('</ul-->')
 
@@ -545,8 +522,8 @@ class Anidub:
 
             if '<div id=\'torrent_' in data:
                 quality = qa[len(qa) - 1]
-                if 'Серии в торренте:' in data:
-                    series = data[data.find('Серии в торренте:')+17:data.find('Раздают')]
+                if u'Серии в торренте:' in data:
+                    series = data[data.find(u'Серии в торренте:')+17:data.find(u'Раздают')]
                     series = tag_list(series)
                    
                     qid = '{} - [ {} ]'.format(quality, series)
@@ -554,9 +531,9 @@ class Anidub:
                     qid = quality
 
                 seed = data[data.find('li_distribute_m">')+17:data.find('</span> <')]
-                peer = data[data.find('li_swing_m">')+12:data.find('</span> <span class="sep"></span> Размер:')]
-                size = data[data.find('Размер: <span class="red">'):data.find('</span> <span class="sep"></span> Скачали')]
-                size = size.replace('Размер: <span class="red">', '')
+                peer = data[data.find('li_swing_m">')+12:data.find(u'</span> <span class="sep"></span> Размер:')]
+                size = data[data.find(u'Размер: <span class="red">'):data.find(u'</span> <span class="sep"></span> Скачали')]
+                size = size.replace(u'Размер: <span class="red">', '')
 
                 label = '[COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(size, qid.upper(), seed, peer)
                 la.append('{}|||{}'.format(label, torrent_id))

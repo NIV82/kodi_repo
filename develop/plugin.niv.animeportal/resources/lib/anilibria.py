@@ -391,10 +391,10 @@ class Anilibria:
 
     def exec_clean_part(self):
         try:
-            self.addon.setSetting('anilibria_search', '')
-            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
+            self.addon.setSetting('{}_search'.format(self.params['portal']), '')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=lime]успешно выполнено[/COLOR]', 5000, self.icon))
         except:
-            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=yellow]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
 
     def exec_information_part(self):

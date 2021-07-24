@@ -575,10 +575,10 @@ class Shiza:
 
     def exec_clean_part(self):
         try:
-            self.addon.setSetting('shiza_search', '')
-            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]Успешно выполнено[/COLOR]')
+            self.addon.setSetting('{}_search'.format(self.params['portal']), '')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=lime]успешно выполнено[/COLOR]', 5000, self.icon))
         except:
-            self.dialog.ok('Поиск','Удаление истории - [COLOR=gold]ERROR: 102[/COLOR]')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=yellow]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
 
     def exec_information_part(self):
@@ -613,7 +613,7 @@ class Shiza:
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
 
-            data_array = self.addon.getSetting('shiza_search').split('|')
+            data_array = self.addon.getSetting('shizaproject_search').split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -627,11 +627,11 @@ class Shiza:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
-                data_array = self.addon.getSetting('shiza_search').split('|')
+                data_array = self.addon.getSetting('shizaproject_search').split('|')
                 while len(data_array) >= 10:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
-                self.addon.setSetting('shiza_search', data_array)
+                self.addon.setSetting('shizaproject_search', data_array)
 
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
