@@ -56,18 +56,18 @@ class Anidub:
         del WebTools
 #================================================
         if self.auth_mode:
-            if not self.addon.getSetting("anidub_username") or not self.addon.getSetting("anidub_password"):
+            if not self.addon.getSetting('anidub_username') or not self.addon.getSetting('anidub_password'):
                 self.params['mode'] = 'addon_setting'
-                self.dialog.ok('Авторизация','Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                self.dialog.ok(u'Авторизация',u'Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    self.dialog.ok('Авторизация','Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                    self.dialog.ok(u'Авторизация',u'Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                     return
                 else:
-                    self.addon.setSetting("anidub_auth", str(self.network.auth_status).lower())
+                    self.addon.setSetting('anidub_auth', str(self.network.auth_status).lower())
 #================================================
         if not os.path.isfile(os.path.join(self.database_dir, 'anidub.db')):
             self.exec_update_part()
@@ -77,7 +77,7 @@ class Anidub:
         del Anidub_DB
 #================================================
     def create_proxy_data(self):
-        if self.addon.getSetting('anidub_unblock') == '0':
+        if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
             return None
 
         try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
@@ -86,10 +86,10 @@ class Anidub:
         if time.time() - proxy_time > 86400:
             self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-                
-            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+
+            try: proxy_pac = proxy_pac.decode('utf-8')
             except: pass
-                
+            
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
             self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
@@ -99,7 +99,7 @@ class Anidub:
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
-                try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                try: proxy_pac = proxy_pac.decode('utf-8')
                 except: pass
 
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
@@ -175,7 +175,7 @@ class Anidub:
     def create_image(self, anime_id):
         url = '{}'.format(self.database.get_cover(anime_id))
 
-        if self.addon.getSetting('anidub_covers') == '0':
+        if '0' in self.addon.getSetting('anidub_covers'):
             return url
         else:
             #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
@@ -313,7 +313,7 @@ class Anidub:
             try: file_size = int(data.info().getheaders("Content-Length")[0])
             except: file_size = int(data.getheader('Content-Length'))
 
-            self.progress.create('Загрузка Базы Данных')
+            self.progress.create(u'Загрузка Базы Данных')
             with open(db_file, 'wb') as write_file:
                 while True:
                     chunk = data.read(chunk_size)
@@ -322,7 +322,7 @@ class Anidub:
                     if len(chunk) < chunk_size:
                         break
                     percent = bytes_read * 100 / file_size
-                    self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                    self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                 self.progress.close()
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
@@ -333,7 +333,6 @@ class Anidub:
 
     def exec_favorites_part(self):
         url = '{}engine/ajax/favorites.php?fav_id={}&action={}&size=small&skin=Anidub'.format(self.site_url, self.params['id'], self.params['node'])        
-        label = self.database.get_title(self.params['id'])[0]
 
         if 'plus' in self.params['node']:
             try:
@@ -358,14 +357,13 @@ class Anidub:
             pass
 
     def exec_information_part(self):
-        from info import animeportal_data
-        txt = animeportal_data
+        from info import animeportal_data as info
             
         start = '[{}]'.format(self.params['param'])
         end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
+        data = info[info.find(start)+6:info.find(end)].strip()
 
-        self.dialog.textviewer('Информация', data)
+        self.dialog.textviewer(u'Информация', data)
         return
 
     def exec_main_part(self):
@@ -423,20 +421,20 @@ class Anidub:
                 self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'xfsearch/{}/'.format(quote(i))})
 
         if 'alphabet' in self.params['param']:
-            from info import anidub_alphabet
-            
+            from info import anidub_alphabet            
             for i in anidub_alphabet:
                 self.create_line(title='{}'.format(i), params={'mode': 'common_part', 'param': 'catalog/{}/'.format(quote(i))})  
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
    
     def exec_common_part(self):
-        self.progress.create("AniDUB", "Инициализация")
+        self.progress.create('AniDUB', u'Инициализация')
 
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         post = ''
 
-        if self.params['param'] == 'search_part':
+        #if self.params['param'] == 'search_part':
+        if 'search_part' in self.params['param']:
             url = '{}index.php?do=search'.format(self.site_url)
             post = 'do=search&story={}&subaction=search&search_start={}&full_search=0'.format(quote(self.params['search_string']), self.params['page'])
         
@@ -447,7 +445,8 @@ class Anidub:
         #     return
 
         if '<h2>' in html:         
-            if self.params['node'] == 'popular':
+            #if self.params['node'] == 'popular':
+            if 'popular' in self.params['node']:
                 data_array = html[html.find('hover</a>')+9:html.rfind('<!-- END OF OV')]
                 data_array = data_array.split('hover</a>')
             else:
@@ -471,14 +470,11 @@ class Anidub:
                 title = ai[ai.find('>')+1:]
                 anime_id = url[url.rfind('/')+1:url.find('-')]
 
-                # if '11310' in anime_id:
-                #     continue
-
                 info = self.create_title_info(title)
 
                 if self.progress.iscanceled():
                     break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
                 if not self.database.is_anime_in_db(anime_id):
                     inf = self.create_info(anime_id)
@@ -491,14 +487,14 @@ class Anidub:
 
                 self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
         else:
-            self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
-        
-        if '<span class="n_next rcol"><a ' in html and not self.params['node'] == 'popular':
-            if self.params['param'] == 'search_part':
-                self.create_line(title='[B][COLOR=skyblue][ Следующая страница ][/COLOR][/B]', params={
+            self.create_line(title=u'[COLOR=yellow]Ничего не найдено[/COLOR]', params={'mode': 'main_part'})
+
+        if '<span class="n_next rcol"><a ' in html and not 'popular' in self.params['node']:
+            if 'search_part' in self.params['param']:
+                self.create_line(title=u'[B][COLOR=red]Следующая страница[/COLOR][/B]', params={
                                  'mode': 'common_part', 'search_string': self.params['search_string'], 'param': 'search_part', 'page': int(self.params['page']) + 1})
             else:
-                self.create_line(title='[B][COLOR=skyblue][ Следующая страница ][/COLOR][/B]', params={
+                self.create_line(title=u'[B][COLOR=red]Следующая страница[/COLOR][/B]', params={
                                'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
         
         self.progress.close()        
@@ -581,14 +577,16 @@ class Anidub:
         index = int(self.params['index'])
         portal_engine = '{}_engine'.format(self.params['portal'])
 
-        if self.addon.getSetting(portal_engine) == '0':
+        #if self.addon.getSetting(portal_engine) == '0':
+        if '0' in self.addon.getSetting(portal_engine):
             tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
             engine = tam_engine[int(self.addon.getSetting('{}_tam'.format(self.params['portal'])))]
             purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
-        if self.addon.getSetting(portal_engine) == '1':
+        #if self.addon.getSetting(portal_engine) == '1':
+        if '1' in self.addon.getSetting(portal_engine):
             purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)

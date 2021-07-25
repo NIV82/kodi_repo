@@ -86,7 +86,8 @@ class Animedia:
         self.animedia_voice = ("","Amails","Agzy","4a4i","Matorian","aZon","ArtLight","BlackVlastelin","Demetra","Derenn","DEMIKS","Rikku","ABSURD95","AMELIA","ANGEL","ANIMAN","Andry B","AriannaFray","AXLt","BLACK_VLASTELIN","ELADIEL","ENEMY","ENILOU","ERINANT","EneerGy","Egoist","Eugene","FaSt","FREYA","FRUKT","FUEGOALMA","FUUROU","GFT","GKONKOV","GOMER","GREH","HHANZO","HUNTER26","ITLM","JAM","JEPT","JULIABLACK","KovarnyBober","KIARA_LAINE","Kleo Rin","KUCLIA","KASHI","Kansai","Kobayashi","Kona-chan","LISEK","LINOKK","L'Roy","LUNIFERA","LUPIN","LeXar","Lyxor","MACHAON","MEISEI","MIRIKU","MisterX","MIRONA","MOONY","MULYA","MUNYA","MUSTADIO","MyDuck","MezIdA","NAZEL","NASTR","NEAR","N_O_I_R","NIKIRI","Nuriko","Neonoir","Kabrok","Komuro","LolAlice","ORIKO","OZIRIST","PERSONA99","Phoenix","RYC99","RUBY","REZAN","Riddle","Reewayvs","Railgun","Revi_Kim","Rizz_Fisher","SAHAWK","SAJURI","SANDEL","SAY","SCREAM","SHACHIBURI","SHALU","SILV","STEFAN","Soer","TDUBOVIC","TINDA","TicTac","TRAY","TRINAD","TROUBLE","Televizor","TSUMI","VIKI","VINS","YUKIO","ZACK_FAIR","ZART","ZENDOS","VULPES VUPLES","Wicked_Wayfarer","Григорий Коньков","NRG Film Distribution","Tina","ВИКТОР БОЛГОВ","Mega Anime","Пифагор","Реанимедия","Ruscico","MC Entertainment","Симбад","Ruri","Odissey","Акварелька","Garison","zaShunina","Sad_Kit","Milirina","Leo Tail","Satsuki","SilverTatsu","Sabadaher","Morin","KingMaster","Каркас")
 #================================================
     def create_proxy_data(self):
-        if self.addon.getSetting('animedia_unblock') == '0':
+        #if self.addon.getSetting('anidub_unblock') == '0':
+        if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
             return None
 
         try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
@@ -96,9 +97,11 @@ class Animedia:
             self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
-            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # except: pass
+            try: proxy_pac = proxy_pac.decode('utf-8')
             except: pass
-                
+            
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
             self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
@@ -108,9 +111,12 @@ class Animedia:
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
-                try: proxy_pac = str(proxy_pac, encoding='utf-8')
-                except: pass
+                # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                # except: pass
 
+                try: proxy_pac = proxy_pac.decode('utf-8')
+                except: pass
+                
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
                 self.addon.setSetting('animeportal_proxy', proxy)
                 proxy_data = {'https': proxy}
@@ -372,14 +378,13 @@ class Animedia:
             pass
 
     def exec_information_part(self):
-        from info import animeportal_data
-        txt = animeportal_data
+        from info import animeportal_data as info
             
         start = '[{}]'.format(self.params['param'])
         end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
+        data = info[info.find(start)+6:info.find(end)].strip()
 
-        self.dialog.textviewer('Информация', data)
+        self.dialog.textviewer(u'Информация', data)
         return
 
     def exec_main_part(self):

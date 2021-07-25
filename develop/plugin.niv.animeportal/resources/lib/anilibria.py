@@ -79,7 +79,8 @@ class Anilibria:
         del Anilibria_DB
 #================================================
     def create_proxy_data(self):
-        if self.addon.getSetting('anilibria_unblock') == '0':
+        #if self.addon.getSetting('anidub_unblock') == '0':
+        if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
             return None
 
         try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
@@ -89,9 +90,11 @@ class Anilibria:
             self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
-            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # except: pass
+            try: proxy_pac = proxy_pac.decode('utf-8')
             except: pass
-                
+            
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
             self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
@@ -101,9 +104,12 @@ class Anilibria:
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
-                try: proxy_pac = str(proxy_pac, encoding='utf-8')
-                except: pass
+                # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                # except: pass
 
+                try: proxy_pac = proxy_pac.decode('utf-8')
+                except: pass
+                
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
                 self.addon.setSetting('animeportal_proxy', proxy)
                 proxy_data = {'https': proxy}
@@ -398,14 +404,13 @@ class Anilibria:
             pass
 
     def exec_information_part(self):
-        from info import animeportal_data
-        txt = animeportal_data
+        from info import animeportal_data as info
             
         start = '[{}]'.format(self.params['param'])
         end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
+        data = info[info.find(start)+6:info.find(end)].strip()
 
-        self.dialog.textviewer('Информация', data)
+        self.dialog.textviewer(u'Информация', data)
         return
 
     def exec_main_part(self):

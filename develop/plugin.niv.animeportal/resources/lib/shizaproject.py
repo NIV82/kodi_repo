@@ -92,7 +92,8 @@ class Shiza:
         self.shiza_tags = {'':'','Дружба':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI0','Повседневность':'VGFnOjQ1ODkxNDE0ODg1NjYyODA3','Кровь':'VGFnOjQ1ODkxNDE0ODg1NjYyODk2','Будущее':'VGFnOjQ1ODkxNDE0ODg5ODU3MDI5','bdrip':'VGFnOjQ1ODkxNDE0ODgxNDY4NDE4','webrip':'VGFnOjQ1ODkxNDE0ODg1NjYyODAw','Школа':'VGFnOjQ1ODkxNDE0ODg1NjYyNzM2','Олдскул':'VGFnOjQ1ODkxNDE0ODg1NjYyNzY1','Магия':'VGFnOjQ1ODkxNDE0ODg1NjYyNzk5','hdtvrip':'VGFnOjQ1ODkxNDE0ODg5ODU3MDM0','Демоны':'VGFnOjQ1ODkxNDE0ODg1NjYyNzQ5','Война':'VGFnOjQ1ODkxNDE0ODg1NjYyODAy','Роботы':'VGFnOjQ1ODkxNDE0ODg1NjYyNzcz','Космос':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI4','Любовь':'VGFnOjQ1ODkxNDE0ODg1NjYyODU0','Вампиры':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMy','Оружие':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMz'}
 #================================================
     def create_proxy_data(self):
-        if self.addon.getSetting('shiza_unblock') == '0':
+        #if self.addon.getSetting('anidub_unblock') == '0':
+        if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
             return None
 
         try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
@@ -102,9 +103,11 @@ class Shiza:
             self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
-            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # except: pass
+            try: proxy_pac = proxy_pac.decode('utf-8')
             except: pass
-                
+            
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
             self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
@@ -114,9 +117,12 @@ class Shiza:
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
-                try: proxy_pac = str(proxy_pac, encoding='utf-8')
-                except: pass
+                # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                # except: pass
 
+                try: proxy_pac = proxy_pac.decode('utf-8')
+                except: pass
+                
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
                 self.addon.setSetting('animeportal_proxy', proxy)
                 proxy_data = {'https': proxy}
@@ -582,14 +588,13 @@ class Shiza:
             pass
 
     def exec_information_part(self):
-        from info import animeportal_data
-        txt = animeportal_data
+        from info import animeportal_data as info
             
         start = '[{}]'.format(self.params['param'])
         end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
+        data = info[info.find(start)+6:info.find(end)].strip()
 
-        self.dialog.textviewer('Информация', data)
+        self.dialog.textviewer(u'Информация', data)
         return
 
     def exec_main_part(self):

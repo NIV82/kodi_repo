@@ -87,7 +87,8 @@ class Anistar:
         self.anistar_ignor_list = ['7013','6930','6917','6974','6974','4106','1704','1229','1207','1939','1954','2282','4263','4284','4288','4352','4362','4422','4931','5129','5130','5154','5155','6917','6928','6930','6932','6936','6968','6994','7013','7055','3999','4270','4282','4296','4300','4314','4348','4349','4364','4365','4366','4367','4368','4369','4374','4377','4480','4493','4556','6036','3218','3943','3974','4000','4091']
 #================================================
     def create_proxy_data(self):
-        if self.addon.getSetting('anistar_unblock') == '0':
+        #if self.addon.getSetting('anidub_unblock') == '0':
+        if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
             return None
 
         try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
@@ -97,9 +98,11 @@ class Anistar:
             self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
-            try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+            # except: pass
+            try: proxy_pac = proxy_pac.decode('utf-8')
             except: pass
-                
+            
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
             self.addon.setSetting('animeportal_proxy', proxy)
             proxy_data = {'https': proxy}
@@ -109,9 +112,12 @@ class Anistar:
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
-                try: proxy_pac = str(proxy_pac, encoding='utf-8')
-                except: pass
+                # try: proxy_pac = str(proxy_pac, encoding='utf-8')
+                # except: pass
 
+                try: proxy_pac = proxy_pac.decode('utf-8')
+                except: pass
+                
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
                 self.addon.setSetting('animeportal_proxy', proxy)
                 proxy_data = {'https': proxy}
@@ -441,14 +447,13 @@ class Anistar:
             pass
 
     def exec_information_part(self):
-        from info import animeportal_data
-        txt = animeportal_data
+        from info import animeportal_data as info
             
         start = '[{}]'.format(self.params['param'])
         end = '[/{}]'.format(self.params['param'])
-        data = txt[txt.find(start)+6:txt.find(end)].strip()
+        data = info[info.find(start)+6:info.find(end)].strip()
 
-        self.dialog.textviewer('Информация', data)
+        self.dialog.textviewer(u'Информация', data)
         return
 
     def exec_main_part(self):

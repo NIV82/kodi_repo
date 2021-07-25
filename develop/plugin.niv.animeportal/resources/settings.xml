@@ -128,12 +128,12 @@
     <setting id="shiza_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
     <setting id="shiza_mirror_2" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-3,2)"/>
     <setting type="sep"/>
-    <setting id="shiza_unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy" enable="eq(-15,true)"/>
+    <setting id="shizaproject_unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy" enable="eq(-15,true)"/>
     <setting type="sep"/>
     <setting id="shizaproject_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|Elementum|T2Http" enable="eq(-17,true)"/>
     <setting id="shiza_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="default|ACE engine|T2Http|YATP|Torrenter|Elementum|XBMCtorrent|ACE proxy|Quasar|TorrServer" enable="eq(-18,true)"/>
     <setting id="shiza_session" label="session" type="text" default="" visible="false"/>
-    <setting id="shiza_search" label="status" type="text" default="" visible="false"/>
+    <setting id="shizaproject_search" label="status" type="text" default="" visible="false"/>
     <setting id="shiza_auth" label="auth" type="bool" default="false" visible="false"/>    
     <setting id="shiza_year_start" label="year" type="text" default="1970" visible="false"/>
     <setting id="shiza_year_end" label="year" type="text" default="2021" visible="false"/>
