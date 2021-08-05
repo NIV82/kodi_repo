@@ -73,6 +73,7 @@ class WebTools:
         except HTTPError as error:
             return error.code
 
+    #def get_html2(self, target_name, post=None):
     def get_html2(self, target_name, post=None):
         if self.auth_usage and not self.auth_check():
             return None
@@ -82,7 +83,10 @@ class WebTools:
         if self.portal == 'shiza':
             self.headers['Content-Type'] = 'application/json'
 
-        try: post = bytes(post, encoding='utf-8')
+        # try: post = bytes(post, encoding='utf-8')
+        # except: pass
+
+        try: post = post.decode(encoding='utf-8', errors='replace')
         except: pass
 
         try:
@@ -99,8 +103,8 @@ class WebTools:
 
             # try: data = str(data, encoding='utf-8')
             # except: pass
-            try: data = data.decode('utf-8')
-            except: pass
+            # try: data = data.decode('utf-8')
+            # except: pass
 
             return data
         except HTTPError as error:

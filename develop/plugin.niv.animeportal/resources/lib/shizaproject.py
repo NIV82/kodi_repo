@@ -73,7 +73,9 @@ class Shiza:
                 else:
                     self.addon.setSetting("shiza_auth", str(self.network.auth_status).lower())
 #================================================
-        if not os.path.isfile(os.path.join(self.database_dir, 'shizaproject.db')):
+        # if not os.path.isfile(os.path.join(self.database_dir, 'shizaproject.db')):
+        #     self.exec_update_part()
+        if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_part()
 #================================================
         from database import ShizaProject_DB
@@ -508,14 +510,11 @@ class Shiza:
         try: self.database.end()
         except: pass
         
-        #try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
-        try: os.remove(os.path.join(self.database_dir, '{}.db'.format(self.params['portal'])))
+        try: os.remove(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
         except: pass
 
-        #db_file = os.path.join(self.database_dir, 'anidub.db')
-        db_file = os.path.join(self.database_dir, '{}.db'.format(self.params['portal']))
-        #db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
-        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}.db'.format(self.params['portal'])
+        db_file = os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/ap_{}.db'.format(self.params['portal'])
         try:                
             data = urlopen(db_url)
             chunk_size = 8192
@@ -524,7 +523,7 @@ class Shiza:
             try: file_size = int(data.info().getheaders("Content-Length")[0])
             except: file_size = int(data.getheader('Content-Length'))
 
-            self.progress.create('Загрузка Базы Данных')
+            self.progress.create(u'Загрузка Базы Данных')
             with open(db_file, 'wb') as write_file:
                 while True:
                     chunk = data.read(chunk_size)
@@ -533,18 +532,56 @@ class Shiza:
                     if len(chunk) < chunk_size:
                         break
                     percent = bytes_read * 100 / file_size
-                    self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                    self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                 self.progress.close()
-            #label_1 = '{} - База Данных'.format(self.params['portal'].upper())
-            #label_2 = 'База Данных [COLOR=lime]успешно загружена[/COLOR]'
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
-            #self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
         except:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
-            #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
             pass
+
+    # def exec_update_part(self):
+    #     try: self.database.end()
+    #     except: pass
+        
+    #     #try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
+    #     try: os.remove(os.path.join(self.database_dir, '{}.db'.format(self.params['portal'])))
+    #     except: pass
+
+    #     #db_file = os.path.join(self.database_dir, 'anidub.db')
+    #     db_file = os.path.join(self.database_dir, '{}.db'.format(self.params['portal']))
+    #     #db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
+    #     db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}.db'.format(self.params['portal'])
+    #     try:                
+    #         data = urlopen(db_url)
+    #         chunk_size = 8192
+    #         bytes_read = 0
+
+    #         try: file_size = int(data.info().getheaders("Content-Length")[0])
+    #         except: file_size = int(data.getheader('Content-Length'))
+
+    #         self.progress.create('Загрузка Базы Данных')
+    #         with open(db_file, 'wb') as write_file:
+    #             while True:
+    #                 chunk = data.read(chunk_size)
+    #                 bytes_read = bytes_read + len(chunk)
+    #                 write_file.write(chunk)
+    #                 if len(chunk) < chunk_size:
+    #                     break
+    #                 percent = bytes_read * 100 / file_size
+    #                 self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+    #             self.progress.close()
+    #         #label_1 = '{} - База Данных'.format(self.params['portal'].upper())
+    #         #label_2 = 'База Данных [COLOR=lime]успешно загружена[/COLOR]'
+    #         xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
+    #             self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
+    #         #self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
+    #     except:
+    #         xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
+    #             self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
+    #         #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
+    #         pass
         
     # def exec_update_part(self):
     #     try: self.database.end()
