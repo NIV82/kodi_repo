@@ -324,7 +324,7 @@ class Anidub:
                 'path':'',#	string (/home/user/movie.avi)
                 'trailer':'',#	string (/home/user/trailer.avi)
                 'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+                #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
                 'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
             }
 
@@ -660,7 +660,7 @@ class Anidub:
                 break
             self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-            if not self.database.is_anime_in_db(anime_id):
+            if not self.database.anime_in_db(anime_id):
                 inf = self.create_info(anime_id)
 
                 if type(inf) == int:
@@ -684,7 +684,8 @@ class Anidub:
 
     def exec_select_part(self):
         self.create_line(title=u'[B]Онлайн просмотр[/B]', params={'mode': 'online_part', 'id': self.params['id']})
-        self.create_line(title=u'[B]Торрент просмотр[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
+        if self.database.get_tid(self.params['id']):
+            self.create_line(title=u'[B]Торрент просмотр[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
@@ -702,8 +703,10 @@ class Anidub:
                 video_url = data[data.find('span data="')+11:data.find('"">')]
                 video_title = data[data.find('"">')+3:]
 
-                self.create_line(title=video_title, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id'],'title':video_title.encode('utf-8')})
-                #self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': data[2], 'title':label, 'cover': cover})
+                try: title = video_title.encode('utf-8')
+                except: title = video_title
+
+                self.create_line(title=video_title, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id'],'title':title})
 
         if self.params['param']:
             html = self.network.get_html(target_name=self.params['param'])
@@ -715,7 +718,7 @@ class Anidub:
                 video_src = video_src[:video_src.find('"')]
                 play_url = 'https://video.sibnet.ru{}|referer={}'.format(video_src, self.params['param'])
 
-                label = self.params['title'].decode('utf-8')
+                label = self.params['title']
 
             if 'class=videostatus><p>' in html:
                 status = html[html.find('class=videostatus><p>')+21:html.find('</p></div><script')]
@@ -726,93 +729,95 @@ class Anidub:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
-#     def exec_select_part(self):
-#         html = self.network.get_html2('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
-#         html = html[html.find('<div class="torrent_c">')+23:html.rfind(u'Управление')]
+    def exec_torrent_part(self):
+        if not self.params['param']:
+            anime_tid = self.database.get_tid(self.params['id'])
+            html = self.network.get_html2('https://tr.anidub.com/index.php?newsid={}'.format(anime_tid))
+        
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
 
-#         data_array = html.split('</ul-->')
+            html = html[html.find('<div class="torrent_c">')+23:html.rfind(u'Управление')]
 
-#         qa = []
-#         la = []
+            data_array = html.split('</ul-->')
 
-#         for data in data_array:
-#             torrent_id = data[data.find('torrent_')+8:data.find('_info\'>')]
+            qa = []
+            la = []
 
-#             if '<div id="' in data:
-#                 quality = data[data.find('="')+2:data.find('"><')]
-#                 qa.append(quality)
+            for data in data_array:
+                torrent_id = data[data.find('torrent_')+8:data.find('_info\'>')]
 
-#             if '<div id=\'torrent_' in data:
-#                 quality = qa[len(qa) - 1]
-#                 if u'Серии в торренте:' in data:
-#                     series = data[data.find(u'Серии в торренте:')+17:data.find(u'Раздают')]
-#                     series = tag_list(series)
-                   
-#                     qid = '{} - [ {} ]'.format(quality, series)
-#                 else:
-#                     qid = quality
+                if '<div id="' in data:
+                    quality = data[data.find('="')+2:data.find('"><')]
+                    qa.append(quality)
 
-#                 seed = data[data.find('li_distribute_m">')+17:data.find('</span> <')]
-#                 peer = data[data.find('li_swing_m">')+12:data.find(u'</span> <span class="sep"></span> Размер:')]
-#                 size = data[data.find(u'Размер: <span class="red">'):data.find(u'</span> <span class="sep"></span> Скачали')]
-#                 size = size.replace(u'Размер: <span class="red">', '')
+                if '<div id=\'torrent_' in data:
+                    quality = qa[len(qa) - 1]
+                    if u'Серии в торренте:' in data:
+                        series = data[data.find(u'Серии в торренте:')+17:data.find(u'Раздают')]
+                        series = tag_list(series)
+                    
+                        qid = '{} - [ {} ]'.format(quality, series)
+                    else:
+                        qid = quality
 
-#                 label = '[COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(size, qid.upper(), seed, peer)
-#                 la.append('{}|||{}'.format(label, torrent_id))
+                    seed = data[data.find('li_distribute_m">')+17:data.find('</span> <')]
+                    peer = data[data.find('li_swing_m">')+12:data.find(u'</span> <span class="sep"></span> Размер:')]
+                    size = data[data.find(u'Размер: <span class="red">'):data.find(u'</span> <span class="sep"></span> Скачали')]
+                    size = size.replace(u'Размер: <span class="red">', '')
 
-#         for lb in reversed(la):
-#             lb = lb.split('|||')
-#             label = lb[0]
-#             torrent_id = lb[1]
+                    label = '[COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(size, qid.upper(), seed, peer)
+                    la.append('{}|||{}'.format(label, torrent_id))
+
+            for lb in reversed(la):
+                lb = lb.split('|||')
+                label = lb[0]
+                torrent_id = lb[1]
+
+                self.create_line(title=label, anime_id=self.params['id'], params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id']})
+
+        if self.params['param']:
+            url = 'https://tr.anidub.com/engine/download.php?id={}'.format(self.params['param'])            
             
-#             self.create_line(title=label, params={'mode': 'torrent_part', 'torrent_id': torrent_id, 'id': self.params['id']},  anime_id=self.params['id'])
+            file_name = '{}_{}'.format(self.params['portal'], self.params['param'])
+            full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+            torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
 
-#         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            import bencode
+
+            with open(torrent_file, 'rb') as read_file:
+                torrent_data = read_file.read()
+
+            torrent = bencode.bdecode(torrent_data)
+
+            info = torrent['info']
+            series = {}
+            size = {}
+            
+            if 'files' in info:
+                for i, x in enumerate(info['files']):
+                    size[i] = x['length']
+                    series[i] = x['path'][-1]
+                for i in sorted(series, key=series.get):                
+                    self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False,  size=size[i])
+            else:
+                self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
-#     def exec_torrent_part(self):
-#         url = '{}engine/download.php?id={}'.format(self.site_url, self.params['torrent_id'])
-        
-#         file_name = '{}_{}'.format(self.params['portal'], self.params['torrent_id'])
-#         full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
-#         torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
+    def exec_play_part(self):
+        url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
+        index = int(self.params['index'])
+        portal_engine = '{}_engine'.format(self.params['portal'])
 
-#         import bencode
+        if '0' in self.addon.getSetting(portal_engine):
+            tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
+            engine = tam_engine[int(self.addon.getSetting('{}_tam'.format(self.params['portal'])))]
+            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
+            item = xbmcgui.ListItem(path=purl)
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
-#         with open(torrent_file, 'rb') as read_file:
-#             torrent_data = read_file.read()
-
-#         torrent = bencode.bdecode(torrent_data)
-
-#         info = torrent['info']
-#         series = {}
-#         size = {}
-        
-#         if 'files' in info:
-#             for i, x in enumerate(info['files']):
-#                 size[i] = x['length']
-#                 series[i] = x['path'][-1]
-#             for i in sorted(series, key=series.get):                
-#                 self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False,  size=size[i])
-#         else:
-#             self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
-        
-#         xbmcplugin.endOfDirectory(int(sys.argv[1]))
-#========================#========================#========================#
-#     def exec_play_part(self):
-#         url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
-#         index = int(self.params['index'])
-#         portal_engine = '{}_engine'.format(self.params['portal'])
-
-#         #if self.addon.getSetting(portal_engine) == '0':
-#         if '0' in self.addon.getSetting(portal_engine):
-#             tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
-#             engine = tam_engine[int(self.addon.getSetting('{}_tam'.format(self.params['portal'])))]
-#             purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
-#             item = xbmcgui.ListItem(path=purl)
-#             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-
-#         #if self.addon.getSetting(portal_engine) == '1':
-#         if '1' in self.addon.getSetting(portal_engine):
-#             purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
-#             item = xbmcgui.ListItem(path=purl)
-#             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+        if '1' in self.addon.getSetting(portal_engine):
+            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
+            item = xbmcgui.ListItem(path=purl)
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)

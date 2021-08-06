@@ -19,15 +19,20 @@ class DataBase:
             self.cu.execute('CREATE UNIQUE INDEX i_i ON anime_db (anime_id)')
             self.c.commit()
 
-    def add_anime(self, anime_id, anime_tid=None, title_ru=None, title_en=None, title_jp=None, kind=None, score=None, status=None, episodes=None, episodes_aired=None, aired_on=None, released_on=None, rating=None, duration=None, genres=None, writer=None, director=None, franchise=None, description=None, dubbing=None, translation=None, timing=None, sound=None, mastering=None, editing=None, other=None, country=None, studios=None, image=None):
+    def add_anime(self, anime_id, anime_tid='', title_ru='', title_en='', title_jp='', kind='', score='', status='', episodes='', episodes_aired='', aired_on='', released_on='', rating='', duration='', genres='', writer='', director='', franchise='', description='', dubbing='', translation='', timing='', sound='', mastering='', editing='', other='', country='', studios='', image=''):
         self.cu.execute('INSERT INTO anime_db (anime_id, anime_tid, title_ru, title_en, title_jp, kind, score, status, episodes, episodes_aired, aired_on, released_on, rating, duration, genres, writer, director, franchise, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios, image) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                         (anime_id, anime_tid, title_ru, title_en, title_jp, kind, score, status, episodes, episodes_aired, aired_on, released_on, rating, duration, genres, writer, director, franchise, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios, image))
         self.c.commit()
 
-    def is_anime_in_db(self, anime_id):
+    def anime_in_db(self, anime_id):
         self.cu.execute('SELECT COUNT(1) FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
         return False if self.cu.fetchone()[0] == 0 else True
+
+    def get_tid(self, anime_id):
+        self.cu.execute('SELECT anime_tid FROM anime_db WHERE anime_id=?', (anime_id,))
+        self.c.commit()
+        return self.cu.fetchone()[0]
 
     def get_title(self, anime_id):
         self.cu.execute('SELECT title_ru, title_en FROM anime_db WHERE anime_id=?', (anime_id,))
@@ -41,7 +46,6 @@ class DataBase:
 
     def get_anime(self, anime_id):
         self.cu.execute('SELECT kind, score, status, episodes, episodes_aired, aired_on, released_on, rating, duration, genres, writer, director, franchise, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios FROM anime_db WHERE anime_id=?', (anime_id,))            #'SELECT genres, director, writer, description, dubbing, translation, timing, country, studios, aired_on FROM anime_db WHERE anime_id=?', (anime_id,))
-            #('SELECT kind, score, status, episodes, episodes_aired, aired_on, released_on, rating, duration, genres, writer, director, franchise, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
         return self.cu.fetchone()
 #========================#========================#========================#========================#========================#     
