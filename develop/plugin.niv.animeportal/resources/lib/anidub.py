@@ -265,67 +265,68 @@ class Anidub:
                 cover = self.create_image(anime_id)
             art = {'icon': cover, 'thumb': cover, 'poster': cover}
             li.setArt(art)
-            #kind, score, status, episodes, episodes_aired, aired_on, released_on, rating, duration, genres, writer, director, franchise, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
+            # 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
+            #kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
             
-            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[13], anime_info[14])
-            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[15])
-            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[16])
-            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[17])
-            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[18])
-            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[19])
-            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[20])
+            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
+            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
+            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
+            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
+            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
+            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
+            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
 
             info = {
-                'genre':anime_info[9], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
-                'country':anime_info[21],#string (Germany) or list of strings (["Germany", "Italy", "France"])
-                'year':anime_info[5],#	integer (2009)
-                'episode':anime_info[3],#	integer (4)
-                'season':'',#	integer (1)
-                'sortepisode':'',#	integer (4)
-                'sortseason':'',#	integer (1)
-                'episodeguide':'',#	string (Episode guide)
-                'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
-                'top250':'',#	integer (192)
-                'setid':'',#	integer (14)
-                'tracknumber':'',#	integer (3)
-                'rating':'',#	float (6.4) - range is 0..10
-                'userrating':anime_info[1],#	integer (9) - range is 1..10 (0 to reset)
-                'watched':'',#	deprecated - use playcount instead
-                'playcount':'',#	integer (2) - number of times this item has been played
-                'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
+                'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
+                'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
+                'year':anime_info[3],#	integer (2009)
+                'episode':anime_info[2],#	integer (4)
+                #'season':'',#	integer (1)
+                #'sortepisode':'',#	integer (4)
+                #'sortseason':'',#	integer (1)
+                #'episodeguide':'',#	string (Episode guide)
+                #'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
+                #'top250':'',#	integer (192)
+                #'setid':'',#	integer (14)
+                #'tracknumber':'',#	integer (3)
+                #'rating':'',#	float (6.4) - range is 0..10
+                #'userrating':'',#	integer (9) - range is 1..10 (0 to reset)
+                #'watched':'',#	deprecated - use playcount instead
+                #'playcount':'',#	integer (2) - number of times this item has been played
+                #'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
                 #'cast':'',#	list (["Michal C. Hall","Jennifer Carpenter"]) - if provided a list of tuples cast will be interpreted as castandrole
                 #'castandrole':'',#	list of tuples ([("Michael C. Hall","Dexter"),("Jennifer Carpenter","Debra")])
-                'director':anime_info[11],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
-                'mpaa':anime_info[7],#	string (PG-13)
+                'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
+                'mpaa':anime_info[5],#	string (PG-13)
                 'plot':description,#	string (Long Description)
-                'plotoutline':'',#	string (Short Description)
+                #'plotoutline':'',#	string (Short Description)
                 'title':title,#	string (Big Fan)
-                'originaltitle':'',#	string (Big Fan)
-                'sorttitle':'',#	string (Big Fan)
-                'duration':anime_info[8],#	integer (245) - duration in seconds
-                'studio':anime_info[22],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-                'tagline':'',#	string (An awesome movie) - short description of movie
-                'writer':anime_info[10],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
+                #'originaltitle':'',#	string (Big Fan)
+                #'sorttitle':'',#	string (Big Fan)
+                'duration':anime_info[6],#	integer (245) - duration in seconds
+                'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
+                #'tagline':'',#	string (An awesome movie) - short description of movie
+                'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
                 'tvshowtitle':title,#	string (Heroes)
-                'premiered':'',#	string (2005-03-04)
-                'status':anime_info[2],#	string (Continuing) - status of a TVshow
-                'set':'',#	string (Batman Collection) - name of the collection
-                'setoverview':'',#	string (All Batman movies) - overview of the collection
-                'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
-                'imdbnumber':'',#	string (tt0110293) - IMDb code
-                'code':'',#	string (101) - Production code
-                'aired':anime_info[5],#	string (2008-12-07)
-                'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
-                'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                'album':'',#	string (The Joshua Tree)
+                'premiered':anime_info[3],#	string (2005-03-04)
+                'status':anime_info[1],#	string (Continuing) - status of a TVshow
+                #'set':'',#	string (Batman Collection) - name of the collection
+                #'setoverview':'',#	string (All Batman movies) - overview of the collection
+                #'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
+                #'imdbnumber':'',#	string (tt0110293) - IMDb code
+                #'code':'',#	string (101) - Production code
+                'aired':anime_info[3],#	string (2008-12-07)
+                #'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
+                #'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'album':'',#	string (The Joshua Tree)
                 #'artist':'',#	list (['U2'])
-                'votes':'',#	string (12345 votes)
-                'path':'',#	string (/home/user/movie.avi)
-                'trailer':'',#	string (/home/user/trailer.avi)
-                'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'votes':'',#	string (12345 votes)
+                #'path':'',#	string (/home/user/movie.avi)
+                #'trailer':'',#	string (/home/user/trailer.avi)
+                #'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
                 #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
-                'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
+                #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
             }
 
             if size: info['size'] = size
@@ -554,27 +555,13 @@ class Anidub:
         #     self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})        
         #self.create_line(title=u'[B][COLOR=lime][ Популярное за неделю ][/COLOR][/B]', params={'mode': 'common_part', 'node': 'popular'})
 
-
-        self.create_line(title=u'[B][COLOR=lime]Новый сезон[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/anime_ongoing/'})
+        self.create_line(title=u'[B][COLOR=lime]Аниме[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/'})
+        self.create_line(title=u'[B][COLOR=lime]Онгоинги[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/anime_ongoing/'})
         self.create_line(title=u'[B][COLOR=lime]Вышедшие сериалы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/full/'})
         self.create_line(title=u'[B][COLOR=lime]Аниме фильмы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
         self.create_line(title=u'[B][COLOR=lime]Аниме OVA[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
-        self.create_line(title=u'[B][COLOR=lime]Дорамы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
+        self.create_line(title=u'[B][COLOR=gold]Дорамы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
-    # def exec_main_part(self):
-    #     self.create_line(title=u'[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-    #     if self.auth_mode:
-    #         self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})        
-    #     self.create_line(title=u'[B][COLOR=lime][ Популярное за неделю ][/COLOR][/B]', params={'mode': 'common_part', 'node': 'popular'})
-    #     self.create_line(title=u'[B][COLOR=lime][ Новое ][/COLOR][/B]', params={'mode': 'common_part'})      
-    #     self.create_line(title=u'[B][COLOR=lime][ TV Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/anime_ongoing/'})
-    #     self.create_line(title=u'[B][COLOR=lime][ TV 100+ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/shonen/'})
-    #     self.create_line(title=u'[B][COLOR=lime][ TV Законченные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/full/'})
-    #     self.create_line(title=u'[B][COLOR=lime][ Аниме OVA ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
-    #     self.create_line(title=u'[B][COLOR=lime][ Аниме фильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
-    #     self.create_line(title=u'[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
-    #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
@@ -639,6 +626,10 @@ class Anidub:
         try: html = html.decode(encoding='utf-8', errors='replace')
         except: pass
 
+        pages = html[html.rfind('<div class="navigation">'):html.rfind('<!--/noindex-->')]
+        pages = tag_list(pages).replace(' ','|')
+        last_page = pages[pages.rfind('|')+1:]
+
         data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!--noindex-->')]
         data_array = clean_list(data_array).split('<div class="th-item">')
 
@@ -670,6 +661,11 @@ class Anidub:
             label = self.create_title(anime_id, info['series'])
 
             self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+        
+        if int(self.params['page']) < int(last_page):
+            self.create_line(title=u'[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={
+                               'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+
 
         # if '<span class="n_next rcol"><a ' in html and not 'popular' in self.params['node']:
         #     if 'search_part' in self.params['param']:
