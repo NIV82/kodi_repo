@@ -514,23 +514,23 @@ class Anidub:
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
 #========================#========================#========================#
-    def exec_favorites_part(self):
-        url = '{}engine/ajax/favorites.php?fav_id={}&action={}&size=small&skin=Anidub'.format(self.site_url, self.params['id'], self.params['node'])        
+    # def exec_favorites_part(self):
+    #     url = '{}engine/ajax/favorites.php?fav_id={}&action={}&size=small&skin=Anidub'.format(self.site_url, self.params['id'], self.params['node'])        
 
-        if 'plus' in self.params['node']:
-            try:
-                self.network.get_html2(target_name=url)
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
-            except:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
+    #     if 'plus' in self.params['node']:
+    #         try:
+    #             self.network.get_html2(target_name=url)
+    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
+    #         except:
+    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
 
-        if 'minus' in self.params['node']:
-            try:
-                self.network.get_html2(target_name=url)
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
-            except:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
-        
+    #     if 'minus' in self.params['node']:
+    #         try:
+    #             self.network.get_html2(target_name=url)
+    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
+    #         except:
+    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
+#========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
@@ -612,69 +612,75 @@ class Anidub:
 #========================#========================#========================#
     def exec_common_part(self):
         self.progress.create('AniDUB', u'Инициализация')
-        #url = https://online.anidub.com/page/2/
 
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         post = ''
 
-        # if 'search_part' in self.params['param']:
-        #     url = '{}index.php?do=search'.format(self.site_url)
-        #     post = 'do=search&story={}&subaction=search&search_start={}&full_search=0'.format(quote(self.params['search_string']), self.params['page'])
-        
+        if 'search_part' in self.params['param']:
+            url = '{}index.php?do=search'.format(self.site_url)
+            #url = self.site_url
+            post = 'do=search&story={}&subaction=search&search_start={}&full_search=0'.format(quote(self.params['search_string']), self.params['page'])
+
+
         html = self.network.get_html2(url, post=post)
         
         try: html = html.decode(encoding='utf-8', errors='replace')
         except: pass
 
-        pages = html[html.rfind('<div class="navigation">'):html.rfind('<!--/noindex-->')]
-        pages = tag_list(pages).replace(' ','|')
-        last_page = pages[pages.rfind('|')+1:]
+        if html.find('<div class="th-item">') > -1:
+            pages = html[html.rfind('<div class="navigation">'):html.rfind('<!--/noindex-->')]
+            pages = tag_list(pages).replace(' ','|')
 
-        data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!--noindex-->')]
-        data_array = clean_list(data_array).split('<div class="th-item">')
+            if pages: last_page = int(pages[pages.rfind('|')+1:])
+            else: last_page = -1
 
-        i = 0
+            #data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!--noindex-->')]
+            data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!-- END CONTENT -->')]
+            data_array = clean_list(data_array).split('<div class="th-item">')
 
-        for data in data_array:
-            data = unescape(data)
+            i = 0
 
-            i = i + 1
-            p = int((float(i) / len(data_array)) * 100)
-                
-            url = data[data.find('th-in" href="')+13:data.find('.html">')]
-            anime_id = url[url.rfind('/')+1:url.find('-')]
+            for data in data_array:
+                data = unescape(data)
 
-            title = data[data.find('<div class="fx-1">')+18:data.find('</div><span>')]
-            info = self.create_title_info(title)
+                i = i + 1
+                p = int((float(i) / len(data_array)) * 100)
+                    
+                url = data[data.find('th-in" href="')+13:data.find('.html">')]
 
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
-
-            if not self.database.anime_in_db(anime_id):
-                inf = self.create_info(anime_id)
-
-                if type(inf) == int:
-                    self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
+                if '/manga/' in url or '/ost/' in url or '/podcast/' in url or '/anons_ongoing/' in url or '/games/' in url or '/videoblog/' in url:
                     continue
 
-            label = self.create_title(anime_id, info['series'])
+                anime_id = url[url.rfind('/')+1:url.find('-')]
+                
+                title = data[data.find('<div class="fx-1">')+18:data.find('</div><span>')]
+                info = self.create_title_info(title)
 
-            self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
-        
-        if int(self.params['page']) < int(last_page):
-            self.create_line(title=u'[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={
-                               'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+                if self.progress.iscanceled():
+                    break
+                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
+                if not self.database.anime_in_db(anime_id):
+                    inf = self.create_info(anime_id)
 
-        # if '<span class="n_next rcol"><a ' in html and not 'popular' in self.params['node']:
-        #     if 'search_part' in self.params['param']:
-        #         self.create_line(title=u'[B][COLOR=red]Следующая страница[/COLOR][/B]', params={
-        #                          'mode': 'common_part', 'search_string': self.params['search_string'], 'param': 'search_part', 'page': int(self.params['page']) + 1})
-        #     else:
-        #         self.create_line(title=u'[B][COLOR=red]Следующая страница[/COLOR][/B]', params={
-        #                        'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
-        
+                    if type(inf) == int:
+                        self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
+                        continue
+
+                label = self.create_title(anime_id, info['series'])
+
+                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+            
+            if int(self.params['page']) < last_page:
+                if 'search_part' in self.params['param']:
+                    self.create_line(title=u'[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={
+                        'mode': 'common_part', 'search_string': self.params['search_string'], 'param': 'search_part', 'page': int(self.params['page']) + 1})
+                else:
+                    self.create_line(title=u'[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={
+                        'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+        else:
+            self.create_line(title='[COLOR=red][B][ Контент не найден ][/B][/COLOR]', params={'mode': 'main_part'})
+
         self.progress.close()        
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 

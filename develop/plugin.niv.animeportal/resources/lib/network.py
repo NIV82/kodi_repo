@@ -73,6 +73,7 @@ class WebTools:
         except HTTPError as error:
             return error.code
 
+    #def get_html2(self, target_name, post=None):
     def get_html2(self, target_name, post=None):
         if self.auth_usage and not self.auth_check():
             return None
