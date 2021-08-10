@@ -23,7 +23,7 @@ class Shiza:
 
         self.params = params
         self.addon = addon
-        self.icon = icon
+        self.icon = icon.replace('icon', self.params['portal'])
 
         self.images_dir = os.path.join(addon_data_dir, 'images')
         self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
@@ -74,9 +74,9 @@ class Shiza:
                     self.addon.setSetting("shiza_auth", str(self.network.auth_status).lower())
 #================================================
         # if not os.path.isfile(os.path.join(self.database_dir, 'shizaproject.db')):
-        #     self.exec_update_part()
+        #     self.exec_update_database_part()
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
-            self.exec_update_part()
+            self.exec_update_database_part()
 #================================================
         from database import ShizaProject_DB
         self.database = ShizaProject_DB(os.path.join(self.database_dir, 'shizaproject.db'))
@@ -433,7 +433,7 @@ class Shiza:
 
     def create_context(self, anime_id):
         context_menu = []
-        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=shizaproject")'))
+        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=shizaproject")'))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
             context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
@@ -506,7 +506,7 @@ class Shiza:
     def exec_addon_setting(self):
         self.addon.openSettings()
 
-    def exec_update_part(self):
+    def exec_update_database_part(self):
         try: self.database.end()
         except: pass
         
@@ -541,7 +541,7 @@ class Shiza:
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
 
-    # def exec_update_part(self):
+    # def exec_update_database_part(self):
     #     try: self.database.end()
     #     except: pass
         
@@ -583,7 +583,7 @@ class Shiza:
     #         #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
     #         pass
         
-    # def exec_update_part(self):
+    # def exec_update_database_part(self):
     #     try: self.database.end()
     #     except: pass
 

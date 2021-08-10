@@ -22,7 +22,7 @@ class Anilibria:
 
         self.params = params
         self.addon = addon
-        self.icon = icon
+        self.icon = icon.replace('icon', self.params['portal'])
 
         self.images_dir = os.path.join(addon_data_dir, 'images')
         self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
@@ -72,9 +72,9 @@ class Anilibria:
                     self.addon.setSetting("anilibria_auth", str(self.network.auth_status).lower())
 #================================================
         # if not os.path.isfile(os.path.join(self.database_dir, 'anilibria.db')):
-        #     self.exec_update_part()
+        #     self.exec_update_database_part()
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
-            self.exec_update_part()
+            self.exec_update_database_part()
 #================================================
         from database import Anilibria_DB
         self.database = Anilibria_DB(os.path.join(self.database_dir, 'anilibria.db'))
@@ -199,7 +199,7 @@ class Anilibria:
     def create_context(self, anime_id):
         context_menu = []
         
-        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anilibria")'))
+        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=anilibria")'))
         context_menu.append(('[B][COLOR=darkorange]Обновить Зеркала[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anilibria")'))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
@@ -305,7 +305,7 @@ class Anilibria:
         self.addon.setSetting('anilibria_mirror_2', mirror_2)
         return
 
-    def exec_update_part(self):
+    def exec_update_database_part(self):
         try: self.database.end()
         except: pass
         
@@ -340,7 +340,7 @@ class Anilibria:
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
 
-    # def exec_update_part(self):
+    # def exec_update_database_part(self):
     #     try: self.database.end()
     #     except: pass
         
@@ -382,7 +382,7 @@ class Anilibria:
     #         #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
     #         pass
         
-    # def exec_update_part(self):
+    # def exec_update_database_part(self):
     #     try: self.database.end()
     #     except: pass
 

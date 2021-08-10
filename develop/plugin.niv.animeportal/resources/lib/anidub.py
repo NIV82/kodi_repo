@@ -21,7 +21,7 @@ class Anidub:
 
         self.params = params
         self.addon = addon
-        self.icon = icon
+        self.icon = icon.replace('icon', self.params['portal'])
 
         self.images_dir = os.path.join(addon_data_dir, 'images')
         self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
@@ -70,11 +70,8 @@ class Anidub:
                     self.addon.setSetting('anidub_auth', str(self.network.auth_status).lower())
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
-            self.exec_update_part()
+            self.exec_update_database_part()
 #========================#========================#========================#
-        # from database import Anidub_DB
-        # self.database = Anidub_DB(os.path.join(self.database_dir, 'anidub.db'))
-        # del Anidub_DB
         from database import DataBase
         self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
         del DataBase
@@ -122,9 +119,6 @@ class Anidub:
         return site_url
 #========================#========================#========================#
     def create_title_info(self, title):
-        title = clean_list(title)
-        title = unescape(title)
-
         info = dict.fromkeys(['series', 'title_ru', 'title_en'], '')
 
         title = tag_list(title).replace('...','')
@@ -159,42 +153,6 @@ class Anidub:
         except:
             pass
         return info
-
-    # def create_title_info(self, title):
-    #     info = dict.fromkeys(['series', 'title_ru', 'title_en'], '')
-
-    #     title = tag_list(title).replace('...','')
-    #     title = title.replace('/ ', ' / ').replace('  ', ' ')
-    #     title = title.replace('|', '/')
-    #     title = title.replace('  [', ' [').replace ('\\', '/')
-
-    #     v = title.split(' / ', 1)
-        
-    #     if len(v) == 1:           
-    #         v = title.split('  ', 1)
-    #         if len(v) == 1:
-    #             title = title.replace('/ ', ' / ')
-    #             v = title.split(' / ', 1)
-    #         if len(v) == 1:
-    #             title = title.replace(' /', ' / ')
-    #             v = title.split(' / ', 1)
-               
-    #     try:
-    #         part_pos = v[len(v) - 1][v[len(v) - 1].find(' ['):v[len(v) - 1].find(']')+1]
-    #         v.insert(0, part_pos.replace('[', '').replace(']', '').strip())
-    #         v[len(v) - 1] = v[len(v) - 1].replace(part_pos, '')
-    #     except:
-    #         v.insert(0, '')
-    #     if len(v) == 2:
-    #         v.append('')
-
-    #     try:
-    #         info['series'] = v[0]
-    #         info['title_ru'] = v[1].capitalize()
-    #         info['title_en'] = v[2].capitalize()
-    #     except:
-    #         pass
-    #     return info
 #========================#========================#========================#
     def create_title(self, anime_id, series):
         title = self.database.get_title(anime_id)
@@ -204,7 +162,7 @@ class Anidub:
             series = u' - [COLOR=gold][ {} ][/COLOR]'.format(series)
         else:
             series = ''
-       
+        
         if '0' in self.addon.getSetting('anidub_titles'):
             label = u'{}{}'.format(title[0], series)
         if '1' in self.addon.getSetting('anidub_titles'):
@@ -212,6 +170,8 @@ class Anidub:
         if '2' in self.addon.getSetting('anidub_titles'):
             label = u'{} / {}{}'.format(title[0], title[1], series)
 
+        if 'ERROR-404' in label:
+            label = u'[COLOR=red][B]{}[/B][/COLOR]'.format(label)
         return label
 #========================#========================#========================#
     def create_image(self, anime_id):
@@ -234,11 +194,16 @@ class Anidub:
 #========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
-        context_menu.append((u'[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_part&portal=anidub")'))
+        context_menu.append((u'[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=anidub")'))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
             context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
             context_menu.append((u'[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
+
+        if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
+            context_menu.append((u'[B][COLOR=white]Обновить листинг[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=test&portal=anidub")'))
 
         if self.auth_mode:
             if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
@@ -253,7 +218,6 @@ class Anidub:
         context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
         return context_menu
 #========================#========================#========================#
-    #def create_line(self, title=None, params=None, anime_id=None, size=None,  online=None, folder=True):
     def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
 
         li = xbmcgui.ListItem(title)
@@ -394,7 +358,7 @@ class Anidub:
         if len(data_array) > 2:
             return {'aired_on': 'EXCEPTIONS','released_on':'EXCEPTIONS'}
 #========================#========================#========================#
-    def create_info(self, anime_id):
+    def create_info(self, anime_id, update=False):
         url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
         html = self.network.get_html2(target_name=url)
 
@@ -408,9 +372,9 @@ class Anidub:
         html = unescape(html)
 
         info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'released_on', 'genres', 'director', 'writer', 'description', 'dubbing',
-                      'translation', 'timing', 'country', 'studio', 'cover', 'anime_tid'], '')
+                      'translation', 'timing', 'country', 'studios', 'image', 'anime_tid'], '')
 
-        info['cover'] = html[html.find('data-src="')+10:html.find(u'" title="Постер аниме {')]
+        info['image'] = html[html.find('data-src="')+10:html.find(u'" title="Постер аниме {')]
 
         title_data = html[html.find('<h1>')+4:html.find('</h1>')]
         info.update(self.create_title_info(title_data))
@@ -439,7 +403,7 @@ class Anidub:
             if u'Перевод:</span>' in data:
                 info['translation'] = tag_list(data.replace(u'Перевод:</span>', ''))
             if u'Студия:</span>' in data:
-                info['studio'] = tag_list(data.replace(u'Студия:</span>', ''))
+                info['studios'] = tag_list(data.replace(u'Студия:</span>', ''))
             if u'Озвучивание:</span>' in data:
                 info['dubbing'] = tag_list(data.replace(u'Озвучивание:</span>', ''))
             if u'Тайминг:</span>' in data:
@@ -447,7 +411,7 @@ class Anidub:
             if u'Ссылка на трекер:</span>' in data:
                 anime_tid = data[data.find('https://tr.anidub.com/')+22:data.find('.html')]
                 info['anime_tid'] = anime_tid.replace('-','')
-
+        
         try:
             self.database.add_anime(
                 anime_id = anime_id,
@@ -462,11 +426,11 @@ class Anidub:
                 translation = info['translation'],
                 timing = info['timing'],
                 country = info['country'],
-                studios = info['studio'],
+                studios = info['studios'],
                 aired_on = info['aired_on'],
                 released_on = info['released_on'],
-                image = info['cover']
-            )
+                image = info['image'],
+                update = update)
         except:
             return 101
         return 
@@ -479,7 +443,16 @@ class Anidub:
     def exec_addon_setting(self):
         self.addon.openSettings()
 #========================#========================#========================#
-    def exec_update_part(self):
+    def exec_update_anime_part(self):        
+        self.create_info(anime_id=self.params['id'], update=True)
+
+        self.exec_refresh_part()
+
+    def exec_refresh_part(self):
+        xbmc.executebuiltin('Container.Refresh')
+
+#========================#========================#========================#
+    def exec_update_database_part(self):
         try: self.database.end()
         except: pass
         
@@ -565,10 +538,10 @@ class Anidub:
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
-            self.create_line(title=u'[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
-            self.create_line(title=u'[B][COLOR=red][ Поиск по жанрам ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
-            self.create_line(title=u'[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
-            self.create_line(title=u'[B][COLOR=red][ Поиск по алфавиту ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
+            self.create_line(title=u'[B][COLOR=white]Поиск по названию[/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+            self.create_line(title=u'[B][COLOR=white]Поиск по жанрам[/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
+            self.create_line(title=u'[B][COLOR=white]Поиск по году[/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
+            self.create_line(title=u'[B][COLOR=white]Поиск по алфавиту[/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
 
             data_array = self.addon.getSetting('anidub_search').split('|')
             data_array.reverse()
