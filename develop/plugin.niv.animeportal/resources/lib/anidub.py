@@ -46,11 +46,19 @@ class Anidub:
             auth_usage=self.auth_mode,
             auth_status=bool(self.addon.getSetting('anidub_auth') == 'true'),
             proxy_data=self.proxy_data, portal='anidub')
-        self.auth_post_data = {
-            'login_name': self.addon.getSetting('anidub_username'),
-            'login_password': self.addon.getSetting('anidub_password'),
-            'login': 'submit'}
-        self.network.auth_post_data = urlencode(self.auth_post_data)
+        # self.auth_post_data = {
+        #     'login_name': self.addon.getSetting('anidub_username'),
+        #     'login_password': self.addon.getSetting('anidub_password'),
+        #     'login': 'submit'}
+        self.auth_post_data = 'login_name={}&login_password={}&login=submit'.format(
+            self.addon.getSetting('anidub_username'),self.addon.getSetting('anidub_password')
+            )
+        #self.network.auth_post_data = urlencode(self.auth_post_data)
+        self.network.auth_post_data = self.auth_post_data
+
+
+#https://online.anidub.com/
+
         self.network.auth_url = self.site_url
         self.network.sid_file = os.path.join(self.cookie_dir, 'anidub.sid' )
         del WebTools
@@ -202,14 +210,13 @@ class Anidub:
 
         if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
             context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
-            context_menu.append((u'[B][COLOR=white]Обновить листинг[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=test&portal=anidub")'))
+            context_menu.append((u'[B][COLOR=white]Обновить аниме (один тайтл)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
 
         if self.auth_mode:
             if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
                 context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-                context_menu.append((u'[B][COLOR=white]Добавить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
-                context_menu.append((u'[B][COLOR=white]Удалить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append((u'[B][COLOR=cyan]Добавить в Избранное (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append((u'[B][COLOR=cyan]Удалить из Избранного (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_partnode=minus&id={}&portal=anidub")'.format(anime_id)))
         
         context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
         context_menu.append((u'[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
@@ -362,6 +369,10 @@ class Anidub:
         url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
         html = self.network.get_html2(target_name=url)
 
+        if type(html) == int:
+            self.database.add_anime(anime_id=anime_id, title_ru='ERROR-404', title_en='ERROR-404')
+            return
+
         try: html = html.decode(encoding='utf-8', errors='replace')
         except: pass
 
@@ -374,7 +385,9 @@ class Anidub:
         info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'released_on', 'genres', 'director', 'writer', 'description', 'dubbing',
                       'translation', 'timing', 'country', 'studios', 'image', 'anime_tid'], '')
 
-        info['image'] = html[html.find('data-src="')+10:html.find(u'" title="Постер аниме {')]
+        #info['image'] = html[html.find('data-src="')+10:html.find(u'" title="Постер аниме {')]
+        image = html[html.find('fposter img-box img-fit">')+25:html.find(u'" title="Постер аниме {')]
+        info['image'] = image[image.find('data-src="')+10:]
 
         title_data = html[html.find('<h1>')+4:html.find('</h1>')]
         info.update(self.create_title_info(title_data))
@@ -445,12 +458,7 @@ class Anidub:
 #========================#========================#========================#
     def exec_update_anime_part(self):        
         self.create_info(anime_id=self.params['id'], update=True)
-
-        self.exec_refresh_part()
-
-    def exec_refresh_part(self):
         xbmc.executebuiltin('Container.Refresh')
-
 #========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
@@ -487,22 +495,81 @@ class Anidub:
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
 #========================#========================#========================#
-    # def exec_favorites_part(self):
-    #     url = '{}engine/ajax/favorites.php?fav_id={}&action={}&size=small&skin=Anidub'.format(self.site_url, self.params['id'], self.params['node'])        
+    def exec_favorites_part(self):
+        if not self.params['node']:
+            self.progress.create('AniDUB', u'Инициализация')
 
-    #     if 'plus' in self.params['node']:
-    #         try:
-    #             self.network.get_html2(target_name=url)
-    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
-    #         except:
-    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
+            url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
 
-    #     if 'minus' in self.params['node']:
-    #         try:
-    #             self.network.get_html2(target_name=url)
-    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
-    #         except:
-    #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
+            html = self.network.get_html2(target_name=url)
+
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
+
+            pages = html[html.rfind('<div class="navigation">'):html.rfind('<!--/noindex-->')]
+            pages = tag_list(pages).replace(' ','|')
+
+            if pages: last_page = int(pages[pages.rfind('|')+1:])
+            else: last_page = -1
+                
+            data_array = html[html.find('<div class="animelist">')+23:html.rfind('<label for="mlist">')]
+            data_array = clean_list(data_array).split('<div class="animelist">')
+
+            i = 0
+
+            for data in data_array:
+                data = unescape(data)
+
+                i = i + 1
+                p = int((float(i) / len(data_array)) * 100)
+
+                data = data[data.rfind('<ahref="')+8:data.find('<progress class="proglist"')]
+
+                url = data[data.find(self.site_url)+len(self.site_url):data.find('.html"')]
+                anime_id = url[url.rfind('/')+1:url.find('-')]
+
+                title = data[data.find('class="upd-title">')+18:]
+                series = title[title.find('[')+1:title.find(']')]
+
+                if self.progress.iscanceled():
+                    break
+                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+
+                if not self.database.anime_in_db(anime_id):
+                    inf = self.create_info(anime_id)
+
+                    if type(inf) == int:
+                        self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
+                        continue
+                    
+                label = self.create_title(anime_id, series)
+
+                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+            self.progress.close()
+
+            if int(self.params['page']) < last_page:
+                self.create_line(title=u'[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={
+                    'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+        if 'plus' in self.params['node']:
+            try:
+                url = '{}mylists/'.format(self.site_url)
+                post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
+                self.network.get_html2(target_name=url, post=post)
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
+            except:
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
+
+        if 'minus' in self.params['node']:
+            try:
+                url = '{}mylists/'.format(self.site_url)
+                post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
+                self.network.get_html2(target_name=url, post=post)
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
+            except:
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
@@ -524,10 +591,8 @@ class Anidub:
 #========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title=u'[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
-        # if self.auth_mode:
-        #     self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})        
-        #self.create_line(title=u'[B][COLOR=lime][ Популярное за неделю ][/COLOR][/B]', params={'mode': 'common_part', 'node': 'popular'})
-
+        if self.auth_mode:
+            self.create_line(title=u'[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'favorites_part'})
         self.create_line(title=u'[B][COLOR=lime]Аниме[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/'})
         self.create_line(title=u'[B][COLOR=lime]Онгоинги[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/anime_ongoing/'})
         self.create_line(title=u'[B][COLOR=lime]Вышедшие сериалы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/full/'})
@@ -591,7 +656,6 @@ class Anidub:
 
         if 'search_part' in self.params['param']:
             url = '{}index.php?do=search'.format(self.site_url)
-            #url = self.site_url
             post = 'do=search&story={}&subaction=search&search_start={}&full_search=0'.format(quote(self.params['search_string']), self.params['page'])
 
 
@@ -607,7 +671,6 @@ class Anidub:
             if pages: last_page = int(pages[pages.rfind('|')+1:])
             else: last_page = -1
 
-            #data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!--noindex-->')]
             data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!-- END CONTENT -->')]
             data_array = clean_list(data_array).split('<div class="th-item">')
 
