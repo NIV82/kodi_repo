@@ -208,15 +208,16 @@ class Anidub:
             context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
             context_menu.append((u'[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
 
-        if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+        if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
             context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=white]Обновить аниме (один тайтл)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
+            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
 
         if self.auth_mode:
-            if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+            if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+            #if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
                 context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-                context_menu.append((u'[B][COLOR=cyan]Добавить в Избранное (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
-                context_menu.append((u'[B][COLOR=cyan]Удалить из Избранного (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_partnode=minus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append((u'[B][COLOR=cyan]Добавить [ FAV ][/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append((u'[B][COLOR=cyan]Удалить [ FAV ][/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
         
         context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
         context_menu.append((u'[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
@@ -225,8 +226,7 @@ class Anidub:
         context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
         return context_menu
 #========================#========================#========================#
-    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
-
+    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
         li = xbmcgui.ListItem(title)
 
         if anime_id:
@@ -234,8 +234,7 @@ class Anidub:
                 pass
             else:
                 cover = self.create_image(anime_id)
-            art = {'icon': cover, 'thumb': cover, 'poster': cover}
-            li.setArt(art)
+            li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
             # 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
             #kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
@@ -300,7 +299,8 @@ class Anidub:
                 #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
             }
 
-            if size: info['size'] = size
+            if size:
+                info['size'] = size
 
             li.setInfo(type='video', infoLabels=info)
 
@@ -555,7 +555,7 @@ class Anidub:
 
         if 'plus' in self.params['node']:
             try:
-                url = '{}mylists/'.format(self.site_url)
+                url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
                 post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
                 self.network.get_html2(target_name=url, post=post)
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
@@ -564,7 +564,7 @@ class Anidub:
 
         if 'minus' in self.params['node']:
             try:
-                url = '{}mylists/'.format(self.site_url)
+                url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
                 post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
                 self.network.get_html2(target_name=url, post=post)
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
@@ -603,10 +603,10 @@ class Anidub:
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
-            self.create_line(title=u'[B][COLOR=white]Поиск по названию[/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
-            self.create_line(title=u'[B][COLOR=white]Поиск по жанрам[/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
-            self.create_line(title=u'[B][COLOR=white]Поиск по году[/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
-            self.create_line(title=u'[B][COLOR=white]Поиск по алфавиту[/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
+            self.create_line(title=u'[B][COLOR=red]Поиск по названию[/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+            self.create_line(title=u'[B][COLOR=red]Поиск по жанрам[/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
+            self.create_line(title=u'[B][COLOR=red]Поиск по году[/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
+            self.create_line(title=u'[B][COLOR=red]Поиск по алфавиту[/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
 
             data_array = self.addon.getSetting('anidub_search').split('|')
             data_array.reverse()

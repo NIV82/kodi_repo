@@ -71,14 +71,15 @@ class Anilibria:
                 else:
                     self.addon.setSetting("anilibria_auth", str(self.network.auth_status).lower())
 #================================================
-        # if not os.path.isfile(os.path.join(self.database_dir, 'anilibria.db')):
-        #     self.exec_update_database_part()
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
 #================================================
-        from database import Anilibria_DB
-        self.database = Anilibria_DB(os.path.join(self.database_dir, 'anilibria.db'))
-        del Anilibria_DB
+        # from database import Anilibria_DB
+        # self.database = Anilibria_DB(os.path.join(self.database_dir, 'anilibria.db'))
+        # del Anilibria_DB
+        from database import DataBase
+        self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
+        del DataBase
 #================================================
     def create_proxy_data(self):
         #if self.addon.getSetting('anidub_unblock') == '0':
@@ -163,21 +164,21 @@ class Anilibria:
 
     def create_title(self, title, series, announce=None):        
         if series:
-            res = 'Серии: {}'.format(series)
+            res = u'Серии: {}'.format(series)
             if announce:
-                res = '{} ] - [ {}'.format(res, announce)
-            series = ' - [COLOR=gold][ {} ][/COLOR]'.format(res)
+                res = u'{} ] - [ {}'.format(res, announce)
+            series = u' - [COLOR=gold][ {} ][/COLOR]'.format(res)
             if xbmc.getSkinDir() == 'skin.aeon.nox.silvo' and self.params['mode'] == 'common_part':
-                series = ' - [ {} ]'.format(res)
+                series = u' - [ {} ]'.format(res)
         else:
             series = ''
 
         if self.addon.getSetting('anilibria_titles') == '0':
-            label = '{}{}'.format(title[0], series)
+            label = u'{}{}'.format(title[0], series)
         if self.addon.getSetting('anilibria_titles') == '1':
-            label = '{}{}'.format(title[1], series)
+            label = u'{}{}'.format(title[1], series)
         if self.addon.getSetting('anilibria_titles') == '2':
-            label = '{} / {}{}'.format(title[0], title[1], series)
+            label = u'{} / {}{}'.format(title[0], title[1], series)
         return label
 
     def create_image(self, anime_id):
@@ -219,19 +220,82 @@ class Anilibria:
 
         return context_menu
 
-    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
+    #def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None):
+    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
         li = xbmcgui.ListItem(title)
 
         if anime_id:
             cover = self.create_image(anime_id)
 
-            li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
-                       "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
-
+            # li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
+            #            "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
+            li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
+# 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
+#kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
 
-            info = {'genre': anime_info[0],'year': anime_info[2],'plot': anime_info[3],'title': title, 'tvshowtitle': title}
-            info['plot'] = '{}\n\n[COLOR=steelblue]Над релизом работали[/COLOR]: {}'.format(info['plot'], anime_info[1])
+            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
+            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
+            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
+            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
+            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
+            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
+            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
+
+            info = {
+                'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
+                'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
+                'year':anime_info[3],#	integer (2009)
+                'episode':anime_info[2],#	integer (4)
+                #'season':'',#	integer (1)
+                #'sortepisode':'',#	integer (4)
+                #'sortseason':'',#	integer (1)
+                #'episodeguide':'',#	string (Episode guide)
+                #'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
+                #'top250':'',#	integer (192)
+                #'setid':'',#	integer (14)
+                #'tracknumber':'',#	integer (3)
+                #'rating':'',#	float (6.4) - range is 0..10
+                #'userrating':'',#	integer (9) - range is 1..10 (0 to reset)
+                #'watched':'',#	deprecated - use playcount instead
+                #'playcount':'',#	integer (2) - number of times this item has been played
+                #'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
+                #'cast':'',#	list (["Michal C. Hall","Jennifer Carpenter"]) - if provided a list of tuples cast will be interpreted as castandrole
+                #'castandrole':'',#	list of tuples ([("Michael C. Hall","Dexter"),("Jennifer Carpenter","Debra")])
+                'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
+                'mpaa':anime_info[5],#	string (PG-13)
+                'plot':description,#	string (Long Description)
+                #'plotoutline':'',#	string (Short Description)
+                'title':title,#	string (Big Fan)
+                #'originaltitle':'',#	string (Big Fan)
+                #'sorttitle':'',#	string (Big Fan)
+                'duration':anime_info[6],#	integer (245) - duration in seconds
+                'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
+                #'tagline':'',#	string (An awesome movie) - short description of movie
+                'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
+                'tvshowtitle':title,#	string (Heroes)
+                'premiered':anime_info[3],#	string (2005-03-04)
+                'status':anime_info[1],#	string (Continuing) - status of a TVshow
+                #'set':'',#	string (Batman Collection) - name of the collection
+                #'setoverview':'',#	string (All Batman movies) - overview of the collection
+                #'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
+                #'imdbnumber':'',#	string (tt0110293) - IMDb code
+                #'code':'',#	string (101) - Production code
+                'aired':anime_info[3],#	string (2008-12-07)
+                #'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
+                #'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'album':'',#	string (The Joshua Tree)
+                #'artist':'',#	list (['U2'])
+                #'votes':'',#	string (12345 votes)
+                #'path':'',#	string (/home/user/movie.avi)
+                #'trailer':'',#	string (/home/user/trailer.avi)
+                #'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+                #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
+            }
+
+            #info = {'genre': anime_info[0],'year': anime_info[2],'plot': anime_info[3],'title': title, 'tvshowtitle': title}
+            #info['plot'] = '{}\n\n[COLOR=steelblue]Над релизом работали[/COLOR]: {}'.format(info['plot'], anime_info[1])
 
             if size:
                 info['size'] = size
@@ -250,7 +314,8 @@ class Anilibria:
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
-    def create_info(self, anime_id):
+    #def create_info(self, anime_id):
+    def create_info(self, anime_id, update=False):
         post = 'query=release&id={}&filter=id%2Cnames%2Cgenres%2Cvoices%2Cyear%2Cdescription'.format(anime_id)
         html = self.network.get_html(self.site_url, post)
 
@@ -267,19 +332,32 @@ class Anilibria:
         description = tag_list(description)
         description = unescape(description)
         description = fix_list(description)
-        
+#anime_id, anime_tid, title_ru, title_en, title_jp, kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios, image
         try:
             self.database.add_anime(
-                anime_id,
-                names[0],
-                names[1],
-                ', '.join(genres),
-                ', '.join(voices),
-                year,
-                description
-                )
+                anime_id = anime_id,
+                title_ru = names[0],
+                title_en = names[1],
+                genres = ', '.join(genres),
+                description = description,
+                dubbing = ', '.join(voices),
+                aired_on = year,
+                update = update)
         except:
             return 101
+
+        # try:
+        #     self.database.add_anime(
+        #         anime_id,
+        #         names[0],
+        #         names[1],
+        #         ', '.join(genres),
+        #         ', '.join(voices),
+        #         year,
+        #         description
+        #         )
+        # except:
+        #     return 101
         return
 
     def execute(self):
@@ -524,7 +602,7 @@ class Anilibria:
                     break
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-                if not self.database.is_anime_in_db(anime_id):
+                if not self.database.anime_in_db(anime_id):
                     inf = self.create_info(anime_id)
 
                 label = self.create_title(self.database.get_title(anime_id), series, announce)
@@ -554,8 +632,12 @@ class Anilibria:
                 break
             self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-            if not self.database.is_anime_in_db(anime_id):
+            if not self.database.anime_in_db(anime_id):
                 inf = self.create_info(anime_id)
+                
+                if type(inf) == int:
+                    self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
+                    continue
 
             label = self.create_title(self.database.get_title(anime_id), series, None)
             self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
