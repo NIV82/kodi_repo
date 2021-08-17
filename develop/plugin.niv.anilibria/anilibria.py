@@ -18,6 +18,18 @@ class Main:
     xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
     def __init__(self):
+        try: self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
+        except: self.addon_data_dir = xbmcvfs.translatePath(Main.addon.getAddonInfo('profile'))
+
+        if not 'https://www.anilibria.tv/' in Main.addon.getSetting('mirror_0'):
+            try:
+                #os.remove(os.path.join(self.addon_data_dir, 'settings.xml'))
+                Main.addon.setSetting('mirror_0', 'https://www.anilibria.tv/')
+                Main.addon.setSetting('mirror_1', '')
+                Main.addon.setSetting('mirror_2', '')
+            except:
+                pass
+
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
         self.skin_used = xbmc.getSkinDir()
@@ -25,9 +37,9 @@ class Main:
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
 
-        xbmc.log(str(self.site_url), xbmc.LOGFATAL)
-        try: self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
-        except: self.addon_data_dir = xbmcvfs.translatePath(Main.addon.getAddonInfo('profile'))
+        #xbmc.log(str(self.site_url), xbmc.LOGFATAL)
+        #try: self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
+        #except: self.addon_data_dir = xbmcvfs.translatePath(Main.addon.getAddonInfo('profile'))
 
         if not os.path.exists(self.addon_data_dir):
             os.makedirs(self.addon_data_dir)
