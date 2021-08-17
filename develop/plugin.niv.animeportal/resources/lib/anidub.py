@@ -590,23 +590,23 @@ class Anidub:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        self.create_line(title=u'[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title=u'[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
         if self.auth_mode:
-            self.create_line(title=u'[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'favorites_part'})
-        self.create_line(title=u'[B][COLOR=lime]Аниме[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/'})
-        self.create_line(title=u'[B][COLOR=lime]Онгоинги[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/anime_ongoing/'})
-        self.create_line(title=u'[B][COLOR=lime]Вышедшие сериалы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/full/'})
-        self.create_line(title=u'[B][COLOR=lime]Аниме фильмы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
-        self.create_line(title=u'[B][COLOR=lime]Аниме OVA[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
-        self.create_line(title=u'[B][COLOR=gold]Дорамы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
+            self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'favorites_part'})
+        self.create_line(title=u'[B][COLOR=lime][ Аниме ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/'})
+        self.create_line(title=u'[B][COLOR=lime][ Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/anime_ongoing/'})
+        self.create_line(title=u'[B][COLOR=lime][ Вышедшие сериалы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/full/'})
+        self.create_line(title=u'[B][COLOR=lime][ Аниме фильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
+        self.create_line(title=u'[B][COLOR=lime][ Аниме OVA ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
+        self.create_line(title=u'[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
-            self.create_line(title=u'[B][COLOR=red]Поиск по названию[/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
-            self.create_line(title=u'[B][COLOR=red]Поиск по жанрам[/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
-            self.create_line(title=u'[B][COLOR=red]Поиск по году[/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
-            self.create_line(title=u'[B][COLOR=red]Поиск по алфавиту[/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
+            self.create_line(title=u'[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+            self.create_line(title=u'[B][COLOR=red][ Поиск по жанрам ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'genres'})
+            self.create_line(title=u'[B][COLOR=red][ Поиск по году ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'years'})
+            self.create_line(title=u'[B][COLOR=red][ Поиск по алфавиту ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'alphabet'})
 
             data_array = self.addon.getSetting('anidub_search').split('|')
             data_array.reverse()
@@ -657,7 +657,6 @@ class Anidub:
         if 'search_part' in self.params['param']:
             url = '{}index.php?do=search'.format(self.site_url)
             post = 'do=search&story={}&subaction=search&search_start={}&full_search=0'.format(quote(self.params['search_string']), self.params['page'])
-
 
         html = self.network.get_html2(url, post=post)
         

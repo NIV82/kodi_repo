@@ -53,6 +53,7 @@ params = {
     'page': '1',
     'sort':'',
     'node': '',
+    'limit': '12',
     'portal': 'animeportal'
     }
 
