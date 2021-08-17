@@ -9,12 +9,12 @@
     <setting id="login" type="text" label="Логин" enable="eq(-1,true)" default="" />    
     <setting id="password" type="text" option="hidden" label="Пароль" enable="eq(-2,true)" default="" />
     <setting type="sep"/>
-    <setting id="mirrors" type="enum" label="Выбрать зеркало:" default="0" values="Базовый|Приватное 1|Приватное 2"/>
-    <setting id="mirror_0" type="text" label="Базовый - Требует Разблокировку" default="anilibria.tv" />
+    <setting id="mirrors" type="enum" label="Выбрать зеркало:" default="1" values="Базовый|Приватное 1|Приватное 2"/>
+    <setting id="mirror_0" type="text" label="Базовый - Требует Разблокировку" default="https://www.anilibria.tv/" />
     <setting id="mirror_1" type="text" label="Приватное 1" default="" />
     <setting id="mirror_2" type="text" label="Приватное 2" default="" />
     <setting type="sep"/>
-    <setting id="unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy"/>
+    <setting id="unblock" type="enum" label="Разблокировка:" default="1" values="Отключено|Antizapret - Proxy"/>
     <setting type="sep"/>
   </category>
   <category label="P2P">    

@@ -22,9 +22,10 @@ class Main:
         self.dialog = xbmcgui.Dialog()
         self.skin_used = xbmc.getSkinDir()
 
-        self.site_url = 'https://{}/public/api/index.php'.format(
-            Main.addon.getSetting('mirror_{}'.format(Main.addon.getSetting('mirrors'))))        
+        self.proxy_data = self.create_proxy_data()
+        self.site_url = self.create_site_url()
 
+        xbmc.log(str(self.site_url), xbmc.LOGFATAL)
         try: self.addon_data_dir = utility.fs_enc(xbmc.translatePath(Main.addon.getAddonInfo('profile')))
         except: self.addon_data_dir = xbmcvfs.translatePath(Main.addon.getAddonInfo('profile'))
 
@@ -60,11 +61,6 @@ class Main:
         args = utility.get_params()
         for a in args:
             self.params[a] = unquote(args[a])
-
-        if Main.addon.getSetting('unblock') == '0':
-            proxy_data = None
-        else:
-            proxy_data = self.create_proxy_data()
 #================================================
         try: session_time = float(Main.addon.getSetting('session_time'))
         except: session_time = 0
@@ -78,9 +74,9 @@ class Main:
         from network import WebTools
         self.network = WebTools(auth_usage=bool(Main.addon.getSetting('auth_mode') == 'true'),
                                 auth_status=bool(Main.addon.getSetting('auth') == 'true'),
-                                proxy_data=proxy_data)
+                                proxy_data=self.proxy_data)
         self.network.auth_post_data = urlencode(self.auth_post_data)
-        self.network.auth_url = 'https://{}/public/login.php'.format(
+        self.network.auth_url = '{}/public/login.php'.format(
             Main.addon.getSetting('mirror_{}'.format(Main.addon.getSetting('mirrors'))))
         self.network.sid_file = os.path.join(self.cookies_dir, 'anilibria.sid')
         del WebTools
@@ -109,10 +105,39 @@ class Main:
         self.database = DBTools(os.path.join(self.database_dir, 'anilibria.db'))
         del DBTools
 #================================================
-        if not Main.addon.getSetting('mirror_1'):
-            self.exec_mirror_part()
+    def create_site_url(self):
+        site_url = Main.addon.getSetting('mirror_0')
+        current_mirror = 'mirror_{}'.format(Main.addon.getSetting('mirrors'))        
+
+        if not Main.addon.getSetting(current_mirror):
+            try:
+                self.exec_mirror_part()
+                site_url = '{}public/api/index.php'.format(Main.addon.getSetting(current_mirror))
+            except:
+                site_url = "{}public/api/index.php".format(site_url)
+        else:
+            site_url = '{}public/api/index.php'.format(Main.addon.getSetting(current_mirror))
+        return site_url
 #================================================
-    def create_proxy_data(self):
+    def exec_mirror_part(self):
+        from network import WebTools
+        self.net = WebTools(auth_usage=False,auth_status=False,proxy_data=self.proxy_data)
+        del WebTools
+
+        html = self.net.get_html(target_name='https://darklibria.it/mirror')
+
+        mirror = html[html.find('lg mb-1" href="')+15:html.rfind('" target="_blank" rel="nofollow">')]
+        mirror_1 = mirror[:mirror.find('" target=')]
+        mirror_2 = mirror[mirror.rfind('href="')+6:]
+
+        Main.addon.setSetting('mirror_1', mirror_1)
+        Main.addon.setSetting('mirror_2', mirror_2)
+        return
+#================================================
+    def create_proxy_data(self):        
+        if '0' in Main.addon.getSetting('unblock'):
+            return None
+
         try: proxy_time = float(Main.addon.getSetting('proxy_time'))
         except: proxy_time = 0
 
@@ -185,8 +210,12 @@ class Main:
         return label
 
     def create_image(self, anime_id):
-        site_url = self.site_url.replace('public/api/index.php','')
-        url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
+        if 'anilibria.tv' in self.site_url:
+            url = 'https://static.anilibria.tv/upload/release/350x500/{}.jpg'.format(anime_id)
+        else:
+            site_url = self.site_url.replace('public/api/index.php','')
+            url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
+
 
         if Main.addon.getSetting('cover_mode') == 'false':
             return url
@@ -200,6 +229,24 @@ class Main:
                 try: file_name = utility.fs_dec(os.path.join(self.images_dir, local_img))
                 except: file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
+
+    def create_context(self, anime_id):
+        context_menu = []
+        
+        context_menu.append(('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=update_part")'))
+        context_menu.append(('[B]Обновить Зеркала[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=mirror_part")'))
+        context_menu.append(('[B]Очистить Авторизацию[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=auth_clean")'))
+
+        if self.params['mode'] == 'search_part' and self.params['param'] == '':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=clean_part")'))
+
+        if Main.addon.getSetting('auth_mode') == 'true' and self.params['mode'] == 'common_part' or self.params['mode'] == 'schedule_part':
+            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append(('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=favorites_part&id={}&param=fav_add")'.format(anime_id)))
+            context_menu.append(('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=favorites_part&id={}&param=fav_del")'.format(anime_id)))
+
+        return context_menu
 
     def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
         li = xbmcgui.ListItem(title)
@@ -228,21 +275,8 @@ class Main:
                 info['size'] = size
 
             li.setInfo(type='video', infoLabels=info)
-
-        if self.params['mode'] == 'search_part' and self.params['param'] == '':
-            li.addContextMenuItems([('[B]Очистить историю[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=clean_part")')])
-
-        if Main.addon.getSetting('auth_mode') == 'true' and self.params['mode'] == 'common_part' or self.params['mode'] == 'schedule_part':
-            li.addContextMenuItems([
-                ('[B]Добавить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=favorites_part&id={}&param=fav_add")'.format(anime_id)),
-                ('[B]Удалить FAV (сайт)[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=favorites_part&id={}&param=fav_del")'.format(anime_id))
-                ])
-
-        if self.params['mode'] == 'information_part':
-            li.addContextMenuItems([
-                ('[B]Обновить Базу Данных[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=update_part")'),
-                ('[B]Обновить Зеркала[/B]', 'Container.Update("plugin://plugin.niv.anilibria/?mode=mirror_part")')
-                ])
+        
+        li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -287,6 +321,13 @@ class Main:
             return 101
         return
 
+    def exec_auth_clean(self):
+        Main.addon.setSetting('auth', 'false')
+
+        try: os.remove(os.path.join(self.cookies_dir, 'anilibria.sid'))
+        except: pass
+        return
+
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
         try: self.database.end()
@@ -294,24 +335,6 @@ class Main:
 
     def exec_addon_setting(self):
         Main.addon.openSettings()
-
-    def exec_mirror_part(self):
-        url = 'https://darklibria.it/mirror'
-        html = self.network.get_html(url)
-
-        info = html[html.find('btn-lg mb-1" href="')+19:html.find('Сделать личное зеркало 2')]
-        data_array = info.split('href="')
-        i = 0
-        for data in data_array:
-            i = i + 1
-            mirror = data[:data.find('/" target')]
-            mirror = mirror.replace('https://','')
-            Main.addon.setSetting('mirror_{}'.format(i), mirror)
-        
-        if Main.addon.getSetting('mirrors') =='0':
-            if Main.addon.getSetting('mirror_1'):
-                Main.addon.setSetting('mirrors', '1')
-        return
 
     def exec_update_part(self):
         try: self.database.end()
@@ -463,7 +486,7 @@ class Main:
 
     def exec_common_part(self):
         self.progress.create("Anilibria", "Инициализация")
-        xbmc.log(str(self.site_url), xbmc.LOGFATAL)
+        #xbmc.log(str(self.site_url), xbmc.LOGFATAL)
         html = self.network.get_html(self.site_url, self.create_post())
 
         data_array = html[html.find('"id"'):].split('},{')
