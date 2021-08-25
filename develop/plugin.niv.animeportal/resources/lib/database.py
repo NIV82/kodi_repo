@@ -14,7 +14,7 @@ class DataBase:
         self.cu.execute('SELECT COUNT(1) FROM sqlite_master WHERE type=\'table\' AND name=\'anime_db\'')
         self.c.commit()
         if self.cu.fetchone()[0] == 0:
-            self.cu.execute('CREATE TABLE anime_db (anime_id INTEGER NOT NULL PRIMARY KEY, anime_tid INTEGER, title_ru TEXT, title_en TEXT, title_jp TEXT, kind TEXT, status TEXT, episodes INTEGER, aired_on INTEGER, released_on INTEGER, rating TEXT, duration INTEGER, genres TEXT, writer TEXT, director TEXT, description TEXT, dubbing TEXT, translation TEXT, timing TEXT, sound TEXT, mastering TEXT, editing TEXT, other TEXT, country TEXT, studios TEXT, image TEXT)')
+            self.cu.execute('CREATE TABLE anime_db (anime_id TEXT NOT NULL PRIMARY KEY, anime_tid TEXT, title_ru TEXT, title_en TEXT, title_jp TEXT, kind TEXT, status TEXT, episodes INTEGER, aired_on INTEGER, released_on INTEGER, rating TEXT, duration INTEGER, genres TEXT, writer TEXT, director TEXT, description TEXT, dubbing TEXT, translation TEXT, timing TEXT, sound TEXT, mastering TEXT, editing TEXT, other TEXT, country TEXT, studios TEXT, image TEXT)')
             self.c.commit()
             self.cu.execute('CREATE UNIQUE INDEX i_i ON anime_db (anime_id)')
             self.c.commit()
@@ -146,7 +146,6 @@ class Anistar_DB:
         return self.cu.fetchone()
 
 #========================#========================#========================#========================#========================#
-
 class Animedia_DB:
     def __init__(self, data_file):
         import sqlite3 as db

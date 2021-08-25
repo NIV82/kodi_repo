@@ -495,7 +495,8 @@ class Anilibria:
 
         from info import anilibria_week
 
-        html = self.network.get_html2(self.site_url, self.create_post())
+        html = self.network.get_html2(target_name=self.site_url, post=self.create_post())
+            #self.site_url, self.create_post())
 
         try: html = html.decode(encoding='utf-8', errors='replace')
         except: pass

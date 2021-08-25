@@ -12,7 +12,7 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-from utility import tag_list, clean_list, unescape
+from utility import tag_list, clean_list#, unescape
 
 class Animedia:
     #def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
@@ -75,17 +75,17 @@ class Animedia:
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
 #================================================
-        from database import Animedia_DB
-        self.database = Animedia_DB(os.path.join(self.database_dir, 'animedia.db'))
-        del Animedia_DB
+        from database import DataBase
+        self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
+        del DataBase
 #================================================
-        self.animedia_genre = {"":"","Комедия":"1","Этти":"2","Школа":"3","Мистика":"4","Приключения":"5","Фантастика":"6","Боевые искусства":"7","Война":"9","Детектив":"11","Дзёсэй":"12","Драма":"13","Исторический":"14","Киберпанк":"15","Криминал":"17","Махо-сёдзё":"18","Медицина":"19","Меха":"21","Музыка":"23","Пародия":"25","По игре":"26","Повседневность":"27","Постапокалиптика":"29","Психология":"30","Романтика":"31","Самурайский боевик":"32","Сёдзе":"33","Сёнэн":"34","Сёнэн-ай":"35","Спорт":"37","Сэйнэн":"38","Триллер":"39","Трэш":"40","Ужасы":"41","Фэнтези":"42","Вампиры":"43","Подкасты":"47","Дорамы":"48","История":"49","Лайв-экшн":"50","Сёдзё-ай":"51","Экшен":"52","Сверхъестественное":"53","Гарем":"98"}
-        self.animedia_year = {"":"","2020":"2020","2019":"2019","2018":"2018","2017":"2017","2016":"2016","2015":"2015","2014":"2014","2013":"2013","2012":"2012","2011":"2011","2010":"2010","2009":"2009","2008":"2008","2007":"2007","2006":"2006","2005":"2005","2004":"2004","2003":"2003","2002":"2002","2001":"2001","2000":"2000","1990-e":"199","1980-e":"198"}
-        self.animedia_form = {"":"","ТВ-сериал":"ТВ","Фильмы":"Полнометражный","OVA, ONA, Special":"OVA","Дорама":"Дорама"}
-        self.animedia_status = {"":"","Сейчас выходит":"0","Вышедшие":"1"}
-        self.animedia_sort = {"Популярности":"view_count_one|desc","Дате добавления":"entry_date|desc"}
-        self.animedia_studio = ("","8bit","A-1 Pictures","A.C.G.T","ACTAS"," Inc.","AIC","AIC A.S.T.A.","AIC PLUS","Ajia-do","AKOM","Animac","ANIMATE","Aniplex","ARMS","Artland","ARTMIC Studios","Asahi Production","asread","Ashi Productions","Aubeck","Bandai Visual","Barnum Studio","Bee Train","BeSTACK","Bones","Brain's Base","EMT²","Chaos Project","Cherry Lips","CLAMP","CoMix Wave Inc.","CJ Entertainment","Cinema Citrus","Daume","David Production","Dax International","Digital Frontier","Digital Works","Diomedea","DLE","Dogakobo","Dong Woo Animation","Doumu","DR Movie","Easyfilm","Eiken","EMation","Feel","Five Ways","Foursome","Fuji TV / KTV","FUNimation Entertainment","Frontier Works","G&G Entertainment","Gainax","Gallop","GANSIS","Gathering","Geneon Universal Entertainment","GoHands","Gonzino","Gonzo Digimation","Green Bunny","Group TAC","Hal Film Maker","Hangar-18","Hoods Entertainment","Idea Factory","Imagin","J.C.Staff","Jinni`s Animation Studios","Kaname Production","Khara","Kitty Films","Knack","Kokusai Eigasha","KSS","Kids Station","Kyoto Animation","Lemon Heart","Madhouse","Manpuku Jinja","Magic Bus","Magic Capsule","Manglobe","Mappa","Media Factory","MediaNet","Milky","Minamimachi Bugyosho","Mook Animation","Moonrock","MOVIC","Mystery","Nickelodeon","Mushi Production","Nippon Animation","Nippon Animedia","Nippon Columbia","Nomad","NAZ","NUT","Lantis","Lerche","Liden Films","OB Planning","Office AO","Oh! Production","OLM"," Inc.","Ordet","Oriental Light and Magic","P Production","P.A. Works","Palm Studio","Pastel","Phoenix Entertainment","Picture Magic","Pink Pineapple","Planet","Plum","Production I.G","Production Reed","Project No.9","Primastea","Pony Canyon","Polygon Pictures","Rising Force","Radix","Rikuentai","Robot","Rooster Teeth","FUNimation Entertainment","Satelight","Sanzigen","Seven Arcs","SHAFT","Shirogumi Inc.","Shin-Ei Animation","Shogakukan Music & Digital Entertainment","Soft Garage","Soft on Demand","Starchild Records","Studio 4°C","Studio Rikka","Studio APPP","Studio Blanc","Studio Comet","Studio DEEN","Studio Fantasia","Studio Flag","Studio Gallop","Studio Ghibli","Studio Guts","Studio Hibari","Studio Junio","Studio Live","Studio Pierrot","Studio Gokumi","Studio Barcelona","Sunrise","Silver Link","SynergySP","Tatsunoko Productions","Telecom Animation Film","Tezuka Productions","TMS Entertainment","TNK","The Answer Studio","The Klock Worx","Toei Animation","TV Tokyo","Tokyo Kids","Tokyo Broadcasting System","Tokyo Movie Shinsha","Top Craft","Transarts","Triangle Staff","Trinet Entertainment","Trigger","TYO Animations","UFO Table","Victor Entertainment","Viewworks","White Fox","Wonder Farm","Wit Studio","Xebec","XEBEC-M2","Zexcs","Zuiyo","Hoods Drifters Studio")
-        self.animedia_voice = ("","Amails","Agzy","4a4i","Matorian","aZon","ArtLight","BlackVlastelin","Demetra","Derenn","DEMIKS","Rikku","ABSURD95","AMELIA","ANGEL","ANIMAN","Andry B","AriannaFray","AXLt","BLACK_VLASTELIN","ELADIEL","ENEMY","ENILOU","ERINANT","EneerGy","Egoist","Eugene","FaSt","FREYA","FRUKT","FUEGOALMA","FUUROU","GFT","GKONKOV","GOMER","GREH","HHANZO","HUNTER26","ITLM","JAM","JEPT","JULIABLACK","KovarnyBober","KIARA_LAINE","Kleo Rin","KUCLIA","KASHI","Kansai","Kobayashi","Kona-chan","LISEK","LINOKK","L'Roy","LUNIFERA","LUPIN","LeXar","Lyxor","MACHAON","MEISEI","MIRIKU","MisterX","MIRONA","MOONY","MULYA","MUNYA","MUSTADIO","MyDuck","MezIdA","NAZEL","NASTR","NEAR","N_O_I_R","NIKIRI","Nuriko","Neonoir","Kabrok","Komuro","LolAlice","ORIKO","OZIRIST","PERSONA99","Phoenix","RYC99","RUBY","REZAN","Riddle","Reewayvs","Railgun","Revi_Kim","Rizz_Fisher","SAHAWK","SAJURI","SANDEL","SAY","SCREAM","SHACHIBURI","SHALU","SILV","STEFAN","Soer","TDUBOVIC","TINDA","TicTac","TRAY","TRINAD","TROUBLE","Televizor","TSUMI","VIKI","VINS","YUKIO","ZACK_FAIR","ZART","ZENDOS","VULPES VUPLES","Wicked_Wayfarer","Григорий Коньков","NRG Film Distribution","Tina","ВИКТОР БОЛГОВ","Mega Anime","Пифагор","Реанимедия","Ruscico","MC Entertainment","Симбад","Ruri","Odissey","Акварелька","Garison","zaShunina","Sad_Kit","Milirina","Leo Tail","Satsuki","SilverTatsu","Sabadaher","Morin","KingMaster","Каркас")
+        # self.animedia_genre = {"":"","Комедия":"1","Этти":"2","Школа":"3","Мистика":"4","Приключения":"5","Фантастика":"6","Боевые искусства":"7","Война":"9","Детектив":"11","Дзёсэй":"12","Драма":"13","Исторический":"14","Киберпанк":"15","Криминал":"17","Махо-сёдзё":"18","Медицина":"19","Меха":"21","Музыка":"23","Пародия":"25","По игре":"26","Повседневность":"27","Постапокалиптика":"29","Психология":"30","Романтика":"31","Самурайский боевик":"32","Сёдзе":"33","Сёнэн":"34","Сёнэн-ай":"35","Спорт":"37","Сэйнэн":"38","Триллер":"39","Трэш":"40","Ужасы":"41","Фэнтези":"42","Вампиры":"43","Подкасты":"47","Дорамы":"48","История":"49","Лайв-экшн":"50","Сёдзё-ай":"51","Экшен":"52","Сверхъестественное":"53","Гарем":"98"}
+        # self.animedia_year = {"":"","2020":"2020","2019":"2019","2018":"2018","2017":"2017","2016":"2016","2015":"2015","2014":"2014","2013":"2013","2012":"2012","2011":"2011","2010":"2010","2009":"2009","2008":"2008","2007":"2007","2006":"2006","2005":"2005","2004":"2004","2003":"2003","2002":"2002","2001":"2001","2000":"2000","1990-e":"199","1980-e":"198"}
+        # self.animedia_form = {"":"","ТВ-сериал":"ТВ","Фильмы":"Полнометражный","OVA, ONA, Special":"OVA","Дорама":"Дорама"}
+        # self.animedia_status = {"":"","Сейчас выходит":"0","Вышедшие":"1"}
+        # self.animedia_sort = {"Популярности":"view_count_one|desc","Дате добавления":"entry_date|desc"}
+        # self.animedia_studio = ("","8bit","A-1 Pictures","A.C.G.T","ACTAS"," Inc.","AIC","AIC A.S.T.A.","AIC PLUS","Ajia-do","AKOM","Animac","ANIMATE","Aniplex","ARMS","Artland","ARTMIC Studios","Asahi Production","asread","Ashi Productions","Aubeck","Bandai Visual","Barnum Studio","Bee Train","BeSTACK","Bones","Brain's Base","EMT²","Chaos Project","Cherry Lips","CLAMP","CoMix Wave Inc.","CJ Entertainment","Cinema Citrus","Daume","David Production","Dax International","Digital Frontier","Digital Works","Diomedea","DLE","Dogakobo","Dong Woo Animation","Doumu","DR Movie","Easyfilm","Eiken","EMation","Feel","Five Ways","Foursome","Fuji TV / KTV","FUNimation Entertainment","Frontier Works","G&G Entertainment","Gainax","Gallop","GANSIS","Gathering","Geneon Universal Entertainment","GoHands","Gonzino","Gonzo Digimation","Green Bunny","Group TAC","Hal Film Maker","Hangar-18","Hoods Entertainment","Idea Factory","Imagin","J.C.Staff","Jinni`s Animation Studios","Kaname Production","Khara","Kitty Films","Knack","Kokusai Eigasha","KSS","Kids Station","Kyoto Animation","Lemon Heart","Madhouse","Manpuku Jinja","Magic Bus","Magic Capsule","Manglobe","Mappa","Media Factory","MediaNet","Milky","Minamimachi Bugyosho","Mook Animation","Moonrock","MOVIC","Mystery","Nickelodeon","Mushi Production","Nippon Animation","Nippon Animedia","Nippon Columbia","Nomad","NAZ","NUT","Lantis","Lerche","Liden Films","OB Planning","Office AO","Oh! Production","OLM"," Inc.","Ordet","Oriental Light and Magic","P Production","P.A. Works","Palm Studio","Pastel","Phoenix Entertainment","Picture Magic","Pink Pineapple","Planet","Plum","Production I.G","Production Reed","Project No.9","Primastea","Pony Canyon","Polygon Pictures","Rising Force","Radix","Rikuentai","Robot","Rooster Teeth","FUNimation Entertainment","Satelight","Sanzigen","Seven Arcs","SHAFT","Shirogumi Inc.","Shin-Ei Animation","Shogakukan Music & Digital Entertainment","Soft Garage","Soft on Demand","Starchild Records","Studio 4°C","Studio Rikka","Studio APPP","Studio Blanc","Studio Comet","Studio DEEN","Studio Fantasia","Studio Flag","Studio Gallop","Studio Ghibli","Studio Guts","Studio Hibari","Studio Junio","Studio Live","Studio Pierrot","Studio Gokumi","Studio Barcelona","Sunrise","Silver Link","SynergySP","Tatsunoko Productions","Telecom Animation Film","Tezuka Productions","TMS Entertainment","TNK","The Answer Studio","The Klock Worx","Toei Animation","TV Tokyo","Tokyo Kids","Tokyo Broadcasting System","Tokyo Movie Shinsha","Top Craft","Transarts","Triangle Staff","Trinet Entertainment","Trigger","TYO Animations","UFO Table","Victor Entertainment","Viewworks","White Fox","Wonder Farm","Wit Studio","Xebec","XEBEC-M2","Zexcs","Zuiyo","Hoods Drifters Studio")
+        # self.animedia_voice = ("","Amails","Agzy","4a4i","Matorian","aZon","ArtLight","BlackVlastelin","Demetra","Derenn","DEMIKS","Rikku","ABSURD95","AMELIA","ANGEL","ANIMAN","Andry B","AriannaFray","AXLt","BLACK_VLASTELIN","ELADIEL","ENEMY","ENILOU","ERINANT","EneerGy","Egoist","Eugene","FaSt","FREYA","FRUKT","FUEGOALMA","FUUROU","GFT","GKONKOV","GOMER","GREH","HHANZO","HUNTER26","ITLM","JAM","JEPT","JULIABLACK","KovarnyBober","KIARA_LAINE","Kleo Rin","KUCLIA","KASHI","Kansai","Kobayashi","Kona-chan","LISEK","LINOKK","L'Roy","LUNIFERA","LUPIN","LeXar","Lyxor","MACHAON","MEISEI","MIRIKU","MisterX","MIRONA","MOONY","MULYA","MUNYA","MUSTADIO","MyDuck","MezIdA","NAZEL","NASTR","NEAR","N_O_I_R","NIKIRI","Nuriko","Neonoir","Kabrok","Komuro","LolAlice","ORIKO","OZIRIST","PERSONA99","Phoenix","RYC99","RUBY","REZAN","Riddle","Reewayvs","Railgun","Revi_Kim","Rizz_Fisher","SAHAWK","SAJURI","SANDEL","SAY","SCREAM","SHACHIBURI","SHALU","SILV","STEFAN","Soer","TDUBOVIC","TINDA","TicTac","TRAY","TRINAD","TROUBLE","Televizor","TSUMI","VIKI","VINS","YUKIO","ZACK_FAIR","ZART","ZENDOS","VULPES VUPLES","Wicked_Wayfarer","Григорий Коньков","NRG Film Distribution","Tina","ВИКТОР БОЛГОВ","Mega Anime","Пифагор","Реанимедия","Ruscico","MC Entertainment","Симбад","Ruri","Odissey","Акварелька","Garison","zaShunina","Sad_Kit","Milirina","Leo Tail","Satsuki","SilverTatsu","Sabadaher","Morin","KingMaster","Каркас")
 #================================================
     def create_proxy_data(self):
         #if self.addon.getSetting('anidub_unblock') == '0':
@@ -211,22 +211,116 @@ class Animedia:
 
         return context_menu
 
-    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, ex_info=None): 
+    # def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, ex_info=None): 
+    #     li = xbmcgui.ListItem(title)
+
+    #     if anime_id:
+    #         cover = self.create_image(anime_id)
+    #         art = {'icon': cover, 'thumb': cover, 'poster': cover}
+    #         li.setArt(art)
+
+    #         anime_info = self.database.get_anime(anime_id)
+    #         info = {'title': title, 'genre': anime_info[0], 'year': anime_info[1], 'studio': anime_info[2], 'director': anime_info[3], 'writer': anime_info[4], 'plot': anime_info[5]}
+
+    #         if ex_info:
+    #             info['plot'] += '\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
+    #                 ex_info['series'], ex_info['quality'], ex_info['size'], ex_info['container'], ex_info['video'], ex_info['audio'], ex_info['translate'], ex_info['timing'])
+
+    #         if size: info['size'] = size
+
+    #         li.setInfo(type='video', infoLabels=info)
+
+    #     li.addContextMenuItems(self.create_context(anime_id))
+
+    #     if folder==False:
+    #             li.setProperty('isPlayable', 'true')
+
+    #     params['portal'] = 'animedia'
+    #     url = '{}?{}'.format(sys.argv[0], urlencode(params))
+
+    #     xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+
+    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
         li = xbmcgui.ListItem(title)
 
         if anime_id:
             cover = self.create_image(anime_id)
-            art = {'icon': cover, 'thumb': cover, 'poster': cover}
-            li.setArt(art)
 
+            li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
+                       "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
+            #li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
+# 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
+#kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
-            info = {'title': title, 'genre': anime_info[0], 'year': anime_info[1], 'studio': anime_info[2], 'director': anime_info[3], 'writer': anime_info[4], 'plot': anime_info[5]}
 
-            if ex_info:
-                info['plot'] += '\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
-                    ex_info['series'], ex_info['quality'], ex_info['size'], ex_info['container'], ex_info['video'], ex_info['audio'], ex_info['translate'], ex_info['timing'])
+            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
+            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
+            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
+            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
+            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
+            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
+            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
 
-            if size: info['size'] = size
+            # if ex_info:
+            #     info['plot'] += '\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
+            #         ex_info['series'], ex_info['quality'], ex_info['size'], ex_info['container'], ex_info['video'], ex_info['audio'], ex_info['translate'], ex_info['timing'])
+
+            duration = anime_info[6] * 60 if anime_info[6] else 0
+
+            info = {
+                'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
+                'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
+                'year':anime_info[3],#	integer (2009)
+                'episode':anime_info[2],#	integer (4)
+                #'season':'',#	integer (1)
+                #'sortepisode':'',#	integer (4)
+                #'sortseason':'',#	integer (1)
+                #'episodeguide':'',#	string (Episode guide)
+                #'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
+                #'top250':'',#	integer (192)
+                #'setid':'',#	integer (14)
+                #'tracknumber':'',#	integer (3)
+                #'rating':'',#	float (6.4) - range is 0..10
+                #'userrating':'',#	integer (9) - range is 1..10 (0 to reset)
+                #'watched':'',#	deprecated - use playcount instead
+                #'playcount':'',#	integer (2) - number of times this item has been played
+                #'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
+                #'cast':'',#	list (["Michal C. Hall","Jennifer Carpenter"]) - if provided a list of tuples cast will be interpreted as castandrole
+                #'castandrole':'',#	list of tuples ([("Michael C. Hall","Dexter"),("Jennifer Carpenter","Debra")])
+                'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
+                'mpaa':anime_info[5],#	string (PG-13)
+                'plot':description,#	string (Long Description)
+                #'plotoutline':'',#	string (Short Description)
+                'title':title,#	string (Big Fan)
+                #'originaltitle':'',#	string (Big Fan)
+                #'sorttitle':'',#	string (Big Fan)
+                'duration':duration,#	integer (245) - duration in seconds
+                'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
+                #'tagline':'',#	string (An awesome movie) - short description of movie
+                'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
+                'tvshowtitle':title,#	string (Heroes)
+                'premiered':anime_info[3],#	string (2005-03-04)
+                'status':anime_info[1],#	string (Continuing) - status of a TVshow
+                #'set':'',#	string (Batman Collection) - name of the collection
+                #'setoverview':'',#	string (All Batman movies) - overview of the collection
+                #'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
+                #'imdbnumber':'',#	string (tt0110293) - IMDb code
+                #'code':'',#	string (101) - Production code
+                'aired':anime_info[3],#	string (2008-12-07)
+                #'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
+                #'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'album':'',#	string (The Joshua Tree)
+                #'artist':'',#	list (['U2'])
+                #'votes':'',#	string (12345 votes)
+                #'path':'',#	string (/home/user/movie.avi)
+                #'trailer':'',#	string (/home/user/trailer.avi)
+                #'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+                #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
+            }
+
+            if size:
+                info['size'] = size
 
             li.setInfo(type='video', infoLabels=info)
 
@@ -238,14 +332,17 @@ class Animedia:
         params['portal'] = 'animedia'
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
+        if online: url = online
+
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
-    def create_info(self, anime_id):
+    def create_info(self, anime_id, update=False):
         url = '{}anime/{}'.format(self.site_url, anime_id)
 
         html = self.network.get_html(target_name=url)
 
-        if type(html) == int: return html
+        if type(html) == int:
+            return html
 
         info = dict.fromkeys(['title_ru', 'title_en', 'genre', 'year', 'studio', 'director', 'author', 'plot', 'cover'], '')
 
@@ -283,9 +380,25 @@ class Animedia:
                 info['author'] = data[data.find('<span>')+6:data.find('</span>')]
 
         try:
-            self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['year'],
-                          info['studio'], info['director'], info['author'], info['plot'], info['cover'])
-        except: return 101
+            self.database.add_anime(
+                anime_id = anime_id,
+                title_ru = info['title_ru'],
+                title_en = info['title_en'],
+                genres = info['genre'],
+                studios = info['studio'],
+                director = info['director'],
+                writer = info['author'],
+                aired_on = info['year'],
+                description = info['plot'],
+                update=update
+                )                    
+        except:
+            return 101
+
+        # try:
+        #     self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['year'],
+        #                   info['studio'], info['director'], info['author'], info['plot'], info['cover'])
+        # except: return 101
         return
 
     def execute(self):
@@ -494,7 +607,7 @@ class Animedia:
                     break
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-                if not self.database.is_anime_in_db(anime_id):
+                if not self.database.anime_in_db(anime_id):
                     inf = self.create_info(anime_id)
 
                     if type(inf) == int:

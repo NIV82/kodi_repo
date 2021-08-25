@@ -73,7 +73,6 @@ class WebTools:
         except HTTPError as error:
             return error.code
 
-    #def get_html2(self, target_name, post=None):
     def get_html2(self, target_name, post=None):
         if self.auth_usage and not self.auth_check():
             return None
@@ -107,6 +106,30 @@ class WebTools:
             return data
         except HTTPError as error:
             return error.code
+
+    # def get_html3(self, target_name, post=None, method='GET'):
+    #     try: post = post.encode('utf-8', 'replace')
+    #     except: pass
+
+    #     try:
+    #         request = Request(url=target_name, data=post, headers=self.headers)
+    #         request.get_method = lambda: '{}'.format(method)
+    #         url = self.url_opener.open(request)
+
+    #         #url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+
+    #         try: charset = url.headers.getparam('charset')
+    #         except: charset = url.headers.get_content_charset()
+
+    #         data = url.read()
+
+    #         if charset:
+    #             if not 'utf-8' in charset.lower():
+    #                 data = data.decode(charset).encode('utf8')
+
+    #         return data
+    #     except HTTPError as error:
+    #         return error.code
 
     def get_file(self, target_name, post=None, destination_name=None):
         if self.auth_usage and not self.auth_check():
