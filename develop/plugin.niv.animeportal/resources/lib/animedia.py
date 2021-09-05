@@ -32,7 +32,7 @@ class Animedia:
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
         self.auth_mode = bool(self.addon.getSetting('animedia_auth_mode') == '1')
-#================================================
+#========================#========================#========================#
         try: animedia_session = float(self.addon.getSetting('animedia_session'))
         except: animedia_session = 0
 
@@ -41,7 +41,7 @@ class Animedia:
             try: os.remove(os.path.join(self.cookie_dir, 'animedia.sid'))
             except: pass
             self.addon.setSetting('animedia_auth', 'false')
-#================================================
+#========================#========================#========================#
         from network import WebTools
         self.network = WebTools(auth_usage=self.auth_mode,
                                 auth_status=bool(self.addon.getSetting('animedia_auth') == 'true'),
@@ -55,7 +55,7 @@ class Animedia:
         self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_url = self.site_url
         del WebTools
-#================================================
+#========================#========================#========================#
         if self.auth_mode:
             if not self.addon.getSetting("animedia_username") or not self.addon.getSetting("animedia_password"):
                 self.params['mode'] = 'addon_setting'
@@ -69,24 +69,16 @@ class Animedia:
                     return
                 else:
                     self.addon.setSetting("animedia_auth", str(self.network.auth_status).lower())
-#================================================
+#========================#========================#========================#
         # if not os.path.isfile(os.path.join(self.database_dir, 'animedia.db')):
         #     self.exec_update_database_part()
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
-#================================================
+#========================#========================#========================#
         from database import DataBase
         self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
         del DataBase
-#================================================
-        # self.animedia_genre = {"":"","Комедия":"1","Этти":"2","Школа":"3","Мистика":"4","Приключения":"5","Фантастика":"6","Боевые искусства":"7","Война":"9","Детектив":"11","Дзёсэй":"12","Драма":"13","Исторический":"14","Киберпанк":"15","Криминал":"17","Махо-сёдзё":"18","Медицина":"19","Меха":"21","Музыка":"23","Пародия":"25","По игре":"26","Повседневность":"27","Постапокалиптика":"29","Психология":"30","Романтика":"31","Самурайский боевик":"32","Сёдзе":"33","Сёнэн":"34","Сёнэн-ай":"35","Спорт":"37","Сэйнэн":"38","Триллер":"39","Трэш":"40","Ужасы":"41","Фэнтези":"42","Вампиры":"43","Подкасты":"47","Дорамы":"48","История":"49","Лайв-экшн":"50","Сёдзё-ай":"51","Экшен":"52","Сверхъестественное":"53","Гарем":"98"}
-        # self.animedia_year = {"":"","2020":"2020","2019":"2019","2018":"2018","2017":"2017","2016":"2016","2015":"2015","2014":"2014","2013":"2013","2012":"2012","2011":"2011","2010":"2010","2009":"2009","2008":"2008","2007":"2007","2006":"2006","2005":"2005","2004":"2004","2003":"2003","2002":"2002","2001":"2001","2000":"2000","1990-e":"199","1980-e":"198"}
-        # self.animedia_form = {"":"","ТВ-сериал":"ТВ","Фильмы":"Полнометражный","OVA, ONA, Special":"OVA","Дорама":"Дорама"}
-        # self.animedia_status = {"":"","Сейчас выходит":"0","Вышедшие":"1"}
-        # self.animedia_sort = {"Популярности":"view_count_one|desc","Дате добавления":"entry_date|desc"}
-        # self.animedia_studio = ("","8bit","A-1 Pictures","A.C.G.T","ACTAS"," Inc.","AIC","AIC A.S.T.A.","AIC PLUS","Ajia-do","AKOM","Animac","ANIMATE","Aniplex","ARMS","Artland","ARTMIC Studios","Asahi Production","asread","Ashi Productions","Aubeck","Bandai Visual","Barnum Studio","Bee Train","BeSTACK","Bones","Brain's Base","EMT²","Chaos Project","Cherry Lips","CLAMP","CoMix Wave Inc.","CJ Entertainment","Cinema Citrus","Daume","David Production","Dax International","Digital Frontier","Digital Works","Diomedea","DLE","Dogakobo","Dong Woo Animation","Doumu","DR Movie","Easyfilm","Eiken","EMation","Feel","Five Ways","Foursome","Fuji TV / KTV","FUNimation Entertainment","Frontier Works","G&G Entertainment","Gainax","Gallop","GANSIS","Gathering","Geneon Universal Entertainment","GoHands","Gonzino","Gonzo Digimation","Green Bunny","Group TAC","Hal Film Maker","Hangar-18","Hoods Entertainment","Idea Factory","Imagin","J.C.Staff","Jinni`s Animation Studios","Kaname Production","Khara","Kitty Films","Knack","Kokusai Eigasha","KSS","Kids Station","Kyoto Animation","Lemon Heart","Madhouse","Manpuku Jinja","Magic Bus","Magic Capsule","Manglobe","Mappa","Media Factory","MediaNet","Milky","Minamimachi Bugyosho","Mook Animation","Moonrock","MOVIC","Mystery","Nickelodeon","Mushi Production","Nippon Animation","Nippon Animedia","Nippon Columbia","Nomad","NAZ","NUT","Lantis","Lerche","Liden Films","OB Planning","Office AO","Oh! Production","OLM"," Inc.","Ordet","Oriental Light and Magic","P Production","P.A. Works","Palm Studio","Pastel","Phoenix Entertainment","Picture Magic","Pink Pineapple","Planet","Plum","Production I.G","Production Reed","Project No.9","Primastea","Pony Canyon","Polygon Pictures","Rising Force","Radix","Rikuentai","Robot","Rooster Teeth","FUNimation Entertainment","Satelight","Sanzigen","Seven Arcs","SHAFT","Shirogumi Inc.","Shin-Ei Animation","Shogakukan Music & Digital Entertainment","Soft Garage","Soft on Demand","Starchild Records","Studio 4°C","Studio Rikka","Studio APPP","Studio Blanc","Studio Comet","Studio DEEN","Studio Fantasia","Studio Flag","Studio Gallop","Studio Ghibli","Studio Guts","Studio Hibari","Studio Junio","Studio Live","Studio Pierrot","Studio Gokumi","Studio Barcelona","Sunrise","Silver Link","SynergySP","Tatsunoko Productions","Telecom Animation Film","Tezuka Productions","TMS Entertainment","TNK","The Answer Studio","The Klock Worx","Toei Animation","TV Tokyo","Tokyo Kids","Tokyo Broadcasting System","Tokyo Movie Shinsha","Top Craft","Transarts","Triangle Staff","Trinet Entertainment","Trigger","TYO Animations","UFO Table","Victor Entertainment","Viewworks","White Fox","Wonder Farm","Wit Studio","Xebec","XEBEC-M2","Zexcs","Zuiyo","Hoods Drifters Studio")
-        # self.animedia_voice = ("","Amails","Agzy","4a4i","Matorian","aZon","ArtLight","BlackVlastelin","Demetra","Derenn","DEMIKS","Rikku","ABSURD95","AMELIA","ANGEL","ANIMAN","Andry B","AriannaFray","AXLt","BLACK_VLASTELIN","ELADIEL","ENEMY","ENILOU","ERINANT","EneerGy","Egoist","Eugene","FaSt","FREYA","FRUKT","FUEGOALMA","FUUROU","GFT","GKONKOV","GOMER","GREH","HHANZO","HUNTER26","ITLM","JAM","JEPT","JULIABLACK","KovarnyBober","KIARA_LAINE","Kleo Rin","KUCLIA","KASHI","Kansai","Kobayashi","Kona-chan","LISEK","LINOKK","L'Roy","LUNIFERA","LUPIN","LeXar","Lyxor","MACHAON","MEISEI","MIRIKU","MisterX","MIRONA","MOONY","MULYA","MUNYA","MUSTADIO","MyDuck","MezIdA","NAZEL","NASTR","NEAR","N_O_I_R","NIKIRI","Nuriko","Neonoir","Kabrok","Komuro","LolAlice","ORIKO","OZIRIST","PERSONA99","Phoenix","RYC99","RUBY","REZAN","Riddle","Reewayvs","Railgun","Revi_Kim","Rizz_Fisher","SAHAWK","SAJURI","SANDEL","SAY","SCREAM","SHACHIBURI","SHALU","SILV","STEFAN","Soer","TDUBOVIC","TINDA","TicTac","TRAY","TRINAD","TROUBLE","Televizor","TSUMI","VIKI","VINS","YUKIO","ZACK_FAIR","ZART","ZENDOS","VULPES VUPLES","Wicked_Wayfarer","Григорий Коньков","NRG Film Distribution","Tina","ВИКТОР БОЛГОВ","Mega Anime","Пифагор","Реанимедия","Ruscico","MC Entertainment","Симбад","Ruri","Odissey","Акварелька","Garison","zaShunina","Sad_Kit","Milirina","Leo Tail","Satsuki","SilverTatsu","Sabadaher","Morin","KingMaster","Каркас")
-#================================================
+#========================#========================#========================#
     def create_proxy_data(self):
         #if self.addon.getSetting('anidub_unblock') == '0':
         if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
@@ -124,62 +116,99 @@ class Animedia:
                 proxy_data = {'https': proxy}
 
         return proxy_data
-#================================================
+#========================#========================#========================#
     def create_site_url(self):
         site_url = self.addon.getSetting('animedia_mirror_0')
-        #current_mirror = 'animedia_mirror_{}'.format(self.addon.getSetting('animedia_mirror_mode'))
+        current_mirror = 'animedia_mirror_{}'.format(self.addon.getSetting('animedia_mirror_mode'))
 
-        # if not self.addon.getSetting(current_mirror):
-        #     pass
-        # else:
-        #     site_url = self.addon.getSetting(current_mirror)
+        if not self.addon.getSetting(current_mirror):
+            site_url = self.addon.getSetting('animedia_mirror_0')
+            pass
+        else:
+            site_url = self.addon.getSetting(current_mirror)
 
         return site_url
-
+#========================#========================#========================#
     def create_url(self):
-        url = '{}P{}'.format(self.site_url, int(self.params['page'])-1)
+        url = '{}{}'.format(self.site_url, self.params['param'])
 
-        if self.params['param'] == 'search_part':
-            url = '{}ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.site_url, self.params['search_string'])
+        page = (int(self.params['page']) - 1) * 25
 
-        if self.params['param'] == 'popular':
-            url = '{}ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'.format(self.site_url)
+        if 'completed' in self.params['param']:
+            url = '{}ajax/search_result_search_page_2/P{}?limit=25&search:ongoing=1&orderby_sort=entry_date|desc'.format(
+                self.site_url, page
+            )
 
-        if self.params['param'] == 'catalog':
-            genre = '&category={}'.format(self.animedia_genre[self.addon.getSetting('animedia_genre')]) if self.animedia_genre[self.addon.getSetting('animedia_genre')] else ''
-            voice = '&search:voiced={}'.format(quote(self.addon.getSetting('animedia_voice'))) if self.addon.getSetting('animedia_voice') else ''
-            studio = '&search:studies={}'.format(quote(self.addon.getSetting('animedia_studio'))) if self.addon.getSetting('animedia_studio') else ''
-            sort = '&orderby_sort={}'.format(self.animedia_sort[self.addon.getSetting('animedia_sort')]) if self.animedia_sort[self.addon.getSetting('animedia_sort')] else ''
-            year = '&search:datetime={}'.format(self.animedia_year[self.addon.getSetting('animedia_year')]) if self.animedia_year[self.addon.getSetting('animedia_year')] else ''
-            form = '&search:type={}'.format(quote(self.animedia_form[self.addon.getSetting('animedia_form')])) if self.animedia_form[self.addon.getSetting('animedia_form')] else ''
-            ongoing = '&search:ongoing={}'.format(self.animedia_status[self.addon.getSetting('animedia_status')]) if self.animedia_status[self.addon.getSetting('animedia_status')] else ''
+        if 'search_part' in self.params['param']:
+            url = '{}ajax/search_result_search_page_2/P0?limit=25&keywords={}&orderby_sort=entry_date|desc'.format(
+                self.site_url, self.params['search_string']
+            )
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&orderby_sort=entry_date|desc - all
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:ongoing=0&orderby_sort=entry_date|desc - ongoing
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:ongoing=1&orderby_sort=entry_date|desc - complete
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:relize_plan=1&orderby_sort=entry_date|desc - anonnce
 
-            url = '{}ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(self.site_url, genre, voice, studio, year, form, ongoing, sort)
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=ТВ&orderby_sort=entry_date|desc - TV
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=Полнометражный&orderby_sort=entry_date|desc - Full Movie
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=Короткометражный&orderby_sort=entry_date|desc - Short Movie
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=OVA&orderby_sort=entry_date|desc
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=Дорама&orderby_sort=entry_date|desc
+
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&category=98&orderby_sort=entry_date|desc - genre
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:voiced=Amails&orderby_sort=entry_date|desc - voicer
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:studies=8bit&orderby_sort=entry_date|desc - studio
+#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:datetime=2020&orderby_sort=entry_date|desc - year
+
+        xbmc.log(str(url), xbmc.LOGNOTICE)
+        
         return url
-#================================================
-    def create_title(self, anime_id, series):
+
+    # def create_url(self):
+    #     url = '{}P{}'.format(self.site_url, int(self.params['page'])-1)
+
+    #     if self.params['param'] == 'search_part':
+    #         url = '{}ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.site_url, self.params['search_string'])
+
+    #     if self.params['param'] == 'popular':
+    #         url = '{}ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'.format(self.site_url)
+
+    #     if self.params['param'] == 'catalog':
+    #         genre = '&category={}'.format(self.animedia_genre[self.addon.getSetting('animedia_genre')]) if self.animedia_genre[self.addon.getSetting('animedia_genre')] else ''
+    #         voice = '&search:voiced={}'.format(quote(self.addon.getSetting('animedia_voice'))) if self.addon.getSetting('animedia_voice') else ''
+    #         studio = '&search:studies={}'.format(quote(self.addon.getSetting('animedia_studio'))) if self.addon.getSetting('animedia_studio') else ''
+    #         sort = '&orderby_sort={}'.format(self.animedia_sort[self.addon.getSetting('animedia_sort')]) if self.animedia_sort[self.addon.getSetting('animedia_sort')] else ''
+    #         year = '&search:datetime={}'.format(self.animedia_year[self.addon.getSetting('animedia_year')]) if self.animedia_year[self.addon.getSetting('animedia_year')] else ''
+    #         form = '&search:type={}'.format(quote(self.animedia_form[self.addon.getSetting('animedia_form')])) if self.animedia_form[self.addon.getSetting('animedia_form')] else ''
+    #         ongoing = '&search:ongoing={}'.format(self.animedia_status[self.addon.getSetting('animedia_status')]) if self.animedia_status[self.addon.getSetting('animedia_status')] else ''
+
+    #         url = '{}ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(self.site_url, genre, voice, studio, year, form, ongoing, sort)
+    #     return url
+#========================#========================#========================#
+    def create_title(self, anime_id, series=None):
         title = self.database.get_title(anime_id)
 
         if series:
             #series = series.replace('Серия','').replace('Серии','')
             series = series.strip()
-            series = ' - [COLOR=gold][ {} ][/COLOR]'.format(series)
+            series = u' - [COLOR=gold][ {} ][/COLOR]'.format(series)
         else:
             series = ''
        
-        if self.addon.getSetting('animedia_titles') == '0':
-            label = '{}{}'.format(title[0], series)
-        if self.addon.getSetting('animedia_titles') == '1':
-            label = '{}{}'.format(title[1], series)
-        if self.addon.getSetting('animedia_titles') == '2':
-            label = '{} / {}{}'.format(title[0], title[1], series)
+        if '0' in self.addon.getSetting('animedia_titles'):# == '0':
+            label = u'{}{}'.format(title[0], series)
+        if '1' in self.addon.getSetting('animedia_titles'):# == '1':
+            label = u'{}{}'.format(title[1], series)
+        if '2' in self.addon.getSetting('animedia_titles'):# == '2':
+            label = u'{} / {}{}'.format(title[0], title[1], series)
 
         return label
-
+#========================#========================#========================#
     def create_image(self, anime_id):        
-        cover = self.database.get_cover(anime_id)
-###========================================================  quote(cover[0])
-        url = 'https://static.animedia.tv/uploads/{}'.format(quote(cover[0]))
+        #cover = self.database.get_cover(anime_id)
+        #url = 'https://static.animedia.tv/uploads/{}'.format(quote(cover))
+        url = self.database.get_cover(anime_id)
+
+        #xbmc.log(str(cover), xbmc.LOGFATAL)
 
         if self.addon.getSetting('animedia_covers') == '0':
             return url
@@ -193,7 +222,7 @@ class Animedia:
             else:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
-
+#========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
 
@@ -210,36 +239,7 @@ class Animedia:
         context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
 
         return context_menu
-
-    # def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, ex_info=None): 
-    #     li = xbmcgui.ListItem(title)
-
-    #     if anime_id:
-    #         cover = self.create_image(anime_id)
-    #         art = {'icon': cover, 'thumb': cover, 'poster': cover}
-    #         li.setArt(art)
-
-    #         anime_info = self.database.get_anime(anime_id)
-    #         info = {'title': title, 'genre': anime_info[0], 'year': anime_info[1], 'studio': anime_info[2], 'director': anime_info[3], 'writer': anime_info[4], 'plot': anime_info[5]}
-
-    #         if ex_info:
-    #             info['plot'] += '\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
-    #                 ex_info['series'], ex_info['quality'], ex_info['size'], ex_info['container'], ex_info['video'], ex_info['audio'], ex_info['translate'], ex_info['timing'])
-
-    #         if size: info['size'] = size
-
-    #         li.setInfo(type='video', infoLabels=info)
-
-    #     li.addContextMenuItems(self.create_context(anime_id))
-
-    #     if folder==False:
-    #             li.setProperty('isPlayable', 'true')
-
-    #     params['portal'] = 'animedia'
-    #     url = '{}?{}'.format(sys.argv[0], urlencode(params))
-
-    #     xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
-
+#========================#========================#========================#
     def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
         li = xbmcgui.ListItem(title)
 
@@ -332,83 +332,100 @@ class Animedia:
         params['portal'] = 'animedia'
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
-        if online: url = online
+        #xbmc.log(str(), xbmc.LOGNOTICE)
+
+
+        if online:
+            url = online
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+#========================#========================#========================#
+    def create_title_info(self, data):
+        data = data.split('/')
+        title_ru = data[0].strip()
+        title_en = data[1].strip()
+        data = {'title_ru': title_ru, 'title_en': title_en}
+        return data
+#========================#========================#========================#
+    def create_info(self, anime_id, title_data=None, update=False):
+        info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
 
-    def create_info(self, anime_id, update=False):
+        if title_data:
+            info.update(self.create_title_info(title_data))
+        # else:
+        #     title_data = 'XXX'
+        #     info.update(self.create_title_info(title_data))
+
         url = '{}anime/{}'.format(self.site_url, anime_id)
-
-        html = self.network.get_html(target_name=url)
-
-        if type(html) == int:
-            return html
-
-        info = dict.fromkeys(['title_ru', 'title_en', 'genre', 'year', 'studio', 'director', 'author', 'plot', 'cover'], '')
-
-        info['cover'] = html[html.rfind('<a href="https://static.animedia.tv/uploads/')+44:html.rfind('" class="zoomLink">')]
-
-        #data_array = html[html.find('post__header">')+14:html.find('<!--Media post End-->')]
-        data_array = html[html.find('post__header">')+14:html.find('</article>')]
-
-        info['plot'] = data_array[data_array.find('<p>'):data_array.rfind('</p>')]
-        info['plot'] = tag_list(info['plot'])
-        info['plot'] = clean_list(info['plot'])
-        info['plot'] = unescape(info['plot'])
+        html = self.network.get_html2(target_name=url)
         
+        if type(html) == int:
+            label_ru = u'[B][COLOR=red]ERROR-404 - {}[/COLOR][/B]'.format(info['title_ru'])
+            label_en = u'[B][COLOR=red]ERROR-404 - {}[/COLOR][/B]'.format(info['title_ru'])
+            self.database.add_anime(anime_id=anime_id, title_ru=label_ru, title_en=label_en)
+            return
+
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
+
+        html = unescape(html)
+
+        info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
+
+        if html.find(u'Скачать торрент') > -1:
+            anime_tid = html[html.find('torrents-list/')+14:html.find('" class="btn btn__big btn__g')]
+            info['anime_tid'] = quote(anime_tid.encode('utf-8'))
+
+        if html.find(u'Релиз озвучивали:') > -1:
+            dubbing = html[html.find(u'Релиз озвучивали:')+17:html.find(u'Новые серии')]
+            info['dubbing'] = tag_list(dubbing)
+
+        info['image'] = html[html.find('image" content="')+16:html.find('<meta property="og:type')-5]
+
+        data_array = html[html.find('post__body">')+12:html.find('</article>')]
         data_array = data_array.splitlines()
 
         for data in data_array:
-            if '<h1 class="media' in data:
-                info['title_ru'] = data[data.find('title">')+7:data.find('</h1>')].strip()
-            if 'Жанр:' in data:
-                data = data.replace('Жанр: ','').replace('</a>', ', ')
-                info['genre'] = tag_list(data)[:-1]
-            if 'Английское название:' in data:
-                info['title_en'] = data[data.find('<span>')+6:data.find('</span>')].strip()
-            if 'Дата выпуска:' in data:
+            if '<p>' in data:
+                description = tag_list(data)
+                info['description'] = u'{}\n{}'.format(info['description'],description).strip()
+            if u'Дата выпуска:' in data:
                 data = tag_list(data)
                 for year in range(1975, 2030, 1):
                     if str(year) in data:
                         info['year'] = year
-            if 'Студия:' in data:
-                info['studio'] = data[data.find('<span>')+6:data.find('</span>')]
-                info['studio'] = unescape(info['studio'])
-            if 'Режисер:' in data:
-                info['director'] = data[data.find('<span>')+6:data.find('</span>')]
-            if 'Автор оригинала:' in data:
-                info['author'] = data[data.find('<span>')+6:data.find('</span>')]
+            if u'Жанр:' in data:
+                data = tag_list(data.replace('</a><a',', <a'))
+                info['genres'] = data.replace(u'Жанр:','').strip()
+            if u'Студия:' in data:
+                data = tag_list(data).replace(u'Студия:','')
+                info['studios'] = data.strip()
 
         try:
             self.database.add_anime(
                 anime_id = anime_id,
+                anime_tid = info['anime_tid'],
                 title_ru = info['title_ru'],
                 title_en = info['title_en'],
-                genres = info['genre'],
-                studios = info['studio'],
-                director = info['director'],
-                writer = info['author'],
+                dubbing = info['dubbing'],
+                genres = info['genres'],
+                studios = info['studios'],
                 aired_on = info['year'],
-                description = info['plot'],
+                description = info['description'],
+                image = info['image'],
                 update=update
-                )                    
+                )
         except:
             return 101
-
-        # try:
-        #     self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['genre'], info['year'],
-        #                   info['studio'], info['director'], info['author'], info['plot'], info['cover'])
-        # except: return 101
-        return
-
+#========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
         try: self.database.end()
         except: pass
-
+#========================#========================#========================#
     def exec_addon_setting(self):
         self.addon.openSettings()
-
+#========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
         except: pass
@@ -443,82 +460,7 @@ class Animedia:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
-
-    # def exec_update_database_part(self):
-    #     try: self.database.end()
-    #     except: pass
-        
-    #     #try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
-    #     try: os.remove(os.path.join(self.database_dir, '{}.db'.format(self.params['portal'])))
-    #     except: pass
-
-    #     #db_file = os.path.join(self.database_dir, 'anidub.db')
-    #     db_file = os.path.join(self.database_dir, '{}.db'.format(self.params['portal']))
-    #     #db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
-    #     db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}.db'.format(self.params['portal'])
-    #     try:                
-    #         data = urlopen(db_url)
-    #         chunk_size = 8192
-    #         bytes_read = 0
-
-    #         try: file_size = int(data.info().getheaders("Content-Length")[0])
-    #         except: file_size = int(data.getheader('Content-Length'))
-
-    #         self.progress.create('Загрузка Базы Данных')
-    #         with open(db_file, 'wb') as write_file:
-    #             while True:
-    #                 chunk = data.read(chunk_size)
-    #                 bytes_read = bytes_read + len(chunk)
-    #                 write_file.write(chunk)
-    #                 if len(chunk) < chunk_size:
-    #                     break
-    #                 percent = bytes_read * 100 / file_size
-    #                 self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-    #             self.progress.close()
-    #         #label_1 = '{} - База Данных'.format(self.params['portal'].upper())
-    #         #label_2 = 'База Данных [COLOR=lime]успешно загружена[/COLOR]'
-    #         xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
-    #             self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
-    #         #self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
-    #     except:
-    #         xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
-    #             self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
-    #         #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
-    #         pass
-        
-    # def exec_update_database_part(self):
-    #     try: self.database.end()
-    #     except: pass
-        
-    #     try: os.remove(os.path.join(self.database_dir, 'animedia.db'))
-    #     except: pass        
-
-    #     db_file = os.path.join(self.database_dir, 'animedia.db')
-    #     db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/animedia.db'        
-    #     try:                
-    #         data = urlopen(db_url)
-    #         chunk_size = 8192
-    #         bytes_read = 0
-
-    #         try: file_size = int(data.info().getheaders("Content-Length")[0])
-    #         except: file_size = int(data.getheader('Content-Length'))
-
-    #         self.progress.create('Загрузка Базы Данных')
-    #         with open(db_file, 'wb') as write_file:
-    #             while True:
-    #                 chunk = data.read(chunk_size)
-    #                 bytes_read = bytes_read + len(chunk)
-    #                 write_file.write(chunk)
-    #                 if len(chunk) < chunk_size:
-    #                     break
-    #                 percent = bytes_read * 100 / file_size
-    #                 self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-    #             self.progress.close()
-    #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Успешно загружена[/COLOR]')
-    #     except:
-    #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
-    #         pass
-
+#========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
@@ -526,7 +468,7 @@ class Animedia:
         except:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=yellow]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
-
+#========================#========================#========================#
     def exec_information_part(self):
         from info import animeportal_data as info
             
@@ -536,14 +478,17 @@ class Animedia:
 
         self.dialog.textviewer(u'Информация', data)
         return
-
+#========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=blue][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
-        self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part'})      
-        self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=yellow][ Анонсы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'announcements'})
+        self.create_line(title='[B][COLOR=lime][ ТОП-100 ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'top-100-anime'})
+        self.create_line(title='[B][COLOR=lime][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'populyarnye-anime-nedeli'})
+        self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'novinki-anime'})
+        self.create_line(title='[B][COLOR=lime][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'completed'})
+        self.create_line(title='[B][COLOR=blue][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-    
+#========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
@@ -573,60 +518,78 @@ class Animedia:
                 return False
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_common_part(self, url=None):
-        self.progress.create("Animedia", "Инициализация")
+        self.progress.create('Animedia', u'Инициализация')
 
-        url = self.create_url()
-        html = self.network.get_html(target_name=url)
+        html = self.network.get_html2(target_name=self.create_url())
         
+        # try: html = html.decode(encoding='utf-8', errors='replace')
+        # except: pass
+
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
         if '<div class="ads-list__item">' in html:
-            data_array = html[html.find('<div class="ads-list__item">')+28:html.find('<!-- Pagination End-->')]            
+            data_array = html[html.find('<div class="ads-list__item">')+28:html.find('<div class="about-page">')]
             data_array = data_array.split('<div class="ads-list__item">')
 
             i = 0
 
             for data in data_array:
+                try: data = data.decode(encoding='utf-8', errors='replace')
+                except: pass
+
+                data = unescape(data)
+
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
 
-                series = data[data.find('font">')+6:data.find('</div></div></div>')]
+                # anime_id = data[data.find('col-l"><a href="/anime/')+23:data.find(u'" title="Подробнее')]
+                # anime_id = quote(anime_id.encode('utf-8'))
 
-                try: series = series.encode('cp1251').decode('utf-8')
-                except: pass
+                anime_id = data[data.rfind('col-l"><a href="')+16:data.find(u'" title="Подробнее')]
+                anime_id = anime_id[anime_id.rfind('/')+1:]
+                anime_id = quote(anime_id.encode('utf-8'))
 
-                anime_id = data[data.find('primary"><a href="')+47:data.find('" title=')]
+                title_data = data[data.find(u'смотреть аниме онлайн')+21:data.find('" class="btn btn__black')]
 
-                if '></div></div>' in anime_id: continue
+                # if '></div></div>' in anime_id:
+                #     continue
 
                 if self.progress.iscanceled():
                     break
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
                 if not self.database.anime_in_db(anime_id):
-                    inf = self.create_info(anime_id)
+                    #inf = self.create_info(anime_id)
+                    inf = self.create_info(anime_id, title_data)
 
                     if type(inf) == int:
                         self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=lime]ID: {} ][/COLOR][/B]'.format(inf, anime_id), params={})
                         continue
 
-                label = self.create_title(anime_id, series)
-                self.create_line(title=label,anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+                label = self.create_title(anime_id)
+                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id, 'title_data':title_data.encode('utf-8')})
+                #self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
         else:
             self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
         
         self.progress.close()
 
-        if '">Вперёд</a></li>' in html:
-            self.create_line(title='[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 16)})
+        if 'Загрузить ещё' in html:
+            self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+
+        # if u'">Вперёд</a></li>' in html:
+        #     self.create_line(title='[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 16)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_catalog_part(self):
+        from info import animedia_form, animedia_genre, animedia_voice, animedia_studio, animedia_year, animedia_status, animedia_sort
+
         if self.params['param'] == '':
             self.create_line(title='Форма выпуска: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_form')), params={'mode': 'catalog_part', 'param': 'form'})
             self.create_line(title='Жанр аниме: [COLOR=yellow]{}[/COLOR]'.format(self.addon.getSetting('animedia_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
@@ -639,35 +602,35 @@ class Animedia:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         
         if self.params['param'] == 'form':
-            result = self.dialog.select('Выберите Тип:', tuple(self.animedia_form.keys()))
-            self.addon.setSetting(id='animedia_form', value=tuple(self.animedia_form.keys())[result])
+            result = self.dialog.select('Выберите Тип:', tuple(animedia_form.keys()))
+            self.addon.setSetting(id='animedia_form', value=tuple(animedia_form.keys())[result])
         
         if self.params['param'] == 'genre':
-            result = self.dialog.select('Выберите Жанр:', tuple(self.animedia_genre.keys()))
-            self.addon.setSetting(id='animedia_genre', value=tuple(self.animedia_genre.keys())[result])
+            result = self.dialog.select('Выберите Жанр:', tuple(animedia_genre.keys()))
+            self.addon.setSetting(id='animedia_genre', value=tuple(animedia_genre.keys())[result])
 
         if self.params['param'] == 'voice':
-            result = self.dialog.select('Выберите Войсера:', self.animedia_voice)
-            self.addon.setSetting(id='animedia_voice', value=self.animedia_voice[result])
+            result = self.dialog.select('Выберите Войсера:', animedia_voice)
+            self.addon.setSetting(id='animedia_voice', value=animedia_voice[result])
 
         if self.params['param'] == 'studio':
-            result = self.dialog.select('Выберите Студию:', self.animedia_studio)
-            self.addon.setSetting(id='animedia_studio', value=self.animedia_studio[result])
+            result = self.dialog.select('Выберите Студию:', animedia_studio)
+            self.addon.setSetting(id='animedia_studio', value=animedia_studio[result])
 
         if self.params['param'] == 'year':
-            result = self.dialog.select('Выберите Год:', tuple(self.animedia_year.keys()))
-            self.addon.setSetting(id='animedia_year', value=tuple(self.animedia_year.keys())[result])
+            result = self.dialog.select('Выберите Год:', tuple(animedia_year.keys()))
+            self.addon.setSetting(id='animedia_year', value=tuple(animedia_year.keys())[result])
         
         if self.params['param'] == 'status':
-            result = self.dialog.select('Выберите статус:', tuple(self.animedia_status.keys()))
-            self.addon.setSetting(id='animedia_status', value=tuple(self.animedia_status.keys())[result])
+            result = self.dialog.select('Выберите статус:', tuple(animedia_status.keys()))
+            self.addon.setSetting(id='animedia_status', value=tuple(animedia_status.keys())[result])
         
         if self.params['param'] == 'sort':
-            result = self.dialog.select('Сортировать по:', tuple(self.animedia_sort.keys()))
-            self.addon.setSetting(id='animedia_sort', value=tuple(self.animedia_sort.keys())[result])
-
+            result = self.dialog.select('Сортировать по:', tuple(animedia_sort.keys()))
+            self.addon.setSetting(id='animedia_sort', value=tuple(animedia_sort.keys())[result])
+#========================#========================#========================#
     def exec_select_part(self):
-        html = self.network.get_html(target_name='{}anime/{}'.format(self.site_url, self.params['id']))
+        html = self.network.get_html2(target_name='{}anime/{}'.format(self.site_url, self.params['id']))
 
         ex_info = dict.fromkeys(['series', 'quality', 'size', 'container', 'video', 'audio', 'translate', 'timing'], '')
 
@@ -749,7 +712,7 @@ class Animedia:
                 self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_torrent_part(self):
         url = self.params['torrent_url']
 
@@ -778,7 +741,7 @@ class Animedia:
             self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
-
+#========================#========================#========================#
     def exec_play_part(self):
         url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
         index = int(self.params['index'])
