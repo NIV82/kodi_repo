@@ -143,46 +143,23 @@ class Animedia:
             url = '{}ajax/search_result_search_page_2/P0?limit=25&keywords={}&orderby_sort=entry_date|desc'.format(
                 self.site_url, self.params['search_string']
             )
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&orderby_sort=entry_date|desc - all
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:ongoing=0&orderby_sort=entry_date|desc - ongoing
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:ongoing=1&orderby_sort=entry_date|desc - complete
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:relize_plan=1&orderby_sort=entry_date|desc - anonnce
 
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=ТВ&orderby_sort=entry_date|desc - TV
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=Полнометражный&orderby_sort=entry_date|desc - Full Movie
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=Короткометражный&orderby_sort=entry_date|desc - Short Movie
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=OVA&orderby_sort=entry_date|desc
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:type=Дорама&orderby_sort=entry_date|desc
+        if 'catalog' in self.params['param']:
+            from info import animedia_form, animedia_genre, animedia_voice, animedia_studio, animedia_year, animedia_status, animedia_sort
 
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&category=98&orderby_sort=entry_date|desc - genre
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:voiced=Amails&orderby_sort=entry_date|desc - voicer
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:studies=8bit&orderby_sort=entry_date|desc - studio
-#https://m42.animedia.pro/ajax/search_result_search_page_2/P0?limit=12&search:datetime=2020&orderby_sort=entry_date|desc - year
+            genre = '&category={}'.format(animedia_genre[self.addon.getSetting('animedia_genre')]) if animedia_genre[self.addon.getSetting('animedia_genre')] else ''
+            voice = '&search:voiced={}'.format(quote(self.addon.getSetting('animedia_voice'))) if self.addon.getSetting('animedia_voice') else ''
+            studio = '&search:studies={}'.format(quote(self.addon.getSetting('animedia_studio'))) if self.addon.getSetting('animedia_studio') else ''
+            year = '&search:datetime={}'.format(animedia_year[self.addon.getSetting('animedia_year')]) if animedia_year[self.addon.getSetting('animedia_year')] else ''
+            form = '&search:type={}'.format(quote(animedia_form[self.addon.getSetting('animedia_form')])) if animedia_form[self.addon.getSetting('animedia_form')] else ''
+            status = animedia_status[self.addon.getSetting('animedia_status')] if animedia_status[self.addon.getSetting('animedia_status')] else ''
+            sort = animedia_sort[self.addon.getSetting('animedia_sort')]
 
-        xbmc.log(str(url), xbmc.LOGNOTICE)
+            url = '{}ajax/search_result_search_page_2/P{}?limit=25{}{}{}{}{}{}{}'.format(self.site_url, page, genre, voice, studio, year, form, status, sort)
+
+        #xbmc.log(str(url), xbmc.LOGNOTICE)
         
         return url
-
-    # def create_url(self):
-    #     url = '{}P{}'.format(self.site_url, int(self.params['page'])-1)
-
-    #     if self.params['param'] == 'search_part':
-    #         url = '{}ajax/search_result/P0?limit=100&keywords={}&orderby_sort=entry_date|desc'.format(self.site_url, self.params['search_string'])
-
-    #     if self.params['param'] == 'popular':
-    #         url = '{}ajax/search_result/P0?limit=100&orderby_sort=view_count_one|desc'.format(self.site_url)
-
-    #     if self.params['param'] == 'catalog':
-    #         genre = '&category={}'.format(self.animedia_genre[self.addon.getSetting('animedia_genre')]) if self.animedia_genre[self.addon.getSetting('animedia_genre')] else ''
-    #         voice = '&search:voiced={}'.format(quote(self.addon.getSetting('animedia_voice'))) if self.addon.getSetting('animedia_voice') else ''
-    #         studio = '&search:studies={}'.format(quote(self.addon.getSetting('animedia_studio'))) if self.addon.getSetting('animedia_studio') else ''
-    #         sort = '&orderby_sort={}'.format(self.animedia_sort[self.addon.getSetting('animedia_sort')]) if self.animedia_sort[self.addon.getSetting('animedia_sort')] else ''
-    #         year = '&search:datetime={}'.format(self.animedia_year[self.addon.getSetting('animedia_year')]) if self.animedia_year[self.addon.getSetting('animedia_year')] else ''
-    #         form = '&search:type={}'.format(quote(self.animedia_form[self.addon.getSetting('animedia_form')])) if self.animedia_form[self.addon.getSetting('animedia_form')] else ''
-    #         ongoing = '&search:ongoing={}'.format(self.animedia_status[self.addon.getSetting('animedia_status')]) if self.animedia_status[self.addon.getSetting('animedia_status')] else ''
-
-    #         url = '{}ajax/search_result/P0?limit=100{}{}{}{}{}{}{}'.format(self.site_url, genre, voice, studio, year, form, ongoing, sort)
-    #     return url
 #========================#========================#========================#
     def create_title(self, anime_id, series=None):
         title = self.database.get_title(anime_id)
@@ -341,6 +318,9 @@ class Animedia:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def create_title_info(self, data):
+        try: data = data.decode('utf-8')
+        except: pass
+
         data = data.split('/')
         title_ru = data[0].strip()
         title_en = data[1].strip()
@@ -352,9 +332,8 @@ class Animedia:
 
         if title_data:
             info.update(self.create_title_info(title_data))
-        # else:
-        #     title_data = 'XXX'
-        #     info.update(self.create_title_info(title_data))
+        else:
+            info.update(self.create_title_info(self.params['title_data']))
 
         url = '{}anime/{}'.format(self.site_url, anime_id)
         html = self.network.get_html2(target_name=url)
