@@ -70,8 +70,6 @@ class Animedia:
                 else:
                     self.addon.setSetting("animedia_auth", str(self.network.auth_status).lower())
 #========================#========================#========================#
-        # if not os.path.isfile(os.path.join(self.database_dir, 'animedia.db')):
-        #     self.exec_update_database_part()
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
 #========================#========================#========================#
@@ -229,6 +227,10 @@ class Animedia:
 # 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
 #kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
+            
+            # if metadata:
+            #     description += u'\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
+            #         metadata['series'], metadata['quality'], metadata['size'], metadata['container'], metadata['video'], metadata['audio'], metadata['translate'], metadata['timing'])
 
             description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
             description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
@@ -237,10 +239,6 @@ class Animedia:
             description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
             description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
             description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
-
-            # if ex_info:
-            #     info['plot'] += '\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
-            #         ex_info['series'], ex_info['quality'], ex_info['size'], ex_info['container'], ex_info['video'], ex_info['audio'], ex_info['translate'], ex_info['timing'])
 
             duration = anime_info[6] * 60 if anime_info[6] else 0
 
@@ -609,117 +607,146 @@ class Animedia:
             self.addon.setSetting(id='animedia_sort', value=tuple(animedia_sort.keys())[result])
 #========================#========================#========================#
     def exec_select_part(self):
-        html = self.network.get_html2(target_name='{}anime/{}'.format(self.site_url, self.params['id']))
-
-        ex_info = dict.fromkeys(['series', 'quality', 'size', 'container', 'video', 'audio', 'translate', 'timing'], '')
-
-        tab = []
-
-        if html.find('<div class="media__tabs" id="down_load">') > -1:
-            tabs_nav = html[html.find('data-toggle="tab">')+18:html.find('<!-- tabs navigation end-->')]
-            tabs_nav = tabs_nav.split('data-toggle="tab">')
-
-            for tabs in tabs_nav:
-                nav = tabs[:tabs.find('</a></li>')]
-                tab.append(nav)
-
-            tabs_content = html[html.find('<div class="tracker_info">')+26:html.find('<!-- tabs content end-->')]
-            tabs_content = tabs_content.split('<div class="tracker_info">')
-            
-            for x, content in enumerate(tabs_content):
-                title = tab[x].strip()
-
-                seed = content[content.find('green_text_top">')+16:content.find('</div></div></div>')]
-                peer = content[content.find('red_text_top">')+14:content.find('</div></div></div></div>')]
-
-                torrent_url = content[content.find('<a href="')+9:content.find('" class')]
-                #magnet_url = content[content.rfind('<a href="')+9:content.rfind('" class')]
-
-                content = content.splitlines()
-
-                for line in content:
-                    if '<h3 class=' in line:
-                        if title in line:
-                            ex_info['series'] = ''
-                        else:
-                            series = line[line.find('">')+2:line.find('</h3>')].replace('из XXX','')
-                            series = series.replace('Серии','').replace('Серия','').strip()
-                            ex_info['series'] = ' - [ {} ]'.format(series)
-
-                        ex_info['quality'] = line[line.find('</h3>')+5:]
-                        ex_info['quality'] = ex_info['quality'].replace('Качество','').strip()
-                    if '>Размер:' in line:
-                        ex_info['size'] = tag_list(line[line.find('<span>'):])
-                    if 'Контейнер:' in line:
-                        ex_info['container'] = line[line.find('<span>')+6:line.find('</span>')]
-                    if 'Видео:' in line:
-                        ex_info['video'] = line[line.find('<span>')+6:line.find('</span>')]
-                    if 'Аудио:' in line:                        
-                        ex_info['audio'] = line[line.find('<span>')+6:line.find('</span>')].strip()
-                    if 'Перевод:' in line:                        
-                        ex_info['translate'] = line[line.find('<span>')+6:line.find('</span>')]
-                    if 'Тайминг и сведение звука:' in line:
-                        ex_info['timing'] = line[line.find('<span>')+6:line.find('</span>')]
-                    
-                label = '{}{} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сиды: [COLOR=lime]{}[/COLOR] , Пиры: [COLOR=red]{}[/COLOR]'.format(
-                    title, ex_info['series'], ex_info['size'], ex_info['quality'], seed, peer)                    
-                
-                self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'], ex_info=ex_info)
-        else:
-            tabs_content = html[html.find('<li class="tracker_info_pop_left">')+34:html.find('<!-- Media series tabs End-->')]
-            tabs_content = tabs_content.split('<li class="tracker_info_pop_left">')
-
-            for content in tabs_content:
-                content = clean_list(content)
-                title = content[content.find('left_top">')+10:content.find('</span>')]
-                title = title.replace('Серии ','').replace('Серия ','').strip()
-                
-                quality = content[content.find(')')+1:content.find('</span><p>')]
-                quality = quality.replace('р', 'p').strip()
-
-                torr_inf = content[content.find('left_op">')+9:content.rfind(';</span></span></p>')]
-                torr_inf = tag_list(torr_inf)
-                torr_inf = torr_inf.replace('Размер: ','').replace('Сидов: ','').replace('Пиров: ','')
-                torr_inf = torr_inf.split(';')
-
-                # magnet_url = content[content.find('href="')+6:content.find('" class=')]
-                torrent_url = content[content.rfind('href="')+6:content.rfind('" class=')]
-
-                label = 'Серии: {} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
-                    title, torr_inf[0], quality, torr_inf[2], torr_inf[3])
-
-                self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
-
+        self.create_line(title=u'[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
+        if self.database.get_tid(self.params['id']):
+            self.create_line(title=u'[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id']})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
+    def exec_online_part(self):
+        html = self.network.get_html2(
+            target_name='{}anime/{}'.format(self.site_url,self.params['id']))
+        
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
+
+        html = unescape(html)
+        
+        return
+#========================#========================#========================#
     def exec_torrent_part(self):
-        url = self.params['torrent_url']
+        if not self.params['param']:
+            html = self.network.get_html2(
+                target_name='https://tt.animedia.tv/anime/{}'.format(self.database.get_tid(self.params['id']))
+                )
 
-        file_name = '{}_{}'.format(self.params['portal'], self.params['id'])
-        full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
-        torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
-        
-        import bencode
-        
-        with open(torrent_file, 'rb') as read_file:
-            torrent_data = read_file.read()
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
 
-        torrent = bencode.bdecode(torrent_data)
+            html = unescape(html)
 
-        info = torrent['info']
-        series = {}
-        size = {}
-        
-        if 'files' in info:
-            for i, x in enumerate(info['files']):
-                size[i] = x['length']
-                series[i] = x['path'][-1]
-            for i in sorted(series, key=series.get):
-                self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False, size=size[i])
-        else:
-            self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
-        
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+            metadata = dict.fromkeys(['series', 'quality', 'size', 'container', 'video', 'audio', 'translate', 'timing'], '')
+
+            tab = []
+
+            if '<div class="media__tabs" id="down_load">' in html:
+                tabs_nav = html[html.find('data-toggle="tab">')+18:html.find('<!-- tabs navigation end-->')]
+                tabs_nav = tabs_nav.split('data-toggle="tab">')
+
+                for tabs in tabs_nav:
+                    nav = tabs[:tabs.find('</a></li>')]
+                    tab.append(nav)
+
+                tabs_content = html[html.find('<div class="tracker_info">')+26:html.find('<!-- tabs content end-->')]
+                tabs_content = tabs_content.split('<div class="tracker_info">')
+                
+                for x, content in enumerate(tabs_content):
+                    title = tab[x].strip()
+
+                    seed = content[content.find('green_text_top">')+16:content.find('</div></div></div>')]
+                    peer = content[content.find('red_text_top">')+14:content.find('</div></div></div></div>')]
+
+                    torrent_url = content[content.find('<a href="')+9:content.find('" class')]
+                    #magnet_url = content[content.rfind('<a href="')+9:content.rfind('" class')]
+
+                    content = content.splitlines()
+
+                    for line in content:
+                        if '<h3 class=' in line:
+                            if title in line:
+                                metadata['series'] = ''
+                            else:
+                                series = line[line.find('">')+2:line.find('</h3>')].replace(u'из XXX','')
+                                series = series.replace(u'Серии','').replace(u'Серия','').strip()
+                                metadata['series'] = u' - [ {} ]'.format(series)
+
+                            metadata['quality'] = line[line.find('</h3>')+5:]
+                            metadata['quality'] = metadata['quality'].replace(u'Качество','').strip()
+                        if u'>Размер:' in line:
+                            metadata['size'] = tag_list(line[line.find('<span>'):])
+                        if u'Контейнер:' in line:
+                            metadata['container'] = line[line.find('<span>')+6:line.find('</span>')]
+                        if u'Видео:' in line:
+                            metadata['video'] = line[line.find('<span>')+6:line.find('</span>')]
+                        if u'Аудио:' in line:                        
+                            metadata['audio'] = line[line.find('<span>')+6:line.find('</span>')].strip()
+                        if u'Перевод:' in line:                        
+                            metadata['translate'] = line[line.find('<span>')+6:line.find('</span>')]
+                        if u'Тайминг и сведение звука:' in line:
+                            metadata['timing'] = line[line.find('<span>')+6:line.find('</span>')]
+                        
+                    label = u'{}{} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сиды: [COLOR=lime]{}[/COLOR] , Пиры: [COLOR=red]{}[/COLOR]'.format(
+                        title, metadata['series'], metadata['size'], metadata['quality'], seed, peer)                    
+                    
+                    #self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'], metadata=metadata)
+                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'], metadata=metadata)
+            else:
+                tabs_content = html[html.find('<li class="tracker_info_pop_left">')+34:html.find('<!-- Media series tabs End-->')]
+                tabs_content = tabs_content.split('<li class="tracker_info_pop_left">')
+
+                for content in tabs_content:
+                    content = clean_list(content)
+                    title = content[content.find('left_top">')+10:content.find('</span>')]
+                    title = title.replace(u'Серии ','').replace(u'Серия ','').strip()
+                    
+                    quality = content[content.find(')')+1:content.find('</span><p>')]
+
+                    quality = quality.replace(u'р', u'p').strip()
+
+                    torr_inf = content[content.find('left_op">')+9:content.rfind(';</span></span></p>')]
+                    torr_inf = tag_list(torr_inf)
+                    torr_inf = torr_inf.replace(u'Размер: ','').replace(u'Сидов: ','').replace(u'Пиров: ','')
+                    torr_inf = torr_inf.split(';')
+
+                    # magnet_url = content[content.find('href="')+6:content.find('" class=')]
+                    torrent_url = content[content.rfind('href="')+6:content.rfind('" class=')]
+
+                    label = u'Серии: {} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
+                        title, torr_inf[0], quality, torr_inf[2], torr_inf[3])
+
+                    #self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
+                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'])
+
+        if self.params['param']:
+            #url = self.params['torrent_url']
+            url = self.params['param']
+
+            file_name = '{}_{}'.format(self.params['portal'], self.params['id'])
+            full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+            torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
+            
+            import bencode
+            
+            with open(torrent_file, 'rb') as read_file:
+                torrent_data = read_file.read()
+
+            torrent = bencode.bdecode(torrent_data)
+
+            info = torrent['info']
+            series = {}
+            size = {}
+            
+            if 'files' in info:
+                for i, x in enumerate(info['files']):
+                    size[i] = x['length']
+                    series[i] = x['path'][-1]
+                for i in sorted(series, key=series.get):
+                    self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False, size=size[i])
+            else:
+                self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
+            
+            #xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_play_part(self):
         url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
