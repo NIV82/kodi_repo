@@ -613,14 +613,87 @@ class Animedia:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
-        html = self.network.get_html2(
-            target_name='{}anime/{}'.format(self.site_url,self.params['id']))
-        
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        if not self.params['param']:
+            html = self.network.get_html2(
+                target_name='{}anime/{}'.format(self.site_url,self.params['id']))
+            
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
 
-        html = unescape(html)
-        
+            html = unescape(html)
+
+            if 'data-entry_id=' in html:
+                data_entry = html[html.find('data-entry_id="')+15:html.find('<li class="media__tabs__nav__item')]
+                data_entry = data_entry[:data_entry.find('">')]
+
+                data_array = html[html.find('<a href="#tab'):html.find('<div class="media__tabs__content')]
+                data_array = data_array.strip()
+                data_array = data_array.split('<li class="media__tabs__nav__item">')
+
+                for data in data_array:
+                    tab_num = data[data.find('"#tab')+5:data.find('" role')]
+                    tab_name = data[data.find('"tab">')+6:data.find('</a></li>')]
+
+                    tab_entry = '|||{}/{}'.format(data_entry, int(tab_num)+1)
+                    #tab_entry = '{}/{}'.format(data_entry, int(tab_num)+1)
+                    
+                    self.create_line(title=tab_name, params={'mode': 'online_part', 'param': tab_entry, 'id': self.params['id']})
+            else:
+                self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
+
+        if '|||' in self.params['param']:
+            url = '{}ajax/episodes/{}/undefined'.format(self.site_url, self.params['param'].replace('|||',''))
+
+            html = self.network.get_html2(target_name=url)
+            
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
+
+            html = unescape(html)
+
+            data_array = html[html.find('list__item">')+12:html.find('<div class="clearfix">')]
+            data_array = data_array.split('<div class="media__tabs__series__list__item">')
+
+            for data in data_array:
+                data = data.strip()
+
+                series_url = data[data.find('<a href="/')+10:data.find('" title')]
+
+                # series_image = data[data.find('data-src="')+10:data.find('?w=')]
+                # series_image = series_image.replace('_min','')
+                # series_image = 'https:{}?w={}&h={}&fit=crop&q=45'.format(series_image, 153, 86)
+
+                #series_title = data[data.find('<span>')+6:data.find('</span>')]
+                series_title = data[data.find('title="')+7:data.find('"><img data-src')]
+
+                self.create_line(title=series_title, anime_id=self.params['id'], params={'mode': 'online_part', 'param': series_url, 'id': self.params['id']})
+
+        if 'anime/' in self.params['param']:
+            html = self.network.get_html2(
+                target_name='{}{}'.format(self.site_url, self.params['param']))
+            
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
+
+            html = unescape(html)
+
+            title = html[html.find('post__title">')+13:html.find('</h1>')]
+            title = title.replace(u'Смотреть онлайн','').strip()
+
+            video_url = html[html.find('iframe" content="')+17:html.find('<meta property="ya:ovs:allow_embed')]
+            video_url = video_url[:video_url.find('" />')]
+
+            if video_url:
+                html = self.network.get_html2(target_name=video_url)
+
+                online_url = html[html.find('file: "')+7:html.find('",poster')]
+                if not 'https:' in online_url:
+                    online_url = online_url.replace('//','https://')
+
+                #xbmc.log(str(online_url), xbmc.LOGNOTICE)                
+                self.create_line(title=title, params={}, anime_id=self.params['id'], online=online_url, folder=False)
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
     def exec_torrent_part(self):
