@@ -13,7 +13,8 @@ except:
     from html import unescape
 
 import info
-from utility import tag_list, unescape, clean_list
+#from utility import tag_list, unescape, clean_list
+from utility import tag_list, clean_list
 
 class Anistar:
     #def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
@@ -37,7 +38,7 @@ class Anistar:
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
         self.auth_mode = bool(self.addon.getSetting('anistar_auth_mode') == '1')
-#================================================
+#========================#========================#========================#
         try: anistar_session = float(self.addon.getSetting('anistar_session'))
         except: anistar_session = 0
 
@@ -46,7 +47,7 @@ class Anistar:
             try: os.remove(os.path.join(self.cookie_dir, 'anistar.sid'))
             except: pass
             self.addon.setSetting('anistar_auth', 'false')
-#================================================
+#========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
             auth_usage=self.auth_mode,
@@ -61,33 +62,36 @@ class Anistar:
         self.network.auth_url = self.site_url
         self.network.sid_file = os.path.join(self.cookie_dir, 'anistar.sid')
         del WebTools
-#================================================
+#========================#========================#========================#
         if self.auth_mode:
             if not self.addon.getSetting("anistar_username") or not self.addon.getSetting("anistar_password"):
                 self.params['mode'] = 'addon_setting'
-                self.dialog.ok('Авторизация','Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                self.dialog.ok(u'Авторизация',u'Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    self.dialog.ok('Авторизация','Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                    self.dialog.ok(u'Авторизация',u'Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
                     return
                 else:
                     self.addon.setSetting("anistar_auth", str(self.network.auth_status).lower())
-#================================================
+#========================#========================#========================#
         # if not os.path.isfile(os.path.join(self.database_dir, 'anistar.db')):
         #     self.exec_update_database_part()
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
-#================================================
-        from database import Anistar_DB
-        self.database = Anistar_DB(os.path.join(self.database_dir, 'anistar.db'))
-        del Anistar_DB
-#================================================
+#========================#========================#========================#
+        # from database import Anistar_DB
+        # self.database = Anistar_DB(os.path.join(self.database_dir, 'anistar.db'))
+        # del Anistar_DB
+        from database import DataBase
+        self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
+        del DataBase
+#========================#========================#========================#
         self.anistar_categories=[('thriller/','Боевик'),('vampires/','Вампиры'),('ani-garem/','Гарем'),('detective/','Детектив'),('drama/','Драма'),('history/','История'),('cyberpunk/','Киберпанк'),('comedy/','Комедия'),('maho-shoujo/','Махо-седзе'),('fur/','Меха'),('parodies/','Пародии'),('senen/','Сёнен'),('sports/','Спорт'),('mysticism/','Мистика'),('music/','Музыкальное'),('everyday-life/','Повседневность'),('adventures/','Приключения'),('romance/','Романтика'),('shoujo/','Сёдзе'),('senen-ay/','Сёнен-ай'),('horror/','Триллер'),('horor/','Ужасы'),('fantasy/','Фантастика'),('fentezi/','Фэнтези'),('school/','Школа'),('echchi-erotic/','Эччи'),('action/','Экшен'),('metty/','Этти'),('seinen/','Сейнен'),('demons/','Демоны'),('magic/','Магия'),('super-power/','Супер сила'),('military/','Военное'),('kids/','Детское'),('supernatural/','Сверхъестественное'),('psychological/','Психологическое'),('historical/','Исторический'),('samurai/','Самураи'),('martial-arts/','Боевые искусства'),('police/','Полиция'),('space/','Космос'),('game/','Игры'),('josei/','Дзёсэй'),('shoujo-ai/','Сёдзе Ай')]
         self.anistar_ignor_list = ['7013','6930','6917','6974','6974','4106','1704','1229','1207','1939','1954','2282','4263','4284','4288','4352','4362','4422','4931','5129','5130','5154','5155','6917','6928','6930','6932','6936','6968','6994','7013','7055','3999','4270','4282','4296','4300','4314','4348','4349','4364','4365','4366','4367','4368','4369','4374','4377','4480','4493','4556','6036','3218','3943','3974','4000','4091']
-#================================================
+#========================#========================#========================#
     def create_proxy_data(self):
         #if self.addon.getSetting('anidub_unblock') == '0':
         if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
@@ -125,7 +129,7 @@ class Anistar:
                 proxy_data = {'https': proxy}
 
         return proxy_data
-#================================================
+#========================#========================#========================#
     def create_site_url(self):
         site_url = self.addon.getSetting('anistar_mirror_0')
         current_mirror = 'anistar_mirror_{}'.format(self.addon.getSetting('anistar_mirror_mode'))        
@@ -139,13 +143,13 @@ class Anistar:
         else:
             site_url = '{}'.format(self.addon.getSetting(current_mirror))
         return site_url
-
+#========================#========================#========================#
     def create_title_info(self, title):
         info = dict.fromkeys(['title_ru', 'title_en'], '')
 
-        alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
+        alphabet=set(u'абвгдеёжзийклмнопрстуфхцчшщъыьэюя')
 
-        title = unescape(title)
+        #title = unescape(title)
         title = tag_list(title)
         title = title.replace('|', '/')
         title = title.replace('\\', '/')
@@ -170,21 +174,24 @@ class Anistar:
         except: pass
         
         return info
-
+#========================#========================#========================#
     def create_title(self, title, series):
         if series:
-            series = ' - [COLOR=gold][ {} ][/COLOR]'.format(series)
+            series = u' - [COLOR=gold][ {} ][/COLOR]'.format(series)
         else:
             series = ''
         
-        if self.addon.getSetting('anistar_titles') == '0':
-            label = '{}{}'.format(title[0], series)
-        if self.addon.getSetting('anistar_titles') == '1':
-            label = '{}{}'.format(title[1], series)
-        if self.addon.getSetting('anistar_titles') == '2':
-            label = '{} / {}{}'.format(title[0], title[1], series)
+        #if self.addon.getSetting('anistar_titles') == '0':
+        if '0' in self.addon.getSetting('anistar_titles'):
+            label = u'{}{}'.format(title[0], series)
+        #if self.addon.getSetting('anistar_titles') == '1':
+        if '1' in self.addon.getSetting('anistar_titles'):
+            label = u'{}{}'.format(title[1], series)
+        #if self.addon.getSetting('anistar_titles') == '2':
+        if '2' in self.addon.getSetting('anistar_titles'):
+            label = u'{} / {}{}'.format(title[0], title[1], series)
         return label
-
+#========================#========================#========================#
     def create_image(self, anime_id):
         url = '{}uploads/posters/{}/original.jpg'.format(self.site_url, anime_id)
 
@@ -199,7 +206,7 @@ class Anistar:
             else:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
-
+#========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
         
@@ -222,69 +229,168 @@ class Anistar:
         context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
 
         return context_menu
-
-    def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
+#========================#========================#========================#
+    def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
         li = xbmcgui.ListItem(title)
 
         if anime_id:
-            cover = self.create_image(anime_id)
-            art = {'icon': cover, 'thumb': cover, 'poster': cover}
-            li.setArt(art)
-
+            if cover:
+                pass
+            else:
+                cover = self.create_image(anime_id)
+            li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
+            # 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
+            #kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
-            info = {'title': title, 'year': anime_info[0], 'genre': anime_info[1], 'director': anime_info[2], 'writer': anime_info[3], 'plot': anime_info[4]}
+            
+            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
+            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
+            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
+            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
+            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
+            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
+            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
 
-            if size: info['size'] = size
+            info = {
+                'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
+                'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
+                'year':anime_info[3],#	integer (2009)
+                'episode':anime_info[2],#	integer (4)
+                #'season':'',#	integer (1)
+                #'sortepisode':'',#	integer (4)
+                #'sortseason':'',#	integer (1)
+                #'episodeguide':'',#	string (Episode guide)
+                #'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
+                #'top250':'',#	integer (192)
+                #'setid':'',#	integer (14)
+                #'tracknumber':'',#	integer (3)
+                #'rating':'',#	float (6.4) - range is 0..10
+                #'userrating':'',#	integer (9) - range is 1..10 (0 to reset)
+                #'watched':'',#	deprecated - use playcount instead
+                #'playcount':'',#	integer (2) - number of times this item has been played
+                #'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
+                #'cast':'',#	list (["Michal C. Hall","Jennifer Carpenter"]) - if provided a list of tuples cast will be interpreted as castandrole
+                #'castandrole':'',#	list of tuples ([("Michael C. Hall","Dexter"),("Jennifer Carpenter","Debra")])
+                'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
+                'mpaa':anime_info[5],#	string (PG-13)
+                'plot':description,#	string (Long Description)
+                #'plotoutline':'',#	string (Short Description)
+                'title':title,#	string (Big Fan)
+                #'originaltitle':'',#	string (Big Fan)
+                #'sorttitle':'',#	string (Big Fan)
+                'duration':anime_info[6],#	integer (245) - duration in seconds
+                'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
+                #'tagline':'',#	string (An awesome movie) - short description of movie
+                'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
+                'tvshowtitle':title,#	string (Heroes)
+                'premiered':anime_info[3],#	string (2005-03-04)
+                'status':anime_info[1],#	string (Continuing) - status of a TVshow
+                #'set':'',#	string (Batman Collection) - name of the collection
+                #'setoverview':'',#	string (All Batman movies) - overview of the collection
+                #'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
+                #'imdbnumber':'',#	string (tt0110293) - IMDb code
+                #'code':'',#	string (101) - Production code
+                'aired':anime_info[3],#	string (2008-12-07)
+                #'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
+                #'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'album':'',#	string (The Joshua Tree)
+                #'artist':'',#	list (['U2'])
+                #'votes':'',#	string (12345 votes)
+                #'path':'',#	string (/home/user/movie.avi)
+                #'trailer':'',#	string (/home/user/trailer.avi)
+                #'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
+                #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
+                #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
+            }
+
+            if size:
+                info['size'] = size
 
             li.setInfo(type='video', infoLabels=info)
 
         li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
-                li.setProperty('isPlayable', 'true')
+            li.setProperty('isPlayable', 'true')
 
         params['portal'] = 'anistar'
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
-        if online: url = unquote(online)
+        if online: url = online
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 
-    def create_info(self, anime_id, data, schedule=False):
+    # def create_line(self, title=None, params=None, anime_id=None, size=None, folder=True, online=None): 
+    #     li = xbmcgui.ListItem(title)
+
+    #     if anime_id:
+    #         cover = self.create_image(anime_id)
+    #         art = {'icon': cover, 'thumb': cover, 'poster': cover}
+    #         li.setArt(art)
+
+    #         anime_info = self.database.get_anime(anime_id)
+    #         info = {'title': title, 'year': anime_info[0], 'genre': anime_info[1], 'director': anime_info[2], 'writer': anime_info[3], 'plot': anime_info[4]}
+
+    #         if size: info['size'] = size
+
+    #         li.setInfo(type='video', infoLabels=info)
+
+    #     li.addContextMenuItems(self.create_context(anime_id))
+
+    #     if folder==False:
+    #             li.setProperty('isPlayable', 'true')
+
+    #     params['portal'] = 'anistar'
+    #     url = '{}?{}'.format(sys.argv[0], urlencode(params))
+
+    #     if online: url = unquote(online)
+
+    #     xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+#========================#========================#========================#
+    def create_info(self, anime_id, data, schedule=False, update=False):
         info = dict.fromkeys(['title_ru', 'title_en', 'year', 'genre', 'director', 'author', 'plot'], '')
 
         if schedule:
             url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
-            data = self.network.get_html(target_name=url)
+            data = self.network.get_html2(target_name=url)
+
+            try: data = data.decode(encoding='utf-8', errors='replace')
+            except: pass
+
+            data = unescape(data)
+
             title_data = data[data.find('<h1'):data.find('</h1>')]
         else:
             title_data = data[data.find('>')+1:data.find('</a>')]
         
         info.update(self.create_title_info(title_data))
 
+        #xbmc.log(str(type(data)), xbmc.LOGNOTICE)
         genre = data[data.find('<p class="tags">')+16:data.find('</a></p>')]
-        genre = genre.replace('Новинки(онгоинги)', '').replace('Аниме', '')
-        genre = genre.replace('Категория:', '').replace('Хентай', '')
-        genre = genre.replace('Дорамы', '').replace('></a>,','>')
+        genre = genre.replace(u'Новинки(онгоинги)', '').replace(u'Аниме', '')
+        genre = genre.replace(u'Категория:', '').replace(u'Хентай', '')
+        genre = genre.replace(u'Дорамы', '').replace('></a>,','>')
         info['genre'] = tag_list(genre)
 
-        if 'Новости сайта' in info['genre']:
-            if '<li><b>Жанр: </b>' in data: pass
-            else: return 999
+        if u'Новости сайта' in info['genre']:
+            if u'<li><b>Жанр: </b>' in data:
+                pass
+            else:
+                return 999
 
         data_array = data[data.find('news_text">')+11:data.find('<div class="descripts"')]
         data_array = data_array.splitlines()
 
         for line in data_array:
-            if 'Год выпуска:' in line:
+            if u'Год выпуска:' in line:
                 for year in range(1950, 2030, 1):
                     if str(year) in line:
                         info['year'] = year
-            if 'Режиссёр:' in line:
-                line = line.replace('Режиссёр:','')
+            if u'Режиссёр:' in line:
+                line = line.replace(u'Режиссёр:','')
                 info['director'] = tag_list(line)
-            if 'Автор оригинала:' in line:
-                line = line.replace('Автор оригинала:','')
+            if u'Автор оригинала:' in line:
+                line = line.replace(u'Автор оригинала:','')
                 info['author'] = tag_list(line)
 
         if schedule:
@@ -296,7 +402,7 @@ class Anistar:
             plot = plot[:plot.find('<p class="reason">')]
 
         plot = clean_list(plot)
-        plot = unescape(plot)
+        #plot = unescape(plot)
 
         if '<div class="title_spoiler">' in plot:
             spoiler = plot[plot.find('<div class="title_spoiler">'):plot.find('<!--spoiler_text_end-->')]
@@ -306,23 +412,37 @@ class Anistar:
 
             plot = plot[:plot.find('<!--dle_spoiler')]
             plot = tag_list(plot)
-            info['plot'] = '{}\n\n{}'.format(plot, spoiler)
+            info['plot'] = u'{}\n\n{}'.format(plot, spoiler)
         else:
             info['plot'] = tag_list(plot)
         
         try:
-            self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['director'], info['author'], info['plot'])
-        except: return 101
+            self.database.add_anime(
+                anime_id=anime_id,
+                title_ru = info['title_ru'],
+                title_en = info['title_en'],                
+                aired_on = info['year'],
+                genres = info['genre'],
+                director = info['director'],
+                writer = info['author'],
+                description = info['plot'],
+                update = update
+            )
+        except:
+            return 101
+        # try:
+        #     self.database.add_anime(anime_id, info['title_ru'], info['title_en'], info['year'], info['genre'], info['director'], info['author'], info['plot'])
+        # except: return 101
         return
-
+#========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
         try: self.database.end()
         except: pass
-
+#========================#========================#========================#
     def exec_addon_setting(self):
         self.addon.openSettings()
-
+#========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
         except: pass
@@ -357,7 +477,7 @@ class Anistar:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
-
+#========================#========================#========================#
     # def exec_update_database_part(self):
     #     try: self.database.end()
     #     except: pass
@@ -399,7 +519,7 @@ class Anistar:
     #             self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
     #         #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
     #         pass
-        
+#========================#========================#========================#
     # def exec_update_database_part(self):
     #     try: self.database.end()
     #     except: pass
@@ -432,7 +552,7 @@ class Anistar:
     #     except:
     #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
     #         pass
-
+#========================#========================#========================#
     def exec_mirror_part(self):
         from network import WebTools
         self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=self.proxy_data)
@@ -442,8 +562,8 @@ class Anistar:
         site_url = self.addon.getSetting('anistar_mirror_0')
 
         try:            
-            #ht = self.net.get_html(target_name='https://anistar.org/')
-            ht = self.net.get_html(target_name=site_url)
+            #ht = self.net.get_html2(target_name='https://anistar.org/')
+            ht = self.net.get_html2(target_name=site_url)
             actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
             actual_url = tag_list(actual_url).lower()
             actual_url = 'https://{}/'.format(actual_url)
@@ -456,25 +576,25 @@ class Anistar:
             self.dialog.ok('AniStar', '[COLOR=red]Ошибка[/COLOR]: Применяем базовый адрес:\n[COLOR=blue]{}[/COLOR], Включаем разблокировку'.format(actual_url))
 
         self.addon.setSetting(current_mirror, actual_url)
-
+#========================#========================#========================#
     def exec_favorites_part(self):
         url = '{}engine/ajax/favorites.php?fav_id={}&action={}&skin=new36'.format(self.site_url, self.params['id'], self.params['node'])
         label = self.database.get_title(self.params['id'])[0]
 
         if 'plus' in self.params['node']:
             try:
-                self.network.get_html(target_name=url)
+                self.network.get_html2(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно добавлено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
 
         if 'minus' in self.params['node']:
             try:
-                self.network.get_html(target_name=url)
+                self.network.get_html2(target_name=url)
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Успешно удалено[/COLOR]'.format(label))
             except:
                 self.dialog.ok('Избранное','{}\n\n[COLOR=gold]Ошибка - 103[/COLOR]'.format(label))
-
+#========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
@@ -482,7 +602,7 @@ class Anistar:
         except:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=yellow]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
-
+#========================#========================#========================#
     def exec_information_part(self):
         from info import animeportal_data as info
             
@@ -492,24 +612,25 @@ class Anistar:
 
         self.dialog.textviewer(u'Информация', data)
         return
-
+#========================#========================#========================#
     def exec_main_part(self):
         if self.auth_mode:
-            self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
-        self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=lime][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
-        self.create_line(title='[B][COLOR=lime][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
-        self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
-        self.create_line(title='[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
-        self.create_line(title='[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})        
-        if self.addon.getSetting('anistar_adult') == '1':
+            self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
+        self.create_line(title=u'[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title=u'[B][COLOR=lime][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
+        self.create_line(title=u'[B][COLOR=lime][ Категории ][/COLOR][/B]', params={'mode': 'categories_part'})
+        self.create_line(title=u'[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'new/'})
+        self.create_line(title=u'[B][COLOR=lime][ RPG ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'rpg/'})
+        self.create_line(title=u'[B][COLOR=lime][ Скоро ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'next/'})        
+        #if self.addon.getSetting('anistar_adult') == '1':
+        if '1' in self.addon.getSetting('anistar_adult'):
             if self.addon.getSetting('anistar_adult_pass') in self.anistar_ignor_list:
-                self.create_line(title='[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
-        self.create_line(title='[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
-        self.create_line(title='[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
+                self.create_line(title=u'[B][COLOR=lime][ Хентай ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'hentai/'})
+        self.create_line(title=u'[B][COLOR=gold][ Дорамы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorams/'})
+        self.create_line(title=u'[B][COLOR=blue][ Мультфильмы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'cartoons/'})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_search_part(self):
         if not self.addon.getSetting('anistar_search'):
             self.addon.setSetting('anistar_search', '')
@@ -570,7 +691,7 @@ class Anistar:
                 self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&type=year&r=anime&xf={}'.format(i)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_categories_part(self):
         data_array = self.anistar_categories
 
@@ -579,12 +700,12 @@ class Anistar:
             self.create_line(title=label, params={'mode': 'common_part', 'param': '{}'.format(data[0])})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_schedule_part(self):
         self.progress.create("AniStar", "Инициализация")
 
         url = '{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html')
-        html = self.network.get_html(target_name=url)
+        html = self.network.get_html2(target_name=url)
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -644,9 +765,9 @@ class Anistar:
             w = w + 1
         self.progress.close()
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_common_part(self):
-        self.progress.create("AniStar", "Инициализация")
+        self.progress.create("AniStar", u"Инициализация")
         
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         post = ''
@@ -659,7 +780,11 @@ class Anistar:
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
                 self.params['page'], self.params['search_string'])
 
-        html = self.network.get_html(target_name=url, post=post)
+        #xbmc.log(str(url), xbmc.LOGNOTICE)
+        html = self.network.get_html2(target_name=url, post=post)
+
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -673,18 +798,22 @@ class Anistar:
             data_array.pop(0)
 
         if len(data_array) < 1:
-            self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
+            self.create_line(title=u'[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return   
 
         i = 0
+
         for data in data_array:
+            data = unescape(data)
+
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
 
-            if '/m/">Манга</a>' in data: continue
+            if u'/m/">Манга</a>' in data:
+                continue
 
-            if '/hentai/">Хентай</a>' in data:
+            if u'/hentai/">Хентай</a>' in data:
                 if not self.addon.getSetting('anistar_adult_pass') in self.anistar_ignor_list:
                     continue
 
@@ -700,9 +829,9 @@ class Anistar:
 
             if self.progress.iscanceled():
                 break
-            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-            if not self.database.is_anime_in_db(anime_id):
+            if not self.database.anime_in_db(anime_id):
                 inf = self.create_info(anime_id, data)
 
                 if type(inf) == int:
@@ -716,24 +845,25 @@ class Anistar:
         self.progress.close()
 
         if 'button_nav r"><a' in html:
-            if self.params['param'] == 'search_part':
-                self.create_line(title='[B][COLOR=skyblue][ Следующая страница ][/COLOR][/B]', params={
+            #if self.params['param'] == 'search_part':
+            if 'search_part' in self.params['param']:
+                self.create_line(title=u'[B][COLOR=skyblue][ Следующая страница ][/COLOR][/B]', params={
                                  'mode': 'common_part', 'search_string': self.params['search_string'], 'param': 'search_part', 'page': int(self.params['page']) + 1})
             else:
-                self.create_line(title='[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={
+                self.create_line(title=u'[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={
                     'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_select_part(self):
         self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
         self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_online_part(self):
         if not self.params['param']:
             video_url = '{}test/player2/videoas.php?id={}'.format(self.site_url, self.params['id'])
-            html = self.network.get_html(target_name=video_url)
+            html = self.network.get_html2(target_name=video_url)
 
             data_array = html[html.find('playlst=[')+9:html.find('];')]
             data_array = data_array.split('{')
@@ -768,10 +898,10 @@ class Anistar:
                 self.create_line(title=data[0], params={}, anime_id=self.params['id'], online=data[1], folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_torrent_part(self):
         if not self.params['param']:
-            html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
+            html = self.network.get_html2('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
 
             if not '<div class="title">' in html:
                 self.create_line(title='Контент не обнаружен', params={})
@@ -825,7 +955,7 @@ class Anistar:
                 self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_play_part(self):
         url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
         index = int(self.params['index'])
