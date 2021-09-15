@@ -12,8 +12,8 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-import info
-from utility import unescape
+#import info
+#from utility import unescape
 
 class Shiza:
     #def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
@@ -34,7 +34,7 @@ class Shiza:
         self.site_url = self.create_site_url()
         
         self.auth_mode = bool(self.addon.getSetting('shiza_auth_mode') == '1')
-#================================================
+#========================#========================#========================#
         try: shiza_session = float(self.addon.getSetting('shiza_session'))
         except: shiza_session = 0
 
@@ -43,7 +43,7 @@ class Shiza:
             try: os.remove(os.path.join(self.cookie_dir, 'shiza.sid'))
             except: pass
             self.addon.setSetting('shiza_auth', 'false')
-#================================================
+#========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
             auth_usage=self.auth_mode,
@@ -58,7 +58,7 @@ class Shiza:
         self.network.auth_url = ''
         self.network.sid_file = os.path.join(self.cookie_dir, 'shiza.sid')
         del WebTools
-#================================================  
+#========================#========================#========================#  
         if self.auth_mode:
             if not self.addon.getSetting("shiza_username") or not self.addon.getSetting("shiza_password"):
                 self.params['mode'] = 'addon_setting'
@@ -72,16 +72,19 @@ class Shiza:
                     return
                 else:
                     self.addon.setSetting("shiza_auth", str(self.network.auth_status).lower())
-#================================================
+#========================#========================#========================#
         # if not os.path.isfile(os.path.join(self.database_dir, 'shizaproject.db')):
         #     self.exec_update_database_part()
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
-#================================================
-        from database import ShizaProject_DB
-        self.database = ShizaProject_DB(os.path.join(self.database_dir, 'shizaproject.db'))
-        del ShizaProject_DB
-#================================================
+#========================#========================#========================#
+        # from database import ShizaProject_DB
+        # self.database = ShizaProject_DB(os.path.join(self.database_dir, 'shizaproject.db'))
+        # del ShizaProject_DB
+        from database import DataBase
+        self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
+        del DataBase
+#========================#========================#========================#
         self.shiza_season = {'':'','Весна':'SPRING','Лето':'SUMMER','Осень':'FALL','Зима':'WINTER'}
         self.shiza_categories = {'':'','Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=','Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=','Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=','Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}
         self.shiza_status = {'':'','Анонс':'ANNOUNCE','Онгоинг':'ONGOING','Выпущено':'RELEASED','Приостановлено':'SUSPENDED'}
@@ -92,7 +95,7 @@ class Shiza:
         self.shiza_direction = {'По убыванию':'DESC','По возрастанию':'ASC'}
         self.shiza_sort = {'Дате публикации':'PUBLISHED_AT','Дате обновление':'UPDATED_AT','Просмотрам':'VIEW_COUNT','Названию EN':'ORIGINAL_NAME','Названию RU':'NAME','Рейтингу':'SCORE'}
         self.shiza_tags = {'':'','Дружба':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI0','Повседневность':'VGFnOjQ1ODkxNDE0ODg1NjYyODA3','Кровь':'VGFnOjQ1ODkxNDE0ODg1NjYyODk2','Будущее':'VGFnOjQ1ODkxNDE0ODg5ODU3MDI5','bdrip':'VGFnOjQ1ODkxNDE0ODgxNDY4NDE4','webrip':'VGFnOjQ1ODkxNDE0ODg1NjYyODAw','Школа':'VGFnOjQ1ODkxNDE0ODg1NjYyNzM2','Олдскул':'VGFnOjQ1ODkxNDE0ODg1NjYyNzY1','Магия':'VGFnOjQ1ODkxNDE0ODg1NjYyNzk5','hdtvrip':'VGFnOjQ1ODkxNDE0ODg5ODU3MDM0','Демоны':'VGFnOjQ1ODkxNDE0ODg1NjYyNzQ5','Война':'VGFnOjQ1ODkxNDE0ODg1NjYyODAy','Роботы':'VGFnOjQ1ODkxNDE0ODg1NjYyNzcz','Космос':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI4','Любовь':'VGFnOjQ1ODkxNDE0ODg1NjYyODU0','Вампиры':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMy','Оружие':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMz'}
-#================================================
+#========================#========================#========================#
     def create_proxy_data(self):
         #if self.addon.getSetting('anidub_unblock') == '0':
         if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
@@ -130,7 +133,7 @@ class Shiza:
                 proxy_data = {'https': proxy}
 
         return proxy_data
-#================================================
+#========================#========================#========================#
     def create_site_url(self):
         current_mirror = 'shiza_mirror_{}'.format(self.addon.getSetting('shiza_mirror_mode'))
 
@@ -141,7 +144,7 @@ class Shiza:
 
         #site_url = '{}graphql'.format(site_url)
         return site_url
-
+#========================#========================#========================#
     def create_post(self):
         post = {
             "operationName":"fetchReleases",
@@ -249,7 +252,7 @@ class Shiza:
             post = post.replace('"query": ""','"query": "{}"'.format(unquote(self.params['search_string'])))
             #post['variables']['query'] = unquote(self.params['search_string'])
         return post
-
+#========================#========================#========================#
     def create_episodes(self, episodes):
         online_array = []
         #episodes = episodes.split('}]},{')
@@ -269,7 +272,7 @@ class Shiza:
         episodes_data = '|||'.join(online_array)
 
         return episodes_data
-
+#========================#========================#========================#
     def create_torrent(self, torrent):
         seed = torrent[torrent.find('seeders":')+9:torrent.find(',"leechers')]
         leech = torrent[torrent.find('leechers":')+10:torrent.find(',"size')]
@@ -288,7 +291,7 @@ class Shiza:
 
         torrent_data = '{}||{}||{}||{}||{}||{}||{}'.format(seed,leech,size,metadata,video_format,quality,url)
         return torrent_data
-
+#========================#========================#========================#
     def create_title(self, anime_id, episodes_count, episodes_aired):        
         title = self.database.get_title(anime_id)
 
@@ -302,7 +305,7 @@ class Shiza:
             label = '{} / {}{}'.format(title[0], title[1], series)
 
         return label
-# ===========================================================================================
+#========================#========================#========================#
     def create_image(self, anime_id, url):
         if self.addon.getSetting('shiza_covers') == '0':
             return url
@@ -315,7 +318,7 @@ class Shiza:
             else:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
-#===========================================================================================
+#========================#========================#========================#
     def create_contributors(self, data):
         info = {'VOICE_ACTING':[],'EDITING':[], 'MASTERING':[],'TIMING':[],'TRANSLATION':[], 'OTHER':[]}
 
@@ -351,8 +354,8 @@ class Shiza:
                     info['OTHER'].append(user)
             
         return info
-
-    def create_info(self, slug=''):        
+#========================#========================#========================#
+    def create_info(self, slug='', update=False):        
         post = {
             "operationName":"fetchRelease",
             "variables":{"slug":"{}".format(slug)},
@@ -373,11 +376,15 @@ class Shiza:
                 }
         
         post = str(post).replace('\'','"').replace('None','null')
-        html = self.network.get_html(self.site_url, post)
+        html = self.network.get_html2(self.site_url, post)
 
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
+
+        html = unescape(html)
         html = html.replace('\\n', '\n').replace('\\"', '"')
 
-        data = unescape(html).replace('null','""')
+        data = html.replace('null','""')
 
         anime_id = data[data.find('"slug":"')+8:data.find('","malId"')]
         shiki_id = data[data.find('"malId":"')+9:data.find('","name"')]
@@ -410,27 +417,48 @@ class Shiza:
         try:
             self.database.add_anime(
                 anime_id = anime_id,
-                shiki_id = shiki_id,
                 title_ru = title_ru,
                 title_en = title_en,
-                plot = plot,
-                countries = countries,
-                aired = aired,
+                description = plot,
+                country = countries,
+                aired_on = aired,
                 studios = studios,
                 genres = genres,
-                authors = staff,
+                writer = staff,
                 dubbing = ', '.join(contributors['VOICE_ACTING']),
                 mastering = ', '.join(contributors['MASTERING']),
                 timing = ', '.join(contributors['TIMING']),
                 other = ', '.join(contributors['OTHER']),
                 translation = ', '.join(contributors['TRANSLATION']),
-                editing = ', '.join(contributors['EDITING'])
-                )
+                editing = ', '.join(contributors['EDITING']),
+                update=update
+            )
         except:
             return 101
+        # try:
+        #     self.database.add_anime(
+        #         anime_id = anime_id,
+        #         shiki_id = shiki_id,
+        #         title_ru = title_ru,
+        #         title_en = title_en,
+        #         plot = plot,
+        #         countries = countries,
+        #         aired = aired,
+        #         studios = studios,
+        #         genres = genres,
+        #         authors = staff,
+        #         dubbing = ', '.join(contributors['VOICE_ACTING']),
+        #         mastering = ', '.join(contributors['MASTERING']),
+        #         timing = ', '.join(contributors['TIMING']),
+        #         other = ', '.join(contributors['OTHER']),
+        #         translation = ', '.join(contributors['TRANSLATION']),
+        #         editing = ', '.join(contributors['EDITING'])
+        #         )
+        # except:
+        #     return 101
+
         return
-
-
+#========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
         context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=shizaproject")'))
@@ -446,7 +474,7 @@ class Shiza:
         context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))        
 
         return context_menu
-
+#========================#========================#========================#
     def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
         li = xbmcgui.ListItem(title)
 
@@ -497,15 +525,15 @@ class Shiza:
         if online: url = online
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
-
+#========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
         try: self.database.end()
         except: pass
-
+#========================#========================#========================#
     def exec_addon_setting(self):
         self.addon.openSettings()
-
+#========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
         except: pass
@@ -615,7 +643,7 @@ class Shiza:
     #     except:
     #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
     #         pass
-
+#========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
@@ -623,7 +651,7 @@ class Shiza:
         except:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=yellow]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
-
+#========================#========================#========================#
     def exec_information_part(self):
         from info import animeportal_data as info
             
@@ -633,7 +661,7 @@ class Shiza:
 
         self.dialog.textviewer(u'Информация', data)
         return
-
+#========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
         self.create_line(title='[B][COLOR=lime][ Аниме ][/COLOR][/B]', params={'mode': 'anime_part'})
@@ -642,7 +670,7 @@ class Shiza:
         self.create_line(title='[B][COLOR=orange][ Кино и ТВ ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'Разное'})
         self.create_line(title='[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-    
+#========================#========================#========================#
     def exec_anime_part(self):
         self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part'})
         self.create_line(title='[B][COLOR=lime][ Онгоинги ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'ONGOING'})
@@ -650,7 +678,7 @@ class Shiza:
         self.create_line(title='[B][COLOR=lime][ Запланированные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'WISH'})
         self.create_line(title='[B][COLOR=lime][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'COMPLETED'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
             self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
@@ -681,12 +709,12 @@ class Shiza:
                 return False
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_common_part(self):
         self.progress.create("ShizaProject", "Инициализация")
         post = self.create_post()
 
-        html = self.network.get_html(self.site_url, post)
+        html = self.network.get_html2(self.site_url, post)
         
         data_array = html.split('{"node":{"slug":"')
         data_array.pop(0)
@@ -738,7 +766,7 @@ class Shiza:
                              'mode': self.params['mode'], 'param': self.params['param'], 'after': after})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_catalog_part(self):
         shiza_year = ['{}'.format(year) for year in range(1970,2022)]
 
@@ -808,14 +836,14 @@ class Shiza:
         if 'shiza_direction' in self.params['param']:
             result = self.dialog.select('Направление сортировки:', tuple(self.shiza_direction.keys()))
             self.addon.setSetting(id='shiza_direction', value=tuple(self.shiza_direction.keys())[result])
-
+#========================#========================#========================#
     def exec_select_part(self):
         if 'episodes' in self.params:
             self.create_line(title='[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id'], 'episodes':self.params['episodes'], 'cover': self.params['cover']})
         if 'torrent' in self.params:
             self.create_line(title='[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent':self.params['torrent'], 'cover': self.params['cover'], 'series':self.params['series']})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-    
+#========================#========================#========================#
     def exec_online_part(self):
         if not self.params['param']:
             data_array = self.params['episodes'].split('|||')
@@ -831,7 +859,7 @@ class Shiza:
                 self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': data[2], 'title':label, 'cover': cover})
 
         if self.params['param']:
-            html = self.network.get_html(target_name=self.params['param'])
+            html = self.network.get_html2(target_name=self.params['param'])
             
             cover = html[html.find('og:image" content="')+19:html.find('"/><meta property="og:description')]
             
@@ -850,7 +878,7 @@ class Shiza:
             self.create_line(title=label, cover=cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_torrent_part(self):
         if not self.params['param']:
             data = self.params['torrent'].split('||')
@@ -896,7 +924,7 @@ class Shiza:
                 self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], cover=self.params['cover'], folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
+#========================#========================#========================#
     def exec_play_part(self):
         url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
         index = int(self.params['index'])

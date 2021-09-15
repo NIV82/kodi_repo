@@ -12,7 +12,7 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-import info
+#import info
 #from utility import tag_list, unescape, clean_list
 from utility import tag_list, clean_list
 
@@ -701,8 +701,14 @@ class Anistar:
     def exec_schedule_part(self):
         self.progress.create("AniStar", "Инициализация")
 
-        url = '{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html')
-        html = self.network.get_html2(target_name=url)
+        #url = '{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html')
+        html = self.network.get_html2(
+            target_name='{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html'))
+
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
+
+        html = unescape(html)
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -711,10 +717,10 @@ class Anistar:
         week_title = []
 
         today_title = html[html.find('<span>[')+7:html.find(']</span>')]
-        today_title = '{} - {}'.format('Сегодня', today_title)
+        today_title = u'{} - {}'.format(u'Сегодня', today_title)
 
         call_list = html[html.find('<div class=\'cal-list\'>'):html.find('<div id="day1')]
-        week_list = '{}{}'.format(today_title, call_list).replace('<span>',' - ')        
+        week_list = u'{}{}'.format(today_title, call_list).replace('<span>',' - ')        
         week_list = tag_list(week_list)
         week_list = week_list.splitlines()
 
@@ -735,12 +741,12 @@ class Anistar:
             array = array.split('<div class="top-w" >')
             array.pop(0)
 
-            day_title = '{}'.format(week_title[w])
-            self.create_line(title='[B][COLOR=lime]{}[/COLOR][/B]'.format(day_title), params={})
+            day_title = u'{}'.format(week_title[w])
+            self.create_line(title=u'[B][COLOR=lime]{}[/COLOR][/B]'.format(day_title), params={})
             
             if self.progress.iscanceled():
                 break
-            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
             for data in array:
                 anime_id = data[data.find(self.site_url):data.find('.html">')].replace(self.site_url, '')
@@ -753,7 +759,7 @@ class Anistar:
                     series = data[data.find('<div class="timer_cal">'):]
                     series = tag_list(series)
 
-                if not self.database.is_anime_in_db(anime_id):
+                if not self.database.anime_in_db(anime_id):
                     inf = self.create_info(anime_id, data=None, schedule=True)
 
                 label = self.create_title(self.database.get_title(anime_id), series)
