@@ -291,12 +291,21 @@ class Shiza:
         url = torrent[torrent.find('url":"')+6:torrent.find('?filename=')]
 
         torrent_data = u'{}||{}||{}||{}||{}||{}||{}'.format(seed,leech,size,metadata,video_format,quality,url)
+
+        if not '.torrent' in torrent_data:
+            torrent_data = ''
+
         return torrent_data
 #========================#========================#========================#
     def create_title(self, anime_id, episodes_count, episodes_aired):        
         title = self.database.get_title(anime_id)
 
-        series = u' - [COLOR=gold][ Серии: 1-{} из {} ][/COLOR]'.format(episodes_aired, episodes_count)
+        episodes_aired = episodes_aired.replace('null','0')
+        episodes_count = episodes_count.replace('null','XXX')
+
+        series = u' - [COLOR=gold][ Серии: {} из {} ][/COLOR]'.format(episodes_aired, episodes_count)
+
+        #series = u' - [COLOR=gold][ Серии: 1-{} из {} ][/COLOR]'.format(episodes_aired, episodes_count)
 
         if '0' in self.addon.getSetting('shiza_titles'):
         #if self.addon.getSetting('shiza_titles') == '0':
@@ -439,28 +448,6 @@ class Shiza:
             )
         except:
             return 101
-        # try:
-        #     self.database.add_anime(
-        #         anime_id = anime_id,
-        #         shiki_id = shiki_id,
-        #         title_ru = title_ru,
-        #         title_en = title_en,
-        #         plot = plot,
-        #         countries = countries,
-        #         aired = aired,
-        #         studios = studios,
-        #         genres = genres,
-        #         authors = staff,
-        #         dubbing = ', '.join(contributors['VOICE_ACTING']),
-        #         mastering = ', '.join(contributors['MASTERING']),
-        #         timing = ', '.join(contributors['TIMING']),
-        #         other = ', '.join(contributors['OTHER']),
-        #         translation = ', '.join(contributors['TRANSLATION']),
-        #         editing = ', '.join(contributors['EDITING'])
-        #         )
-        # except:
-        #     return 101
-
         return
 #========================#========================#========================#
     def create_context(self, anime_id):
@@ -470,6 +457,10 @@ class Shiza:
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
             context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
             context_menu.append(('[B][COLOR=red]Очистить историю[/B][/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=shizaproject")'))
+
+        if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=shizaproject")'.format(anime_id)))
 
         context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
         context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=shizaproject")'))
@@ -570,57 +561,6 @@ class Shiza:
         #xbmc.log(str(online), xbmc.LOGNOTICE)
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
-
-    # def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None): 
-    #     li = xbmcgui.ListItem(title)
-
-    #     if metadata:
-    #         li.setInfo(type='video', infoLabels={'plot':metadata})
-
-    #     if anime_id:
-    #         #cover = cover
-    #         cover = self.create_image(anime_id, cover)
-
-    #         li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
-    #                    "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
-
-    #         anime_info = self.database.get_anime(anime_id)
-
-    #         info = {
-    #             'plot': anime_info[0],
-    #             'country': anime_info[1],
-    #             'year': anime_info[2],
-    #             'premiered': anime_info[2],
-    #             'studio': anime_info[3],
-    #             'genre': anime_info[4],
-    #             'writer': anime_info[5],
-    #             'director': anime_info[5],
-    #             'title': title, 
-    #             'tvshowtitle': title}
-            
-    #         info['plot'] = '{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(info['plot'], anime_info[6])
-    #         info['plot'] = '{}\n[COLOR=steelblue]Работа со звуком[/COLOR]: {}'.format(info['plot'], anime_info[7])
-    #         info['plot'] = '{}\n[COLOR=steelblue]Работа над таймингом[/COLOR]: {}'.format(info['plot'], anime_info[8])
-    #         info['plot'] = '{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(info['plot'], anime_info[10])
-    #         info['plot'] = '{}\n[COLOR=steelblue]Редактура[/COLOR]: {}'.format(info['plot'], anime_info[11])
-    #         info['plot'] = '{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(info['plot'], anime_info[9])
-
-    #         if size:
-    #             info['size'] = size
-
-    #         li.setInfo(type='video', infoLabels=info)
-
-    #     li.addContextMenuItems(self.create_context(anime_id))
-
-    #     if folder==False:
-    #             li.setProperty('isPlayable', 'true')
-
-    #     params['portal'] = 'shizaproject'
-    #     url = '{}?{}'.format(sys.argv[0], urlencode(params))
-
-    #     if online: url = online
-
-    #     xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
@@ -629,6 +569,10 @@ class Shiza:
 #========================#========================#========================#
     def exec_addon_setting(self):
         self.addon.openSettings()
+#========================#========================#========================#
+    def exec_update_anime_part(self):
+        self.create_info(slug=self.params['id'], update=True)
+        xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
@@ -664,81 +608,6 @@ class Shiza:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
                 self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
-
-    # def exec_update_database_part(self):
-    #     try: self.database.end()
-    #     except: pass
-        
-    #     #try: os.remove(os.path.join(self.database_dir, 'anidub.db'))
-    #     try: os.remove(os.path.join(self.database_dir, '{}.db'.format(self.params['portal'])))
-    #     except: pass
-
-    #     #db_file = os.path.join(self.database_dir, 'anidub.db')
-    #     db_file = os.path.join(self.database_dir, '{}.db'.format(self.params['portal']))
-    #     #db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/anidub.db'
-    #     db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/{}.db'.format(self.params['portal'])
-    #     try:                
-    #         data = urlopen(db_url)
-    #         chunk_size = 8192
-    #         bytes_read = 0
-
-    #         try: file_size = int(data.info().getheaders("Content-Length")[0])
-    #         except: file_size = int(data.getheader('Content-Length'))
-
-    #         self.progress.create('Загрузка Базы Данных')
-    #         with open(db_file, 'wb') as write_file:
-    #             while True:
-    #                 chunk = data.read(chunk_size)
-    #                 bytes_read = bytes_read + len(chunk)
-    #                 write_file.write(chunk)
-    #                 if len(chunk) < chunk_size:
-    #                     break
-    #                 percent = bytes_read * 100 / file_size
-    #                 self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-    #             self.progress.close()
-    #         #label_1 = '{} - База Данных'.format(self.params['portal'].upper())
-    #         #label_2 = 'База Данных [COLOR=lime]успешно загружена[/COLOR]'
-    #         xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
-    #             self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
-    #         #self.dialog.ok('AniDUB - База Данных','БД успешно загружена')
-    #     except:
-    #         xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
-    #             self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
-    #         #self.dialog.ok('AniDUB - База Данных','Ошибка загрузки - [COLOR=yellow]ERROR: 100[/COLOR])')
-    #         pass
-        
-    # def exec_update_database_part(self):
-    #     try: self.database.end()
-    #     except: pass
-
-    #     try: os.remove(os.path.join(self.database_dir, 'shizaproject.db'))
-    #     except: pass
-
-    #     db_file = os.path.join(self.database_dir, 'shizaproject.db')        
-    #     db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/shizaproject.db'
-    #     try:                
-    #         data = urlopen(db_url)
-    #         chunk_size = 8192
-    #         bytes_read = 0
-
-    #         try: file_size = int(data.info().getheaders("Content-Length")[0])
-    #         except: file_size = int(data.getheader('Content-Length'))
-
-    #         self.progress.create('Загрузка Базы Данных')
-    #         with open(db_file, 'wb') as write_file:
-    #             while True:
-    #                 chunk = data.read(chunk_size)
-    #                 bytes_read = bytes_read + len(chunk)
-    #                 write_file.write(chunk)
-    #                 if len(chunk) < chunk_size:
-    #                     break
-    #                 percent = bytes_read * 100 / file_size
-    #                 self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-    #             self.progress.close()
-    #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Успешно загружена[/COLOR]')
-    #     except:
-    #         self.dialog.ok('База Данных','База Данных - [COLOR=yellow]Ошибка загрузки: 100[/COLOR])')
-    #         pass
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
@@ -827,6 +696,8 @@ class Shiza:
             episodes_count = data[data.find('episodesCount":')+15:data.find(',"episodesAired')]
             episodes_aired = data[data.find('episodesAired":')+15:data.find(',"posters')]
 
+            #xbmc.log(str(episodes_aired), xbmc.LOGNOTICE)
+
             poster_data = data[data.find('posters":[{')+11:data.find('"}}],"episodes')]
             poster_preview = poster_data[poster_data.find('https://'):poster_data.find('"},"original')]
             poster_original = poster_data[poster_data.rfind('https://'):]
@@ -845,6 +716,7 @@ class Shiza:
             try: torrent = torrent.encode('utf-8')
             except: pass
 
+            #xbmc.log(str(torrent), xbmc.LOGNOTICE)
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
 
@@ -949,10 +821,13 @@ class Shiza:
             self.addon.setSetting(id='shiza_direction', value=tuple(shiza_direction.keys())[result])
 #========================#========================#========================#
     def exec_select_part(self):
-        if 'episodes' in self.params:
-            self.create_line(title=u'[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id'], 'episodes':self.params['episodes'], 'cover': self.params['cover']})
-        if 'torrent' in self.params:
-            self.create_line(title=u'[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent':self.params['torrent'], 'cover': self.params['cover'], 'series':self.params['series']})
+        if 'episodes' in self.params or 'torrent' in self.params:
+            if 'episodes' in self.params:
+                self.create_line(title=u'[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id'], 'episodes':self.params['episodes'], 'cover': self.params['cover']})
+            if 'torrent' in self.params:
+                self.create_line(title=u'[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent':self.params['torrent'], 'cover': self.params['cover'], 'series':self.params['series']})
+        else:
+            self.create_line(title=u'[B][COLOR=red][ Онлайн и Торрент ссылки отсутствуют ][/COLOR][/B]', params={'mode': self.params['mode']})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
