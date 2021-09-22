@@ -30,6 +30,7 @@ class Anilibria:
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
+
         self.auth_mode = bool(self.addon.getSetting('anilibria_auth_mode') == '1')
 #========================#========================#========================#
         try: anilibria_session = float(self.addon.getSetting('anilibria_session'))
@@ -118,7 +119,7 @@ class Anilibria:
                 self.exec_mirror_part()
                 site_url = '{}public/api/index.php'.format(self.addon.getSetting(current_mirror))
             except:
-                site_url = "{}public/api/index.php".format(site_url)
+                site_url = '{}public/api/index.php'.format(site_url)
         else:
             site_url = '{}public/api/index.php'.format(self.addon.getSetting(current_mirror))
         return site_url
@@ -171,13 +172,16 @@ class Anilibria:
         return label
 #========================#========================#========================#
     def create_image(self, anime_id):
-        site_url = self.site_url.replace('public/api/index.php','')
-        url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
+
+        if '0' in self.addon.getSetting('anilibria_mirror_mode'):
+            url = 'https://static.anilibria.tv/upload/release/350x500/{}.jpg'.format(anime_id)
+        else:
+            site_url = self.site_url.replace('public/api/index.php','')
+            url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
 
         if self.addon.getSetting('anilibria_covers') == '0':
             return url
         else:
-            #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
             local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
             if local_img in os.listdir(self.images_dir):
                 local_path = os.path.join(self.images_dir, local_img)
@@ -365,18 +369,17 @@ class Anilibria:
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_mirror_part(self):
+        self.addon.setSetting('anilibria_unblock', '1')
         from network import WebTools
         self.net = WebTools(auth_usage=False,auth_status=False,proxy_data=self.proxy_data)
         del WebTools
 
-        html = self.net.get_html2(target_name='https://darklibria.it/mirror')
+        html = self.net.get_html2(target_name='https://darklibria.it/redirect/mirror/1')
 
-        mirror = html[html.find('lg mb-1" href="')+15:html.rfind('" target="_blank" rel="nofollow">')]
-        mirror_1 = mirror[:mirror.find('" target=')]
-        mirror_2 = mirror[mirror.rfind('href="')+6:]
+        mirror = html[html.find('mt-1" href="')+12:html.find('" target="_blank" rel="')]
 
-        self.addon.setSetting('anilibria_mirror_1', mirror_1)
-        self.addon.setSetting('anilibria_mirror_2', mirror_2)
+        self.addon.setSetting('anilibria_mirror_1', '{}/'.format(mirror))
+        self.addon.setSetting('anilibria_unblock', '0')
         return
 #========================#========================#========================#
     def exec_update_database_part(self):
