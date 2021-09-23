@@ -198,10 +198,15 @@ class Animedia:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
 #========================#========================#========================#
-    def create_context(self, anime_id):
+    def create_context(self, anime_id, title_data):
         context_menu = []
 
         context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=animedia")'))
+
+        if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]',
+                                 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&title_data={}&portal=animedia")'.format(anime_id, title_data)))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
             context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
@@ -299,7 +304,7 @@ class Animedia:
 
             li.setInfo(type='video', infoLabels=info)
 
-        li.addContextMenuItems(self.create_context(anime_id))
+        li.addContextMenuItems(self.create_context(anime_id, metadata))
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -328,10 +333,20 @@ class Animedia:
     def create_info(self, anime_id, title_data=None, update=False):
         info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
 
+        xbmc.log(str(title_data), xbmc.LOGNOTICE)
+
         if title_data:
             info.update(self.create_title_info(title_data))
         else:
             info.update(self.create_title_info(self.params['title_data']))
+
+        #xbmc.log(str(info['title_ru']), xbmc.LOGNOTICE)
+        #xbmc.log(str(info['title_en']), xbmc.LOGNOTICE)
+        try:
+            info['title_ru'] = info['title_ru'].decode(encoding='utf-8', errors='replace')
+            info['title_en'] = info['title_en'].decode(encoding='utf-8', errors='replace')
+        except:
+            pass
 
         url = '{}anime/{}'.format(self.site_url, anime_id)
         html = self.network.get_html2(target_name=url)
@@ -347,7 +362,7 @@ class Animedia:
 
         html = unescape(html)
 
-        info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
+        #info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
 
         if html.find(u'Скачать торрент') > -1:
             anime_tid = html[html.find('torrents-list/')+14:html.find('" class="btn btn__big btn__g')]
@@ -402,6 +417,10 @@ class Animedia:
 #========================#========================#========================#
     def exec_addon_setting(self):
         self.addon.openSettings()
+#========================#========================#========================#
+    def exec_update_anime_part(self):
+        self.create_info(anime_id=self.params['id'], title_data=self.params['title_data'], update=True)
+        xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
@@ -549,7 +568,8 @@ class Animedia:
                         continue
 
                 label = self.create_title(anime_id)
-                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id, 'title_data':title_data.encode('utf-8')})
+                self.create_line(title=label, anime_id=anime_id, metadata=title_data.encode('utf-8'), params={'mode': 'select_part', 'id': anime_id})
+                #self.create_line(title=label, anime_id=anime_id, met,params={'mode': 'select_part', 'id': anime_id, 'title_data':title_data.encode('utf-8')})
                 #self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
         else:
             self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
