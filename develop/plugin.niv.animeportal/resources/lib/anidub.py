@@ -18,7 +18,7 @@ class Anidub:
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
-
+        
         self.params = params
         self.addon = addon
         self.icon = icon.replace('icon', self.params['portal'])
@@ -46,19 +46,10 @@ class Anidub:
             auth_usage=self.auth_mode,
             auth_status=bool(self.addon.getSetting('anidub_auth') == 'true'),
             proxy_data=self.proxy_data, portal='anidub')
-        # self.auth_post_data = {
-        #     'login_name': self.addon.getSetting('anidub_username'),
-        #     'login_password': self.addon.getSetting('anidub_password'),
-        #     'login': 'submit'}
         self.auth_post_data = 'login_name={}&login_password={}&login=submit'.format(
             self.addon.getSetting('anidub_username'),self.addon.getSetting('anidub_password')
             )
-        #self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_post_data = self.auth_post_data
-
-
-#https://online.anidub.com/
-
         self.network.auth_url = self.site_url
         self.network.sid_file = os.path.join(self.cookie_dir, 'anidub.sid' )
         del WebTools
@@ -191,7 +182,6 @@ class Anidub:
         if '0' in self.addon.getSetting('anidub_covers'):
             return url
         else:
-            #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
             local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
             if local_img in os.listdir(self.images_dir):
                 local_path = os.path.join(self.images_dir, local_img)
@@ -202,28 +192,22 @@ class Anidub:
 #========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
-        context_menu.append((u'[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=anidub")'))
+        context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=anidub")'))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
+            context_menu.append((u'[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
 
         if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
+            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
 
         if self.auth_mode:
             if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            #if 'common_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-                context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-                context_menu.append((u'[B][COLOR=cyan]Добавить [ FAV ][/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
-                context_menu.append((u'[B][COLOR=cyan]Удалить [ FAV ][/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
-        
-        context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-        context_menu.append((u'[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
-        context_menu.append((u'[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anidub")'))
-        context_menu.append((u'[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anidub")'))
-        context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+                context_menu.append((u'[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
+                context_menu.append((u'[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
+
+        context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
+        context_menu.append((u'[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anidub")'))
+        context_menu.append((u'[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anidub")'))
         return context_menu
 #========================#========================#========================#
     def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
@@ -252,51 +236,17 @@ class Anidub:
                 'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
                 'year':anime_info[3],#	integer (2009)
                 'episode':anime_info[2],#	integer (4)
-                #'season':'',#	integer (1)
-                #'sortepisode':'',#	integer (4)
-                #'sortseason':'',#	integer (1)
-                #'episodeguide':'',#	string (Episode guide)
-                #'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
-                #'top250':'',#	integer (192)
-                #'setid':'',#	integer (14)
-                #'tracknumber':'',#	integer (3)
-                #'rating':'',#	float (6.4) - range is 0..10
-                #'userrating':'',#	integer (9) - range is 1..10 (0 to reset)
-                #'watched':'',#	deprecated - use playcount instead
-                #'playcount':'',#	integer (2) - number of times this item has been played
-                #'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
-                #'cast':'',#	list (["Michal C. Hall","Jennifer Carpenter"]) - if provided a list of tuples cast will be interpreted as castandrole
-                #'castandrole':'',#	list of tuples ([("Michael C. Hall","Dexter"),("Jennifer Carpenter","Debra")])
                 'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
                 'mpaa':anime_info[5],#	string (PG-13)
                 'plot':description,#	string (Long Description)
-                #'plotoutline':'',#	string (Short Description)
                 'title':title,#	string (Big Fan)
-                #'originaltitle':'',#	string (Big Fan)
-                #'sorttitle':'',#	string (Big Fan)
                 'duration':anime_info[6],#	integer (245) - duration in seconds
                 'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-                #'tagline':'',#	string (An awesome movie) - short description of movie
                 'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
                 'tvshowtitle':title,#	string (Heroes)
                 'premiered':anime_info[3],#	string (2005-03-04)
                 'status':anime_info[1],#	string (Continuing) - status of a TVshow
-                #'set':'',#	string (Batman Collection) - name of the collection
-                #'setoverview':'',#	string (All Batman movies) - overview of the collection
-                #'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
-                #'imdbnumber':'',#	string (tt0110293) - IMDb code
-                #'code':'',#	string (101) - Production code
                 'aired':anime_info[3],#	string (2008-12-07)
-                #'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
-                #'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                #'album':'',#	string (The Joshua Tree)
-                #'artist':'',#	list (['U2'])
-                #'votes':'',#	string (12345 votes)
-                #'path':'',#	string (/home/user/movie.avi)
-                #'trailer':'',#	string (/home/user/trailer.avi)
-                #'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
-                #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
             }
 
             if size:
@@ -312,7 +262,8 @@ class Anidub:
         params['portal'] = 'anidub'
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
-        if online: url = online
+        if online:
+            url = online
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
@@ -385,7 +336,6 @@ class Anidub:
         info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'released_on', 'genres', 'director', 'writer', 'description', 'dubbing',
                       'translation', 'timing', 'country', 'studios', 'image', 'anime_tid'], '')
 
-        #info['image'] = html[html.find('data-src="')+10:html.find(u'" title="Постер аниме {')]
         image = html[html.find('fposter img-box img-fit">')+25:html.find(u'" title="Постер аниме {')]
         info['image'] = image[image.find('data-src="')+10:]
 
@@ -488,11 +438,9 @@ class Anidub:
                     percent = bytes_read * 100 / file_size
                     self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                 self.progress.close()
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
-                self.params['portal'].capitalize()), 'База Данных [COLOR=lime]успешно загружена[/COLOR]', 5000, self.icon))
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=lime]УСПЕШНО ЗАГРУЖЕНА[/COLOR]', 5000, self.icon))
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - База Данных'.format(
-                self.params['portal'].capitalize()), 'База Данных [COLOR=yellow]ERROR: 100[/COLOR]', 5000, self.icon))
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ERROR: 100[/COLOR]', 5000, self.icon))
             pass
 #========================#========================#========================#
     def exec_favorites_part(self):
@@ -558,25 +506,25 @@ class Anidub:
                 url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
                 post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
                 self.network.get_html2(target_name=url, post=post)
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
             except:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
 
         if 'minus' in self.params['node']:
             try:
                 url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
                 post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
                 self.network.get_html2(target_name=url, post=post)
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, self.icon))
             except:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=yellow]Ошибка - 103[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=lime]успешно выполнено[/COLOR]', 5000, self.icon))
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, self.icon))
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', 'Удаление истории [COLOR=yellow]ERROR: 102[/COLOR]', 5000, self.icon))
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Поиск', '[COLOR=gold]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
 #========================#========================#========================#
     def exec_information_part(self):
@@ -726,8 +674,10 @@ class Anidub:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
+        from utility import digit_list
         if not self.params['param']:
             url = '{}index.php?newsid={}'.format(self.site_url, self.params['id'])
+            
             html = self.network.get_html2(url)
 
             try: html = html.decode(encoding='utf-8', errors='replace')
@@ -737,32 +687,36 @@ class Anidub:
             data_array = data_array.split('</span>')
 
             for data in data_array:
-                video_url = data[data.find('span data="')+11:data.find('"">')]
+                video_url = data[data.find('?videoid=')+9:data.find('"">')]
+                if '&quot;' in video_url:
+                    video_url = video_url[:video_url.find('&quot;')]
+            
                 video_title = data[data.find('"">')+3:]
 
-                try: title = video_title.encode('utf-8')
-                except: title = video_title
-
-                self.create_line(title=video_title, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id'],'title':title})
+                self.create_line(title=video_title, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id']})
 
         if self.params['param']:
-            html = self.network.get_html(target_name=self.params['param'])
+            url = 'https://video.sibnet.ru/shell.php?videoid={}'.format(self.params['param'])
             
-            cover = html[html.find('og:image" content="')+19:html.find('"/><meta property="og:description')]
+            html = self.network.get_html(target_name=url)
+            
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
             
             if 'player.src' in html:
                 video_src = html[html.find('player.src([{src: "')+19:html.find(';player.persistvolume')]
                 video_src = video_src[:video_src.find('"')]
-                play_url = 'https://video.sibnet.ru{}|referer={}'.format(video_src, self.params['param'])
 
-                label = self.params['title']
+                play_url = 'https://video.sibnet.ru{}|referer={}'.format(video_src, url)
+
+                label = 'Смотреть'
 
             if 'class=videostatus><p>' in html:
                 status = html[html.find('class=videostatus><p>')+21:html.find('</p></div><script')]
                 label = '[COLOR=red][B][ {} ][/B][/COLOR]'.format(status.replace('.',''))
                 play_url = ''
 
-            self.create_line(title=label, cover=cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
+            self.create_line(title=label, params={}, anime_id=self.params['id'], online=play_url, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#

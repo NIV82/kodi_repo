@@ -25,9 +25,6 @@ except:
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
 
-# progress = xbmcgui.DialogProgress()
-# dialog = xbmcgui.Dialog()
-
 if not os.path.exists(addon_data_dir):
     os.makedirs(addon_data_dir)
 
@@ -83,35 +80,30 @@ def create_portals():
 
     if 'anidub' in params['portal']:
         from anidub import Anidub
-        #anidub = Anidub(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
         anidub = Anidub(addon_data_dir, params, addon, icon)
         anidub.execute()
         del Anidub
 
     if 'anilibria' in params['portal']:
         from anilibria import Anilibria
-        #anilibria = Anilibria(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
         anilibria = Anilibria(addon_data_dir, params, addon, icon)
         anilibria.execute()
         del Anilibria
             
     if 'anistar' in params['portal']:
         from anistar import Anistar
-        # anistar = Anistar(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
         anistar = Anistar(addon_data_dir, params, addon, icon)
         anistar.execute()
         del Anistar
             
     if 'animedia' in params['portal']:
         from animedia import Animedia
-        #animedia = Animedia(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
         animedia = Animedia(addon_data_dir, params, addon, icon)
         animedia.execute()
         del Animedia
         
     if 'shizaproject' in params['portal']:
         from shizaproject import Shiza
-        #shiza = Shiza(images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress)
         shiza = Shiza(addon_data_dir, params, addon, icon)
         shiza.execute()
         del Shiza
