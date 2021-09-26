@@ -122,6 +122,7 @@ class Anilibria:
                 site_url = '{}public/api/index.php'.format(site_url)
         else:
             site_url = '{}public/api/index.php'.format(self.addon.getSetting(current_mirror))
+
         return site_url
 #========================#========================#========================#
     def create_post(self):
@@ -172,7 +173,6 @@ class Anilibria:
         return label
 #========================#========================#========================#
     def create_image(self, anime_id):
-
         if '0' in self.addon.getSetting('anilibria_mirror_mode'):
             url = 'https://static.anilibria.tv/upload/release/350x500/{}.jpg'.format(anime_id)
         else:
@@ -193,27 +193,22 @@ class Anilibria:
     def create_context(self, anime_id):
         context_menu = []
         
-        context_menu.append((u'[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=anilibria")'))
-        context_menu.append((u'[B][COLOR=darkorange]Обновить Зеркала[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anilibria")'))
+        context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=anilibria")'))
+        context_menu.append((u'[COLOR=darkorange]Обновить Зеркала[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anilibria")'))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anilibria")'))
+            context_menu.append((u'[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anilibria")'))
 
         if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anilibria")'.format(anime_id)))
+            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anilibria")'.format(anime_id)))
 
         if self.auth_mode and 'common_part' in self.params['mode'] or self.auth_mode and 'schedule_part' in self.params['mode']:
-            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=white]Добавить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal=anilibria")'.format(anime_id)))
-            context_menu.append((u'[B][COLOR=white]Удалить FAV (сайт)[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal=anilibria")'.format(anime_id)))
+            context_menu.append((u'[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal=anilibria")'.format(anime_id)))
+            context_menu.append((u'[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal=anilibria")'.format(anime_id)))
         
-        context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-        context_menu.append((u'[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anilibria")'))
-        context_menu.append((u'[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anilibria")'))
-        context_menu.append((u'[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anilibria")'))
-        context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anilibria")'))
+        context_menu.append((u'[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anilibria")'))
+        context_menu.append((u'[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anilibria")'))
 
         return context_menu
 #========================#========================#========================#
@@ -245,51 +240,17 @@ class Anilibria:
                 'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
                 'year':anime_info[3],#	integer (2009)
                 'episode':anime_info[2],#	integer (4)
-                #'season':'',#	integer (1)
-                #'sortepisode':'',#	integer (4)
-                #'sortseason':'',#	integer (1)
-                #'episodeguide':'',#	string (Episode guide)
-                #'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
-                #'top250':'',#	integer (192)
-                #'setid':'',#	integer (14)
-                #'tracknumber':'',#	integer (3)
-                #'rating':'',#	float (6.4) - range is 0..10
-                #'userrating':'',#	integer (9) - range is 1..10 (0 to reset)
-                #'watched':'',#	deprecated - use playcount instead
-                #'playcount':'',#	integer (2) - number of times this item has been played
-                #'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
-                #'cast':'',#	list (["Michal C. Hall","Jennifer Carpenter"]) - if provided a list of tuples cast will be interpreted as castandrole
-                #'castandrole':'',#	list of tuples ([("Michael C. Hall","Dexter"),("Jennifer Carpenter","Debra")])
                 'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
                 'mpaa':anime_info[5],#	string (PG-13)
                 'plot':description,#	string (Long Description)
-                #'plotoutline':'',#	string (Short Description)
                 'title':title,#	string (Big Fan)
-                #'originaltitle':'',#	string (Big Fan)
-                #'sorttitle':'',#	string (Big Fan)
                 'duration':duration,#	integer (245) - duration in seconds
                 'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-                #'tagline':'',#	string (An awesome movie) - short description of movie
                 'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
                 'tvshowtitle':title,#	string (Heroes)
                 'premiered':anime_info[3],#	string (2005-03-04)
                 'status':anime_info[1],#	string (Continuing) - status of a TVshow
-                #'set':'',#	string (Batman Collection) - name of the collection
-                #'setoverview':'',#	string (All Batman movies) - overview of the collection
-                #'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
-                #'imdbnumber':'',#	string (tt0110293) - IMDb code
-                #'code':'',#	string (101) - Production code
                 'aired':anime_info[3],#	string (2008-12-07)
-                #'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
-                #'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                #'album':'',#	string (The Joshua Tree)
-                #'artist':'',#	list (['U2'])
-                #'votes':'',#	string (12345 votes)
-                #'path':'',#	string (/home/user/movie.avi)
-                #'trailer':'',#	string (/home/user/trailer.avi)
-                #'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
-                #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
             }
 
             if size:
@@ -370,11 +331,15 @@ class Anilibria:
 #========================#========================#========================#
     def exec_mirror_part(self):
         self.addon.setSetting('anilibria_unblock', '1')
+
         from network import WebTools
         self.net = WebTools(auth_usage=False,auth_status=False,proxy_data=self.proxy_data)
         del WebTools
 
         html = self.net.get_html2(target_name='https://darklibria.it/redirect/mirror/1')
+        
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
 
         mirror = html[html.find('mt-1" href="')+12:html.find('" target="_blank" rel="')]
 
@@ -418,17 +383,20 @@ class Anilibria:
     def exec_favorites_part(self):
         html = self.network.get_html2(self.site_url, self.create_post())
 
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
+        
         if 'status":false' in html:
             if 'fav_add' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]Ошибка - уже в вашем списке[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: - УЖЕ ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
             if 'fav_del' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]Ошибка - уже удалено из списка[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: - УЖЕ УДАЛЕНО[/COLOR]', 5000, self.icon))
 
         if 'status":true' in html:
             if 'fav_add' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно добавлено[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
             if 'fav_del' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]Успешно удалено[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, self.icon))
         
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
@@ -497,7 +465,6 @@ class Anilibria:
         from info import anilibria_week
 
         html = self.network.get_html2(target_name=self.site_url, post=self.create_post())
-            #self.site_url, self.create_post())
 
         try: html = html.decode(encoding='utf-8', errors='replace')
         except: pass
@@ -632,6 +599,9 @@ class Anilibria:
         if not self.params['param']:
             html = self.network.get_html2(self.site_url, self.create_post())
 
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
+
             array = {'480p': [], '720p': [], '1080p': []}
 
             data_array = html[html.find('[{"id"')+2:].split('},{')
@@ -667,6 +637,9 @@ class Anilibria:
     def exec_torrent_part(self):
         if not self.params['param']:
             html = self.network.get_html2(self.site_url, self.create_post())
+
+            try: html = html.decode(encoding='utf-8', errors='replace')
+            except: pass
 
             data_array = html[html.find('[{"id"')+2:].split('},{')
 
