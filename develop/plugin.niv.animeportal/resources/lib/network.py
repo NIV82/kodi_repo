@@ -264,7 +264,7 @@ class WebTools:
             auth = True if 'anime_sessionid' in str(self.mcj) else False
         else:
             self.url_opener.open(Request(url=self.auth_url, headers=self.headers))
-            csrf_token = list(self.mcj)[1].value
+            csrf_token = [cookie.value for cookie in self.mcj if cookie.name == 'anime_csrf_token'][0]
             self.auth_post_data = '{}&csrf_token={}'.format(self.auth_post_data, csrf_token)
 
             try: post_data = bytes(self.auth_post_data, encoding='utf-8')

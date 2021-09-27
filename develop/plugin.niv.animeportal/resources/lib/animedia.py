@@ -12,10 +12,9 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-from utility import tag_list, clean_list#, unescape
+from utility import tag_list, clean_list
 
 class Animedia:
-    #def __init__(self, images_dir, torrents_dir, database_dir, cookie_dir, params, addon, dialog, progress):
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
@@ -48,11 +47,8 @@ class Animedia:
                                 proxy_data=self.proxy_data,
                                 portal='animedia')
         self.network.sid_file = os.path.join(self.cookie_dir, 'animedia.sid' )
-        self.auth_post_data = {
-            'ACT': '14', 'RET': '/', 'site_id': '4',
-            'username': self.addon.getSetting('animedia_username'),
-            'password': self.addon.getSetting('animedia_password')}
-        self.network.auth_post_data = urlencode(self.auth_post_data)
+        self.network.auth_post_data = 'ACT=14&RET=%2F&site_id=1&username={}&password={}'.format(
+            self.addon.getSetting('animedia_username'), self.addon.getSetting('animedia_password'))
         self.network.auth_url = self.site_url
         del WebTools
 #========================#========================#========================#
@@ -78,7 +74,6 @@ class Animedia:
         del DataBase
 #========================#========================#========================#
     def create_proxy_data(self):
-        #if self.addon.getSetting('anidub_unblock') == '0':
         if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
             return None
 
@@ -88,9 +83,7 @@ class Animedia:
         if time.time() - proxy_time > 86400:
             self.addon.setSetting('animeportal_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-                
-            # try: proxy_pac = str(proxy_pac, encoding='utf-8')
-            # except: pass
+
             try: proxy_pac = proxy_pac.decode('utf-8')
             except: pass
             
@@ -102,9 +95,6 @@ class Animedia:
                 proxy_data = {'https': self.addon.getSetting('animeportal_proxy')}
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-                # try: proxy_pac = str(proxy_pac, encoding='utf-8')
-                # except: pass
 
                 try: proxy_pac = proxy_pac.decode('utf-8')
                 except: pass
@@ -155,40 +145,32 @@ class Animedia:
 
             url = '{}ajax/search_result_search_page_2/P{}?limit=25{}{}{}{}{}{}{}'.format(self.site_url, page, genre, voice, studio, year, form, status, sort)
 
-        #xbmc.log(str(url), xbmc.LOGNOTICE)
-        
         return url
 #========================#========================#========================#
     def create_title(self, anime_id, series=None):
         title = self.database.get_title(anime_id)
 
         if series:
-            #series = series.replace('Серия','').replace('Серии','')
             series = series.strip()
             series = u' - [COLOR=gold][ {} ][/COLOR]'.format(series)
         else:
             series = ''
        
-        if '0' in self.addon.getSetting('animedia_titles'):# == '0':
+        if '0' in self.addon.getSetting('animedia_titles'):
             label = u'{}{}'.format(title[0], series)
-        if '1' in self.addon.getSetting('animedia_titles'):# == '1':
+        if '1' in self.addon.getSetting('animedia_titles'):
             label = u'{}{}'.format(title[1], series)
-        if '2' in self.addon.getSetting('animedia_titles'):# == '2':
+        if '2' in self.addon.getSetting('animedia_titles'):
             label = u'{} / {}{}'.format(title[0], title[1], series)
 
         return label
 #========================#========================#========================#
     def create_image(self, anime_id):        
-        #cover = self.database.get_cover(anime_id)
-        #url = 'https://static.animedia.tv/uploads/{}'.format(quote(cover))
         url = self.database.get_cover(anime_id)
-
-        #xbmc.log(str(cover), xbmc.LOGFATAL)
 
         if self.addon.getSetting('animedia_covers') == '0':
             return url
         else:
-            #local_img = '{}{}'.format(anime_id, url[url.rfind('.'):])
             local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
 
             if local_img in os.listdir(self.images_dir):
@@ -201,22 +183,18 @@ class Animedia:
     def create_context(self, anime_id, title_data):
         context_menu = []
 
-        context_menu.append(('[B][COLOR=darkorange]Обновить Базу Данных[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=animedia")'))
-
-        if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append((u'[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append((u'[B][COLOR=white]Обновить аниме[/COLOR][/B]',
-                                 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&title_data={}&portal=animedia")'.format(anime_id, title_data)))
+        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=animedia")'))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-            context_menu.append(('[B][COLOR=red]Очистить историю[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=animedia")'))
+            context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=animedia")'))
 
-        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
-        context_menu.append(('[B][COLOR=lime]Новости обновлений[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=animedia")'))
-        context_menu.append(('[B][COLOR=lime]Настройки воспроизведения[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=animedia")'))
-        context_menu.append(('[B][COLOR=lime]Описание ошибок плагина[/COLOR][/B]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=animedia")'))
-        context_menu.append(('[B][COLOR=white]- - - - - - - - - - - - - - - - [/COLOR][/B]', ''))
+        if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]',
+                                 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&title_data={}&portal=animedia")'.format(anime_id, title_data)))
+
+        context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=animedia")'))
+        context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=animedia")'))
+        context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=animedia")'))
 
         return context_menu
 #========================#========================#========================#
@@ -228,15 +206,10 @@ class Animedia:
 
             li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
-            #li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
 # 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
 #kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
             
-            # if metadata:
-            #     description += u'\n\nСерии: {}\nКачество: {}\nРазмер: {}\nКонтейнер: {}\nВидео: {}\nАудио: {}\nПеревод: {}\nТайминг: {}'.format(
-            #         metadata['series'], metadata['quality'], metadata['size'], metadata['container'], metadata['video'], metadata['audio'], metadata['translate'], metadata['timing'])
-
             description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
             description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
             description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
@@ -252,51 +225,17 @@ class Animedia:
                 'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
                 'year':anime_info[3],#	integer (2009)
                 'episode':anime_info[2],#	integer (4)
-                #'season':'',#	integer (1)
-                #'sortepisode':'',#	integer (4)
-                #'sortseason':'',#	integer (1)
-                #'episodeguide':'',#	string (Episode guide)
-                #'showlink':'',#	string (Battlestar Galactica) or list of strings (["Battlestar Galactica", "Caprica"])
-                #'top250':'',#	integer (192)
-                #'setid':'',#	integer (14)
-                #'tracknumber':'',#	integer (3)
-                #'rating':'',#	float (6.4) - range is 0..10
-                #'userrating':'',#	integer (9) - range is 1..10 (0 to reset)
-                #'watched':'',#	deprecated - use playcount instead
-                #'playcount':'',#	integer (2) - number of times this item has been played
-                #'overlay':'',#	integer (2) - range is 0..7. See Overlay icon types for values
-                #'cast':'',#	list (["Michal C. Hall","Jennifer Carpenter"]) - if provided a list of tuples cast will be interpreted as castandrole
-                #'castandrole':'',#	list of tuples ([("Michael C. Hall","Dexter"),("Jennifer Carpenter","Debra")])
                 'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
                 'mpaa':anime_info[5],#	string (PG-13)
                 'plot':description,#	string (Long Description)
-                #'plotoutline':'',#	string (Short Description)
                 'title':title,#	string (Big Fan)
-                #'originaltitle':'',#	string (Big Fan)
-                #'sorttitle':'',#	string (Big Fan)
                 'duration':duration,#	integer (245) - duration in seconds
                 'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-                #'tagline':'',#	string (An awesome movie) - short description of movie
                 'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
                 'tvshowtitle':title,#	string (Heroes)
                 'premiered':anime_info[3],#	string (2005-03-04)
                 'status':anime_info[1],#	string (Continuing) - status of a TVshow
-                #'set':'',#	string (Batman Collection) - name of the collection
-                #'setoverview':'',#	string (All Batman movies) - overview of the collection
-                #'tag':'',#	string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
-                #'imdbnumber':'',#	string (tt0110293) - IMDb code
-                #'code':'',#	string (101) - Production code
                 'aired':anime_info[3],#	string (2008-12-07)
-                #'credits':'',#	string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
-                #'lastplayed':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                #'album':'',#	string (The Joshua Tree)
-                #'artist':'',#	list (['U2'])
-                #'votes':'',#	string (12345 votes)
-                #'path':'',#	string (/home/user/movie.avi)
-                #'trailer':'',#	string (/home/user/trailer.avi)
-                #'dateadded':'',#	string (Y-m-d h:m:s = 2009-04-05 23:16:04)
-                #'mediatype':anime_info[0],#	string - "video", "movie", "tvshow", "season", "episode" or "musicvideo"
-                #'dbid':'',#	integer (23) - Only add this for items which are part of the local db. You also need to set the correct 'mediatype'!
             }
 
             if size:
@@ -311,9 +250,6 @@ class Animedia:
 
         params['portal'] = 'animedia'
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
-
-        #xbmc.log(str(), xbmc.LOGNOTICE)
-
 
         if online:
             url = online
@@ -333,15 +269,11 @@ class Animedia:
     def create_info(self, anime_id, title_data=None, update=False):
         info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
 
-        xbmc.log(str(title_data), xbmc.LOGNOTICE)
-
         if title_data:
             info.update(self.create_title_info(title_data))
         else:
             info.update(self.create_title_info(self.params['title_data']))
 
-        #xbmc.log(str(info['title_ru']), xbmc.LOGNOTICE)
-        #xbmc.log(str(info['title_en']), xbmc.LOGNOTICE)
         try:
             info['title_ru'] = info['title_ru'].decode(encoding='utf-8', errors='replace')
             info['title_en'] = info['title_en'].decode(encoding='utf-8', errors='replace')
@@ -361,8 +293,6 @@ class Animedia:
         except: pass
 
         html = unescape(html)
-
-        #info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
 
         if html.find(u'Скачать торрент') > -1:
             anime_tid = html[html.find('torrents-list/')+14:html.find('" class="btn btn__big btn__g')]
@@ -518,8 +448,8 @@ class Animedia:
 
         html = self.network.get_html2(target_name=self.create_url())
         
-        # try: html = html.decode(encoding='utf-8', errors='replace')
-        # except: pass
+        try: html = html.decode(encoding='utf-8', errors='replace')
+        except: pass
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -533,16 +463,10 @@ class Animedia:
             i = 0
 
             for data in data_array:
-                try: data = data.decode(encoding='utf-8', errors='replace')
-                except: pass
-
                 data = unescape(data)
 
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
-
-                # anime_id = data[data.find('col-l"><a href="/anime/')+23:data.find(u'" title="Подробнее')]
-                # anime_id = quote(anime_id.encode('utf-8'))
 
                 anime_id = data[data.rfind('col-l"><a href="')+16:data.find(u'" title="Подробнее')]
                 anime_id = anime_id[anime_id.rfind('/')+1:]
@@ -558,7 +482,6 @@ class Animedia:
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
                 if not self.database.anime_in_db(anime_id):
-                    #inf = self.create_info(anime_id)
                     inf = self.create_info(anime_id, title_data)
 
                     if type(inf) == int:
@@ -567,8 +490,6 @@ class Animedia:
 
                 label = self.create_title(anime_id)
                 self.create_line(title=label, anime_id=anime_id, metadata=title_data.encode('utf-8'), params={'mode': 'select_part', 'id': anime_id})
-                #self.create_line(title=label, anime_id=anime_id, met,params={'mode': 'select_part', 'id': anime_id, 'title_data':title_data.encode('utf-8')})
-                #self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
         else:
             self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
         
@@ -576,9 +497,6 @@ class Animedia:
 
         if 'Загрузить ещё' in html:
             self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
-
-        # if u'">Вперёд</a></li>' in html:
-        #     self.create_line(title='[COLOR=F020F0F0][ Следующая страница ][/COLOR]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 16)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -653,7 +571,6 @@ class Animedia:
                     tab_name = data[data.find('"tab">')+6:data.find('</a></li>')]
 
                     tab_entry = '|||{}/{}'.format(data_entry, int(tab_num)+1)
-                    #tab_entry = '{}/{}'.format(data_entry, int(tab_num)+1)
                     
                     self.create_line(title=tab_name, params={'mode': 'online_part', 'param': tab_entry, 'id': self.params['id']})
             else:
@@ -676,12 +593,6 @@ class Animedia:
                 data = data.strip()
 
                 series_url = data[data.find('<a href="/')+10:data.find('" title')]
-
-                # series_image = data[data.find('data-src="')+10:data.find('?w=')]
-                # series_image = series_image.replace('_min','')
-                # series_image = 'https:{}?w={}&h={}&fit=crop&q=45'.format(series_image, 153, 86)
-
-                #series_title = data[data.find('<span>')+6:data.find('</span>')]
                 series_title = data[data.find('title="')+7:data.find('"><img data-src')]
 
                 self.create_line(title=series_title, anime_id=self.params['id'], params={'mode': 'online_part', 'param': series_url, 'id': self.params['id']})
@@ -704,11 +615,13 @@ class Animedia:
             if video_url:
                 html = self.network.get_html2(target_name=video_url)
 
+                try: html = html.decode(encoding='utf-8', errors='replace')
+                except: pass
+
                 online_url = html[html.find('file: "')+7:html.find('",poster')]
                 if not 'https:' in online_url:
                     online_url = online_url.replace('//','https://')
-
-                #xbmc.log(str(online_url), xbmc.LOGNOTICE)                
+              
                 self.create_line(title=title, params={}, anime_id=self.params['id'], online=online_url, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -764,22 +677,23 @@ class Animedia:
                             metadata['quality'] = metadata['quality'].replace(u'Качество','').strip()
                         if u'>Размер:' in line:
                             metadata['size'] = tag_list(line[line.find('<span>'):])
-                        if u'Контейнер:' in line:
-                            metadata['container'] = line[line.find('<span>')+6:line.find('</span>')]
-                        if u'Видео:' in line:
-                            metadata['video'] = line[line.find('<span>')+6:line.find('</span>')]
-                        if u'Аудио:' in line:                        
-                            metadata['audio'] = line[line.find('<span>')+6:line.find('</span>')].strip()
-                        if u'Перевод:' in line:                        
-                            metadata['translate'] = line[line.find('<span>')+6:line.find('</span>')]
-                        if u'Тайминг и сведение звука:' in line:
-                            metadata['timing'] = line[line.find('<span>')+6:line.find('</span>')]
+                        # if u'Контейнер:' in line:
+                        #     metadata['container'] = line[line.find('<span>')+6:line.find('</span>')]
+                        # if u'Видео:' in line:
+                        #     metadata['video'] = line[line.find('<span>')+6:line.find('</span>')]
+                        # if u'Аудио:' in line:                        
+                        #     metadata['audio'] = line[line.find('<span>')+6:line.find('</span>')].strip()
+                        # if u'Перевод:' in line:                        
+                        #     metadata['translate'] = line[line.find('<span>')+6:line.find('</span>')]
+                        # if u'Тайминг и сведение звука:' in line:
+                        #     metadata['timing'] = line[line.find('<span>')+6:line.find('</span>')]
                         
                     label = u'{}{} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сиды: [COLOR=lime]{}[/COLOR] , Пиры: [COLOR=red]{}[/COLOR]'.format(
                         title, metadata['series'], metadata['size'], metadata['quality'], seed, peer)                    
                     
                     #self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'], metadata=metadata)
-                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'], metadata=metadata)
+                    #self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'], metadata=metadata)
+                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'])
             else:
                 tabs_content = html[html.find('<li class="tracker_info_pop_left">')+34:html.find('<!-- Media series tabs End-->')]
                 tabs_content = tabs_content.split('<li class="tracker_info_pop_left">')
@@ -804,11 +718,9 @@ class Animedia:
                     label = u'Серии: {} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
                         title, torr_inf[0], quality, torr_inf[2], torr_inf[3])
 
-                    #self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'])
                     self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'])
 
         if self.params['param']:
-            #url = self.params['torrent_url']
             url = self.params['param']
 
             file_name = '{}_{}'.format(self.params['portal'], self.params['id'])
@@ -834,8 +746,6 @@ class Animedia:
                     self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False, size=size[i])
             else:
                 self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
-            
-            #xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
