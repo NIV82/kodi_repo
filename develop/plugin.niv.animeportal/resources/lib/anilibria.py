@@ -388,9 +388,9 @@ class Anilibria:
         
         if 'status":false' in html:
             if 'fav_add' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: - УЖЕ ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
             if 'fav_del' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: - УЖЕ УДАЛЕНО[/COLOR]', 5000, self.icon))
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
 
         if 'status":true' in html:
             if 'fav_add' in self.params['param']:
