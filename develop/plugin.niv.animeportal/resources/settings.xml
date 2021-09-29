@@ -121,39 +121,40 @@
   <category label="SHIZAPROJECT">
     <setting label="[B]ShizaProject[/B]" id="use_shizaproject" type="bool" default="true"/>
     <setting type="sep"/>
-    <setting id="shiza_auth_mode" label="Авторизация:" type="enum" default="0" values="Отключено|Включено" enable="eq(-2,true)"/>
-    <setting id="shiza_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
-    <setting id="shiza_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
+    <setting id="shizaproject_auth_mode" label="Авторизация:" type="enum" default="0" values="Отключено|Включено" enable="eq(-2,false)"/>
+    <!-- <setting id="shizaproject_auth_mode" label="Авторизация:" type="enum" default="0" values="Отключено|Включено" enable="eq(-2,true)"/> -->
+    <setting id="shizaproject_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="shizaproject_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
-    <setting id="shiza_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-6,true)" />
-    <setting id="shiza_covers_quality" type="enum" label="Качество обложек:" default="0" values="Обычное|Высокое" enable="eq(-7,true)" />
-    <setting id="shiza_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-8,true)" />
+    <setting id="shizaproject_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-6,true)" />
+    <setting id="shizaproject_covers_quality" type="enum" label="Качество обложек:" default="0" values="Обычное|Высокое" enable="eq(-7,true)" />
+    <setting id="shizaproject_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-8,true)" />
     <setting type="sep"/>
-    <setting id="shiza_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт|Зеркало-1|Зеркало-2" enable="eq(-10,true)"/>
-    <setting id="shiza_mirror_0" label="Адрес:" type="text" default="https://shiza-project.com/graphql" subsetting="true" visible="eq(-1,0)" enable="eq(-1,3)"/>
-    <setting id="shiza_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
-    <setting id="shiza_mirror_2" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-3,2)"/>
+    <setting id="shizaproject_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт|Зеркало-1|Зеркало-2" enable="eq(-10,true)"/>
+    <setting id="shizaproject_mirror_0" label="Адрес:" type="text" default="https://shiza-project.com/graphql" subsetting="true" visible="eq(-1,0)" enable="eq(-1,3)"/>
+    <setting id="shizaproject_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
+    <setting id="shizaproject_mirror_2" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-3,2)"/>
     <setting type="sep"/>
     <setting id="shizaproject_unblock" type="enum" label="Разблокировка:" default="0" values="Отключено|Antizapret - Proxy" enable="eq(-15,true)"/>
     <setting type="sep"/>
     <!-- <setting id="shizaproject_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|Elementum|T2Http" enable="eq(-17,true)"/> -->
     <setting id="shizaproject_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|Elementum" enable="eq(-17,true)"/>
-    <setting id="shiza_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="default|ACE engine|T2Http|YATP|Torrenter|Elementum|XBMCtorrent|ACE proxy|Quasar|TorrServer" enable="eq(-18,true)"/>
-    <setting id="shiza_session" label="session" type="text" default="" visible="false"/>
+    <setting id="shizaproject_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="default|ACE engine|T2Http|YATP|Torrenter|Elementum|XBMCtorrent|ACE proxy|Quasar|TorrServer" enable="eq(-18,true)"/>
+    <setting id="shizaproject_session" label="session" type="text" default="" visible="false"/>
     <setting id="shizaproject_search" label="status" type="text" default="" visible="false"/>
-    <setting id="shiza_auth" label="auth" type="bool" default="false" visible="false"/>    
-    <setting id="shiza_year_start" label="year" type="text" default="1970" visible="false"/>
-    <setting id="shiza_year_end" label="year" type="text" default="2021" visible="false"/>
-    <setting id="shiza_season" label="season" type="text" default="" visible="false"/>
-    <setting id="shiza_categories" label="categories" type="text" default="" visible="false"/>
-    <setting id="shiza_status" label="status" type="text" default="" visible="false"/>
-    <setting id="shiza_voice_stat" label="voice_stat" type="text" default="" visible="false"/>
-    <setting id="shiza_form" label="form" type="text" default="" visible="false"/>
-    <setting id="shiza_rating" label="rating" type="text" default="" visible="false"/>    
-    <setting id="shiza_genre" label="genre" type="text" default="" visible="false"/>
-    <setting id="shiza_tags" label="genre" type="text" default="" visible="false"/>
-    <setting id="shiza_sort" label="sort" type="text" default="Дате публикации" visible="false"/>
-    <setting id="shiza_direction" label="direction" type="text" default="По убыванию" visible="false"/>
+    <setting id="shizaproject_auth" label="auth" type="bool" default="false" visible="false"/>    
+    <setting id="shizaproject_year_start" label="year" type="text" default="1970" visible="false"/>
+    <setting id="shizaproject_year_end" label="year" type="text" default="2021" visible="false"/>
+    <setting id="shizaproject_season" label="season" type="text" default="" visible="false"/>
+    <setting id="shizaproject_categories" label="categories" type="text" default="" visible="false"/>
+    <setting id="shizaproject_status" label="status" type="text" default="" visible="false"/>
+    <setting id="shizaproject_voice_stat" label="voice_stat" type="text" default="" visible="false"/>
+    <setting id="shizaproject_form" label="form" type="text" default="" visible="false"/>
+    <setting id="shizaproject_rating" label="rating" type="text" default="" visible="false"/>    
+    <setting id="shizaproject_genre" label="genre" type="text" default="" visible="false"/>
+    <setting id="shizaproject_tags" label="genre" type="text" default="" visible="false"/>
+    <setting id="shizaproject_sort" label="sort" type="text" default="Дате публикации" visible="false"/>
+    <setting id="shizaproject_direction" label="direction" type="text" default="По убыванию" visible="false"/>
   </category>
   
 </settings>

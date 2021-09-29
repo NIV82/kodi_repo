@@ -692,14 +692,14 @@ class Anilibria:
         index = int(self.params['index'])
         portal_engine = '{}_engine'.format(self.params['portal'])
 
-        if self.addon.getSetting(portal_engine) == '0':
+        if '0' in self.addon.getSetting(portal_engine):
             tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
             engine = tam_engine[int(self.addon.getSetting('{}_tam'.format(self.params['portal'])))]
             purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
 
-        if self.addon.getSetting(portal_engine) == '1':
+        if '1' in self.addon.getSetting(portal_engine):
             purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
