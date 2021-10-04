@@ -34,16 +34,17 @@ class Anistar:
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-        self.auth_mode = bool(self.addon.getSetting('anistar_auth_mode') == '1')
+        #self.auth_mode = bool(self.addon.getSetting('anistar_auth_mode') == '1')
+        self.auth_mode = bool(self.addon.getSetting('{}_auth_mode'.format(self.params['portal'])) == '1')
 #========================#========================#========================#
-        try: anistar_session = float(self.addon.getSetting('anistar_session'))
-        except: anistar_session = 0
+        try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
+        except: session = 0
 
-        if time.time() - anistar_session > 28800:
-            self.addon.setSetting('anistar_session', str(time.time()))
-            try: os.remove(os.path.join(self.cookie_dir, 'anistar.sid'))
+        if time.time() - session > 28800:
+            self.addon.setSetting('{}_session'.format(self.params['portal']), str(time.time()))
+            try: os.remove(os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal'])))
             except: pass
-            self.addon.setSetting('anistar_auth', 'false')
+            self.addon.setSetting('{}_auth'.format(self.params['portal']), 'false')
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
@@ -61,18 +62,18 @@ class Anistar:
         del WebTools
 #========================#========================#========================#
         if self.auth_mode:
-            if not self.addon.getSetting("anistar_username") or not self.addon.getSetting("anistar_password"):
+            if not self.addon.getSetting('{}_username'.format(self.params['portal'])) or not self.addon.getSetting('{}_password'.format(self.params['portal'])):
                 self.params['mode'] = 'addon_setting'
-                self.dialog.ok(u'Авторизация',u'Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    self.dialog.ok(u'Авторизация',u'Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                    xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                     return
                 else:
-                    self.addon.setSetting("anistar_auth", str(self.network.auth_status).lower())
+                    self.addon.setSetting('{}_auth'.format(self.params['portal']), str(self.network.auth_status).lower())
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
@@ -164,12 +165,13 @@ class Anistar:
         else:
             series = ''
 
-        if '0' in self.addon.getSetting('anistar_titles'):
+        if '0' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[0], series)
-        if '1' in self.addon.getSetting('anistar_titles'):
+        if '1' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[1], series)
-        if '2' in self.addon.getSetting('anistar_titles'):
+        if '2' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{} / {}{}'.format(title[0], title[1], series)
+            
         return label
 #========================#========================#========================#
     def create_image(self, anime_id):
@@ -270,7 +272,7 @@ class Anistar:
 
         if schedule:
             url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
-            data = self.network.get_html2(target_name=url)
+            data = self.network.get_html(target_name=url)
 
             try: data = data.decode(encoding='utf-8', errors='replace')
             except: pass
@@ -403,11 +405,8 @@ class Anistar:
         site_url = self.addon.getSetting('anistar_mirror_0')
 
         try:
-            ht = self.net.get_html2(target_name=site_url)
+            ht = self.net.get_html(target_name=site_url)
             
-            try: ht = ht.decode(encoding='utf-8', errors='replace')
-            except: pass
-
             actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
             actual_url = tag_list(actual_url).lower()
             actual_url = 'https://{}/'.format(actual_url)
@@ -429,14 +428,14 @@ class Anistar:
 
         if 'plus' in self.params['node']:
             try:
-                self.network.get_html2(target_name=url)
+                self.network.get_html(target_name=url)
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
             except:
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
 
         if 'minus' in self.params['node']:
             try:
-                self.network.get_html2(target_name=url)
+                self.network.get_html(target_name=url)
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, self.icon))
             except:
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
@@ -540,11 +539,8 @@ class Anistar:
     def exec_schedule_part(self):
         self.progress.create("AniStar", "Инициализация")
 
-        html = self.network.get_html2(
+        html = self.network.get_html(
             target_name='{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html'))
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
 
         html = unescape(html)
 
@@ -623,10 +619,7 @@ class Anistar:
             post = 'do=search&subaction=search&search_start={}&full_search=1&story={}&catlist%5B%5D=39&catlist%5B%5D=113&catlist%5B%5D=76'.format(
                 self.params['page'], self.params['search_string'])
 
-        html = self.network.get_html2(target_name=url, post=post)
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        html = self.network.get_html(target_name=url, post=post)
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -704,10 +697,7 @@ class Anistar:
     def exec_online_part(self):
         if not self.params['param']:
             video_url = '{}test/player2/videoas.php?id={}'.format(self.site_url, self.params['id'])
-            html = self.network.get_html2(target_name=video_url)
-
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
+            html = self.network.get_html(target_name=video_url)
 
             html = unescape(html)
 
@@ -758,10 +748,7 @@ class Anistar:
 #========================#========================#========================#
     def exec_torrent_part(self):
         if not self.params['param']:
-            html = self.network.get_html2('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
-
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
+            html = self.network.get_html('{}index.php?newsid={}'.format(self.site_url, self.params['id']))
 
             if not '<div class="title">' in html:
                 self.create_line(title=u'Контент не обнаружен', params={})

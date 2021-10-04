@@ -17,10 +17,10 @@ except:
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None):
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0',
-            # 'Accept': '*/*',
-            # 'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-            #'Accept-Charset': 'utf-8',
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
+            'Accept': '*/*',
+            'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+            'Accept-Charset': 'utf-8',
             'Accept-Encoding': 'identity',
             #'Content-Type': 'application/json'
             #'Content-Type': 'application/x-www-form-urlencoded'
@@ -46,44 +46,8 @@ class WebTools:
         if self.auth_usage and not self.auth_check():
             return None
 
-        # if self.portal == 'anilibria':
-        #     self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        if self.portal == 'shiza':
+        if 'shizaproject' in self.portal:
             self.headers['Content-Type'] = 'application/json'
-
-        try: post = bytes(post, encoding='utf-8')
-        except: pass
-
-        try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-
-            try: charset = url.headers.getparam('charset')
-            except: charset = url.headers.get_content_charset()
-
-            data = url.read()
-
-            if charset:
-                if not 'utf-8' in charset.lower():
-                    data = data.decode(charset).encode('utf8')
-
-            try: data = str(data, encoding='utf-8')
-            except: pass
-            
-            return data
-        except HTTPError as error:
-            return error.code
-
-    def get_html2(self, target_name, post=None):
-        if self.auth_usage and not self.auth_check():
-            return None
-
-        # if self.portal == 'anilibria':
-        #     self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        if self.portal == 'shizaproject':
-            self.headers['Content-Type'] = 'application/json'
-
-        # try: post = bytes(post, encoding='utf-8')
-        # except: pass
         
         try: post = post.encode(encoding='utf-8')
         except: pass
@@ -100,36 +64,12 @@ class WebTools:
                 if not 'utf-8' in charset.lower():
                     data = data.decode(charset).encode('utf8')
 
-            # try: data = str(data, encoding='utf-8')
-            # except: pass
+            try: data = data.decode(encoding='utf-8', errors='replace')
+            except: pass
 
             return data
         except HTTPError as error:
             return error.code
-
-    # def get_html3(self, target_name, post=None, method='GET'):
-    #     try: post = post.encode('utf-8', 'replace')
-    #     except: pass
-
-    #     try:
-    #         request = Request(url=target_name, data=post, headers=self.headers)
-    #         request.get_method = lambda: '{}'.format(method)
-    #         url = self.url_opener.open(request)
-
-    #         #url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-
-    #         try: charset = url.headers.getparam('charset')
-    #         except: charset = url.headers.get_content_charset()
-
-    #         data = url.read()
-
-    #         if charset:
-    #             if not 'utf-8' in charset.lower():
-    #                 data = data.decode(charset).encode('utf8')
-
-    #         return data
-    #     except HTTPError as error:
-    #         return error.code
 
     def get_file(self, target_name, post=None, destination_name=None):
         if self.auth_usage and not self.auth_check():

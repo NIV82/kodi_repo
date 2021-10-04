@@ -31,45 +31,58 @@ class Anilibria:
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
 
-        self.auth_mode = bool(self.addon.getSetting('anilibria_auth_mode') == '1')
+        self.auth_mode = bool(self.addon.getSetting('{}_auth_mode'.format(self.params['portal'])) == '1')
 #========================#========================#========================#
-        try: anilibria_session = float(self.addon.getSetting('anilibria_session'))
-        except: anilibria_session = 0
+        try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
+        except: session = 0
 
-        if time.time() - anilibria_session > 28800:
-            self.addon.setSetting('anilibria_session', str(time.time()))
-            try: os.remove(os.path.join(self.cookie_dir, 'anilibria.sid'))
+        if time.time() - session > 28800:
+            self.addon.setSetting('{}_session'.format(self.params['portal']), str(time.time()))
+            try: os.remove(os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal'])))
             except: pass
-            self.addon.setSetting('anilibria_auth', 'false')
+            self.addon.setSetting('{}_auth'.format(self.params['portal']), 'false')
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
             auth_usage=self.auth_mode,
-            auth_status=bool(self.addon.getSetting('anilibria_auth') == 'true'),
-            proxy_data=self.proxy_data,
-            portal='anilibria')
+            auth_status=bool(self.addon.getSetting('{}_auth'.format(self.params['portal'])) == 'true'),
+            proxy_data=self.proxy_data, portal=self.params['portal'])
+        self.auth_post_data = 'login_name={}&login_password={}&login=submit'.format(
+            self.addon.getSetting('{}_username'.format(self.params['portal'])),
+            self.addon.getSetting('{}_password'.format(self.params['portal']))
+            )
+        self.network.auth_post_data = self.auth_post_data
+        self.network.auth_url = self.site_url
+        self.network.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
+        del WebTools
+
+        from network import WebTools
+        self.network = WebTools(
+            auth_usage=self.auth_mode,
+            auth_status=bool(self.addon.getSetting('{}_auth'.format(self.params['portal'])) == 'true'),
+            proxy_data=self.proxy_data, portal=self.params['portal'])
         self.auth_post_data = {
-            "mail": self.addon.getSetting('anilibria_username'),
-            "passwd": self.addon.getSetting('anilibria_password')
+            "mail": self.addon.getSetting('{}_username'.format(self.params['portal'])),
+            "passwd": self.addon.getSetting('{}_password'.format(self.params['portal']))
             }
         self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_url = self.site_url.replace('api/index.php','login.php')
-        self.network.sid_file = os.path.join(self.cookie_dir, 'anilibria.sid')
+        self.network.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
         del WebTools
 #========================#========================#========================#  
         if self.auth_mode:
-            if not self.addon.getSetting('anilibria_username') or not self.addon.getSetting('anilibria_password'):
+            if not self.addon.getSetting('{}_username'.format(self.params['portal'])) or not self.addon.getSetting('{}_password'.format(self.params['portal'])):
                 self.params['mode'] = 'addon_setting'
-                self.dialog.ok(u'Авторизация',u'Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    self.dialog.ok(u'Авторизация',u'Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                    xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                     return
                 else:
-                    self.addon.setSetting('anilibria_auth', str(self.network.auth_status).lower())
+                    self.addon.setSetting('{}_auth'.format(self.params['portal']), str(self.network.auth_status).lower())
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
@@ -111,8 +124,8 @@ class Anilibria:
         return proxy_data
 #========================#========================#========================#
     def create_site_url(self):
-        site_url = self.addon.getSetting('anilibria_mirror_0')
-        current_mirror = 'anilibria_mirror_{}'.format(self.addon.getSetting('anilibria_mirror_mode'))        
+        site_url = self.addon.getSetting('{}_mirror_0'.format(self.params['portal']))
+        current_mirror = '{}_mirror_{}'.format(self.params['portal'], self.addon.getSetting('{}_mirror_mode'.format(self.params['portal'])))
 
         if not self.addon.getSetting(current_mirror):
             try:
@@ -144,8 +157,12 @@ class Anilibria:
             post = 'query=catalog&page={}&xpage=catalog&sort=2&filter=id%2Cseries%2Cannounce'.format(self.params['page'])
         if self.params['param'] == 'catalog':
             post = 'query=catalog&page={}&filter=id%2Cseries%2Cannounce&xpage=catalog&search=%7B%22year%22%3A%22{}%22%2C%22genre%22%3A%22{}%22%2C%22season%22%3A%22{}%22%7D&sort={}&finish={}'.format(
-                self.params['page'],self.addon.getSetting('anilibria_year'),self.addon.getSetting('anilibria_genre'),self.addon.getSetting('anilibria_season'),
-                anilibria_sort[self.addon.getSetting('anilibria_sort')],anilibria_status[self.addon.getSetting('anilibria_status')])
+                self.params['page'],
+                self.addon.getSetting('{}_year'.format(self.params['portal'])),
+                self.addon.getSetting('{}_genre'.format(self.params['portal'])),
+                self.addon.getSetting('{}_season'.format(self.params['portal'])),
+                anilibria_sort[self.addon.getSetting('{}_sort'.format(self.params['portal']))],
+                anilibria_status[self.addon.getSetting('{}_status'.format(self.params['portal']))])
         if self.params['mode'] == 'online_part':
             post = 'query=release&id={}&filter=playlist'.format(self.params['id'])
         if self.params['mode'] == 'torrent_part':
@@ -164,22 +181,23 @@ class Anilibria:
         else:
             series = ''
 
-        if '0' in self.addon.getSetting('anilibria_titles'):
+        if '0' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[0], series)
-        if '1' in self.addon.getSetting('anilibria_titles'):
+        if '1' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[1], series)
-        if '2' in self.addon.getSetting('anilibria_titles'):
+        if '2' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{} / {}{}'.format(title[0], title[1], series)
+
         return label
 #========================#========================#========================#
     def create_image(self, anime_id):
-        if '0' in self.addon.getSetting('anilibria_mirror_mode'):
+        if '0' in self.addon.getSetting('{}_mirror_mode'.format(self.params['portal'])):
             url = 'https://static.anilibria.tv/upload/release/350x500/{}.jpg'.format(anime_id)
         else:
             site_url = self.site_url.replace('public/api/index.php','')
             url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
 
-        if self.addon.getSetting('anilibria_covers') == '0':
+        if '0' in self.addon.getSetting('{}_covers'.format(self.params['portal'])):
             return url
         else:
             local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
@@ -193,22 +211,22 @@ class Anilibria:
     def create_context(self, anime_id):
         context_menu = []
         
-        context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=anilibria")'))
-        context_menu.append((u'[COLOR=darkorange]Обновить Зеркала[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anilibria")'))
+        context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal={}")'.format(self.params['portal'])))
+        context_menu.append((u'[COLOR=darkorange]Обновить Зеркала[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal={}")'.format(self.params['portal'])))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append((u'[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anilibria")'))
+            context_menu.append((u'[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal={}")'.format(self.params['portal'])))
 
         if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anilibria")'.format(anime_id)))
+            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
 
         if self.auth_mode and 'common_part' in self.params['mode'] or self.auth_mode and 'schedule_part' in self.params['mode']:
-            context_menu.append((u'[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal=anilibria")'.format(anime_id)))
-            context_menu.append((u'[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal=anilibria")'.format(anime_id)))
+            context_menu.append((u'[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal={}")'.format(anime_id, self.params['portal'])))
+            context_menu.append((u'[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal={}")'.format(anime_id, self.params['portal'])))
         
-        context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anilibria")'))
-        context_menu.append((u'[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=anilibria")'))
-        context_menu.append((u'[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=anilibria")'))
+        context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal={}")'.format(self.params['portal'])))
+        context_menu.append((u'[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal={}")'.format(self.params['portal'])))
+        context_menu.append((u'[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal={}")'.format(self.params['portal'])))
 
         return context_menu
 #========================#========================#========================#
@@ -263,7 +281,7 @@ class Anilibria:
         if folder==False:
                 li.setProperty('isPlayable', 'true')
 
-        params['portal'] = 'anilibria'
+        params['portal'] = self.params['portal']
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
         if online: url = online
@@ -274,10 +292,7 @@ class Anilibria:
         url = 'https://api.anilibria.tv/v2/getTitle?id={}{}'.format(
             anime_id, '&filter=id,names,type.code,type.length,genres,team,season.year,description')
 
-        html = self.network.get_html2(target_name=url)
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        html = self.network.get_html(target_name=url)
 
         html = unescape(html)
 
@@ -330,21 +345,18 @@ class Anilibria:
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_mirror_part(self):
-        self.addon.setSetting('anilibria_unblock', '1')
+        self.addon.setSetting('{}_unblock'.format(self.params['portal']), '1')
 
         from network import WebTools
-        self.net = WebTools(auth_usage=False,auth_status=False,proxy_data=self.proxy_data)
+        self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=self.proxy_data, portal=self.params['portal'])
         del WebTools
 
-        html = self.net.get_html2(target_name='https://darklibria.it/redirect/mirror/1')
+        html = self.net.get_html(target_name='https://darklibria.it/redirect/mirror/1')
         
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
-
         mirror = html[html.find('mt-1" href="')+12:html.find('" target="_blank" rel="')]
 
-        self.addon.setSetting('anilibria_mirror_1', '{}/'.format(mirror))
-        self.addon.setSetting('anilibria_unblock', '0')
+        self.addon.setSetting('{}_mirror_1'.format(self.params['portal']), '{}/'.format(mirror))
+        self.addon.setSetting('{}_unblock'.format(self.params['portal']), '0')
         return
 #========================#========================#========================#
     def exec_update_database_part(self):
@@ -381,11 +393,8 @@ class Anilibria:
             pass
 #========================#========================#========================#
     def exec_favorites_part(self):
-        html = self.network.get_html2(self.site_url, self.create_post())
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
-        
+        html = self.network.get_html(self.site_url, self.create_post())
+       
         if 'status":false' in html:
             if 'fav_add' in self.params['param']:
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
@@ -432,7 +441,7 @@ class Anilibria:
         if self.params['param'] == '':
             self.create_line(title=u'[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
 
-            data_array = self.addon.getSetting('anilibria_search').split('|')
+            data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -446,11 +455,11 @@ class Anilibria:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
-                data_array = self.addon.getSetting('anilibria_search').split('|')
+                data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
                 while len(data_array) >= 10:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
-                self.addon.setSetting('anilibria_search', data_array)
+                self.addon.setSetting('{}_search'.format(self.params['portal']), data_array)
 
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
@@ -460,14 +469,11 @@ class Anilibria:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_schedule_part(self):
-        self.progress.create(u'Anilibria', u'Инициализация')
+        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
 
         from info import anilibria_week
 
-        html = self.network.get_html2(target_name=self.site_url, post=self.create_post())
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        html = self.network.get_html(target_name=self.site_url, post=self.create_post())
 
         if type(html) == int:
             self.create_line(title=u'[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -512,11 +518,8 @@ class Anilibria:
         return
 #========================#========================#========================#
     def exec_common_part(self):
-        self.progress.create(u'Anilibria', u'Инициализация')
-        html = self.network.get_html2(self.site_url, self.create_post())
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+        html = self.network.get_html(self.site_url, self.create_post())
 
         data_array = html[html.find('"id"'):].split('},{')
 
@@ -558,37 +561,37 @@ class Anilibria:
 
         if self.params['param'] == '':
             self.create_line(title='Жанр: [COLOR=gold]{}[/COLOR]'.format(
-                self.addon.getSetting('anilibria_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
+                self.addon.getSetting('{}_genre'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'genre'})
             self.create_line(title='Год: [COLOR=gold]{}[/COLOR]'.format(
-                self.addon.getSetting('anilibria_year')), params={'mode': 'catalog_part', 'param': 'year'})
+                self.addon.getSetting('{}_year'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'year'})
             self.create_line(title='Сезон: [COLOR=gold]{}[/COLOR]'.format(
-                self.addon.getSetting('anilibria_season')), params={'mode': 'catalog_part', 'param': 'season'})
+                self.addon.getSetting('{}_season'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'season'})
             self.create_line(title='Сортировка по: [COLOR=gold]{}[/COLOR]'.format(
-                self.addon.getSetting('anilibria_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
+                self.addon.getSetting('{}_sort'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'sort'})
             self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
-                self.addon.getSetting('anilibria_status')), params={'mode': 'catalog_part', 'param': 'status'})
+                self.addon.getSetting('{}_status'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'status'})
             self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
         if self.params['param'] == 'genre':
             result = self.dialog.select('Жанр:', anilibria_genre)
-            self.addon.setSetting(id='anilibria_genre', value=anilibria_genre[result])
+            self.addon.setSetting(id='{}_genre'.format(self.params['portal']), value=anilibria_genre[result])
         
         if self.params['param'] == 'year':
             result = self.dialog.select('Год:', anilibria_year)
-            self.addon.setSetting(id='anilibria_year', value=anilibria_year[result])
+            self.addon.setSetting(id='{}_year'.format(self.params['portal']), value=anilibria_year[result])
         
         if self.params['param'] == 'season':
             result = self.dialog.select('Сезон:', anilibria_season)
-            self.addon.setSetting(id='anilibria_season', value=anilibria_season[result])            
+            self.addon.setSetting(id='{}_season'.format(self.params['portal']), value=anilibria_season[result])            
 
         if self.params['param'] == 'sort':
             result = self.dialog.select('Сортировать по:', tuple(anilibria_sort.keys()))
-            self.addon.setSetting(id='anilibria_sort', value=tuple(anilibria_sort.keys())[result])
+            self.addon.setSetting(id='{}_sort'.format(self.params['portal']), value=tuple(anilibria_sort.keys())[result])
         
         if self.params['param'] == 'status':
             result = self.dialog.select('Статус релиза:', tuple(anilibria_status.keys()))
-            self.addon.setSetting(id='anilibria_status', value=tuple(anilibria_status.keys())[result])
+            self.addon.setSetting(id='{}_status'.format(self.params['portal']), value=tuple(anilibria_status.keys())[result])
 #========================#========================#========================#   
     def exec_select_part(self):
         self.create_line(title=u'[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
@@ -597,10 +600,7 @@ class Anilibria:
 #========================#========================#========================#
     def exec_online_part(self):
         if not self.params['param']:
-            html = self.network.get_html2(self.site_url, self.create_post())
-
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
+            html = self.network.get_html(self.site_url, self.create_post())
 
             array = {'480p': [], '720p': [], '1080p': []}
 
@@ -636,10 +636,7 @@ class Anilibria:
 #========================#========================#========================#
     def exec_torrent_part(self):
         if not self.params['param']:
-            html = self.network.get_html2(self.site_url, self.create_post())
-
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
+            html = self.network.get_html(self.site_url, self.create_post())
 
             data_array = html[html.find('[{"id"')+2:].split('},{')
 

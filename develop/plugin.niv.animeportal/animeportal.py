@@ -62,53 +62,98 @@ if not addon.getSetting('animeportal_proxy'):
     addon.setSetting('animeportal_proxy', '')
     addon.setSetting('animeportal_proxy_time', '')
 
-def create_portals():
-    if 'animeportal' in params['portal']:
-        portal_list = ('anidub','anilibria','animedia','anistar','shizaproject')
+if 'animeportal' in params['portal']:
+    portal_list = ('anidub','anilibria','animedia','anistar','shizaproject')
 
-        for portal in portal_list:
-            if 'true' in addon.getSetting('use_{}'.format(portal)):
-                li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper()))
-                li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
-                info = {'plot': animeportal_plot[portal], 'title': portal.upper(), 'tvshowtitle': portal.upper()}
-                li.setInfo(type='video', infoLabels=info)
-                url = '{}?{}'.format(sys.argv[0], urlencode({'mode': 'main_part', 'portal': portal}))
+    for portal in portal_list:
+        if 'true' in addon.getSetting('use_{}'.format(portal)):
+            li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper()))
+            li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
+            info = {'plot': animeportal_plot[portal], 'title': portal.upper(), 'tvshowtitle': portal.upper()}
+            li.setInfo(type='video', infoLabels=info)
+            url = '{}?{}'.format(sys.argv[0], urlencode({'mode': 'main_part', 'portal': portal}))
 
-                xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=True)
+            xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=True)
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+    xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-    if 'anidub' in params['portal']:
-        from anidub import Anidub
-        anidub = Anidub(addon_data_dir, params, addon, icon)
-        anidub.execute()
-        del Anidub
+if 'anidub' in params['portal']:
+    from anidub import Anidub
+    anidub = Anidub(addon_data_dir, params, addon, icon)
+    anidub.execute()
+    del Anidub
 
-    if 'anilibria' in params['portal']:
-        from anilibria import Anilibria
-        anilibria = Anilibria(addon_data_dir, params, addon, icon)
-        anilibria.execute()
-        del Anilibria
+if 'anilibria' in params['portal']:
+    from anilibria import Anilibria
+    anilibria = Anilibria(addon_data_dir, params, addon, icon)
+    anilibria.execute()
+    del Anilibria
             
-    if 'anistar' in params['portal']:
-        from anistar import Anistar
-        anistar = Anistar(addon_data_dir, params, addon, icon)
-        anistar.execute()
-        del Anistar
+if 'anistar' in params['portal']:
+    from anistar import Anistar
+    anistar = Anistar(addon_data_dir, params, addon, icon)
+    anistar.execute()
+    del Anistar
             
-    if 'animedia' in params['portal']:
-        from animedia import Animedia
-        animedia = Animedia(addon_data_dir, params, addon, icon)
-        animedia.execute()
-        del Animedia
+if 'animedia' in params['portal']:
+    from animedia import Animedia
+    animedia = Animedia(addon_data_dir, params, addon, icon)
+    animedia.execute()
+    del Animedia
         
-    if 'shizaproject' in params['portal']:
-        from shizaproject import Shiza
-        shiza = Shiza(addon_data_dir, params, addon, icon)
-        shiza.execute()
-        del Shiza
+if 'shizaproject' in params['portal']:
+    from shizaproject import Shiza
+    shiza = Shiza(addon_data_dir, params, addon, icon)
+    shiza.execute()
+    del Shiza
 
-if __name__ == "__main__":
-    create_portals()
+# def create_portals():
+#     if 'animeportal' in params['portal']:
+#         portal_list = ('anidub','anilibria','animedia','anistar','shizaproject')
+
+#         for portal in portal_list:
+#             if 'true' in addon.getSetting('use_{}'.format(portal)):
+#                 li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper()))
+#                 li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
+#                 info = {'plot': animeportal_plot[portal], 'title': portal.upper(), 'tvshowtitle': portal.upper()}
+#                 li.setInfo(type='video', infoLabels=info)
+#                 url = '{}?{}'.format(sys.argv[0], urlencode({'mode': 'main_part', 'portal': portal}))
+
+#                 xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=True)
+
+#         xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+#     if 'anidub' in params['portal']:
+#         from anidub import Anidub
+#         anidub = Anidub(addon_data_dir, params, addon, icon)
+#         anidub.execute()
+#         del Anidub
+
+#     if 'anilibria' in params['portal']:
+#         from anilibria import Anilibria
+#         anilibria = Anilibria(addon_data_dir, params, addon, icon)
+#         anilibria.execute()
+#         del Anilibria
+            
+#     if 'anistar' in params['portal']:
+#         from anistar import Anistar
+#         anistar = Anistar(addon_data_dir, params, addon, icon)
+#         anistar.execute()
+#         del Anistar
+            
+#     if 'animedia' in params['portal']:
+#         from animedia import Animedia
+#         animedia = Animedia(addon_data_dir, params, addon, icon)
+#         animedia.execute()
+#         del Animedia
+        
+#     if 'shizaproject' in params['portal']:
+#         from shizaproject import Shiza
+#         shiza = Shiza(addon_data_dir, params, addon, icon)
+#         shiza.execute()
+#         del Shiza
+
+# if __name__ == "__main__":
+#     create_portals()
 
 gc.collect()

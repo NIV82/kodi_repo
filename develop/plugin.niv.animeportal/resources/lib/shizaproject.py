@@ -29,16 +29,17 @@ class Shiza:
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
         
-        self.auth_mode = bool(self.addon.getSetting('shizaproject_auth_mode') == '1')
+        #self.auth_mode = bool(self.addon.getSetting('shizaproject_auth_mode') == '1')
+        self.auth_mode = bool(self.addon.getSetting('{}_auth_mode'.format(self.params['portal'])) == '1')
 #========================#========================#========================#
-        try: shizaproject_session = float(self.addon.getSetting('shizaproject_session'))
-        except: shizaproject_session = 0
+        try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
+        except: session = 0
 
-        if time.time() - shizaproject_session > 28800:
-            self.addon.setSetting('shizaproject_session', str(time.time()))
-            try: os.remove(os.path.join(self.cookie_dir, 'shizaproject.sid'))
+        if time.time() - session > 28800:
+            self.addon.setSetting('{}_session'.format(self.params['portal']), str(time.time()))
+            try: os.remove(os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal'])))
             except: pass
-            self.addon.setSetting('shizaproject_auth', 'false')
+            self.addon.setSetting('{}_auth'.format(self.params['portal']), 'false')
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
@@ -56,18 +57,18 @@ class Shiza:
         del WebTools
 #========================#========================#========================#  
         if self.auth_mode:
-            if not self.addon.getSetting("shizaproject_username") or not self.addon.getSetting("shizaproject_password"):
+            if not self.addon.getSetting('{}_username'.format(self.params['portal'])) or not self.addon.getSetting('{}_password'.format(self.params['portal'])):
                 self.params['mode'] = 'addon_setting'
-                self.dialog.ok('Авторизация','Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    self.dialog.ok('Авторизация','Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                    xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                     return
                 else:
-                    self.addon.setSetting("shizaproject_auth", str(self.network.auth_status).lower())
+                    self.addon.setSetting('{}_auth'.format(self.params['portal']), str(self.network.auth_status).lower())
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
@@ -275,11 +276,11 @@ class Shiza:
 
         series = u' - [COLOR=gold][ Серии: {} из {} ][/COLOR]'.format(episodes_aired, episodes_count)
 
-        if '0' in self.addon.getSetting('shizaproject_titles'):
+        if '0' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[0], series)
-        if '1' in self.addon.getSetting('shizaproject_titles'):
+        if '1' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[1], series)
-        if '2' in self.addon.getSetting('shizaproject_titles'):
+        if '2' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{} / {}{}'.format(title[0], title[1], series)
 
         return label
@@ -354,10 +355,7 @@ class Shiza:
                 }
         
         post = str(post).replace('\'','"').replace('None','null')
-        html = self.network.get_html2(self.site_url, post)
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        html = self.network.get_html(self.site_url, post)
 
         html = unescape(html)
         html = html.replace('\\n', '\n').replace('\\"', '"')
@@ -604,10 +602,7 @@ class Shiza:
         self.progress.create("ShizaProject", u"Инициализация")
         post = self.create_post()
 
-        html = self.network.get_html2(self.site_url, post)
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        html = self.network.get_html(self.site_url, post)
 
         data_array = html.split('{"node":{"slug":"')
         data_array.pop(0)
@@ -768,10 +763,7 @@ class Shiza:
                 self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': data[2], 'title':'[COLOR=gold][ PLAY ][/COLOR]', 'cover': cover})
 
         if self.params['param']:
-            html = self.network.get_html2(target_name=self.params['param'])
-            
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
+            html = self.network.get_html(target_name=self.params['param'])
 
             cover = html[html.find('og:image" content="')+19:html.find('"/><meta property="og:description')]
             

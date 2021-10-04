@@ -30,16 +30,17 @@ class Animedia:
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-        self.auth_mode = bool(self.addon.getSetting('animedia_auth_mode') == '1')
+        #self.auth_mode = bool(self.addon.getSetting('animedia_auth_mode') == '1')
+        self.auth_mode = bool(self.addon.getSetting('{}_auth_mode'.format(self.params['portal'])) == '1')
 #========================#========================#========================#
-        try: animedia_session = float(self.addon.getSetting('animedia_session'))
-        except: animedia_session = 0
+        try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
+        except: session = 0
 
-        if time.time() - animedia_session > 28800:
-            self.addon.setSetting('animedia_session', str(time.time()))
-            try: os.remove(os.path.join(self.cookie_dir, 'animedia.sid'))
+        if time.time() - session > 28800:
+            self.addon.setSetting('{}_session'.format(self.params['portal']), str(time.time()))
+            try: os.remove(os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal'])))
             except: pass
-            self.addon.setSetting('animedia_auth', 'false')
+            self.addon.setSetting('{}_auth'.format(self.params['portal']), 'false')
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(auth_usage=self.auth_mode,
@@ -53,18 +54,18 @@ class Animedia:
         del WebTools
 #========================#========================#========================#
         if self.auth_mode:
-            if not self.addon.getSetting("animedia_username") or not self.addon.getSetting("animedia_password"):
+            if not self.addon.getSetting('{}_username'.format(self.params['portal'])) or not self.addon.getSetting('{}_password'.format(self.params['portal'])):
                 self.params['mode'] = 'addon_setting'
-                self.dialog.ok('Авторизация','Ошибка - укажите [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    self.dialog.ok('Авторизация','Ошибка - проверьте [COLOR=gold]Логин[/COLOR] и [COLOR=gold]Пароль[/COLOR]')
+                    xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
                     return
                 else:
-                    self.addon.setSetting("animedia_auth", str(self.network.auth_status).lower())
+                    self.addon.setSetting('{}_auth'.format(self.params['portal']), str(self.network.auth_status).lower())
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
             self.exec_update_database_part()
@@ -156,11 +157,11 @@ class Animedia:
         else:
             series = ''
        
-        if '0' in self.addon.getSetting('animedia_titles'):
+        if '0' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[0], series)
-        if '1' in self.addon.getSetting('animedia_titles'):
+        if '1' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}'.format(title[1], series)
-        if '2' in self.addon.getSetting('animedia_titles'):
+        if '2' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{} / {}{}'.format(title[0], title[1], series)
 
         return label
@@ -281,16 +282,13 @@ class Animedia:
             pass
 
         url = '{}anime/{}'.format(self.site_url, anime_id)
-        html = self.network.get_html2(target_name=url)
+        html = self.network.get_html(target_name=url)
         
         if type(html) == int:
             label_ru = u'[B][COLOR=red]ERROR-404 - {}[/COLOR][/B]'.format(info['title_ru'])
             label_en = u'[B][COLOR=red]ERROR-404 - {}[/COLOR][/B]'.format(info['title_ru'])
             self.database.add_anime(anime_id=anime_id, title_ru=label_ru, title_en=label_en)
             return
-
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
 
         html = unescape(html)
 
@@ -446,10 +444,7 @@ class Animedia:
     def exec_common_part(self, url=None):
         self.progress.create('Animedia', u'Инициализация')
 
-        html = self.network.get_html2(target_name=self.create_url())
-        
-        try: html = html.decode(encoding='utf-8', errors='replace')
-        except: pass
+        html = self.network.get_html(target_name=self.create_url())
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
@@ -550,12 +545,9 @@ class Animedia:
 #========================#========================#========================#
     def exec_online_part(self):
         if not self.params['param']:
-            html = self.network.get_html2(
+            html = self.network.get_html(
                 target_name='{}anime/{}'.format(self.site_url,self.params['id']))
             
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
-
             html = unescape(html)
 
             if 'data-entry_id=' in html:
@@ -579,11 +571,8 @@ class Animedia:
         if '|||' in self.params['param']:
             url = '{}ajax/episodes/{}/undefined'.format(self.site_url, self.params['param'].replace('|||',''))
 
-            html = self.network.get_html2(target_name=url)
+            html = self.network.get_html(target_name=url)
             
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
-
             html = unescape(html)
 
             data_array = html[html.find('list__item">')+12:html.find('<div class="clearfix">')]
@@ -598,12 +587,9 @@ class Animedia:
                 self.create_line(title=series_title, anime_id=self.params['id'], params={'mode': 'online_part', 'param': series_url, 'id': self.params['id']})
 
         if 'anime/' in self.params['param']:
-            html = self.network.get_html2(
+            html = self.network.get_html(
                 target_name='{}{}'.format(self.site_url, self.params['param']))
             
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
-
             html = unescape(html)
 
             title = html[html.find('post__title">')+13:html.find('</h1>')]
@@ -613,10 +599,7 @@ class Animedia:
             video_url = video_url[:video_url.find('" />')]
 
             if video_url:
-                html = self.network.get_html2(target_name=video_url)
-
-                try: html = html.decode(encoding='utf-8', errors='replace')
-                except: pass
+                html = self.network.get_html(target_name=video_url)
 
                 online_url = html[html.find('file: "')+7:html.find('",poster')]
                 if not 'https:' in online_url:
@@ -629,12 +612,9 @@ class Animedia:
 #========================#========================#========================#
     def exec_torrent_part(self):
         if not self.params['param']:
-            html = self.network.get_html2(
+            html = self.network.get_html(
                 target_name='https://tt.animedia.tv/anime/{}'.format(self.database.get_tid(self.params['id']))
                 )
-
-            try: html = html.decode(encoding='utf-8', errors='replace')
-            except: pass
 
             html = unescape(html)
 
