@@ -398,8 +398,11 @@ class Anistar:
             pass
 #========================#========================#========================#
     def exec_mirror_part(self):
+
+        proxy_data = {'https': 'proxy-nossl.antizapret.prostovpn.org:29976'}
+
         from network import WebTools
-        self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=self.proxy_data)
+        self.net = WebTools(proxy_data=proxy_data, portal=self.params['portal'])
         del WebTools
 
         current_mirror = 'anistar_mirror_{}'.format(self.addon.getSetting('anistar_mirror_mode'))
@@ -411,16 +414,14 @@ class Anistar:
             actual_url = ht[ht.find('<center><h3><b><u>'):ht.find('</span></a></u></b></h3></center>')]
             actual_url = tag_list(actual_url).lower()
             actual_url = 'https://{}/'.format(actual_url)
-            self.addon.setSetting('anistar_unblock', '0')
             
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - [COLOR=lime]Выполнено[/COLOR]'.format(
-                self.params['portal'].capitalize()), 'Применяем новый адрес:\n[COLOR=blue]{}[/COLOR], Отключаем разблокировку'.format(actual_url), 5000, self.icon))          
+                self.params['portal'].capitalize()), 'Применяем новый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url), 5000, self.icon))          
         except:
             actual_url = site_url
-            self.addon.setSetting('anistar_unblock', '1')
             
             xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - [COLOR=red]Ошибка[/COLOR]'.format(
-                self.params['portal'].capitalize()), 'Применяем базовый адрес:\n[COLOR=blue]{}[/COLOR], Включаем разблокировку'.format(actual_url), 5000, self.icon))
+                self.params['portal'].capitalize()), 'Применяем базовый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url), 5000, self.icon))
 
         self.addon.setSetting(current_mirror, actual_url)
 #========================#========================#========================#
