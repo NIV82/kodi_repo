@@ -599,7 +599,8 @@ class Anidub:
     def exec_common_part(self):
         self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
 
-        url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
+        #url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
+        url = '{}{}page/{}/'.format(self.site_url, quote(self.params['param']), self.params['page'])
         post = ''
 
         if 'search_part' in self.params['param']:

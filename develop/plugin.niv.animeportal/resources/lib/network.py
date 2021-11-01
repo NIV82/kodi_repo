@@ -48,11 +48,17 @@ class WebTools:
 
         if 'shizaproject' in self.portal:
             self.headers['Content-Type'] = 'application/json'
-        
+
         try: post = post.encode(encoding='utf-8')
         except: pass
 
         try:
+            # import xbmc
+            # xbmc.log(str(target_name), xbmc.LOGFATAL)
+            # xbmc.log(str(post), xbmc.LOGFATAL)
+            # from urllib.parse import urlencode, quote, unquote
+            # xbmc.log(str(target_name), xbmc.LOGFATAL)
+
             url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
 
             try: charset = url.headers.getparam('charset')

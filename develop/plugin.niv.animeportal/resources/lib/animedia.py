@@ -31,7 +31,6 @@ class Animedia:
         #self.proxy_data = self.create_proxy_data()
         self.proxy_data = None
         self.site_url = self.create_site_url()
-        xbmc.log(str(self.site_url), xbmc.LOGNOTICE)
         self.auth_mode = bool(self.addon.getSetting('{}_auth_mode'.format(self.params['portal'])) == '1')
 #========================#========================#========================#
         try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))

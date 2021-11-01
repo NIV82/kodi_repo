@@ -614,7 +614,8 @@ class Anistar:
         post = ''
         
         if 'xfsearch' in self.params['param']:
-            url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], self.params['param'])
+            #url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], self.params['param'])
+            url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], quote(self.params['param']))
 
         if self.params['param'] == 'search_part':
             url = self.site_url
