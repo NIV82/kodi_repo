@@ -515,17 +515,18 @@ class Anistar:
                 return False
 
         if 'genres' in self.params['param']:
-            from info import anistar_genres
+            from info import anistar_genres2
 
-            for i in anistar_genres:
-                label = '{}'.format(i[1])
-                self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&xf={}'.format(quote(i[1]))})
+            for k, i in anistar_genres2.items():
+                label = '{}'.format(i)
+                self.create_line(title=label, params={'mode': 'common_part', 'param': 'genres', 'node': '{}'.format(k)})
 
         if 'years' in self.params['param']:
             from info import anistar_years
             for i in anistar_years:
                 label = '{}'.format(i)
-                self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&type=year&r=anime&xf={}'.format(i)})
+                # self.create_line(title=label, params={'mode': 'common_part', 'param': '&do=xfsearch&type=year&r=anime&xf={}'.format(i)})
+                self.create_line(title=label, params={'mode': 'common_part','param':'years', 'node': '{}'.format(i)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -612,10 +613,19 @@ class Anistar:
         
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         post = ''
-        
-        if 'xfsearch' in self.params['param']:
-            #url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], self.params['param'])
-            url = '{}index.php?cstart={}{}'.format(self.site_url, self.params['page'], quote(self.params['param']))
+
+        if 'genre' in self.params['param']:
+            from info import anistar_genres2
+
+            url = '{}index.php?cstart={}&do=xfsearch&xf={}'.format(
+                self.site_url, self.params['page'], quote(anistar_genres2[self.params['node']])
+                )
+
+        if 'years' in self.params['param']:
+            xbmc.log(str(self.params['node']), xbmc.LOGFATAL)
+            url = '{}index.php?cstart={}&do=xfsearch&type=year&r=anime&xf={}'.format(
+                self.site_url, self.params['page'], self.params['node']
+                )
 
         if self.params['param'] == 'search_part':
             url = self.site_url
