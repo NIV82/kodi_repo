@@ -74,6 +74,11 @@ if 'animeportal' in params['portal']:
         li.setInfo(type='video', infoLabels=info)
         url = '{}?{}'.format(sys.argv[0], urlencode({'mode': 'main_part', 'portal': portal}))
 
+        if 'animedia' in portal:
+            li.addContextMenuItems(
+                [('[COLOR=white]Обновить Зеркало[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?node=actual_url&portal=animedia")')]
+                )
+            
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=True)
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
@@ -96,6 +101,10 @@ if 'anistar' in params['portal']:
     del Anistar
             
 if 'animedia' in params['portal']:
+    if 'actual_url' in params['node']:
+        addon.setSetting('animedia_auth', 'false')
+        addon.setSetting('animedia_mirror_1', '')
+    
     from animedia import Animedia
     animedia = Animedia(addon_data_dir, params, addon, icon)
     animedia.execute()
@@ -106,5 +115,5 @@ if 'shizaproject' in params['portal']:
     shiza = Shiza(addon_data_dir, params, addon, icon)
     shiza.execute()
     del Shiza
-
+    
 gc.collect()

@@ -355,6 +355,10 @@ class Animedia:
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_mirror_part(self):
+        # auth = self.addon.getSetting('animedia_auth_mode')
+        
+        # self.addon.setSetting('animedia_auth_mode', '0')
+
         from network import WebTools
         self.net = WebTools()
         del WebTools
@@ -364,6 +368,8 @@ class Animedia:
         )
 
         self.addon.setSetting('{}_mirror_1'.format(self.params['portal']), 'https://{}/'.format(mirror))
+        
+        #self.addon.setSetting('animedia_auth_mode', auth)
         return
 #========================#========================#========================#
     def exec_update_database_part(self):
