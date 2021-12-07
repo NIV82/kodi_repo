@@ -19,7 +19,7 @@ from html import unescape
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
 #import utility, info
-from utility import clean_list, tag_list
+from utility import clean_list, tag_list, rep_list
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
@@ -117,44 +117,12 @@ class Lostfilm:
                 else:
                     addon.setSetting('lostfilm_auth', str(self.network.auth_status).lower())
 #========================#========================#========================#
-        # if not os.path.isfile(os.path.join(self.database_dir, 'lostfilm.db')):
-        #     self.exec_update_database_part()
+        if not os.path.isfile(os.path.join(self.database_dir, 'lostfilm.db')):
+            self.exec_update_database_part()
 #========================#========================#========================#
         from database import DataBase
         self.database = DataBase(os.path.join(self.database_dir, 'lostfilm.db'))
         del DataBase
-#========================#========================#========================#
-    # def create_proxy_data(self):
-    #     if '0' in addon.getSetting('{}_unblock'.format(self.params['portal'])):
-    #         return None
-
-    #     try: proxy_time = float(addon.getSetting('animeportal_proxy_time'))
-    #     except: proxy_time = 0
-
-    #     if time.time() - proxy_time > 86400:
-    #         addon.setSetting('animeportal_proxy_time', str(time.time()))
-    #         proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-    #         try: proxy_pac = proxy_pac.decode('utf-8')
-    #         except: pass
-            
-    #         proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #         addon.setSetting('animeportal_proxy', proxy)
-    #         proxy_data = {'https': proxy}
-    #     else:
-    #         if addon.getSetting('animeportal_proxy'):
-    #             proxy_data = {'https': addon.getSetting('animeportal_proxy')}
-    #         else:
-    #             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-    #             try: proxy_pac = proxy_pac.decode('utf-8')
-    #             except: pass
-                
-    #             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #             addon.setSetting('animeportal_proxy', proxy)
-    #             proxy_data = {'https': proxy}
-
-    #     return proxy_data
 #========================#========================#========================#
     def create_site_url(self):
         site_url = addon.getSetting('lostfilm_mirror_0')
@@ -173,35 +141,20 @@ class Lostfilm:
         
         data = data.split('/')
         
+        while len(data) < 3:
+            data.append('999')
+
         if 'additional' in data[1]:
             data[1] = '999'
-        
-        if len(data) < 3:
-            data.append('999')
             
         data[1] = 'SE{:>02}'.format(data[1])
         data[2] = 'EP{:>02}'.format(data[2])
 
-        # data_print(data)
-        # if len(data) > 2:
-        #     data[2] = 'EP{:>02}'.format(data[2])
-            
         return data
-    # def create_code(self, data):
-    #     data = data.replace('season_', '')
-    #     data = data.replace('episode_', '')
-        
-    #     data = data.split('/')
-
-    #     data[1] = 'SE{:>02}'.format(data[1])
-
-    #     if len(data) > 2:
-    #         data[2] = 'EP{:>02}'.format(data[2])
-            
-    #     return data
 #========================#========================#========================#
     def create_image(self, serial_id):
-        sid = serial_id.replace('SE','').replace('EP','')
+        sid = rep_list(serial_id, 'SE|,EP|,999|1')
+        
         sid = sid.split('|')
         
         serial_id = sid[0]
@@ -220,31 +173,6 @@ class Lostfilm:
         
         return image
 #========================#========================#========================#
-    # def create_cast(self, data):
-    #     array = {'cast_ru': [], 'cast_en': []}
-        
-    #     data = data[:data.rfind('</a>')]      
-    #     data = clean_list(data).split('</a>')
-        
-    #     for d in data:
-    #         d = unescape(d)
-            
-    #         # img = d[d.find('load="//'):d.find('" /><div')]
-    #         # img = img.replace('load="//', '')
-    #         # if img:
-    #         #     img = 'https://{}'.format(img)
-
-    #         d = d[d.find('<div class="name-ru">'):]
-    #         d = d.replace('<div class="clr">', '|')
-    #         d = d.replace('<div class="role-pane">', '|')
-    #         d = tag_list(d)
-    #         d = d.split('|')
-            
-    #         array['cast_ru'].append('{}|{}'.format(d[0],d[2]))
-    #         array['cast_en'].append('{}|{}'.format(d[1],d[3]))
-            
-    #     return array
-    
     def create_cast(self, data, actors=False):
         cast = []
         
@@ -378,29 +306,28 @@ class Lostfilm:
 #             else:
 #                 file_name = os.path.join(self.images_dir, local_img)
 #                 return self.network.get_file(target_name=url, destination_name=file_name)
-# #========================#========================#========================#
-#     def create_context(self, anime_id):
-#         context_menu = []
+#========================#========================#========================#
+    def create_context(self):
+        context_menu = []
         
-#         context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal={}")'.format(self.params['portal'])))
-#         context_menu.append((u'[COLOR=darkorange]Обновить Зеркала[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal={}")'.format(self.params['portal'])))
+        #context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal={}")'.format(self.params['portal'])))
 
-#         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-#             context_menu.append((u'[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal={}")'.format(self.params['portal'])))
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
 
-#         if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-#             context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
+        # if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+        #     context_menu.append(('[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
 
-#         if self.auth_mode and 'common_part' in self.params['mode'] or self.auth_mode and 'schedule_part' in self.params['mode']:
-#             context_menu.append((u'[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal={}")'.format(anime_id, self.params['portal'])))
-#             context_menu.append((u'[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal={}")'.format(anime_id, self.params['portal'])))
+        # if self.auth_mode and 'common_part' in self.params['mode'] or self.auth_mode and 'schedule_part' in self.params['mode']:
+        #     context_menu.append(('[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal={}")'.format(anime_id, self.params['portal'])))
+        #     context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal={}")'.format(anime_id, self.params['portal'])))
         
-#         context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal={}")'.format(self.params['portal'])))
-#         context_menu.append((u'[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal={}")'.format(self.params['portal'])))
-#         context_menu.append((u'[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal={}")'.format(self.params['portal'])))
+        context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
+        context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=play")'))
+        context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=bugs")'))
 
-#         return context_menu
-# #========================#========================#========================#
+        return context_menu
+#========================#========================#========================#
     #def create_line(self, title=None, params=None, serial_id=None, season=None, image_id=None, size=None, folder=True, online=None):
     def create_line(self, title=None, params=None, serial_id=None, size=None, folder=True, online=None):
         #Chucky|SE01|EP07|623       
@@ -408,11 +335,6 @@ class Lostfilm:
         
         if serial_id:            
             serial_data = serial_id.split('|')
-
-            #cover = self.create_image(image_id, season)
-            #['Chucky', 'SE01', 'EP07', '623']
-            #cover = self.create_image(serial_data[3], serial_data[1])
-            #cover = self.create_image(serial_id=serial_data[0], serial_season=serial_data[1])
             cover = self.create_image(serial_id=serial_id)
             serial_data = serial_id.split('|')
             
@@ -420,7 +342,6 @@ class Lostfilm:
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
             
             se_info = self.database.get_serial(serial_data[0])
-            #se_info = self.database.get_serial(serial_id)
 
             info = {
                 'genre':se_info[1], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
@@ -454,7 +375,7 @@ class Lostfilm:
 
             li.setInfo(type='video', infoLabels=info)
 
-#         li.addContextMenuItems(self.create_context(anime_id))
+        li.addContextMenuItems(self.create_context())
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -557,57 +478,40 @@ class Lostfilm:
 #     def exec_update_anime_part(self):
 #         self.create_info(anime_id=self.params['id'], update=True)
 #         xbmc.executebuiltin('Container.Refresh')
-# #========================#========================#========================#
-#     def exec_mirror_part(self):
-#         #addon.setSetting('{}_unblock'.format(self.params['portal']), '1')
-
-#         proxy_data = {'https': 'proxy-nossl.antizapret.prostovpn.org:29976'}
-
-#         from network import WebTools
-#         self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=proxy_data, portal=self.params['portal'])
-#         del WebTools
-
-#         html = self.net.get_html(target_name='https://darklibria.it/redirect/mirror/1')
+#========================#========================#========================#
+    def exec_update_database_part(self):
+        try: self.database.end()
+        except: pass
         
-#         mirror = html[html.find('mt-1" href="')+12:html.find('" target="_blank" rel="')]
+        try: os.remove(os.path.join(self.database_dir, 'lostfilm.db'))
+        except: pass
 
-#         addon.setSetting('{}_mirror_1'.format(self.params['portal']), '{}/'.format(mirror))
-#         #addon.setSetting('{}_unblock'.format(self.params['portal']), '0')
-#         return
-# #========================#========================#========================#
-#     def exec_update_database_part(self):
-#         try: self.database.end()
-#         except: pass
-        
-#         try: os.remove(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
-#         except: pass
+        db_file = os.path.join(self.database_dir, 'lostfilm.db')
+        db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/lostfilm.db'
+        try:                
+            data = urlopen(db_url)
+            chunk_size = 8192
+            bytes_read = 0
 
-#         db_file = os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))
-#         db_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/ap_{}.db'.format(self.params['portal'])
-#         try:                
-#             data = urlopen(db_url)
-#             chunk_size = 8192
-#             bytes_read = 0
+            try: file_size = int(data.info().getheaders("Content-Length")[0])
+            except: file_size = int(data.getheader('Content-Length'))
 
-#             try: file_size = int(data.info().getheaders("Content-Length")[0])
-#             except: file_size = int(data.getheader('Content-Length'))
-
-#             self.progress.create(u'Загрузка Базы Данных')
-#             with open(db_file, 'wb') as write_file:
-#                 while True:
-#                     chunk = data.read(chunk_size)
-#                     bytes_read = bytes_read + len(chunk)
-#                     write_file.write(chunk)
-#                     if len(chunk) < chunk_size:
-#                         break
-#                     percent = bytes_read * 100 / file_size
-#                     self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-#                 self.progress.close()
-#             xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=lime]УСПЕШНО ЗАГРУЖЕНА[/COLOR]', 5000, icon))
-#         except:
-#             xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ERROR: 100[/COLOR]', 5000, icon))
-#             pass
-# #========================#========================#========================#
+            self.progress.create('Загрузка Базы Данных')
+            with open(db_file, 'wb') as write_file:
+                while True:
+                    chunk = data.read(chunk_size)
+                    bytes_read = bytes_read + len(chunk)
+                    write_file.write(chunk)
+                    if len(chunk) < chunk_size:
+                        break
+                    percent = bytes_read * 100 / file_size
+                    self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                self.progress.close()
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=lime]УСПЕШНО ЗАГРУЖЕНА[/COLOR]', 5000, icon))
+        except:
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ERROR: 100[/COLOR]', 5000, icon))
+            pass
+#========================#========================#========================#
     # def exec_favorites_part(self):
     #     html = self.network.get_html(self.site_url, self.create_post())
        
@@ -624,25 +528,25 @@ class Lostfilm:
     #             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, icon))
         
     #     xbmc.executebuiltin('Container.Refresh')
-# #========================#========================#========================#
-#     def exec_clean_part(self):
-#         try:
-#             addon.setSetting('{}_search'.format(self.params['portal']), '')
-#             xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=lime]УСПЕШНО ВЫПОЛНЕНО[/COLOR]', 5000, icon))
-#         except:
-#             xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=gold]ERROR: 102[/COLOR]', 5000, icon))
-#             pass
-# #========================#========================#========================#
-#     def exec_information_part(self):
-#         from info import animeportal_data as info
+#========================#========================#========================#
+    def exec_clean_part(self):
+        try:
+            addon.setSetting('lostfilm_search', '')
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=lime]УСПЕШНО ВЫПОЛНЕНО[/COLOR]', 5000, icon))
+        except:
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=gold]ERROR: 102[/COLOR]', 5000, icon))
+            pass
+#========================#========================#========================#
+    def exec_information_part(self):
+        from info import lostfilm_data as info
             
-#         start = '[{}]'.format(self.params['param'])
-#         end = '[/{}]'.format(self.params['param'])
-#         data = info[info.find(start)+6:info.find(end)].strip()
+        start = '[{}]'.format(self.params['param'])
+        end = '[/{}]'.format(self.params['param'])
+        data = info[info.find(start)+6:info.find(end)].strip()
 
-#         self.dialog.textviewer(u'Информация', data)
-#         return
-# #========================#========================#========================#
+        self.dialog.textviewer('Информация', data)
+        return
+#========================#========================#========================#
     def exec_main_part(self):
         # if self.auth_mode:
         #     self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
@@ -654,37 +558,38 @@ class Lostfilm:
         self.create_line(title='[B][COLOR=lime][ Новости ][/COLOR][/B]', params={'mode': 'catalog_part'})
         self.create_line(title='[B][COLOR=lime][ Видео - Новости ][/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-# #========================#========================#========================#
-#     def exec_search_part(self):
-#         if self.params['param'] == '':
-#             self.create_line(title=u'[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+#========================#========================#========================#
+    def exec_search_part(self):
+        if self.params['param'] == '':
+            self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
 
-#             data_array = addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
-#             data_array.reverse()
+            data_array = addon.getSetting('lostfilm_search').split('|')
+            data_array.reverse()
 
-#             for data in data_array:
-#                 if data == '':
-#                     continue
-#                 self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
+            for data in data_array:
+                if data == '':
+                    continue
+                #data_print(data)
+                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': data})
 
-#         if self.params['param'] == 'search':
-#             skbd = xbmc.Keyboard()
-#             skbd.setHeading('Поиск:')
-#             skbd.doModal()
-#             if skbd.isConfirmed():
-#                 self.params['search_string'] = quote(skbd.getText())
-#                 data_array = addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
-#                 while len(data_array) >= 10:
-#                     data_array.pop(0)
-#                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
-#                 addon.setSetting('{}_search'.format(self.params['portal']), data_array)
+        if self.params['param'] == 'search':
+            skbd = xbmc.Keyboard()
+            skbd.setHeading('Поиск:')
+            skbd.doModal()
+            if skbd.isConfirmed():
+                self.params['search_string'] = quote(skbd.getText())
+                data_array = addon.getSetting('lostfilm_search').split('|')
+                while len(data_array) >= 10:
+                    data_array.pop(0)
+                data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
+                addon.setSetting('lostfilm_search', data_array)
 
-#                 self.params['param'] = 'search_part'
-#                 self.exec_common_part()
-#             else:
-#                 return False
+                self.params['param'] = 'search_part'
+                self.exec_common_part()
+            else:
+                return False
 
-#         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_schedule_part(self):
         self.progress.create('LostFilm', 'Инициализация')
@@ -713,6 +618,8 @@ class Lostfilm:
             data = data.split('<td class="alpha"')
             data.pop(0)
             
+            a = 0
+            
             for d in data:
                 d = clean_list(d)
                 d = d[d.find('<td class="delta'):]
@@ -730,9 +637,12 @@ class Lostfilm:
                 series_date = d[0]
                 series_meta = d[1]
                 
+                a = a + 1
+                
                 if self.progress.iscanceled():
                     break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                self.progress.update(p, 'Обработано: [COLOR=gold]{}%[/COLOR]\n[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
+                    p, i, len(data_array), a, len(data)))
 
                 if not self.database.serial_in_db(serial_id):
                     inf = self.create_info(serial_id)
@@ -755,9 +665,13 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_common_part(self):
+        #https://www.lostfilm.tv/search/?q=звездный
         #https://www.lostfilm.tv/new/page_2
         self.progress.create('LostFilm', 'Инициализация')
         url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
+
+        if 'search_part' in self.params['param']:
+            url = '{}search/?q={}'.format(self.site_url,quote(self.params['search_string']))
 
         html = self.network.get_html(target_name=url)#, self.create_post())
 
@@ -769,8 +683,11 @@ class Lostfilm:
         for data in data_array:
             data = unescape(clean_list(data))
 
-            #image_id = data[data.find('Images/')+7:data.find('/Posters/')]            
+            #image_id = data[data.find('Images/')+7:data.find('/Posters/')]
             series_url = data[data.find('series/')+7:data.find('/" style')]
+            if 'search_part' in self.params['param']:
+                series_url = data[data.find('series/')+7:data.find('" class')]
+            #data_print(series_url)
 
             se_code = self.create_code(series_url)
             serial_id = se_code[0]
@@ -788,10 +705,13 @@ class Lostfilm:
             
             label = '[COLOR=blue]{}[/COLOR][COLOR=lime]{}[/COLOR] | [B]{}[/B]: {}'.format(
                 se_code[1], se_code[2], title_ru, series_title_ru)
-            
+
             if '999' in se_code[2]:
                 label = '[COLOR=blue]{}[/COLOR] | [B]{}[/B]'.format(
                     se_code[1], title_ru)
+            
+            if 'search_part' in self.params['param']:
+                label = '[B]{}[/B]'.format(title_ru)
 
             serial_data = '|'.join(se_code)
 
@@ -893,11 +813,11 @@ class Lostfilm:
                     title = self.create_title(se_code[0])
 
                     label = '[COLOR=blue]{}[/COLOR][COLOR=lime]{}[/COLOR] | [B]{}[/B]: {} | [COLOR=gold]{}[/COLOR]'.format(
-                        se_code[1].replace('SE999',''), se_code[2], title, series_title, air_data)
+                        se_code[1].replace('SE999','').replace('EP999',''), se_code[2], title, series_title, air_data)
                     
                     if '"not-available"' in data:
                         label = '[B][COLOR=dimgray]{}{} | {}: {} | {}[/COLOR][/B]'.format(
-                            se_code[1].replace('SE999',''), se_code[2], title, series_title, air_data)
+                            se_code[1].replace('SE999','').replace('EP999',''), se_code[2], title, series_title, air_data)
                         
                     self.create_line(title=label, serial_id=serial_data, params={'mode': 'select_part', 'param': serial_data})
 
