@@ -211,23 +211,23 @@ class Lostfilm:
 
         return data
 #========================#========================#========================#
-#     def create_post(self):
-#         from info import anilibria_status, anilibria_sort
+    def create_post(self):
+        from info import genre, year, channel, types, sort, status
+        
+        post = None
 
-#         if self.params['param'] == 'fav_add':
-#             post = 'query=favorites&id={}&action=add&filter=id%2Cseries%2Cannounce'.format(self.params['id'])
-#         if self.params['param'] == 'fav_del':
-#             post = 'query=favorites&id={}&action=delete&filter=id%2Cseries%2Cannounce'.format(self.params['id'])
-#         if self.params['param'] == 'favorites':
-#             post = 'query=favorites&filter=id%2Cseries%2Cannounce'
-#         if self.params['param'] == 'search_part':
-#             post = 'query=search&search={}&filter=id%2Cseries%2Cannounce'.format(self.params['search_string'])
-#         if self.params['mode'] == 'schedule_part':
-#             post = 'query=schedule&filter=id%2Cseries%2Cannounce'
-#         if self.params['param'] == 'updated':
-#             post = 'query=catalog&page={}&xpage=catalog&sort=1&filter=id%2Cseries%2Cannounce'.format(self.params['page'])
-#         if self.params['param'] == 'popular':
-#             post = 'query=catalog&page={}&xpage=catalog&sort=2&filter=id%2Cseries%2Cannounce'.format(self.params['page'])
+        if 'catalog' in self.params['param']:
+            lostfilm_genre = '&g={}'.format(genre[addon.getSetting('lostfilm_genre')]) if genre[addon.getSetting('lostfilm_genre')] else ''
+            lostfilm_year = '&y={}'.format(year[addon.getSetting('lostfilm_year')]) if year[addon.getSetting('lostfilm_year')] else ''
+            lostfilm_channel = '&c={}'.format(channel[addon.getSetting('lostfilm_channel')]) if channel[addon.getSetting('lostfilm_channel')] else ''
+            lostfilm_types = '&r={}'.format(types[addon.getSetting('lostfilm_types')]) if types[addon.getSetting('lostfilm_types')] else ''
+            lostfilm_sort = sort[addon.getSetting('lostfilm_sort')]
+            lostfilm_status = status[addon.getSetting('lostfilm_status')]
+            
+            post = 'act=serial&type=search&o=0{}{}{}{}&s={}&t={}'.format(
+                lostfilm_genre, lostfilm_year, lostfilm_channel, lostfilm_types, lostfilm_sort, lostfilm_status)
+
+            #data_print(post)
 #         if self.params['param'] == 'catalog':
 #             post = 'query=catalog&page={}&filter=id%2Cseries%2Cannounce&xpage=catalog&search=%7B%22year%22%3A%22{}%22%2C%22genre%22%3A%22{}%22%2C%22season%22%3A%22{}%22%7D&sort={}&finish={}'.format(
 #                 self.params['page'],
@@ -241,35 +241,32 @@ class Lostfilm:
 #         if self.params['mode'] == 'torrent_part':
 #             post = 'query=release&id={}&filter=torrents'.format(self.params['id'])
       
-#         return post
+        return post
 #========================#========================#========================#
-    def create_title(self, serial_id):
-        title = self.database.get_title(serial_id)
+    def create_title(self, se_code, series=None):
+        code = '[COLOR=blue]{}[/COLOR][COLOR=lime]{}[/COLOR] | '.format(
+            se_code[1].replace('SE999',''), se_code[2].replace('EP999','')
+            )
         
-        # if series:
-        #     res = u'Серии: {}'.format(series)
-        #     if announce:
-        #         res = u'{} ] - [ {}'.format(res, announce)
-        #     series = u' - [COLOR=gold][ {} ][/COLOR]'.format(res)
-        #     if xbmc.getSkinDir() == 'skin.aeon.nox.silvo' and self.params['mode'] == 'common_part':
-        #         series = u' - [ {} ]'.format(res)
-        # else:
-        #     series = ''
-
-        # if '0' in addon.getSetting('lostfilm_titles'):
-        #     label = '{}{}'.format(title[0], series)
-        # if '1' in addon.getSetting('lostfilm_titles'):
-        #     label = '{}{}'.format(title[1], series)
-        # if '2' in addon.getSetting('lostfilm_titles'):
-        #     label = '{} / {}{}'.format(title[0], title[1], series)
-
-        if '0' in addon.getSetting('lostfilm_titles'):
-            label = '{}'.format(title[0])
-        if '1' in addon.getSetting('lostfilm_titles'):
-            label = '{}'.format(title[1])
-        # if '2' in addon.getSetting('lostfilm_titles'):
-        #     label = '{} / {}'.format(title[0], title[1])
+        if 'EP' in code or 'SE' in code:
+            code = code
+        else:
+            code = ''
+        
+        title = self.database.get_title(se_code[0])
+        
+        if series:
+            series = series.split('|')
             
+            series_title = ': {}'.format(
+                series[int(addon.getSetting('lostfilm_titles'))]
+                )
+        else:
+            series_title = ''
+
+        label = '{}[B]{}[/B]{}'.format(
+            code, title[int(addon.getSetting('lostfilm_titles'))], series_title)
+
         return label
 # #========================#========================#========================#
 #     def create_title(self, title, series, announce=None):        
@@ -554,9 +551,9 @@ class Lostfilm:
         self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
         self.create_line(title='[B][COLOR=yellow][ Новинки Серий ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new/'})
         self.create_line(title='[B][COLOR=yellow][ Новинки Сезонов ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new_seasons/'})
-        self.create_line(title='[B][COLOR=blue][ Сериалы - Каталог ][/COLOR][/B]', params={'mode': 'common_part'})
-        self.create_line(title='[B][COLOR=lime][ Новости ][/COLOR][/B]', params={'mode': 'catalog_part'})
-        self.create_line(title='[B][COLOR=lime][ Видео - Новости ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=blue][ Сериалы - Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=lime][ Новости ][/COLOR][/B]', params={'mode': 'news'})
+        self.create_line(title='[B][COLOR=lime][ Видео - Новости ][/COLOR][/B]', params={'mode': 'video'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
@@ -597,9 +594,9 @@ class Lostfilm:
         url = '{}schedule/'.format(self.site_url)
         html = self.network.get_html(target_name=url)
 
-        # if type(html) == int:
-        #     self.create_line(title=u'[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
-        #     return
+        if type(html) == int:
+            self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
+            return
 
         data_array = html[html.find('<th colspan="6">')+16:html.rfind('<td class="placeholder">')]        
         data_array = data_array.split('<th colspan="6">')
@@ -664,54 +661,56 @@ class Lostfilm:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
-    def exec_common_part(self):
-        #https://www.lostfilm.tv/search/?q=звездный
-        #https://www.lostfilm.tv/new/page_2
-        self.progress.create('LostFilm', 'Инициализация')
+    def create_url(self):
         url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
-
+        
         if 'search_part' in self.params['param']:
-            url = '{}search/?q={}'.format(self.site_url,quote(self.params['search_string']))
-
-        html = self.network.get_html(target_name=url)#, self.create_post())
-
-        data_array = html[html.find('<div class="hor-breaker dashed">')+32:html.rfind('<div class="hor-breaker dashed">')]
-        data_array = data_array.split('<div class="hor-breaker dashed">')
+            url = '{}search/?q={}'.format(self.site_url, quote(self.params['search_string']))
+        
+        if 'catalog' in self.params['param']:
+            url = '{}ajaxik.php'.format(self.site_url)
+        
+        
+        return url
+#========================#========================#========================#
+    def exec_common_part(self):
+        self.progress.create('LostFilm', 'Инициализация')
+        
+        html = self.network.get_html(target_name=self.create_url(), post=self.create_post())
+        
+        if 'catalog' in self.params['param']:
+            data_array = html.split('},{')
+        else:            
+            if html.find('<div class="hor-breaker dashed">') == -1:
+                self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+            
+            data_array = html[html.find('<div class="hor-breaker dashed">')+32:html.rfind('<div class="hor-breaker dashed">')]
+            data_array = data_array.split('<div class="hor-breaker dashed">')
 
         i = 0
 
         for data in data_array:
-            data = unescape(clean_list(data))
+            data = clean_list(data)
 
-            #image_id = data[data.find('Images/')+7:data.find('/Posters/')]
             series_url = data[data.find('series/')+7:data.find('/" style')]
             if 'search_part' in self.params['param']:
                 series_url = data[data.find('series/')+7:data.find('" class')]
-            #data_print(series_url)
+            if 'catalog' in self.params['param']:
+                series_url = data[data.find('series\/')+8:data.find('","alias')]
 
-            se_code = self.create_code(series_url)
-            serial_id = se_code[0]
+            series = None
+            if 'alpha">' in data:
+                series_title_ru = data[data.find('alpha">')+7:data.find('</div><div class="beta">')]
+                series_title_en = data[data.find('beta">')+6:data.find('</div><div class="hor-spacer3')]
+                if series_title_ru:
+                    series = '{}|{}'.format(series_title_ru, series_title_en)
             
-            series_timedate = data[data.find('<div class="right-part">')+24:data.find('</div></div><img src="')]
-
-            title_ru = data[data.find('class="name-ru">')+16:data.find('</div><div class="clr')]
-            title_en = data[data.find('class="name-en">')+16:data.rfind('</div><div class="clr')]
-
-            series_title_ru = data[data.find('alpha">')+7:data.find('</div><div class="beta">')]            
-            series_title_en = data[data.find('beta">')+6:data.find('</div><div class="hor-spacer3')]
+            se_code = self.create_code(series_url)
 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
-            
-            label = '[COLOR=blue]{}[/COLOR][COLOR=lime]{}[/COLOR] | [B]{}[/B]: {}'.format(
-                se_code[1], se_code[2], title_ru, series_title_ru)
-
-            if '999' in se_code[2]:
-                label = '[COLOR=blue]{}[/COLOR] | [B]{}[/B]'.format(
-                    se_code[1], title_ru)
-            
-            if 'search_part' in self.params['param']:
-                label = '[B]{}[/B]'.format(title_ru)
 
             serial_data = '|'.join(se_code)
 
@@ -719,13 +718,14 @@ class Lostfilm:
                 break
             self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-            if not self.database.serial_in_db(serial_id):
-                inf = self.create_info(serial_id)
+            if not self.database.serial_in_db(se_code[0]):
+                inf = self.create_info(se_code[0])
                 
                 if type(inf) == int:
                     self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, serial_id), params={})
                     continue
 
+            label = self.create_title(se_code, series)
             self.create_line(title=label, serial_id=serial_data, params={'mode': 'select_part', 'id': serial_data})
 
         self.progress.close()
@@ -735,43 +735,48 @@ class Lostfilm:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
-#     def exec_catalog_part(self):
-#         from info import anilibria_year, anilibria_season, anilibria_genre, anilibria_status, anilibria_sort
-
-#         if self.params['param'] == '':
-#             self.create_line(title='Жанр: [COLOR=gold]{}[/COLOR]'.format(
-#                 addon.getSetting('{}_genre'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'genre'})
-#             self.create_line(title='Год: [COLOR=gold]{}[/COLOR]'.format(
-#                 addon.getSetting('{}_year'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'year'})
-#             self.create_line(title='Сезон: [COLOR=gold]{}[/COLOR]'.format(
-#                 addon.getSetting('{}_season'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'season'})
-#             self.create_line(title='Сортировка по: [COLOR=gold]{}[/COLOR]'.format(
-#                 addon.getSetting('{}_sort'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'sort'})
-#             self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
-#                 addon.getSetting('{}_status'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'status'})
-#             self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog'})
-#             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-
-#         if self.params['param'] == 'genre':
-#             result = self.dialog.select('Жанр:', anilibria_genre)
-#             addon.setSetting(id='{}_genre'.format(self.params['portal']), value=anilibria_genre[result])
+    def exec_catalog_part(self):
+        from info import genre, year, channel, types, status, sort
         
-#         if self.params['param'] == 'year':
-#             result = self.dialog.select('Год:', anilibria_year)
-#             addon.setSetting(id='{}_year'.format(self.params['portal']), value=anilibria_year[result])
-        
-#         if self.params['param'] == 'season':
-#             result = self.dialog.select('Сезон:', anilibria_season)
-#             addon.setSetting(id='{}_season'.format(self.params['portal']), value=anilibria_season[result])            
+        if self.params['param'] == '':
+            self.create_line(title='Жанр: [COLOR=gold]{}[/COLOR]'.format(
+                addon.getSetting('lostfilm_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
+            self.create_line(title='Год: [COLOR=gold]{}[/COLOR]'.format(
+                addon.getSetting('lostfilm_year')), params={'mode': 'catalog_part', 'param': 'year'})
+            self.create_line(title='Канал: [COLOR=gold]{}[/COLOR]'.format(
+                addon.getSetting('lostfilm_channel')), params={'mode': 'catalog_part', 'param': 'channel'})            
+            self.create_line(title='Тип: [COLOR=gold]{}[/COLOR]'.format(
+                addon.getSetting('lostfilm_types')), params={'mode': 'catalog_part', 'param': 'types'})            
+            self.create_line(title='Сортировка: [COLOR=gold]{}[/COLOR]'.format(
+                addon.getSetting('lostfilm_sort')), params={'mode': 'catalog_part', 'param': 'sort'})            
+            self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
+                addon.getSetting('lostfilm_status')), params={'mode': 'catalog_part', 'param': 'status'})            
+            self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
-#         if self.params['param'] == 'sort':
-#             result = self.dialog.select('Сортировать по:', tuple(anilibria_sort.keys()))
-#             addon.setSetting(id='{}_sort'.format(self.params['portal']), value=tuple(anilibria_sort.keys())[result])
-        
-#         if self.params['param'] == 'status':
-#             result = self.dialog.select('Статус релиза:', tuple(anilibria_status.keys()))
-#             addon.setSetting(id='{}_status'.format(self.params['portal']), value=tuple(anilibria_status.keys())[result])
+        if 'genre' in self.params['param']:
+            result = self.dialog.select('Жанр:', tuple(genre.keys()))
+            addon.setSetting(id='lostfilm_genre', value=tuple(genre.keys())[result])
 
+        if 'year' in self.params['param']:
+            result = self.dialog.select('Год:', tuple(year.keys()))
+            addon.setSetting(id='lostfilm_year', value=tuple(year.keys())[result])
+
+        if 'channel' in self.params['param']:
+            result = self.dialog.select('Канал:', tuple(channel.keys()))
+            addon.setSetting(id='lostfilm_channel', value=tuple(channel.keys())[result])
+
+        if 'types' in self.params['param']:
+            result = self.dialog.select('Тип:', tuple(types.keys()))
+            addon.setSetting(id='lostfilm_types', value=tuple(types.keys())[result])
+
+        if 'sort' in self.params['param']:
+            result = self.dialog.select('Сортировать по:', tuple(sort.keys()))
+            addon.setSetting(id='lostfilm_sort', value=tuple(sort.keys())[result])
+
+        if 'status' in self.params['param']:
+            result = self.dialog.select('Статус релиза:', tuple(status.keys()))
+            addon.setSetting(id='lostfilm_status', value=tuple(status.keys())[result])
 #========================#========================#========================#
     def exec_select_part(self):
         if not self.params['param']:

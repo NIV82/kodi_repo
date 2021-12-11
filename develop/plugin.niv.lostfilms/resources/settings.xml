@@ -21,6 +21,13 @@
     <setting id="lostfilm_session" label="session" type="text" default="" visible="false"/>
     <setting id="lostfilm_search" label="status" type="text" default="" visible="false"/>
     <setting id="lostfilm_auth" label="auth" type="bool" default="false" visible="false"/>
+    
+    <setting id="lostfilm_genre" label="genre" type="text" default="" visible="false"/>
+    <setting id="lostfilm_year" label="year" type="text" default="" visible="false"/>
+    <setting id="lostfilm_channel" label="channel" type="text" default="" visible="false"/>
+    <setting id="lostfilm_types" label="types" type="text" default="" visible="false"/>
+    <setting id="lostfilm_sort" label="sort" type="text" default="По новизне" visible="false"/>
+    <setting id="lostfilm_status" label="status" type="text" default="все" visible="false"/>
   </category>
 
 </settings>
