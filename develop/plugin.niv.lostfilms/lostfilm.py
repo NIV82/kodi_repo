@@ -18,7 +18,6 @@ from html import unescape
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-#import utility, info
 from utility import clean_list, tag_list, rep_list
 
 def data_print(data):
@@ -63,16 +62,14 @@ class Lostfilm:
             'mode': 'main_part',
             'param': '',
             'page': '1',
-            'sort':'',
-            'node':''
+            'sort': '',
+            'node': '0'
             }
 
         args = parse_qs(sys.argv[2][1:])
         for a in args:
             self.params[a] = unquote(args[a][0])
 
-        self.proxy_data = None
-        # self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
 
         self.auth_mode = bool(addon.getSetting('lostfilm_auth_mode') == '1')
@@ -90,7 +87,7 @@ class Lostfilm:
         self.network = WebTools(
             auth_usage=self.auth_mode,
             auth_status=bool(addon.getSetting('lostfilm_auth') == 'true'),
-            proxy_data=self.proxy_data
+            proxy_data=None
             )
         
         self.auth_post_data = 'act=users&type=login&mail={}&pass={}&need_captcha=1&rem=1'.format(
@@ -136,6 +133,8 @@ class Lostfilm:
         return site_url
 #========================#========================#========================#
     def create_code(self, data):
+        data = data.strip()
+        
         data = data.replace('season_', '')
         data = data.replace('episode_', '')
         
@@ -219,33 +218,17 @@ class Lostfilm:
             lostfilm_types = '&r={}'.format(types[addon.getSetting('lostfilm_types')]) if types[addon.getSetting('lostfilm_types')] else ''
             lostfilm_sort = sort[addon.getSetting('lostfilm_sort')]
             lostfilm_status = status[addon.getSetting('lostfilm_status')]
+            lostfilm_page = self.params['node']
             
-            post = 'act=serial&type=search&o=0{}{}{}{}&s={}&t={}'.format(
-                lostfilm_genre, lostfilm_year, lostfilm_channel, lostfilm_types, lostfilm_sort, lostfilm_status)
+            post = 'act=serial&type=search&o={}{}{}{}{}&s={}&t={}'.format(
+                lostfilm_page,lostfilm_genre,lostfilm_year,lostfilm_channel,lostfilm_types,lostfilm_sort,lostfilm_status)
 
-            #data_print(post)
-#         if self.params['param'] == 'catalog':
-#             post = 'query=catalog&page={}&filter=id%2Cseries%2Cannounce&xpage=catalog&search=%7B%22year%22%3A%22{}%22%2C%22genre%22%3A%22{}%22%2C%22season%22%3A%22{}%22%7D&sort={}&finish={}'.format(
-#                 self.params['page'],
-#                 addon.getSetting('{}_year'.format(self.params['portal'])),
-#                 addon.getSetting('{}_genre'.format(self.params['portal'])),
-#                 addon.getSetting('{}_season'.format(self.params['portal'])),
-#                 anilibria_sort[addon.getSetting('{}_sort'.format(self.params['portal']))],
-#                 anilibria_status[addon.getSetting('{}_status'.format(self.params['portal']))])
-#         if self.params['mode'] == 'online_part':
-#             post = 'query=release&id={}&filter=playlist'.format(self.params['id'])
-#         if self.params['mode'] == 'torrent_part':
-#             post = 'query=release&id={}&filter=torrents'.format(self.params['id'])
-      
         return post
 #========================#========================#========================#
     def create_title(self, se_code, series=None, mode=False):
         code = '[COLOR=blue]{}[/COLOR][COLOR=lime]{}[/COLOR] | '.format(
             se_code[1].replace('SE999',''), se_code[2].replace('EP999','')
             )
-        
-        # code = '{}{} | '.format(
-        #     se_code[1].replace('SE999',''), se_code[2].replace('EP999',''))
         
         if mode:
             code = '{}{} | '.format(
@@ -271,41 +254,6 @@ class Lostfilm:
             code, title[int(addon.getSetting('lostfilm_titles'))], series_title)
 
         return label
-# #========================#========================#========================#
-#     def create_title(self, title, series, announce=None):        
-#         if series:
-#             res = u'Серии: {}'.format(series)
-#             if announce:
-#                 res = u'{} ] - [ {}'.format(res, announce)
-#             series = u' - [COLOR=gold][ {} ][/COLOR]'.format(res)
-#             if xbmc.getSkinDir() == 'skin.aeon.nox.silvo' and self.params['mode'] == 'common_part':
-#                 series = u' - [ {} ]'.format(res)
-#         else:
-#             series = ''
-
-#         if '0' in addon.getSetting('{}_titles'.format(self.params['portal'])):
-#             label = u'{}{}'.format(title[0], series)
-#         if '1' in addon.getSetting('{}_titles'.format(self.params['portal'])):
-#             label = u'{}{}'.format(title[1], series)
-#         if '2' in addon.getSetting('{}_titles'.format(self.params['portal'])):
-#             label = u'{} / {}{}'.format(title[0], title[1], series)
-
-#         return label
-# #========================#========================#========================#
-#     def create_image(self, anime_id):
-#         site_url = self.site_url.replace('public/api/index.php','').replace('//www.','//static.')
-#         url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
-
-#         if '0' in addon.getSetting('{}_covers'.format(self.params['portal'])):
-#             return url
-#         else:
-#             local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
-#             if local_img in os.listdir(self.images_dir):
-#                 local_path = os.path.join(self.images_dir, local_img)
-#                 return local_path
-#             else:
-#                 file_name = os.path.join(self.images_dir, local_img)
-#                 return self.network.get_file(target_name=url, destination_name=file_name)
 #========================#========================#========================#
     def create_context(self):
         context_menu = []
@@ -384,6 +332,7 @@ class Lostfilm:
 #========================#========================#========================#
     def create_info(self, serial_id, update=False):
         url = '{}series/{}/'.format(self.site_url, serial_id)
+
         html = self.network.get_html(url)
         html = unescape(html)
 
@@ -671,6 +620,13 @@ class Lostfilm:
         html = self.network.get_html(target_name=self.create_url(), post=self.create_post())
         
         if 'catalog' in self.params['param']:
+            html = html[html.find('":[')+3:html.find('],"')]
+            
+            if not html:
+                self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+            
             data_array = html.split('},{')
         else:            
             if html.find('<div class="hor-breaker dashed">') == -1:
@@ -691,7 +647,7 @@ class Lostfilm:
                 series_url = data[data.find('series/')+7:data.find('" class')]
             if 'catalog' in self.params['param']:
                 series_url = data[data.find('series\/')+8:data.find('","alias')]
-
+            
             series = None
             if 'alpha">' in data:
                 series_title_ru = data[data.find('alpha">')+7:data.find('</div><div class="beta">')]
@@ -722,6 +678,9 @@ class Lostfilm:
         
         if '<div class="next-link active">' in html:
             self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+        
+        if 'catalog' in self.params['param'] and len(data_array) >= 10:
+            self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'node': (int(self.params['node']) + 10)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -767,6 +726,50 @@ class Lostfilm:
         if 'status' in self.params['param']:
             result = self.dialog.select('Статус релиза:', tuple(status.keys()))
             addon.setSetting(id='lostfilm_status', value=tuple(status.keys())[result])
+        
+        # if 'catalog' in self.params['param']:
+        #     self.progress.create('LostFilm', 'Инициализация')
+            
+        #     html = self.network.get_html(target_name=self.create_url(), post=self.create_post())
+        #     html = html[html.find('":[')+3:html.find('],"')]
+
+        #     if not html:
+        #         self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
+        #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        #         return
+
+        #     data_array = html.split('},{')
+
+        #     i = 0
+            
+        #     for data in data_array:
+        #         data = clean_list(data)
+        #         series_url = data[data.find('series\/')+8:data.find('","alias')]
+                
+        #         se_code = self.create_code(series_url)
+                
+        #         i = i + 1
+        #         p = int((float(i) / len(data_array)) * 100)
+                
+        #         if self.progress.iscanceled():
+        #             break
+        #         self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                
+        #         if not self.database.serial_in_db(se_code[0]):
+        #             inf = self.create_info(se_code[0])
+                    
+        #             if type(inf) == int:
+        #                 self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, serial_id), params={})
+        #                 continue
+                
+        #         label = self.create_title(se_code)
+        #         self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
+
+        #     self.progress.close()
+
+        #     self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'node': (int(self.params['node']) + 10)})
+
+        #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)  
 #========================#========================#========================#
     def exec_select_part(self):
         if not self.params['param']:
@@ -821,7 +824,6 @@ class Lostfilm:
             url = '{}v_search.php?c={}&s={}&e={}'.format(
                 self.site_url,image_id,int(serial_data[1]),int(serial_data[2])
                 )
-            data_print(url)
                 
             html = self.network.get_html(target_name=url)
             
@@ -900,7 +902,6 @@ class Lostfilm:
             purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-
 
 if __name__ == "__main__":
     lostfilm = Lostfilm()
