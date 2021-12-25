@@ -26,7 +26,41 @@ class DataBase:
             self.c.commit()
             self.cu.execute('CREATE UNIQUE INDEX i_c ON cast_db (serial_id)')
             self.c.commit()
+
+        # self.cu.execute('SELECT COUNT(1) FROM sqlite_master WHERE type=\'table\' AND name=\'watched_db\'')
+        # self.c.commit()
+        # if self.cu.fetchone()[0] == 0:
+        #     self.cu.execute('CREATE TABLE watched_db(serial_id TEXT NOT NULL PRIMARY KEY, code TEXT)')
+        #     self.c.commit()
+        #     self.cu.execute('CREATE INDEX w_i ON watched_db (serial_id)')
+        #     self.c.commit()
+
+    # def watched_in_db(self, se_code):
+    #     serial_id = se_code[:se_code.find('|')]
+    #     self.cu.execute('SELECT COUNT(1) FROM watched_db WHERE serial_id=?', (serial_id,))
+    #     self.c.commit()
+    #     return False if '0' in str(self.cu.fetchone()[0]) else True
+
+    # def add_watched(self, se_code):
+    #     serial_code = se_code.split('|')
+    #     serial_id = serial_code[0]
+    #     code = '{}{}'.format(serial_code[1],serial_code[2])
+
+    #     if self.watched_in_db(se_code):
+    #         self.cu.execute('SELECT code FROM watched_db WHERE serial_id=?', (serial_id,))        
+    #         self.c.commit()
+
+    #         db_code = self.cu.fetchone()[0]
             
+    #         if not code in str(db_code):
+    #             new_code = '{}|{}'.format(db_code, code) if db_code else '{}'.format(code)
+    #             self.cu.execute('UPDATE watched_db SET code=? WHERE serial_id=?',(new_code, serial_id))
+    #             self.c.commit()
+    #     else:
+    #         self.cu.execute('INSERT INTO watched_db (serial_id, code) VALUES (?,?)',(serial_id, code))
+    #         self.c.commit()
+    #     return
+    
     def add_serial(self, serial_id, title_ru='', title_en='', aired_on='', genres='', studios='', country='', description='', image_id='', update=False):
         if not update:
             self.cu.execute('INSERT INTO serials_db (serial_id, title_ru, title_en, aired_on, genres, studios, country, description, image_id) VALUES (?,?,?,?,?,?,?,?,?)',
@@ -59,6 +93,13 @@ class DataBase:
         self.cu.execute('SELECT title_ru, title_en FROM serials_db WHERE serial_id=?', (serial_id,))
         self.c.commit()
         return self.cu.fetchone()
+
+    def get_year(self, serial_id):
+        self.cu.execute('SELECT aired_on FROM serials_db WHERE serial_id=?', (serial_id,))
+        self.c.commit()
+        year = self.cu.fetchone()[0]
+        year = year[:year.find('.')]
+        return year
     
     def get_serial(self, serial_id):
         self.cu.execute('SELECT aired_on, genres, studios, country, description FROM serials_db WHERE serial_id=?', (serial_id,))
