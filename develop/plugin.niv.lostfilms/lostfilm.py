@@ -104,10 +104,10 @@ class Lostfilm:
         self.network.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
         del WebTools
 #========================#========================#========================#
-        if 'false' in addon.getSetting('notice'):
-            from info import notice
-            self.dialog.textviewer('Уведомление', notice)
-            addon.setSetting('notice','true')
+        # if 'false' in addon.getSetting('notice'):
+        #     from info import notice
+        #     self.dialog.textviewer('Уведомление', notice)
+        #     addon.setSetting('notice','true')
 
         if not addon.getSetting('username') or not addon.getSetting('password'):
             self.params['mode'] = 'addon_setting'
@@ -305,6 +305,10 @@ class Lostfilm:
 
         if se_code and self.params['mode'] in ('common_part','favorites_part','catalog_part','schedule_part','search_part'):
             context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&id={}")'.format(se_code[0])))
+        
+        if se_code:
+            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(se_code[0])))
+            
             
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=play")'))
@@ -312,13 +316,9 @@ class Lostfilm:
 
         return context_menu
 #========================#========================#========================#
-    #def create_line(self, title=None, params=None, se_code=None, size=None, folder=True, online=None, session=None):
-    #def create_line(self, title=None, params=None, se_code=None, watched=False, size=None, folder=True, online=None):
     def create_line(self, title=None, params=None, se_code=None, size=None, folder=True, online=None):
         li = xbmcgui.ListItem(title)
 
-        #data_print(session)
-        
         if se_code:
             cover = self.create_image(se_code)
             
@@ -326,7 +326,7 @@ class Lostfilm:
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
             
             se_info = self.database.get_serial(se_code[0])
-            
+
             info = {
                 'genre':se_info[1], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
                 'country':se_info[3],#string (Germany) or list of strings (["Germany", "Italy", "France"])
@@ -367,8 +367,6 @@ class Lostfilm:
 
             li.setInfo(type='video', infoLabels=info)
 
-        #li.select(True)
-        #li.addContextMenuItems(self.create_context(se_code, session))
         li.addContextMenuItems(self.create_context(se_code))
 
         if folder==False:
@@ -421,7 +419,7 @@ class Lostfilm:
                 country=info['country'],
                 description=info['description'],
                 image_id=info['image_id'],
-                update=False                
+                update=update                
             )
         except:
             return 101
@@ -455,7 +453,7 @@ class Lostfilm:
                 directors=','.join(cast['directors']),
                 producers=','.join(cast['producers']),
                 writers=','.join(cast['writers']),
-                update=False
+                update=update
             )
         except:
             return 101
@@ -469,10 +467,10 @@ class Lostfilm:
 #========================#========================#========================#
     def exec_addon_setting(self):
         addon.openSettings()
-# #========================#========================#========================#
-#     def exec_update_anime_part(self):
-#         self.create_info(anime_id=self.params['id'], update=True)
-#         xbmc.executebuiltin('Container.Refresh')
+#========================#========================#========================#
+    def exec_update_serial_part(self):
+        self.create_info(serial_id=self.params['id'], update=True)
+        xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
@@ -718,8 +716,6 @@ class Lostfilm:
 
             label = self.create_title(se_code, series)
             self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
-            #self.create_line(title=label, se_code=se_code, session=user_session, params={'mode': 'select_part', 'id': se_code[0]})
-            #self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'id': se_code[0]})
             ### se_code[0] - проверить возможность отсылки всего se_code
 
         self.progress.close()
