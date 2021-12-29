@@ -32,37 +32,46 @@ def clean_list(data):
         data = data.replace(value, '')
     return data
 
-def tag_list(data):
-    start = data.find('<')
-    end = data.find('>')
+# def tag_list(data):
+#     start = data.find('<')
+#     end = data.find('>')
+#     while start < end and start > -1:
+#         data = data.replace(data[start:end+1], '').strip()
+#         start = data.find('<')
+#         end = data.find('>')
+#     return data
+
+def clean_tags(data, tag_start, tag_end):
+    start = data.find(tag_start)
+    end = data.find(tag_end)
     while start < end and start > -1:
         data = data.replace(data[start:end+1], '').strip()
-        start = data.find('<')
-        end = data.find('>')
+        start = data.find(tag_start)
+        end = data.find(tag_end)
     return data
 
-def fix_list(data):
-    fix_list = [('\\n', '\n'),('\\"', '"'),('""', '"'),('<br><b>','<br> <b>')]
-    for value in fix_list:
-        data = data.replace(value[0], value[1])            
-    return data
+# def fix_list(data):
+#     fix_list = [('\\n', '\n'),('\\"', '"'),('""', '"'),('<br><b>','<br> <b>')]
+#     for value in fix_list:
+#         data = data.replace(value[0], value[1])            
+#     return data
 
-def digit_list(data):
-    result = []
-    for d in data:
-        if d.isdigit():
-            result.append(d)
-    return ''.join(result)
+# def digit_list(data):
+#     result = []
+#     for d in data:
+#         if d.isdigit():
+#             result.append(d)
+#     return ''.join(result)
 
-def rep_list(data, rep_data):
-    rep_values = []
-    rep_data = rep_data.split(',')
+# def rep_list(data, rep_data):
+#     rep_values = []
+#     rep_data = rep_data.split(',')
 
-    for i in rep_data:
-        i = i.split('|')
-        rep_values.append((i[0], i[1]))
+#     for i in rep_data:
+#         i = i.split('|')
+#         rep_values.append((i[0], i[1]))
     
-    for value in rep_values:
-        data = data.replace(value[0], value[1])
+#     for value in rep_values:
+#         data = data.replace(value[0], value[1])
     
-    return data
+#     return data

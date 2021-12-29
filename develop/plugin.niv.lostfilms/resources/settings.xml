@@ -20,7 +20,7 @@
     <setting id="user_session" label="session" type="text" default="" visible="false"/>
     <setting id="search" label="status" type="text" default="" visible="false"/>
     <setting id="auth" label="auth" type="bool" default="false" visible="false"/>
-    <setting id="notice" label="notice" type="bool" default="false" visible="false"/>
+    <!-- <setting id="notice" label="notice" type="bool" default="false" visible="false"/> -->
 
     <setting id="genre" label="genre" type="text" default="" visible="false"/>
     <setting id="year" label="year" type="text" default="" visible="false"/>

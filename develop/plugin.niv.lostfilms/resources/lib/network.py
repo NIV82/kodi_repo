@@ -7,21 +7,8 @@ from urllib.request import Request
 from urllib.request import HTTPError
 from http.cookiejar import MozillaCookieJar
 
-#from urllib.request import HTTPRedirectHandler
-#from socket import timeout
-
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
-        # self.headers = {
-        #     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
-        #     'Accept': '*/*',
-        #     'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-        #     'Accept-Charset': 'utf-8',
-        #     'Accept-Encoding': 'identity',
-        #     #'Content-Type': 'application/json'
-        #     #'Content-Type': 'application/x-www-form-urlencoded'
-        #     }
-        
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
             #'Accept': '*/*',
@@ -110,38 +97,26 @@ class WebTools:
 
         try: post_data = bytes(self.auth_post_data, encoding='utf-8')
         except: post_data = self.auth_post_data
-        
-        # import xbmc
-        # xbmc.log(str('AUTH START'), xbmc.LOGFATAL)
 
         if self.auth_status:
             try:
                 self.mcj.load(self.sid_file)
                 auth = True
-                #print('NODE LOAD')
             except:
-                #xbmc.log(str('AUTH TRY'), xbmc.LOGFATAL)
                 data = self.url_opener.open(Request(self.auth_url, post_data, self.headers))
                 response = data.read()
 
                 try: response = str(response, encoding='utf-8')
                 except: pass
-                
-                # import xbmc
-                # xbmc.log(str(response), xbmc.LOGFATAL)
-                #print('NODE SAVE')
-                
+
                 if 'success' in response:
                     auth = True
                     self.mcj.save(self.sid_file)
                 else:
                     auth = False
         else:
-            #xbmc.log(str('AUTH STATUS ELSE'), xbmc.LOGFATAL)
             data = self.url_opener.open(Request(self.auth_url, post_data, self.headers))
             response = data.read()
-            
-            #xbmc.log(str(response), xbmc.LOGFATAL)
             
             try: response = str(response, encoding='utf-8')
             except: pass
