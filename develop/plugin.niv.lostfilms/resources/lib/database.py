@@ -104,3 +104,8 @@ class DataBase:
         self.cu.execute('SELECT image_id FROM serials_db WHERE serial_id=?', (serial_id,))
         self.c.commit()
         return self.cu.fetchone()[0]
+
+    def get_serials_id(self):
+        self.cu.execute('SELECT serial_id FROM serials_db')
+        self.c.commit()
+        return self.cu.fetchall()

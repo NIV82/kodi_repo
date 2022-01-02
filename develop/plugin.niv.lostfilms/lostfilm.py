@@ -288,7 +288,7 @@ class Lostfilm:
         label = '{}[B]{}[/B]{}'.format(
             code, title[int(addon.getSetting('titles'))], series_title)
         
-        if 'search_part' in self.params['param'] or 'catalog_part' in self.params['mode']:
+        if 'search_part' in self.params['param'] or 'catalog_part' in self.params['mode'] or 'serials_part' in self.params['mode']:
             label = '[COLOR=blue]{}[/COLOR] | [B]{}{}[/B]{}'.format(
                 year, code, title[int(addon.getSetting('titles'))], series_title)
 
@@ -565,16 +565,41 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
         self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
         self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
-        #self.create_line(title='[B][COLOR=yellow][ Новинки Серий ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new/'})
+        self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
         self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new/'})
+        self.create_line(title='[B][COLOR=yellow][ Все сериалы ][/COLOR][/B]', params={'mode': 'serials_part'})
         #self.create_line(title='[B][COLOR=yellow][ Новинки Сезонов ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new_seasons/'})
-        self.create_line(title='[B][COLOR=blue][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=blue][ Каталог Сериалов][/COLOR][/B]', params={'mode': 'catalog_part'})
         #self.create_line(title='[B][COLOR=lime][ Новости ][/COLOR][/B]', params={'mode': 'news'})
         #self.create_line(title='[B][COLOR=lime][ Видео - Новости ][/COLOR][/B]', params={'mode': 'video'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+#========================#========================#========================#
+    def exec_serials_part(self):
+        self.progress.create('LostFilm', 'Инициализация')
+
+        data_array = self.database.get_serials_id()
+        data_array = [data[0] for data in self.database.get_serials_id()]
+        
+        i = 0
+        
+        for data in data_array:
+            se_code = self.create_code(data)
+
+            i = i + 1
+            p = int((float(i) / len(data_array)) * 100)
+            
+            if self.progress.iscanceled():
+                break
+            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            
+            label = self.create_title(se_code)
+            self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
+        
+        self.progress.close()
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
+        return
 #========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
