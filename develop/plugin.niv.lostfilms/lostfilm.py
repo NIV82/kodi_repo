@@ -85,22 +85,13 @@ class Lostfilm:
             addon.setSetting('auth', 'false')
 #========================#========================#========================#
         from network import WebTools
-        self.network = WebTools(auth_usage=True,auth_status=bool(addon.getSetting('auth') == 'true'))
-        
+        self.network = WebTools(auth_usage=True,auth_status=bool(addon.getSetting('auth') == 'true'))        
         self.network.auth_post_data = 'act=users&type=login&mail={}&pass={}&need_captcha=1&rem=1'.format(
             addon.getSetting('username'), addon.getSetting('password'))
-
-        #self.network.auth_post_data = self.auth_post_data
         self.network.auth_url = '{}ajaxik.users.php'.format(self.site_url)
-
         self.network.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
         del WebTools
 #========================#========================#========================#
-        # if 'false' in addon.getSetting('notice'):
-        #     from info import notice
-        #     self.dialog.textviewer('Уведомление', notice)
-        #     addon.setSetting('notice','true')
-
         if not addon.getSetting('username') or not addon.getSetting('password'):
             self.params['mode'] = 'addon_setting'
             xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, icon))
@@ -141,6 +132,20 @@ class Lostfilm:
             site_url = addon.getSetting(current_mirror)
 
         return site_url
+#========================#========================#========================#
+    def create_url(self):
+        url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
+
+        if 'search_part' in self.params['param']:
+            url = '{}search/?q={}'.format(self.site_url, quote(self.params['search_string']))
+        
+        if 'catalog' in self.params['param'] or 'favorites' in self.params['param'] or 'favorites_part' in self.params['mode']:
+            url = '{}ajaxik.php'.format(self.site_url)
+
+        if 'select_part' in self.params['mode']:
+            url = '{}ajaxik.php'.format(self.site_url)
+
+        return url
 #========================#========================#========================#
     def create_code(self, data):
         if '/' in data[len(data)-1]:
@@ -252,11 +257,6 @@ class Lostfilm:
             post = 'act=serial&type=getmarks&id={}'.format(
                 self.database.get_image_id(self.params['id'])
                 )
-            
-        if 'mark_part' in self.params['mode']:
-            post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
-                addon.getSetting('user_session'), self.params['id'], self.params['param'])
-
         return post
 #========================#========================#========================#
     def create_title(self, se_code, series=None, mode=False):
@@ -309,10 +309,8 @@ class Lostfilm:
             context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(se_code[0])))
         
         if se_code and not '999' in se_code[2]:
-            data_code = '{}{:>03}{:>03}'.format(
-                self.database.get_image_id(se_code[0]),se_code[1].replace('SE', ''), se_code[2].replace('EP', ''))
-            context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&id={}&param=on")'.format(data_code)))
-            context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&id={}&param=off")'.format(data_code)))
+            context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(','.join(se_code))))
+            context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(','.join(se_code))))
 
         #context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         #context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=play")'))
@@ -520,17 +518,25 @@ class Lostfilm:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ERROR: 100[/COLOR]', 5000, icon))
             pass
 #========================#========================#========================#
-    def exec_mark_part(self):
-        html = self.network.get_html(
-            target_name='{}ajaxik.php'.format(self.site_url), post = self.create_post()
-            )
+    def exec_mark_part(self, notice=True, se_code=False, mode=False):
+        se_code = se_code.split(',') if se_code else self.params['id'].split(',')
+        mode = mode if mode else self.params['param']
         
-        if '"on' in str(html):
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]ОТМЕЧЕНО КАК ПРОСМОТРЕННОЕ[/COLOR]', 5000, icon))
-        if 'off' in str(html):
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]ОТМЕЧЕНО КАК НЕПРОСМОТРЕННОЕ[/COLOR]', 5000, icon))
-        if 'error' in str(html):
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 104[/COLOR]', 5000, icon))
+        data_code = '{}{:>03}{:>03}'.format(
+            self.database.get_image_id(se_code[0]),se_code[1].replace('SE', ''), se_code[2].replace('EP', ''))
+        
+        html = self.network.get_html(
+            target_name='{}ajaxik.php'.format(self.site_url),
+            post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
+                addon.getSetting('user_session'), data_code, mode))
+        
+        if notice:
+            if '"on' in str(html):
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]ОТМЕЧЕНО КАК ПРОСМОТРЕННОЕ[/COLOR]', 5000, icon))
+            if 'off' in str(html):
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]ОТМЕЧЕНО КАК НЕПРОСМОТРЕННОЕ[/COLOR]', 5000, icon))
+            if 'error' in str(html):
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 104[/COLOR]', 5000, icon))
             
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
@@ -575,31 +581,6 @@ class Lostfilm:
         #self.create_line(title='[B][COLOR=lime][ Новости ][/COLOR][/B]', params={'mode': 'news'})
         #self.create_line(title='[B][COLOR=lime][ Видео - Новости ][/COLOR][/B]', params={'mode': 'video'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-#========================#========================#========================#
-    def exec_serials_part(self):
-        self.progress.create('LostFilm', 'Инициализация')
-
-        data_array = self.database.get_serials_id()
-        data_array = [data[0] for data in self.database.get_serials_id()]
-        
-        i = 0
-        
-        for data in data_array:
-            se_code = self.create_code(data)
-
-            i = i + 1
-            p = int((float(i) / len(data_array)) * 100)
-            
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
-            
-            label = self.create_title(se_code)
-            self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
-        
-        self.progress.close()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
-        return
 #========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
@@ -704,20 +685,6 @@ class Lostfilm:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
-#========================#========================#========================#
-    def create_url(self):
-        url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
-
-        if 'search_part' in self.params['param']:
-            url = '{}search/?q={}'.format(self.site_url, quote(self.params['search_string']))
-        
-        if 'catalog' in self.params['param'] or 'favorites' in self.params['param'] or 'favorites_part' in self.params['mode']:
-            url = '{}ajaxik.php'.format(self.site_url)
-
-        if 'select_part' in self.params['mode']:
-            url = '{}ajaxik.php'.format(self.site_url)
-
-        return url
 #========================#========================#========================#
     def exec_common_part(self):
         self.progress.create('LostFilm', 'Инициализация')
@@ -865,7 +832,32 @@ class Lostfilm:
             if len(data_array) >= 10:
                 self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'node': (int(self.params['node']) + 10)})
 
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)  
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+#========================#========================#========================#
+    def exec_serials_part(self):
+        self.progress.create('LostFilm', 'Инициализация')
+
+        data_array = self.database.get_serials_id()
+        data_array.sort(key=lambda tup: tup[int(addon.getSetting('titles'))+1])
+            
+        i = 0
+        
+        for data in data_array:
+            se_code = self.create_code(data[0])
+
+            i = i + 1
+            p = int((float(i) / len(data_array)) * 100)
+            
+            if self.progress.iscanceled():
+                break
+            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            
+            label = self.create_title(se_code)
+            self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
+        
+        self.progress.close()
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
+        return
 #========================#========================#========================#
     def exec_select_part(self):
         if not self.params['param']:
@@ -1015,8 +1007,8 @@ class Lostfilm:
             purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-        
-        #self.database.add_watched(self.params['node'])
+
+        self.exec_mark_part(notice=False, se_code=self.params['node'].replace('|', ','), mode='on')
 
 if __name__ == "__main__":
     lostfilm = Lostfilm()
