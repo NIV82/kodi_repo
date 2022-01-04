@@ -18,11 +18,7 @@ from html import unescape
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-from utility import clean_list, clean_tags#, tag_list
-
-def data_print(data):
-    xbmc.log(str(data), xbmc.LOGFATAL)
-    return
+from utility import clean_list, clean_tags
 
 addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
 icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
@@ -31,6 +27,10 @@ addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
 
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
+
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+    
 class Lostfilm:    
     def __init__(self):
         if not os.path.exists(addon_data_dir):
@@ -52,28 +52,16 @@ class Lostfilm:
         if not os.path.exists(self.database_dir):
             os.mkdir(self.database_dir)
 
-        self.watched_dir = os.path.join(addon_data_dir, 'watched')
-        if not os.path.exists(self.watched_dir):
-            os.mkdir(self.watched_dir)
-
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
-        self.params = {
-            'mode': 'main_part',
-            'param': '',
-            'page': '1',
-            #'sort': '',
-            'node': '0'
-            }
+        self.params = {'mode': 'main_part','param': '','page': '1','node': '0'}
 
         args = parse_qs(sys.argv[2][1:])
         for a in args:
             self.params[a] = unquote(args[a][0])
 
         self.site_url = self.create_site_url()
-
-        #self.auth_mode = bool(addon.getSetting('auth_mode') == '1')
 #========================#========================#========================#
         try: session = float(addon.getSetting('auth_session'))
         except: session = 0
@@ -133,20 +121,6 @@ class Lostfilm:
 
         return site_url
 #========================#========================#========================#
-    def create_url(self):
-        url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
-
-        if 'search_part' in self.params['param']:
-            url = '{}search/?q={}'.format(self.site_url, quote(self.params['search_string']))
-        
-        if 'catalog' in self.params['param'] or 'favorites' in self.params['param'] or 'favorites_part' in self.params['mode']:
-            url = '{}ajaxik.php'.format(self.site_url)
-
-        if 'select_part' in self.params['mode']:
-            url = '{}ajaxik.php'.format(self.site_url)
-
-        return url
-#========================#========================#========================#
     def create_code(self, data):
         if '/' in data[len(data)-1]:
             data = data[0:-1]
@@ -200,7 +174,6 @@ class Lostfilm:
             d = d[d.find('<div class="name-ru">'):]
             d = d.replace('<div class="clr">', '|')
             d = d.replace('<div class="role-pane">', '|')
-            #d = tag_list(d)
             d = clean_tags(d, '<', '>')
             d = d.replace('||', '')            
             d = d.split('|')
@@ -223,7 +196,6 @@ class Lostfilm:
         data = data.replace('Сюжет</strong>', '\n\nСюжет:')
         data = data.replace('Сюжет:</strong>', '\n\nСюжет:')
         
-        #data = tag_list(data)
         data = clean_tags(data, '<', '>')
 
         return data
@@ -312,9 +284,9 @@ class Lostfilm:
             context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(','.join(se_code))))
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(','.join(se_code))))
 
-        #context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
-        #context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=play")'))
-        #context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=bugs")'))
+        context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
+        context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=play")'))
+        context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=bugs")'))
 
         return context_menu
 #========================#========================#========================#
@@ -357,7 +329,6 @@ class Lostfilm:
                 'premiered':se_info[0],#	string (2005-03-04)
                 #'status':anime_info[1],#	string (Continuing) - status of a TVshow
                 'aired':se_info[0],#	string (2008-12-07)
-                #'playcount': 1
             }
             
             if self.database.cast_in_db(se_code[0]):
@@ -374,7 +345,6 @@ class Lostfilm:
 
             if size:
                 info['size'] = size
-                #li.select(True)
 
             li.setInfo(type='video', infoLabels=info)
 
@@ -398,7 +368,7 @@ class Lostfilm:
         info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
               
         info['image_id'] = html[html.find('/Images/')+8:html.find('/Posters/')]
-        
+                
         info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
         info['title_en'] = html[html.find('alternativeHeadline">')+21:html.find('</h2>')]
         
@@ -413,12 +383,10 @@ class Lostfilm:
                 aired_on = data[data.find('content="')+9:data.find('" />')]
                 info['aired_on'] = aired_on.replace('-', '.')
             if 'Канал, Страна:' in data:
-                #data = tag_list(data.replace('Канал, Страна:', ''))
                 data = clean_tags(data.replace('Канал, Страна:', ''), '<','>')
                 info['studios'] = data[:data.find('(')]
                 info['country'] = data[data.rfind('(')+1:data.rfind(')')]
             if 'Жанр:' in data:
-                #info['genres'] = tag_list(data.replace('Жанр:', ''))
                 info['genres'] = clean_tags(data.replace('Жанр:', ''), '<','>')
 
         try:
@@ -541,7 +509,7 @@ class Lostfilm:
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_favorites_part(self):
-        html = self.network.get_html(self.create_url(), self.create_post())
+        html = self.network.get_html('{}ajaxik.php'.format(self.site_url), self.create_post())
 
         if '"on' in str(html):
             xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО ДОБАВЛЕНО[/COLOR]', 5000, icon))
@@ -647,7 +615,7 @@ class Lostfilm:
                 
                 series_title = d[d.find('<td class="gamma'):]
                 series_title = series_title[series_title.find(';">')+3:series_title.find('<br />')]
-                
+
                 d = d[d.find('<td class="delta'):]
                 
                 d = d.replace('<!--', '').replace('-->', '')
@@ -655,8 +623,7 @@ class Lostfilm:
                 
                 se_code = d[d.find('/series/')+8:d.find('/\',false)')]
                 se_code = self.create_code(se_code)
-                
-                #d = tag_list(d)
+
                 d = clean_tags(d, '<', '>')
                 d = d.split('|')
                 
@@ -677,8 +644,9 @@ class Lostfilm:
                         self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, se_code[0]), params={})
                         continue
 
-                label = '{} | [COLOR=gold]{} - {}[/COLOR]'.format(self.create_title(se_code, series_title),series_date,series_meta)
-                #self.create_line(title=label, se_code=se_code, session=user_session, params={'mode': 'select_part', 'id': se_code[0]})
+                label = '{}: {} | [COLOR=gold]{} - {}[/COLOR]'.format(
+                    self.create_title(se_code), series_title, series_date, series_meta
+                    )
                 self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
 
         self.progress.close()
@@ -688,8 +656,12 @@ class Lostfilm:
 #========================#========================#========================#
     def exec_common_part(self):
         self.progress.create('LostFilm', 'Инициализация')
-        
-        html = self.network.get_html(target_name=self.create_url())
+
+        url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
+        if 'search_part' in self.params['param']:
+            url = '{}search/?q={}'.format(self.site_url, quote(self.params['search_string']))
+
+        html = self.network.get_html(target_name=url)
 
         if not '<div class="hor-breaker dashed">' in html:
             self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
@@ -732,9 +704,7 @@ class Lostfilm:
                     continue
 
             label = self.create_title(se_code, series)
-            #self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
             self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'id': se_code[0]})
-            ### se_code[0] - проверить возможность отсылки всего se_code
 
         self.progress.close()
         
@@ -864,7 +834,7 @@ class Lostfilm:
             url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
             html = self.network.get_html(target_name=url)
 
-            watched_data = self.network.get_html(self.create_url(), self.create_post())
+            watched_data = self.network.get_html('{}ajaxik.php'.format(self.site_url), self.create_post())
 
             data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
             data_array = data_array.split('<h2>')
@@ -883,7 +853,6 @@ class Lostfilm:
                     self.create_line(title='[B][COLOR=white]{}[/COLOR][/B]'.format(
                         title.capitalize()), params={'mode': 'select_part', 'param': '|'.join(self.create_code(code))})
                 else:
-                    #self.create_line(title='[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title.capitalize()), params={'mode': self.params['mode'], 'id': self.params['id']})
                     self.create_line(title='[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title.capitalize()), params={})
 
                 array = array.split('<tr')
@@ -891,7 +860,6 @@ class Lostfilm:
 
                 for data in array:
                     series_title = data[data.find('<td class="gamma'):data.find('<td class="delta"')]
-                    #series_title = tag_list(series_title.replace('<br />','|').replace('<br>','|'))
                     series_title = clean_tags(series_title.replace('<br />','|').replace('<br>','|'), '<', '>')
 
                     series_url = data[data.rfind('/series/')+8:data.rfind('\',false)')]
@@ -905,7 +873,6 @@ class Lostfilm:
                     is_watched = True if data_code in watched_data else False
 
                     air_data = data[data.find('Ru:')+3:data.rfind('Eng:')]
-                    #air_data = tag_list(air_data)
                     air_data = clean_tags(air_data, '<', '>')
                     
                     title = self.create_title(se_code)
@@ -918,7 +885,6 @@ class Lostfilm:
                             self.create_title(se_code, series_title, True), air_data)
                         self.create_line(title=label, se_code=se_code, params={})
                     else:
-                        #self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'param': '|'.join(se_code)})
                         self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'param': '|'.join(se_code)})
 
         if self.params['param']:
@@ -941,7 +907,6 @@ class Lostfilm:
             
             for data in data_array:
                 data = data.replace('</div>', '|').replace('||', '')
-                #data = tag_list(data).split('|')
                 data = clean_tags(data, '<', '>').split('|')
 
                 quality = data[0]
@@ -957,17 +922,10 @@ class Lostfilm:
 #========================#========================#========================#
     def exec_torrent_part(self):
         url = self.params['torrent_url']
-### Исправить костыль
-        full_url = '{}?s={}'.format(
-            url[:url.find('?s=')], quote(url[url.find('?s=')+3:])
-            )
-### =========================== ^^
+        full_url = '{}?s={}'.format(url[:url.find('?s=')], quote(url[url.find('?s=')+3:]))
         se_code = self.params['id'].split('|')
-
         file_name = '{}_{}{}_{}'.format(se_code[0],se_code[1],se_code[2],self.params['node'])
-
         full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
-
         torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
 
         import bencode
