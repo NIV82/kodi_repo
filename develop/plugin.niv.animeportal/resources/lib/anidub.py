@@ -14,6 +14,9 @@ except:
 
 from utility import tag_list, clean_list
 
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+    
 class Anidub:
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()
@@ -449,11 +452,9 @@ class Anidub:
         if not self.params['node']:
             self.progress.create('{}'.format(self.params['portal'].upper()), u'Инициализация')
 
-            #url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
             url = '{}mylists/page/{}/'.format(self.site_url,self.params['page'])
-
             html = self.network.get_html(target_name=url)
-            #pages = html[html.rfind('<div class="navigation">'):html.rfind('<!--/noindex-->')]
+            
             pages = html[html.find('<div class="navigation">'):html.find('<div class="animelist">')]
             pages = tag_list(pages).replace(' ','|')
 
@@ -470,8 +471,6 @@ class Anidub:
 
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
-
-                data = data[data.rfind('<ahref="')+8:data.find('<progress class="proglist"')]
 
                 url = data[data.find(self.site_url)+len(self.site_url):data.find('.html"')]
                 anime_id = url[url.rfind('/')+1:url.find('-')]
@@ -503,8 +502,8 @@ class Anidub:
 
         if 'plus' in self.params['node']:
             try:
-                url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
-                post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
+                url = '{}mylists/'.format(self.site_url)
+                post = 'news_id={}&status_id=3'.format(self.params['id'])
                 self.network.get_html(target_name=url, post=post)
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
             except:
@@ -512,8 +511,8 @@ class Anidub:
 
         if 'minus' in self.params['node']:
             try:
-                url = '{}mylists/animefuture/page/{}/'.format(self.site_url,self.params['page'])
-                post = 'news_id={}&status_id={}'.format(self.params['id'], self.params['node'])
+                url = '{}mylists/'.format(self.site_url)
+                post = 'news_id={}&status_id=0'.format(self.params['id'])
                 self.network.get_html(target_name=url, post=post)
                 xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, self.icon))
             except:
