@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# from urllib.request import ProxyHandler
-# from urllib.request import HTTPCookieProcessor
-# from urllib.request import build_opener
-# from urllib.request import Request
-# from urllib.request import HTTPError
-# from http.cookiejar import MozillaCookieJar
-
 try:
     from urllib2 import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
     from cookielib import MozillaCookieJar
@@ -53,12 +46,6 @@ class WebTools:
         except: pass
 
         try:
-            # import xbmc
-            # xbmc.log(str(target_name), xbmc.LOGFATAL)
-            # xbmc.log(str(post), xbmc.LOGFATAL)
-            # from urllib.parse import urlencode, quote, unquote
-            # xbmc.log(str(target_name), xbmc.LOGFATAL)
-
             url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
 
             try: charset = url.headers.getparam('charset')

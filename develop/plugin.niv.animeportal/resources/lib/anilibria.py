@@ -527,7 +527,7 @@ class Anilibria:
 
         for data in data_array:
             data = unescape(data)
-            
+
             anime_id = data[data.find(':')+1:data.find(',')]
             series = data[data.find('series":"')+9:data.find('","announce')]
 

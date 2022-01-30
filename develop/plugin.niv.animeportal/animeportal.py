@@ -12,7 +12,7 @@ except:
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
 from info import animeportal_plot, animeportal_data
-from utility import get_params, fs_dec, fs_enc
+from utility import fs_dec, fs_enc
 
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
@@ -57,8 +57,7 @@ params = {
 
 args = parse_qs(sys.argv[2][1:])
 for a in args:
-    params[a] = unquote(args[a][0])
-
+    params[a] = unquote(args[a][0])            
 #=======================================================================================
 if not addon.getSetting('animeportal_proxy'):
     addon.setSetting('animeportal_proxy', '')
@@ -68,18 +67,20 @@ if 'animeportal' in params['portal']:
     portal_list = ('anidub','anilibria','animedia','anistar','shizaproject')
 
     for portal in portal_list:
-        li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper()))
-        li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
-        info = {'plot': animeportal_plot[portal], 'title': portal.upper(), 'tvshowtitle': portal.upper()}
-        li.setInfo(type='video', infoLabels=info)
-        url = '{}?{}'.format(sys.argv[0], urlencode({'mode': 'main_part', 'portal': portal}))
+        if 'true' in addon.getSetting('use_{}'.format(portal)):
+            li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper()))
+            li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
+            info = {'plot': animeportal_plot[portal], 'title': portal.upper(), 'tvshowtitle': portal.upper()}
+            li.setInfo(type='video', infoLabels=info)
+            url = '{}?{}'.format(sys.argv[0], urlencode({'mode': 'main_part', 'portal': portal}))
 
-        if 'animedia' in portal:
-            li.addContextMenuItems(
-                [('[COLOR=white]Обновить Зеркало[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?node=actual_url&portal=animedia")')]
-                )
-            
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=True)
+            if 'animedia' in portal:
+                li.addContextMenuItems(
+                    [('[COLOR=white]Обновить Зеркало[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?node=actual_url&portal=animedia")')]
+                    )
+
+            xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=True)
+
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 if 'anidub' in params['portal']:

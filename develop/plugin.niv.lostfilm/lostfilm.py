@@ -1,36 +1,46 @@
 # -*- coding: utf-8 -*-
+
 import gc
 import os
 import sys
 import time
+
 import xbmc
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
 import xbmcvfs
 
-from urllib.parse import parse_qs
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-from urllib.request import urlopen
-from html import unescape
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+
+if sys.version_info[0] == 2:
+    from urllib import urlencode, urlopen, quote, unquote
+    from urlparse import parse_qs
+    import HTMLParser
+    unescape = HTMLParser.HTMLParser().unescape
+else:
+    from urllib.parse import urlencode, quote, unquote, parse_qs
+    from urllib.request import urlopen
+    from html import unescape
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-from utility import clean_list, clean_tags
+from utility import clean_list, clean_tags, fs_dec, fs_enc
 
 addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
-icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
-fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
-addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+
+if sys.version_info[0] == 2:
+    addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
+    icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
+    fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
+else:
+    addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+    icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
+    fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
 
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
-
-def data_print(data):
-    xbmc.log(str(data), xbmc.LOGFATAL)
-    
 class Lostfilm:    
     def __init__(self):
         if not os.path.exists(addon_data_dir):
@@ -182,9 +192,9 @@ class Lostfilm:
                 d.append('')
 
             if actors:
-                cast.append('{}|{}'.format(d[0], d[2]))
+                cast.append(u'{}|{}'.format(d[0], d[2]))
             else:
-                cast.append('{}'.format(d[0]))
+                cast.append(u'{}'.format(d[0]))
 
         return cast
 #========================#========================#========================#
@@ -192,9 +202,9 @@ class Lostfilm:
         data = unescape(data)
         data = clean_list(data)
 
-        data = data.replace('Описание', 'Описание: ', 1)
-        data = data.replace('Сюжет</strong>', '\n\nСюжет:')
-        data = data.replace('Сюжет:</strong>', '\n\nСюжет:')
+        data = data.replace(u'Описание', u'Описание: ', 1)
+        data = data.replace(u'Сюжет</strong>', u'\n\nСюжет:')
+        data = data.replace(u'Сюжет:</strong>', u'\n\nСюжет:')
         
         data = clean_tags(data, '<', '>')
 
@@ -251,17 +261,17 @@ class Lostfilm:
         if series:
             series = series.split('|')
             
-            series_title = ': {}'.format(
+            series_title = u': {}'.format(
                 series[int(addon.getSetting('titles'))]
                 )
         else:
             series_title = ''
 
-        label = '{}[B]{}[/B]{}'.format(
+        label = u'{}[B]{}[/B]{}'.format(
             code, title[int(addon.getSetting('titles'))], series_title)
         
         if 'search_part' in self.params['param'] or 'catalog_part' in self.params['mode'] or 'serials_part' in self.params['mode']:
-            label = '[COLOR=blue]{}[/COLOR] | [B]{}{}[/B]{}'.format(
+            label = u'[COLOR=blue]{}[/COLOR] | [B]{}{}[/B]{}'.format(
                 year, code, title[int(addon.getSetting('titles'))], series_title)
 
         return label
@@ -293,7 +303,7 @@ class Lostfilm:
     def create_line(self, title=None, params=None, se_code=None, watched=False, size=None, folder=True, online=None):
         if watched:
             title = clean_tags(title, '[', ']')
-            title = '[COLOR=goldenrod]{}[/COLOR]'.format(title)
+            title = u'[COLOR=goldenrod]{}[/COLOR]'.format(title)
             
         li = xbmcgui.ListItem(title)
 
@@ -372,22 +382,22 @@ class Lostfilm:
         info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
         info['title_en'] = html[html.find('alternativeHeadline">')+21:html.find('</h2>')]
         
-        description_data = html[html.find('Описание</h2>'):html.find('<div class="social-pane">')]
+        description_data = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
         info['description'] = self.create_description(description_data)
 
-        data_array = html[html.find('Премьера:'):html.find('Тип:')]
+        data_array = html[html.find(u'Премьера:'):html.find(u'Тип:')]
         data_array = clean_list(data_array).split('<br />')
         
         for data in data_array:            
-            if 'Премьера:' in data:
+            if u'Премьера:' in data:
                 aired_on = data[data.find('content="')+9:data.find('" />')]
                 info['aired_on'] = aired_on.replace('-', '.')
-            if 'Канал, Страна:' in data:
-                data = clean_tags(data.replace('Канал, Страна:', ''), '<','>')
+            if u'Канал, Страна:' in data:
+                data = clean_tags(data.replace(u'Канал, Страна:', ''), '<','>')
                 info['studios'] = data[:data.find('(')]
                 info['country'] = data[data.rfind('(')+1:data.rfind(')')]
-            if 'Жанр:' in data:
-                info['genres'] = clean_tags(data.replace('Жанр:', ''), '<','>')
+            if u'Жанр:' in data:
+                info['genres'] = clean_tags(data.replace(u'Жанр:', ''), '<','>')
 
         try:
             self.database.add_serial(
@@ -415,16 +425,16 @@ class Lostfilm:
         for cast_info in info_array:
             cast_info = clean_list(cast_info)
 
-            if 'simple">Актеры' in cast_info:
+            if u'simple">Актеры' in cast_info:
                 cast['actors'] = self.create_cast(cast_info, actors=True)
 
-            if 'simple">Режиссеры' in cast_info:
+            if u'simple">Режиссеры' in cast_info:
                 cast['directors'] = self.create_cast(cast_info)
 
-            if 'simple">Продюсеры' in cast_info:
+            if u'simple">Продюсеры' in cast_info:
                 cast['producers'] = self.create_cast(cast_info)
 
-            if 'simple">Сценаристы' in cast_info:
+            if u'simple">Сценаристы' in cast_info:
                 cast['writers'] = self.create_cast(cast_info)
 
         try:
@@ -603,7 +613,7 @@ class Lostfilm:
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
 
-            self.create_line(title='[B][COLOR=white]{}[/COLOR][/B]'.format(title.capitalize()), params={})
+            self.create_line(title=u'[B][COLOR=white]{}[/COLOR][/B]'.format(title.capitalize()), params={})
 
             data = data.split('<td class="alpha"')
             data.pop(0)
@@ -634,17 +644,17 @@ class Lostfilm:
                 
                 if self.progress.iscanceled():
                     break
-                self.progress.update(p, 'Обработано: [COLOR=gold]{}%[/COLOR]\n[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
+                self.progress.update(p, u'Обработано: [COLOR=gold]{}%[/COLOR]\n[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
                     p, i, len(data_array), a, len(data)))
 
                 if not self.database.serial_in_db(se_code[0]):
                     inf = self.create_info(se_code[0])
                     
                     if type(inf) == int:
-                        self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, se_code[0]), params={})
+                        self.create_line(title=u'[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, se_code[0]), params={})
                         continue
 
-                label = '{}: {} | [COLOR=gold]{} - {}[/COLOR]'.format(
+                label = u'{}: {} | [COLOR=gold]{} - {}[/COLOR]'.format(
                     self.create_title(se_code), series_title, series_date, series_meta
                     )
                 self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
@@ -685,7 +695,7 @@ class Lostfilm:
                 series_title_ru = data[data.find('alpha">')+7:data.find('</div><div class="beta">')]
                 series_title_en = data[data.find('beta">')+6:data.find('</div><div class="hor-spacer3')]
                 if series_title_ru:
-                    series = '{}|{}'.format(series_title_ru, series_title_en)
+                    series = u'{}|{}'.format(series_title_ru, series_title_en)
             
             se_code = self.create_code(series_url)
 
@@ -704,7 +714,11 @@ class Lostfilm:
                     continue
 
             label = self.create_title(se_code, series)
-            self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'id': se_code[0]})
+            
+            if 'new/' in self.params['param']:
+                self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'id': se_code[0], 'param': u'|'.join(se_code)})
+            else:
+                self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'id': se_code[0]})
 
         self.progress.close()
         
@@ -850,10 +864,10 @@ class Lostfilm:
                     code = code.replace('\'', '').replace(',', '/')
                     code = code.replace(code[:code.find('/')], self.params['id'])
                     
-                    self.create_line(title='[B][COLOR=white]{}[/COLOR][/B]'.format(
-                        title.capitalize()), params={'mode': 'select_part', 'param': '|'.join(self.create_code(code))})
+                    self.create_line(title=u'[B][COLOR=white]{}[/COLOR][/B]'.format(
+                        title.capitalize()), params={'mode': 'select_part', 'param': u'|'.join(self.create_code(code))})
                 else:
-                    self.create_line(title='[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title.capitalize()), params={})
+                    self.create_line(title=u'[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title.capitalize()), params={})
 
                 array = array.split('<tr')
                 array.pop(0)
@@ -877,17 +891,18 @@ class Lostfilm:
                     
                     title = self.create_title(se_code)
 
-                    label = '{} | [COLOR=gold]{}[/COLOR]'.format(
+                    label = u'{} | [COLOR=gold]{}[/COLOR]'.format(
                         self.create_title(se_code, series_title), air_data)
 
                     if '"not-available"' in data:
-                        label = '[COLOR=dimgray]{} | {}[/COLOR]'.format(
+                        label = u'[COLOR=dimgray]{} | {}[/COLOR]'.format(
                             self.create_title(se_code, series_title, True), air_data)
                         self.create_line(title=label, se_code=se_code, params={})
                     else:
-                        self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'param': '|'.join(se_code)})
+                        self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'param': u'|'.join(se_code)})
 
         if self.params['param']:
+            data_print(self.params['param'])
             serial_data = self.params['param'].replace('SE', '')
             serial_data = serial_data.replace('EP','').split('|')
 
@@ -895,7 +910,7 @@ class Lostfilm:
             url = '{}v_search.php?c={}&s={}&e={}'.format(
                 self.site_url,image_id,int(serial_data[1]),int(serial_data[2])
                 )
-                
+
             html = self.network.get_html(target_name=url)
             
             new_url = html[html.find('url=http')+4:html.find('&newbie=')]
@@ -914,7 +929,7 @@ class Lostfilm:
                 node_url = data[2]
                 info = data[3]
 
-                label = '[COLOR=blue]{: >04}[/COLOR] | {}'.format(quality, info)
+                label = u'[COLOR=blue]{: >04}[/COLOR] | {}'.format(quality, info)
 
                 self.create_line(title=label, params={'mode': 'torrent_part', 'torrent_url': unquote(node_url), 'id': self.params['param'], 'node':quality})
                 

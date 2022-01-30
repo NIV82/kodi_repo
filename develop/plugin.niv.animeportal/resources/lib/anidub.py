@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, sys, time
+import os, sys, time, base64
 import xbmc, xbmcgui, xbmcplugin
 
 try:
@@ -12,7 +12,7 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-from utility import tag_list, clean_list
+from utility import tag_list, clean_list, data_encode, data_decode
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
@@ -185,9 +185,7 @@ class Anidub:
             label = u'[COLOR=red][B]{}[/B][/COLOR]'.format(label)
         return label
 #========================#========================#========================#
-    def create_image(self, anime_id):
-        url = '{}'.format(self.database.get_cover(anime_id))
-
+    def create_image(self, url):
         if not 'https://' in url:
             url = '{}{}'.format(self.site_url, url.replace('/','',1))
         
@@ -226,22 +224,27 @@ class Anidub:
         li = xbmcgui.ListItem(title)
 
         if anime_id:
-            if cover:
-                pass
-            else:
-                cover = self.create_image(anime_id)
+            cover = self.create_image(cover)
+            
             li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
             # 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
             #kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
             anime_info = self.database.get_anime(anime_id)
             
-            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
-            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
-            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
-            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
-            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
-            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
-            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
+            if anime_info[11]:
+                description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
+            if anime_info[12]:
+                description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
+            if anime_info[13]:
+                description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
+            if anime_info[14]:
+                description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
+            if anime_info[15]:
+                description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
+            if anime_info[16]:
+                description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
+            if anime_info[17]:
+                description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
 
             info = {
                 'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
@@ -454,12 +457,11 @@ class Anidub:
 
             url = '{}mylists/page/{}/'.format(self.site_url,self.params['page'])
             html = self.network.get_html(target_name=url)
-            
+           
             pages = html[html.find('<div class="navigation">'):html.find('<div class="animelist">')]
             pages = tag_list(pages).replace(' ','|')
 
-            if pages: last_page = int(pages[pages.rfind('|')+1:])
-            else: last_page = -1
+            last_page = int(pages[pages.rfind('|')+1:]) if pages else -1
                 
             data_array = html[html.find('<div class="animelist">')+23:html.rfind('<label for="mlist">')]
             data_array = clean_list(data_array).split('<div class="animelist">')
@@ -474,9 +476,11 @@ class Anidub:
 
                 url = data[data.find(self.site_url)+len(self.site_url):data.find('.html"')]
                 anime_id = url[url.rfind('/')+1:url.find('-')]
-
+                cover = data[data.find('data-src="')+10:data.find('" title="')]
+                
                 title = data[data.find('class="upd-title">')+18:]
                 series = title[title.find('[')+1:title.find(']')]
+                
 
                 if self.progress.iscanceled():
                     break
@@ -490,8 +494,9 @@ class Anidub:
                         continue
                     
                 label = self.create_title(anime_id, series)
+                anime_code = data_encode('{}|{}'.format(anime_id, cover))
 
-                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+                self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_code})
             self.progress.close()
 
             if int(self.params['page']) < last_page:
@@ -598,7 +603,6 @@ class Anidub:
     def exec_common_part(self):
         self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
 
-        #url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         url = '{}{}page/{}/'.format(self.site_url, quote(self.params['param']), self.params['page'])
         post = ''
 
@@ -608,14 +612,12 @@ class Anidub:
 
         html = self.network.get_html(url, post=post)
         
-        if html.find('<div class="th-item">') > -1:
-            #pages = html[html.rfind('<div class="navigation">'):html.rfind('<!--/noindex-->')]
+        if '<div class="th-item">' in html:
             pages = html[html.rfind('<div class="navigation">'):html.rfind('<footer class="footer sect-bg">')]
             pages = tag_list(pages).replace(' ','|')
 
-            if pages: last_page = int(pages[pages.rfind('|')+1:])
-            else: last_page = -1
-
+            last_page = int(pages[pages.rfind('|')+1:]) if pages else -1
+            
             data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!-- END CONTENT -->')]
             data_array = clean_list(data_array).split('<div class="th-item">')
 
@@ -631,9 +633,10 @@ class Anidub:
 
                 if '/manga/' in url or '/ost/' in url or '/podcast/' in url or '/anons_ongoing/' in url or '/games/' in url or '/videoblog/' in url:
                     continue
-
-                anime_id = url[url.rfind('/')+1:url.find('-')]
                 
+                cover = data[data.find('data-src="')+10:data.find('" title="')]
+                anime_id = url[url.rfind('/')+1:url.find('-')]
+
                 title = data[data.find('<div class="fx-1">')+18:data.find('</div><span>')]
                 info = self.create_title_info(title)
 
@@ -649,9 +652,10 @@ class Anidub:
                         continue
 
                 label = self.create_title(anime_id, info['series'])
+                anime_code = data_encode('{}|{}'.format(anime_id, cover))
 
-                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
-            
+                self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_code})
+
             if int(self.params['page']) < last_page:
                 if 'search_part' in self.params['param']:
                     self.create_line(title=u'[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={
@@ -666,15 +670,18 @@ class Anidub:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_select_part(self):
+        anime_id = data_decode(self.params['id'])[0]
+        
         self.create_line(title=u'[B]Онлайн просмотр[/B]', params={'mode': 'online_part', 'id': self.params['id']})
-        if self.database.get_tid(self.params['id']):
-            self.create_line(title=u'[B]Торрент просмотр[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
+        if self.database.get_tid(anime_id):
+            self.create_line(title=u'[B]Торрент просмотр[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})   
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
-        from utility import digit_list
+        anime_code = data_decode(self.params['id'])
+
         if not self.params['param']:
-            url = '{}index.php?newsid={}'.format(self.site_url, self.params['id'])
+            url = '{}index.php?newsid={}'.format(self.site_url, anime_code[0])
             
             html = self.network.get_html(url)
 
@@ -687,7 +694,7 @@ class Anidub:
                 
                 if '&quot;' in video_url:
                     video_url = video_url[:video_url.find('&quot;')]
-                
+
                 video_title = data[data.find('>')+1:]
 
                 self.create_line(title=video_title, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id']})
@@ -710,13 +717,16 @@ class Anidub:
                 label = '[COLOR=red][B][ {} ][/B][/COLOR]'.format(status.replace('.',''))
                 play_url = ''
 
-            self.create_line(title=label, params={}, anime_id=self.params['id'], online=play_url, folder=False)
+            self.create_line(title=label, params={}, cover=anime_code[1], anime_id=anime_code[0], online=play_url, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_torrent_part(self):
+        anime_code = data_decode(self.params['id'])
+        
         if not self.params['param']:
-            anime_tid = self.database.get_tid(self.params['id'])
+            anime_tid = self.database.get_tid(anime_code[0])
+            data_print(anime_tid)
             html = self.network.get_html('https://tr.anidub.com/index.php?newsid={}'.format(anime_tid))
         
             html = html[html.find('<div class="torrent_c">')+23:html.rfind(u'Управление')]
@@ -756,11 +766,12 @@ class Anidub:
                 label = lb[0]
                 torrent_id = lb[1]
 
-                self.create_line(title=label, anime_id=self.params['id'], params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id']})
+                self.create_line(title=label, anime_id=anime_code[0], cover=anime_code[1], params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id']})
 
         if self.params['param']:
-            url = 'https://tr.anidub.com/engine/download.php?id={}'.format(self.params['param'])            
-            
+            data_print(self.params)
+            url = 'https://tr.anidub.com/engine/download.php?id={}'.format(self.params['param'])
+
             file_name = '{}_{}'.format(self.params['portal'], self.params['param'])
             full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
             torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
@@ -780,10 +791,10 @@ class Anidub:
                 for i, x in enumerate(info['files']):
                     size[i] = x['length']
                     series[i] = x['path'][-1]
-                for i in sorted(series, key=series.get):                
-                    self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False,  size=size[i])
+                for i in sorted(series, key=series.get):
+                    self.create_line(title=series[i], anime_id=anime_code[0], cover=anime_code[1], params={'mode': 'play_part', 'index': i, 'id': file_name}, folder=False, size=size[i])
             else:
-                self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
+                self.create_line(title=info['name'], anime_id=anime_code[0], cover=anime_code[1], params={'mode': 'play_part', 'index': 0, 'id': file_name}, folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#

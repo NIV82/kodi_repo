@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from urllib.request import ProxyHandler
-from urllib.request import HTTPCookieProcessor
-from urllib.request import build_opener
-from urllib.request import Request
-from urllib.request import HTTPError
-from http.cookiejar import MozillaCookieJar
-
+try:
+    from urllib2 import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
+    from cookielib import MozillaCookieJar
+except:
+    from urllib.request import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
+    from http.cookiejar import MozillaCookieJar
+    
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
         self.headers = {

@@ -92,7 +92,7 @@ class DataBase:
         if cast_info[1]:
             cast['directors'] = cast_info[1]
             if cast_info[2]:
-                cast['directors'] = '{},{}'.format(cast_info[1], cast_info[2])
+                cast['directors'] = u'{},{}'.format(cast_info[1], cast_info[2])
             cast['directors'] = cast['directors'].split(',')
         
         if cast_info[3]:

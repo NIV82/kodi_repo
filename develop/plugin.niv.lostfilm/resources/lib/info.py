@@ -10,9 +10,8 @@ lostfilm_data = '[play]\n\
 [COLOR gray]=====================================================[/COLOR]\n\
 [/play]\n\
 [news]\n\
-[B][COLOR=darkorange]Version 0.2.2[/COLOR][/B]\n\
-    - Оптимизация кода\n\
-    - Мелкие правки\n\
+[B][COLOR=darkorange]Version 0.3.0[/COLOR][/B]\n\
+    - Унификация под Kodi-18\n\
 [COLOR gray]=====================================================[/COLOR]\n\
 [/news]\n\
 [bugs]\n\
