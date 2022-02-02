@@ -104,8 +104,12 @@ class WebTools:
     def auth_check(self):
         if self.portal == None:
             return False
-        if self.portal == 'anidub':
-            return self.anidub_authorization()
+        # if self.portal == 'anidub':
+        #     return self.anidub_authorization()
+        if self.portal == 'anidub_o':
+            return self.anidub_o_authorization()
+        if self.portal == 'anidub_t':
+            return self.anidub_t_authorization()
         if self.portal == 'anilibria':
              return self.anilibria_authorization()
         if self.portal == 'anistar':

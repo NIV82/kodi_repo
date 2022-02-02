@@ -14,6 +14,9 @@ except:
 
 from utility import tag_list, fix_list, digit_list
 
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+    
 class Anilibria:
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()
@@ -48,25 +51,18 @@ class Anilibria:
             auth_usage=self.auth_mode,
             auth_status=bool(self.addon.getSetting('{}_auth'.format(self.params['portal'])) == 'true'),
             proxy_data=self.proxy_data, portal=self.params['portal'])
-        self.auth_post_data = 'login_name={}&login_password={}&login=submit'.format(
+        #mail=niv&passwd=tbz7Xa99m&fa2code=&csrf=1
+        #self.auth_post_data = 'mail={}&passwd={}code=&csrf=1'.format(
+        self.auth_post_data = 'mail={}&passwd={}'.format(
             self.addon.getSetting('{}_username'.format(self.params['portal'])),
             self.addon.getSetting('{}_password'.format(self.params['portal']))
             )
+        # self.auth_post_data = {
+        #     "mail": self.addon.getSetting('{}_username'.format(self.params['portal'])),
+        #     "passwd": self.addon.getSetting('{}_password'.format(self.params['portal']))
+        #     }
+        #self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_post_data = self.auth_post_data
-        self.network.auth_url = self.site_url
-        self.network.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
-        del WebTools
-
-        from network import WebTools
-        self.network = WebTools(
-            auth_usage=self.auth_mode,
-            auth_status=bool(self.addon.getSetting('{}_auth'.format(self.params['portal'])) == 'true'),
-            proxy_data=self.proxy_data, portal=self.params['portal'])
-        self.auth_post_data = {
-            "mail": self.addon.getSetting('{}_username'.format(self.params['portal'])),
-            "passwd": self.addon.getSetting('{}_password'.format(self.params['portal']))
-            }
-        self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_url = self.site_url.replace('api/index.php','login.php')
         self.network.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
         del WebTools
@@ -92,38 +88,6 @@ class Anilibria:
         self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
         del DataBase
 #========================#========================#========================#
-    # def create_proxy_data(self):
-    #     if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
-    #         return None
-
-    #     try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
-    #     except: proxy_time = 0
-
-    #     if time.time() - proxy_time > 86400:
-    #         self.addon.setSetting('animeportal_proxy_time', str(time.time()))
-    #         proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-    #         try: proxy_pac = proxy_pac.decode('utf-8')
-    #         except: pass
-            
-    #         proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #         self.addon.setSetting('animeportal_proxy', proxy)
-    #         proxy_data = {'https': proxy}
-    #     else:
-    #         if self.addon.getSetting('animeportal_proxy'):
-    #             proxy_data = {'https': self.addon.getSetting('animeportal_proxy')}
-    #         else:
-    #             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-    #             try: proxy_pac = proxy_pac.decode('utf-8')
-    #             except: pass
-                
-    #             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #             self.addon.setSetting('animeportal_proxy', proxy)
-    #             proxy_data = {'https': proxy}
-
-    #     return proxy_data
-#========================#========================#========================#
     def create_site_url(self):
         site_url = self.addon.getSetting('{}_mirror_0'.format(self.params['portal']))
         current_mirror = '{}_mirror_{}'.format(self.params['portal'], self.addon.getSetting('{}_mirror_mode'.format(self.params['portal'])))
@@ -147,17 +111,17 @@ class Anilibria:
         if self.params['param'] == 'fav_del':
             post = 'query=favorites&id={}&action=delete&filter=id%2Cseries%2Cannounce'.format(self.params['id'])
         if self.params['param'] == 'favorites':
-            post = 'query=favorites&filter=id%2Cseries%2Cannounce'
+            post = 'query=favorites&filter=id%2Cseries%2Cannounce%2Cposter'
         if self.params['param'] == 'search_part':
-            post = 'query=search&search={}&filter=id%2Cseries%2Cannounce'.format(self.params['search_string'])
+            post = 'query=search&search={}&filter=id%2Cseries%2Cannounce%2Cposter'.format(self.params['search_string'])
         if self.params['mode'] == 'schedule_part':
-            post = 'query=schedule&filter=id%2Cseries%2Cannounce'
+            post = 'query=schedule&filter=id%2Cseries%2Cannounce%2Cposter'
         if self.params['param'] == 'updated':
-            post = 'query=catalog&page={}&xpage=catalog&sort=1&filter=id%2Cseries%2Cannounce'.format(self.params['page'])
+            post = 'query=catalog&page={}&xpage=catalog&sort=1&filter=id%2Cseries%2Cannounce%2Cposter'.format(self.params['page'])
         if self.params['param'] == 'popular':
-            post = 'query=catalog&page={}&xpage=catalog&sort=2&filter=id%2Cseries%2Cannounce'.format(self.params['page'])
+            post = 'query=catalog&page={}&xpage=catalog&sort=2&filter=id%2Cseries%2Cannounce%2Cposter'.format(self.params['page'])
         if self.params['param'] == 'catalog':
-            post = 'query=catalog&page={}&filter=id%2Cseries%2Cannounce&xpage=catalog&search=%7B%22year%22%3A%22{}%22%2C%22genre%22%3A%22{}%22%2C%22season%22%3A%22{}%22%7D&sort={}&finish={}'.format(
+            post = 'query=catalog&page={}&filter=id%2Cseries%2Cannounce%2Cposter&xpage=catalog&search=%7B%22year%22%3A%22{}%22%2C%22genre%22%3A%22{}%22%2C%22season%22%3A%22{}%22%7D&sort={}&finish={}'.format(
                 self.params['page'],
                 self.addon.getSetting('{}_year'.format(self.params['portal'])),
                 self.addon.getSetting('{}_genre'.format(self.params['portal'])),
@@ -165,10 +129,11 @@ class Anilibria:
                 anilibria_sort[self.addon.getSetting('{}_sort'.format(self.params['portal']))],
                 anilibria_status[self.addon.getSetting('{}_status'.format(self.params['portal']))])
         if self.params['mode'] == 'online_part':
-            post = 'query=release&id={}&filter=playlist'.format(self.params['id'])
+            post = 'query=release&id={}&filter=playlist%2Cposter'.format(self.params['id'])
         if self.params['mode'] == 'torrent_part':
-            post = 'query=release&id={}&filter=torrents'.format(self.params['id'])
-      
+            post = 'query=release&id={}&filter=torrents%2Cposter'.format(self.params['id'])
+
+        data_print(post)
         return post
 #========================#========================#========================#
     def create_title(self, title, series, announce=None):        
@@ -191,20 +156,22 @@ class Anilibria:
 
         return label
 #========================#========================#========================#
-    def create_image(self, anime_id):
-        site_url = self.site_url.replace('public/api/index.php','').replace('//www.','//static.')
-        url = '{}upload/release/350x500/{}.jpg'.format(site_url, anime_id)
+    def create_image(self, cover):
+        anime_cover = cover.replace('\/','/').replace('/', '', 1)
+        anime_url = self.site_url.replace('public/api/index.php','').replace('//www.','//static.')
+        cover = '{}{}'.format(anime_url, anime_cover)
+        return cover
 
-        if '0' in self.addon.getSetting('{}_covers'.format(self.params['portal'])):
-            return url
-        else:
-            local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
-            if local_img in os.listdir(self.images_dir):
-                local_path = os.path.join(self.images_dir, local_img)
-                return local_path
-            else:
-                file_name = os.path.join(self.images_dir, local_img)
-                return self.network.get_file(target_name=url, destination_name=file_name)
+        # if '0' in self.addon.getSetting('{}_covers'.format(self.params['portal'])):
+        #     return url
+        # else:
+        #     local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
+        #     if local_img in os.listdir(self.images_dir):
+        #         local_path = os.path.join(self.images_dir, local_img)
+        #         return local_path
+        #     else:
+        #         file_name = os.path.join(self.images_dir, local_img)
+        #         return self.network.get_file(target_name=url, destination_name=file_name)
 #========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
@@ -232,7 +199,7 @@ class Anilibria:
         li = xbmcgui.ListItem(title)
 
         if anime_id:
-            cover = self.create_image(anime_id)
+            cover = self.create_image(cover)
 
             li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
@@ -494,7 +461,9 @@ class Anilibria:
 
             for node in data:
                 anime_id = node[node.find(':')+1:node.find(',')]
-                series = node[node.find('series":"')+9:node.find('","announce')]
+                #series = node[node.find('series":"')+9:node.find('","announce')]                
+                series = node[node.find('series":"')+9:node.find('","poster')]
+                cover = node[node.find('poster":"')+9:node.find('","announce')]
                 announce = node[node.find('announce":')+10:node.find(',"status')]
                 announce = announce.replace('null','').replace('"','')
 
@@ -510,7 +479,7 @@ class Anilibria:
                         continue
 
                 label = self.create_title(self.database.get_title(anime_id), series, announce)
-                self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+                self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id, 'node':cover})
         
         self.progress.close()
 
@@ -520,7 +489,7 @@ class Anilibria:
     def exec_common_part(self):
         self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
         html = self.network.get_html(self.site_url, self.create_post())
-
+        
         data_array = html[html.find('"id"'):].split('},{')
 
         i = 0
@@ -529,7 +498,9 @@ class Anilibria:
             data = unescape(data)
 
             anime_id = data[data.find(':')+1:data.find(',')]
-            series = data[data.find('series":"')+9:data.find('","announce')]
+            #series = data[data.find('series":"')+9:data.find('","announce')]
+            series = data[data.find('series":"')+9:data.find('","poster"')]
+            cover = data[data.find('poster":"')+9:data.find('","announce')]
 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
@@ -546,7 +517,8 @@ class Anilibria:
                     continue
 
             label = self.create_title(self.database.get_title(anime_id), series, None)
-            self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
+            
+            self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id})
 
         self.progress.close()
         
@@ -600,23 +572,21 @@ class Anilibria:
 #========================#========================#========================#
     def exec_online_part(self):
         if not self.params['param']:
-            # if sys.version_info.major == 2:
-            #     html = self.network.get_bytes(self.site_url, self.create_post())
-            # else:
-            #     html = self.network.get_html(self.site_url, self.create_post())
-
             html = self.network.get_html(self.site_url, self.create_post())
             array = {'480p': [], '720p': [], '1080p': []}
 
+            cover = html[html.find('poster":"')+9:html.find('","status')]
             data_array = html[html.find('[{"id"')+2:].split('},{')
             
             for data in data_array:
-                name = data[data.find('title":"')+8:data.find('","sd')]
+                name = data[data.find('title":"')+8:data.find('","')]
+                #name = data[data.find('title":"')+8:data.find('","sd')]
                 name = digit_list(name)
 
                 sd = data[data.find('sd":"')+5:data.find('","hd')]
                 hd = data[data.find('hd":"')+5:data.find('","fullhd')]
-                fhd = data[data.find('fullhd":"')+9:data.find('","src')]
+                #fhd = data[data.find('fullhd":"')+9:data.find('","src')]
+                fhd = data[data.find('fullhd":"')+9:data.find('"}')]
 
                 if sd:
                     array['480p'].append('{}||{}'.format(name, sd.replace('\/','/')))
@@ -629,14 +599,14 @@ class Anilibria:
                 if array[i]:
                     array[i].reverse()
                     label = u'[B]Качество: {}[/B]'.format(i)
-                    self.create_line(title=label, params={'mode': 'online_part', 'param': ','.join(array[i]), 'id': self.params['id']})
+                    self.create_line(title=label, params={'mode': 'online_part', 'param': ','.join(array[i]), 'id': self.params['id'], 'node': cover})
         
         if self.params['param']:
             data_array = self.params['param'].split(',')
             for data in data_array:
                 data = data.split('||')
                 label = u'Серия: {}'.format(data[0])
-                self.create_line(title=label, params={}, anime_id=self.params['id'], online=data[1], folder=False)
+                self.create_line(title=label, params={}, anime_id=self.params['id'], cover=self.params['node'], online=data[1], folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -644,6 +614,7 @@ class Anilibria:
         if not self.params['param']:
             html = self.network.get_html(self.site_url, self.create_post())
 
+            cover = html[html.find('poster":"')+9:html.find('","status')]
             data_array = html[html.find('[{"id"')+2:].split('},{')
 
             for data in data_array:
@@ -658,12 +629,12 @@ class Anilibria:
 
                 label = u'Серии: {} : {} , [COLOR=F0FFD700]{} GB[/COLOR], Сидов: [COLOR=F000F000]{}[/COLOR] , Пиров: [COLOR=F0F00000]{}[/COLOR]'.format(
                     series, quality, torrent_size, seeders, leechers)
-                self.create_line(title=label, params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id']})
+                self.create_line(title=label, params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id'], 'node': cover})
 
         if self.params['param']:
             host_site = self.site_url.replace('public/api/index.php','')
-            
-            full_url = '{}upload/torrents/{}.torrent'.format(host_site, self.params['param'])
+
+            full_url = '{}public/torrent/download.php?id={}'.format(host_site,self.params['param'])
             file_name = '{}_{}'.format(self.params['portal'], self.params['param'])            
             full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
             
@@ -684,9 +655,9 @@ class Anilibria:
                     size[i] = x['length']
                     series[i] = x['path'][-1]
                 for i in sorted(series, key=series.get):
-                    self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False, size=size[i])
+                    self.create_line(title=series[i], cover=self.params['node'], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False, size=size[i])
             else:
-                self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
+                self.create_line(title=info['name'], cover=self.params['node'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 #========================#========================#========================#
