@@ -549,15 +549,20 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
-        self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
-        self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new/'})
-        self.create_line(title='[B][COLOR=yellow][ Все сериалы ][/COLOR][/B]', params={'mode': 'serials_part'})
-        #self.create_line(title='[B][COLOR=yellow][ Новинки Сезонов ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new_seasons/'})
-        self.create_line(title='[B][COLOR=blue][ Каталог Сериалов][/COLOR][/B]', params={'mode': 'catalog_part'})
-        #self.create_line(title='[B][COLOR=lime][ Новости ][/COLOR][/B]', params={'mode': 'news'})
-        #self.create_line(title='[B][COLOR=lime][ Видео - Новости ][/COLOR][/B]', params={'mode': 'video'})
+        if '0' in addon.getSetting('colorize'):
+            self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
+            self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
+            self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
+            self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new/'})
+            self.create_line(title='[B][COLOR=yellow][ Все сериалы ][/COLOR][/B]', params={'mode': 'serials_part'})
+            self.create_line(title='[B][COLOR=blue][ Каталог Сериалов][/COLOR][/B]', params={'mode': 'catalog_part'})
+        else:
+            self.create_line(title='[B][ Поиск ][/B]', params={'mode': 'search_part'})
+            self.create_line(title='[B][ Расписание ][/B]', params={'mode': 'schedule_part'})
+            self.create_line(title='[B][ Избранное ][/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
+            self.create_line(title='[B][ Новинки ][/B]', params={'mode': 'common_part', 'param':'new/'})
+            self.create_line(title='[B][ Все сериалы ][/B]', params={'mode': 'serials_part'})
+            self.create_line(title='[B][ Каталог Сериалов ][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
