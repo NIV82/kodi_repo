@@ -17,9 +17,6 @@ from utility import fs_dec, fs_enc
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
-def data_print(data):
-    xbmc.log(str(data), xbmc.LOGFATAL)
-    
 try:
     addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
@@ -87,17 +84,11 @@ if 'animeportal' in params['portal']:
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 if 'anidub' in params['portal']:
-    if '0' in addon.getSetting('anidub_mode'):# == '0':
-        from anidub_online import Anidub
-        anidub = Anidub(addon_data_dir, params, addon, icon)
-        anidub.execute()
-        del Anidub
-    else:
-        from anidub_t import Anidub
-        anidub = Anidub(addon_data_dir, params, addon, icon)
-        anidub.execute()
-        del Anidub
-    
+    from anidub import Anidub
+    anidub = Anidub(addon_data_dir, params, addon, icon)
+    anidub.execute()
+    del Anidub
+
 if 'anilibria' in params['portal']:
     from anilibria import Anilibria
     anilibria = Anilibria(addon_data_dir, params, addon, icon)

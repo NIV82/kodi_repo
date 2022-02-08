@@ -58,14 +58,6 @@ class DataBase:
         self.c.commit()
         return self.cu.fetchone()[0]
 
-    def get_year(self, anime_id):
-        self.cu.execute('SELECT aired_on FROM anime_db WHERE anime_id=?', (anime_id,))
-        self.c.commit()
-        year = self.cu.fetchone()[0]
-        if len(str(year)) > 4:
-            year = year[year.rfind('.')+1:len(year)]            
-        return year
-    
     def get_anime(self, anime_id):
         self.cu.execute('SELECT kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios FROM anime_db WHERE anime_id=?', (anime_id,))            #'SELECT genres, director, writer, description, dubbing, translation, timing, country, studios, aired_on FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
