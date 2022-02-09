@@ -947,16 +947,18 @@ class Lostfilm:
         file_name = '{}_{}{}_{}'.format(se_code[0],se_code[1],se_code[2],self.params['node'])
         full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
         
-        if os.path.isfile(full_name):
-            result = self.dialog.contextmenu(['Использовать загруженный файл', 'Загрузить новый файл'])
+        # if os.path.isfile(full_name):
+        #     result = self.dialog.contextmenu(['Использовать загруженный файл', 'Загрузить новый файл'])
             
-            if result == 0:
-                torrent_file = full_name
-            if result == 1:
-                torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-        else:
-            torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-
+        #     if result == 0:
+        #         torrent_file = full_name
+        #     if result == 1:
+        #         torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+        # else:
+        #     torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+        
+        torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+        
         import bencode
             
         with open(torrent_file, 'rb') as read_file:
