@@ -464,7 +464,7 @@ class Main:
             return
 
         #if html.find('<h2>') > -1:  
-        if '<h2>' in html:         
+        if '<h2>' in html:
             if self.params['node'] == 'popular':
                 data_array = html[html.find('hover</a>')+9:html.rfind('<!-- END OF OV')]
                 data_array = data_array.split('hover</a>')
