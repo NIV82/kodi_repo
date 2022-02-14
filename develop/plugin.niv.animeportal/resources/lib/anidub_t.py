@@ -106,19 +106,30 @@ class Anidub:
             label = u'[COLOR=red][B]{}[/B][/COLOR]'.format(label)
         return label
 #========================#========================#========================#
+    def create_image(self, url, anime_id):
+        if '0' in self.addon.getSetting('anidub_covers'):
+            return url
+        else:
+            local_img = 'anidub_{}{}'.format(anime_id, url[url.rfind('.'):])
+            if local_img in os.listdir(self.images_dir):
+                local_path = os.path.join(self.images_dir, local_img)
+                return local_path
+            else:
+                file_name = os.path.join(self.images_dir, local_img)
+                return self.network.get_file(target_name=url, destination_name=file_name)
+#========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(('Очистить историю', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
-
-        if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append(('[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
+            context_menu.append(('Очистить историю поиска', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
 
         if self.auth_mode:
             if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
                 context_menu.append(('[COLOR=cyan]Избранное Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
                 context_menu.append(('[COLOR=cyan]Избранное Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
 
+        if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+            context_menu.append(('[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
         # context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal={}")'.format(self.params['portal'])))
         # context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal={}")'.format(self.params['portal'])))
         # context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal={}")'.format(self.params['portal'])))
@@ -130,6 +141,8 @@ class Anidub:
         li = xbmcgui.ListItem(title)
 
         if anime_id:
+            cover = self.create_image(cover, anime_id)
+            
             li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
             # 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
             #kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
@@ -705,16 +718,22 @@ class Anidub:
         file_name = 'anidub_{}'.format(self.params['param'])
         full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
 
-        if os.path.isfile(full_name):
-            result = self.dialog.contextmenu(['Использовать загруженный файл', 'Загрузить новый файл'])
+        if '0' in self.addon.getSetting('anidub_local_torrent'):
+            if os.path.isfile(full_name):
+                result = self.dialog.yesno(
+                    'Обнаружен загруженный торрент файл',
+                    'загрузить [COLOR=blue]Новый[/COLOR] или использовать [COLOR=lime]Загруженный[/COLOR] ?',
+                    yeslabel='Новый', nolabel ='Загруженный', autoclose=5000)
 
-            if result == 0:
-                torrent_file = full_name                
-            if result == 1:
+                if result:
+                    torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
+                else:
+                    torrent_file = full_name
+            else:
                 torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
         else:
             torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
-
+            
         import bencode
 
         with open(torrent_file, 'rb') as read_file:
