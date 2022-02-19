@@ -110,7 +110,7 @@ class Anidub:
         if '0' in self.addon.getSetting('anidub_covers'):
             return url
         else:
-            local_img = 'anidub_{}{}'.format(anime_id, url[url.rfind('.'):])
+            local_img = 'anidub_t_{}{}'.format(anime_id, url[url.rfind('.'):])
             if local_img in os.listdir(self.images_dir):
                 local_path = os.path.join(self.images_dir, local_img)
                 return local_path
@@ -151,20 +151,20 @@ class Anidub:
             description = anime_info[10] if anime_info[10] else ''
 
             if anime_info[11]:
-                description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
+                description = u'{}\n\n[B]Озвучивание[/B]: {}'.format(anime_info[10], anime_info[11])
             if anime_info[12]:
-                description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
+                description = u'{}\n[B]Перевод[/B]: {}'.format(description, anime_info[12])
             if anime_info[13]:
-                description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
+                description = u'{}\n[B]Тайминг[/B]: {}'.format(description, anime_info[13])
             if anime_info[14]:
-                description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
+                description = u'{}\n[B]Работа над звуком[/B]: {}'.format(description, anime_info[14])
             if anime_info[15]:
-                description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
+                description = u'{}\n[B]Mastering[/B]: {}'.format(description, anime_info[15])
             if anime_info[16]:
-                description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
+                description = u'{}\n[B]Редактирование[/B]: {}'.format(description, anime_info[16])
             if anime_info[17]:
-                description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
-
+                description = u'{}\n[B]Другое[/B]: {}'.format(description, anime_info[17])
+                
             info = {
                 'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
                 'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
@@ -632,9 +632,8 @@ class Anidub:
                     continue 
             
             anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
-            anime_title = ai[ai.find('>')+1:]
+            #anime_title = ai[ai.find('>')+1:]
             anime_cover = data[data.rfind('<img src="')+10:data.find('" alt=""></a>')]
-            
             anime_rating = data[data.find(u'<sup>рейтинг <b>')+16:data.find(u'из 5')]
 
             i = i + 1
@@ -649,6 +648,7 @@ class Anidub:
 
                 if type(inf) == int:
                     self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
+                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                     continue
 
             label = self.create_title(anime_id, anime_series)            

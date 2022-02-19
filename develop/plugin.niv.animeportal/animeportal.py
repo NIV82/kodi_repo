@@ -55,7 +55,8 @@ params = {
     'sort':'',
     'node': '',
     'limit': '12',
-    'portal': 'animeportal'
+    'portal': 'animeportal',
+    'portal_mode': ''
     }
 
 args = parse_qs(sys.argv[2][1:])
@@ -87,8 +88,8 @@ if 'animeportal' in params['portal']:
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 if 'anidub' in params['portal']:
-    if '0' in addon.getSetting('anidub_mode'):# == '0':
-        from anidub_online import Anidub
+    if '0' in addon.getSetting('anidub_mode'):
+        from anidub_o import Anidub
         anidub = Anidub(addon_data_dir, params, addon, icon)
         anidub.execute()
         del Anidub
@@ -125,5 +126,24 @@ if 'shizaproject' in params['portal']:
     shiza = Shiza(addon_data_dir, params, addon, icon)
     shiza.execute()
     del Shiza
+
+# if 'play_part' in params['portal_mode']:
+#     torrents_dir = os.path.join(addon_data_dir, 'torrents')
     
+#     url = os.path.join(torrents_dir, '{}.torrent'.format(params['id']))
+#     index = int(params['index'])
+#     portal_engine = '{}_engine'.format(params['portal'])
+
+#     if '0' in addon.getSetting(portal_engine):
+#         tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
+#         engine = tam_engine[int(addon.getSetting('{}_tam'.format(params['portal'])))]
+#         purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
+#         item = xbmcgui.ListItem(path=purl)
+#         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+
+#     if '1' in addon.getSetting(portal_engine):
+#         purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
+#         item = xbmcgui.ListItem(path=purl)
+#         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+        
 gc.collect()
