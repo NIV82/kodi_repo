@@ -48,8 +48,7 @@ class Anidub:
         from network import WebTools
         self.network = WebTools(
             auth_usage=self.auth_mode,
-            auth_status=bool(self.addon.getSetting('anidub_t_auth') == 'true'),
-            proxy_data=self.proxy_data, portal='anidub_t')
+            auth_status=bool(self.addon.getSetting('anidub_t_auth') == 'true'), portal='anidub')
         self.network.auth_post_data = 'login_name={}&login_password={}&login=submit'.format(
             self.addon.getSetting('anidub_t_username'),self.addon.getSetting('anidub_t_password'))
         self.network.auth_url = self.site_url
@@ -709,7 +708,18 @@ class Anidub:
             self.create_line(title=label, params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id']} )
                 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        
+
+    # def create_session(self):
+    #     try: torrent_session = float(self.addon.getSetting('anidub_torrent_session'))
+    #     except: torrent_session = 0
+
+    #     if time.time() - torrent_session > 28800:
+    #         self.addon.setSetting('anidub_torrent_session', str(time.time()))
+    #         return True
+    #     else:
+    #         return False
+        #return
+    
     def exec_torrent_part(self):
         anime_code = data_decode(self.params['id'])
         
@@ -718,8 +728,11 @@ class Anidub:
         file_name = 'anidub_{}'.format(self.params['param'])
         full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
 
+        data_print(self.create_session())
+        
         if '0' in self.addon.getSetting('anidub_local_torrent'):
             if os.path.isfile(full_name):
+            #if os.path.isfile(full_name) and self.create_session():
                 result = self.dialog.yesno(
                     'Обнаружен загруженный торрент файл',
                     'загрузить [COLOR=blue]Новый[/COLOR] или использовать [COLOR=lime]Загруженный[/COLOR] ?',
