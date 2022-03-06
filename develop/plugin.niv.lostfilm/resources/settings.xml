@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
 
-  <category label="LOSTFILM">
+  <category label="Настройки">
     <setting id="username" label="Логин:" type="text" default=""/>
     <setting id="password" label="Пароль:" type="text" default="" option="hidden"/>
     <setting type="sep"/>
     <!-- <setting id="lostfilm_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" /> -->
     <setting id="titles" type="enum" label="Формат названий:" default="0" values="Ru|En" />
-    <setting id="colorize" type="enum" label="Расцветка меню:" default="0" values="Есть|Нет" />
+    <setting id="local_torrent" type="enum" label="Загруженные торренты:" default="0" values="Использовать|Не использовать"/>
+    <setting id="quality" type="enum" label="Выбор Качества:" default="0" values="Все|SD|HD|FHD" />
     <setting type="sep"/>
     <setting id="mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт|Зеркало" />
     <setting id="mirror_0" label="Адрес:" type="text" default="https://www.lostfilm.tv/" subsetting="true" visible="eq(-1,0)" enable="false"/>

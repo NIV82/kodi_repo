@@ -373,6 +373,15 @@ class Lostfilm:
         url = '{}series/{}/'.format(self.site_url, serial_id)
 
         html = self.network.get_html(url)
+        
+        if not html:
+            self.database.add_anime(
+                serial_id=anime_id,
+                title_ru='serial_id: {}'.format(serial_id),
+                title_en='serial_id: {}'.format(serial_id)
+                )
+            return
+        
         html = unescape(html)
 
         info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
@@ -549,25 +558,17 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        if '0' in addon.getSetting('colorize'):
-            self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-            self.create_line(title='[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
-            self.create_line(title='[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
-            self.create_line(title='[B][COLOR=yellow][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param':'new/'})
-            self.create_line(title='[B][COLOR=yellow][ Все сериалы ][/COLOR][/B]', params={'mode': 'serials_part'})
-            self.create_line(title='[B][COLOR=blue][ Каталог Сериалов][/COLOR][/B]', params={'mode': 'catalog_part'})
-        else:
-            self.create_line(title='[B][ Поиск ][/B]', params={'mode': 'search_part'})
-            self.create_line(title='[B][ Расписание ][/B]', params={'mode': 'schedule_part'})
-            self.create_line(title='[B][ Избранное ][/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
-            self.create_line(title='[B][ Новинки ][/B]', params={'mode': 'common_part', 'param':'new/'})
-            self.create_line(title='[B][ Все сериалы ][/B]', params={'mode': 'serials_part'})
-            self.create_line(title='[B][ Каталог Сериалов ][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
+        self.create_line(title='[B]Расписание[/B]', params={'mode': 'schedule_part'})
+        self.create_line(title='[B]Избранное[/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
+        self.create_line(title='[B]Новинки[/B]', params={'mode': 'common_part', 'param':'new/'})
+        self.create_line(title='[B]Все сериалы[/B]', params={'mode': 'serials_part'})
+        self.create_line(title='[B]Каталог Сериалов[/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+            self.create_line(title='[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search'})
 
             data_array = addon.getSetting('search').split('|')
             data_array.reverse()
@@ -575,7 +576,7 @@ class Lostfilm:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': data})
+                self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': data})
 
         if self.params['param'] == 'search':
             skbd = xbmc.Keyboard()
@@ -602,10 +603,11 @@ class Lostfilm:
         url = '{}schedule/'.format(self.site_url)
         html = self.network.get_html(target_name=url)
 
-        if type(html) == int:
-            self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
+        if not html:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
-
+        
         data_array = html[html.find('<th colspan="6">')+16:html.rfind('<td class="placeholder">')]        
         data_array = data_array.split('<th colspan="6">')
 
@@ -653,11 +655,7 @@ class Lostfilm:
                     p, i, len(data_array), a, len(data)))
 
                 if not self.database.serial_in_db(se_code[0]):
-                    inf = self.create_info(se_code[0])
-                    
-                    if type(inf) == int:
-                        self.create_line(title=u'[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, se_code[0]), params={})
-                        continue
+                    self.create_info(se_code[0])
 
                 label = u'{}: {} | [COLOR=gold]{} - {}[/COLOR]'.format(
                     self.create_title(se_code), series_title, series_date, series_meta
@@ -678,8 +676,13 @@ class Lostfilm:
 
         html = self.network.get_html(target_name=url)
 
+        if not html:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+        
         if not '<div class="hor-breaker dashed">' in html:
-            self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
+            self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
@@ -712,11 +715,7 @@ class Lostfilm:
             self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
             if not self.database.serial_in_db(se_code[0]):
-                inf = self.create_info(se_code[0])
-                
-                if type(inf) == int:
-                    self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, serial_id), params={})
-                    continue
+                self.create_info(se_code[0])
 
             label = self.create_title(se_code, series)
             
@@ -891,23 +890,25 @@ class Lostfilm:
                         se_code[1].replace('SE', ''), se_code[2].replace('EP', ''))
                     is_watched = True if data_code in watched_data else False
 
-                    air_data = data[data.find('Ru:')+3:data.rfind('Eng:')]
-                    air_data = clean_tags(air_data, '<', '>')
+                    # air_data = data[data.find('Ru:')+3:data.rfind('Eng:')]
+                    # air_data = clean_tags(air_data, '<', '>')
                     
                     title = self.create_title(se_code)
 
-                    label = u'{} | [COLOR=gold]{}[/COLOR]'.format(
-                        self.create_title(se_code, series_title), air_data)
-
+                    # label = u'{} | [COLOR=gold]{}[/COLOR]'.format(
+                    #     self.create_title(se_code, series_title), air_data)
+                    
+                    label = u'{}'.format(self.create_title(se_code, series_title))
+                    
                     if '"not-available"' in data:
-                        label = u'[COLOR=dimgray]{} | {}[/COLOR]'.format(
-                            self.create_title(se_code, series_title, True), air_data)
+                        # label = u'[COLOR=dimgray]{} | {}[/COLOR]'.format(
+                        #     self.create_title(se_code, series_title, True), air_data)
+                        label = u'[COLOR=dimgray]{}[/COLOR]'.format(self.create_title(se_code, series_title, True))
                         self.create_line(title=label, se_code=se_code, params={})
                     else:
                         self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'param': u'|'.join(se_code)})
 
         if self.params['param']:
-            data_print(self.params['param'])
             serial_data = self.params['param'].replace('SE', '')
             serial_data = serial_data.replace('EP','').split('|')
 
@@ -925,39 +926,61 @@ class Lostfilm:
             data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
             data_array = clean_list(data_array).split('<div class="inner-box--label">')
             
+            quality_array = []
+            
             for data in data_array:
                 data = data.replace('</div>', '|').replace('||', '')
-                data = clean_tags(data, '<', '>').split('|')
-
-                quality = data[0]
-                title = data[1]
-                node_url = data[2]
-                info = data[3]
-
-                label = u'[COLOR=blue]{: >04}[/COLOR] | {}'.format(quality, info)
-
-                self.create_line(title=label, params={'mode': 'torrent_part', 'torrent_url': unquote(node_url), 'id': self.params['param'], 'node':quality})
+                data = clean_tags(data, '<', '>')
                 
+                quality_array.append(data)
+            
+            if '0' in addon.getSetting('quality'):
+                for data in quality_array:
+                    data = data.split('|')
+                    
+                    label = u'[COLOR=blue]{: >04}[/COLOR] | {}'.format(data[0], data[3])
+                    
+                    self.create_line(title=label, params={'mode': 'torrent_part', 'torrent_url': unquote(data[2]), 'id': self.params['param'], 'node':data[0]})
+            else:
+                selector = {'1':'SD|', '2':'MP4|', '3':'1080|'}
+                quality = selector[addon.getSetting('quality')]
+                
+                result = [data for data in quality_array if quality in data]
+                
+                if result:
+                    data = result[0].split('|')
+                    self.params = {'mode': 'torrent_part', 'torrent_url': unquote(data[2]), 'id': self.params['param'], 'node':data[0]}
+                    self.exec_torrent_part()
+                else:
+                    self.create_line(title='Требуемое качество отсутствует', params={'mode': self.params['mode']})
+
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_torrent_part(self):
         url = self.params['torrent_url']
+            
         full_url = '{}?s={}'.format(url[:url.find('?s=')], quote(url[url.find('?s=')+3:]))
         se_code = self.params['id'].split('|')
         file_name = '{}_{}{}_{}'.format(se_code[0],se_code[1],se_code[2],self.params['node'])
         full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
         
-        # if os.path.isfile(full_name):
-        #     result = self.dialog.contextmenu(['Использовать загруженный файл', 'Загрузить новый файл'])
-            
-        #     if result == 0:
-        #         torrent_file = full_name
-        #     if result == 1:
-        #         torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-        # else:
-        #     torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-        
-        torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+        if '0' in addon.getSetting('local_torrent'):
+            if os.path.isfile(full_name):
+                result = self.dialog.yesno(
+                    'Обнаружен загруженный торрент файл',
+                    'загрузить [COLOR=blue]Новый[/COLOR] или использовать [COLOR=lime]Загруженный[/COLOR] ?',
+                    yeslabel='Новый', nolabel ='Загруженный', autoclose=3000)
+
+                if result:
+                    torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+                else:
+                    torrent_file = full_name
+            else:
+                torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+        else:
+            torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+                
+        #torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
         
         import bencode
             

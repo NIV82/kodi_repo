@@ -61,9 +61,11 @@ class WebTools:
             except: pass
 
             return data
-        except HTTPError as error:
-            return error.code
-
+        # except HTTPError as error:
+        #     return error.code
+        except HTTPError:
+            return False
+        
     def get_file(self, target_name, post=None, destination_name=None):
         if self.auth_usage and not self.authorization():
             return None
