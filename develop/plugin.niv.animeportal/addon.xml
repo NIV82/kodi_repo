@@ -3,11 +3,7 @@
   <extension point="xbmc.python.pluginsource" library="animeportal.py">
     <provides>video</provides>
   </extension>
-  <!-- <requires>
-    <import addon="xbmc.python" version="3.0.0" />
-    <import addon="xbmc.python" version="2.26.0" />
-    <import addon="script.module.torrent2http" optional="true"/>
-  </requires> -->
+  <!-- <requires> -->
   <extension point="xbmc.addon.metadata">
     <summary lang="en">Anime Portal</summary>
     <summary lang="ru">Anime Portal</summary>

@@ -3,9 +3,7 @@
   <extension point="xbmc.python.pluginsource" library="lostfilm.py">
     <provides>video</provides>
   </extension>
-  <!-- <requires>
-    <import addon="xbmc.python" version="3.0.0" />
-  </requires> -->
+  <!-- <requires> -->
   <extension point="xbmc.addon.metadata">
     <summary lang="en">LostFilm</summary>
     <summary lang="ru">LostFilm</summary>
