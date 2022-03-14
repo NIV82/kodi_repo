@@ -153,6 +153,27 @@ class Lostfilm:
 
         return data
 #========================#========================#========================#
+    def create_colorize(self, data):
+        setting_id = {
+            'Поиск':'search_color',
+            'Расписание':'schedule_color',
+            'Избранное':'favorites_color',
+            'Новинки':'new_color',
+            'Все сериалы':'serials_color',
+            'Каталог Сериалов':'catalog_color',
+            'Поиск по названию':'search_name_color'
+            }
+        
+        color_id = {'0':'none','1':'red','2':'lime','3':'blue','4':'gold','5':'orange'}
+
+        data_color = color_id[
+            addon.getSetting(setting_id[data])
+            ]
+
+        label = '[B][COLOR={}]{}[/COLOR][/B]'.format(data_color, data)
+        
+        return label
+#========================#========================#========================#
     def create_image(self, se_code):
         serial_season = int(se_code[1].replace('SE','').replace('999','1'))
         serial_episode = int(se_code[2].replace('EP','').replace('999','1'))
@@ -311,34 +332,22 @@ class Lostfilm:
             cover = self.create_image(se_code)
             
             li.setArt({
-                #"thumb": cover, 
-                "poster": cover, 
-                #"tvshowposter": cover, 
-                #"fanart": cover,
-                #"clearart": cover,
-                #"clearlogo": cover, 
-                #"landscape": cover, 
+                "poster": cover,
                 "icon": cover
                 })
             
             se_info = self.database.get_serial(se_code[0])
 
             info = {
-                'genre':se_info[1], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
-                'country':se_info[3],#string (Germany) or list of strings (["Germany", "Italy", "France"])
-                'year': int(se_info[0][0:4]),#	integer (2009)
-                #'episode':anime_info[2],#	integer (4)
-                #'director':directors,#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
-                #'mpaa':anime_info[5],#	string (PG-13)
-                'plot':se_info[4],#	string (Long Description)
-                'title':title,#	string (Big Fan)
-                #'duration':duration,#	integer (245) - duration in seconds
-                'studio':se_info[2],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-                #'writer':writers,#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
-                'tvshowtitle':title,#	string (Heroes)
-                'premiered':se_info[0],#	string (2005-03-04)
-                #'status':anime_info[1],#	string (Continuing) - status of a TVshow
-                'aired':se_info[0],#	string (2008-12-07)
+                'genre':se_info[1],
+                'country':se_info[3],
+                'year': int(se_info[0][0:4]),
+                'plot':se_info[4],
+                'title':title,
+                'studio':se_info[2],
+                'tvshowtitle':title,
+                'premiered':se_info[0],
+                'aired':se_info[0]
             }
             
             if self.database.cast_in_db(se_code[0]):
@@ -364,8 +373,6 @@ class Lostfilm:
                 li.setProperty('isPlayable', 'true')
 
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
-
-        #if online: url = online
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
@@ -558,18 +565,17 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B]Расписание[/B]', params={'mode': 'schedule_part'})
-        self.create_line(title='[B]Избранное[/B]', params={'mode': 'catalog_part', 'param': 'favorites'})
-        self.create_line(title='[B]Новинки[/B]', params={'mode': 'common_part', 'param':'new/'})
-        self.create_line(title='[B]Все сериалы[/B]', params={'mode': 'serials_part'})
-        self.create_line(title='[B]Каталог Сериалов[/B]', params={'mode': 'catalog_part'})
+        self.create_line(title=self.create_colorize('Поиск'), params={'mode': 'search_part'})
+        self.create_line(title=self.create_colorize('Расписание'), params={'mode': 'schedule_part'})
+        self.create_line(title=self.create_colorize('Избранное'), params={'mode': 'catalog_part', 'param': 'favorites'})
+        self.create_line(title=self.create_colorize('Новинки'), params={'mode': 'common_part', 'param':'new/'})
+        self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
+        self.create_line(title=self.create_colorize('Каталог Сериалов'), params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
-            self.create_line(title='[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search'})
-
+            self.create_line(title=self.create_colorize('Поиск по названию'), params={'mode': 'search_part', 'param': 'search'})
             data_array = addon.getSetting('search').split('|')
             data_array.reverse()
 
@@ -727,7 +733,8 @@ class Lostfilm:
         self.progress.close()
         
         if '<div class="next-link active">' in html:
-            self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+            label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
+            self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -818,8 +825,10 @@ class Lostfilm:
             self.progress.close()
 
             if len(data_array) >= 10:
-                self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'node': (int(self.params['node']) + 10)})
-
+                page_count = (int(self.params['node']) / 10) + 1
+                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(page_count), int(page_count)+1)                
+                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'node': (int(self.params['node']) + 10)})
+                
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_serials_part(self):
@@ -890,19 +899,11 @@ class Lostfilm:
                         se_code[1].replace('SE', ''), se_code[2].replace('EP', ''))
                     is_watched = True if data_code in watched_data else False
 
-                    # air_data = data[data.find('Ru:')+3:data.rfind('Eng:')]
-                    # air_data = clean_tags(air_data, '<', '>')
-                    
                     title = self.create_title(se_code)
 
-                    # label = u'{} | [COLOR=gold]{}[/COLOR]'.format(
-                    #     self.create_title(se_code, series_title), air_data)
-                    
                     label = u'{}'.format(self.create_title(se_code, series_title))
                     
                     if '"not-available"' in data:
-                        # label = u'[COLOR=dimgray]{} | {}[/COLOR]'.format(
-                        #     self.create_title(se_code, series_title, True), air_data)
                         label = u'[COLOR=dimgray]{}[/COLOR]'.format(self.create_title(se_code, series_title, True))
                         self.create_line(title=label, se_code=se_code, params={})
                     else:

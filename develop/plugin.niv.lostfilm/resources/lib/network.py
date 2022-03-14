@@ -118,6 +118,14 @@ class WebTools:
                     auth = False
         else:
             data = self.url_opener.open(Request(self.auth_url, post_data, self.headers))
+            #FATAL <general>: 403
+            # try:
+            #     data = self.url_opener.open(Request(self.auth_url, post_data, self.headers))
+            # except HTTPError as error:
+            #     import xbmc
+            #     xbmc.log(str(error.code), xbmc.LOGFATAL)
+            #     return error.code
+            
             response = data.read()
             
             try: response = str(response, encoding='utf-8')
