@@ -14,6 +14,9 @@ except:
 
 from utility import tag_list, clean_list
 
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+    
 class Animedia:
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()

@@ -51,17 +51,10 @@ class Anilibria:
             auth_usage=self.auth_mode,
             auth_status=bool(self.addon.getSetting('{}_auth'.format(self.params['portal'])) == 'true'),
             proxy_data=self.proxy_data, portal=self.params['portal'])
-        #mail=niv&passwd=tbz7Xa99m&fa2code=&csrf=1
-        #self.auth_post_data = 'mail={}&passwd={}code=&csrf=1'.format(
         self.auth_post_data = 'mail={}&passwd={}'.format(
             self.addon.getSetting('{}_username'.format(self.params['portal'])),
             self.addon.getSetting('{}_password'.format(self.params['portal']))
             )
-        # self.auth_post_data = {
-        #     "mail": self.addon.getSetting('{}_username'.format(self.params['portal'])),
-        #     "passwd": self.addon.getSetting('{}_password'.format(self.params['portal']))
-        #     }
-        #self.network.auth_post_data = urlencode(self.auth_post_data)
         self.network.auth_post_data = self.auth_post_data
         self.network.auth_url = self.site_url.replace('api/index.php','login.php')
         self.network.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
@@ -136,24 +129,29 @@ class Anilibria:
         data_print(post)
         return post
 #========================#========================#========================#
-    def create_title(self, title, series, announce=None):        
+    def create_title(self, anime_id, series, announce=''):
+        title = self.database.get_title(anime_id)
+
+        year = self.database.get_year(anime_id)
+        year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
+
         if series:
-            res = u'Серии: {}'.format(series)
-            if announce:
-                res = u'{} ] - [ {}'.format(res, announce)
-            series = u' - [COLOR=gold][ {} ][/COLOR]'.format(res)
-            if xbmc.getSkinDir() == 'skin.aeon.nox.silvo' and self.params['mode'] == 'common_part':
-                series = u' - [ {} ]'.format(res)
-        else:
-            series = ''
-
+            series = u' | [COLOR=gold]{}[/COLOR]'.format(series.strip()) if series else ''
+            
+        if announce:
+            announce = u' | [COLOR=gold]{}[/COLOR]'.format(announce.strip()) if announce else ''
+            
         if '0' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
-            label = u'{}{}'.format(title[0], series)
+            label = u'{}{}{}{}'.format(year, title[0], series, announce)
         if '1' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
-            label = u'{}{}'.format(title[1], series)
+            label = u'{}{}{}{}'.format(year, title[1], series, announce)
         if '2' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
-            label = u'{} / {}{}'.format(title[0], title[1], series)
-
+            label = u'{}{} / {}{}{}'.format(year, title[0], title[1], series, announce)
+            
+        if 'anime_id:' in label:
+            label = u'[COLOR=red]ERROR[/COLOR] | Ошибка 403-404 | [COLOR=gold]{}[/COLOR]'.format(
+                title[0].replace('anime_id: ',''))
+            
         return label
 #========================#========================#========================#
     def create_image(self, cover):
@@ -203,37 +201,44 @@ class Anilibria:
 
             li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
-            #li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
-# 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
-#kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
-            anime_info = self.database.get_anime(anime_id)
 
-            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
-            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
-            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
-            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
-            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
-            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
-            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
+            anime_info = self.database.get_anime(anime_id)
+            
+            description = anime_info[10] if anime_info[10] else ''
+            
+            if anime_info[11]:
+                description = u'{}\n\n[B]Озвучивание[/B]: {}'.format(anime_info[10], anime_info[11])
+            if anime_info[12]:
+                description = u'{}\n[B]Перевод[/B]: {}'.format(description, anime_info[12])
+            if anime_info[13]:
+                description = u'{}\n[B]Тайминг[/B]: {}'.format(description, anime_info[13])
+            if anime_info[14]:
+                description = u'{}\n[B]Работа над звуком[/B]: {}'.format(description, anime_info[14])
+            if anime_info[15]:
+                description = u'{}\n[B]Mastering[/B]: {}'.format(description, anime_info[15])
+            if anime_info[16]:
+                description = u'{}\n[B]Редактирование[/B]: {}'.format(description, anime_info[16])
+            if anime_info[17]:
+                description = u'{}\n[B]Другое[/B]: {}'.format(description, anime_info[17])
 
             duration = anime_info[6] * 60 if anime_info[6] else 0
 
             info = {
-                'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
-                'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
-                'year':anime_info[3],#	integer (2009)
-                'episode':anime_info[2],#	integer (4)
-                'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
-                'mpaa':anime_info[5],#	string (PG-13)
-                'plot':description,#	string (Long Description)
-                'title':title,#	string (Big Fan)
-                'duration':duration,#	integer (245) - duration in seconds
-                'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-                'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
-                'tvshowtitle':title,#	string (Heroes)
-                'premiered':anime_info[3],#	string (2005-03-04)
-                'status':anime_info[1],#	string (Continuing) - status of a TVshow
-                'aired':anime_info[3],#	string (2008-12-07)
+                'genre':anime_info[7],
+                'country':anime_info[18],
+                'year':anime_info[3],
+                'episode':anime_info[2],
+                'director':anime_info[9],
+                'mpaa':anime_info[5],
+                'plot':description,
+                'title':title,
+                'duration':duration,
+                'studio':anime_info[19],
+                'writer':anime_info[8],
+                'tvshowtitle':title,
+                'premiered':anime_info[3],
+                'status':anime_info[1],
+                'aired':anime_info[3],
             }
 
             if size:
@@ -258,6 +263,14 @@ class Anilibria:
             anime_id, '&filter=id,names,type.code,type.length,genres,team,season.year,description')
 
         html = self.network.get_html(target_name=url)
+        
+        if not html:
+            self.database.add_anime(
+                anime_id=anime_id,
+                title_ru='anime_id: {}'.format(anime_id),
+                title_en='anime_id: {}'.format(anime_id)
+                )
+            return
 
         html = unescape(html)
 
@@ -310,8 +323,6 @@ class Anilibria:
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_mirror_part(self):
-        #self.addon.setSetting('{}_unblock'.format(self.params['portal']), '1')
-
         proxy_data = {'https': 'proxy-nossl.antizapret.prostovpn.org:29976'}
 
         from network import WebTools
@@ -323,7 +334,6 @@ class Anilibria:
         mirror = html[html.find('mt-1" href="')+12:html.find('" target="_blank" rel="')]
 
         self.addon.setSetting('{}_mirror_1'.format(self.params['portal']), '{}/'.format(mirror))
-        #self.addon.setSetting('{}_unblock'.format(self.params['portal']), '0')
         return
 #========================#========================#========================#
     def exec_update_database_part(self):
@@ -396,17 +406,17 @@ class Anilibria:
 #========================#========================#========================#
     def exec_main_part(self):
         if self.auth_mode:
-            self.create_line(title=u'[B][COLOR=white][ Избранное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
-        self.create_line(title=u'[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title=u'[B][COLOR=white][ Расписание ][/COLOR][/B]', params={'mode': 'schedule_part'})
-        self.create_line(title=u'[B][COLOR=yellow][ Новое ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
-        self.create_line(title=u'[B][COLOR=blue][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
-        self.create_line(title=u'[B][COLOR=lime][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
+            self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
+        self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part'})
+        self.create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
+        self.create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
+        self.create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
-            self.create_line(title=u'[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+            self.create_line(title=u'[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search'})
 
             data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
             data_array.reverse()
@@ -414,7 +424,7 @@ class Anilibria:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
+                self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
 
         if self.params['param'] == 'search':
             skbd = xbmc.Keyboard()
@@ -423,7 +433,7 @@ class Anilibria:
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
                 data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
-                while len(data_array) >= 10:
+                while len(data_array) >= 6:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
                 self.addon.setSetting('{}_search'.format(self.params['portal']), data_array)
@@ -442,9 +452,15 @@ class Anilibria:
 
         html = self.network.get_html(target_name=self.site_url, post=self.create_post())
 
-        if type(html) == int:
-            self.create_line(title=u'[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
+        if not html:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
+
+        # if not '<div class="th-item">' in html:
+        #     self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+        #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        #     return
 
         data_array = html.split(']},{')
 
@@ -460,8 +476,7 @@ class Anilibria:
             self.create_line(title='[B][COLOR=lime]{}[/COLOR][/B]'.format(week_day), params={})
 
             for node in data:
-                anime_id = node[node.find(':')+1:node.find(',')]
-                #series = node[node.find('series":"')+9:node.find('","announce')]                
+                anime_id = node[node.find(':')+1:node.find(',')]              
                 series = node[node.find('series":"')+9:node.find('","poster')]
                 cover = node[node.find('poster":"')+9:node.find('","announce')]
                 announce = node[node.find('announce":')+10:node.find(',"status')]
@@ -472,13 +487,9 @@ class Anilibria:
                 self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
                 if not self.database.anime_in_db(anime_id):
-                    inf = self.create_info(anime_id)
-                    
-                    if type(inf) == int:
-                        self.create_line(title=u'[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
-                        continue
+                    self.create_info(anime_id)
 
-                label = self.create_title(self.database.get_title(anime_id), series, announce)
+                label = self.create_title(anime_id, series, announce)
                 self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id, 'node':cover})
         
         self.progress.close()
@@ -489,6 +500,16 @@ class Anilibria:
     def exec_common_part(self):
         self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
         html = self.network.get_html(self.site_url, self.create_post())
+
+        if not html:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+            
+        # if not '<div class="th-item">' in html:
+        #     self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+        #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        #     return
         
         data_array = html[html.find('"id"'):].split('},{')
 
@@ -498,7 +519,6 @@ class Anilibria:
             data = unescape(data)
 
             anime_id = data[data.find(':')+1:data.find(',')]
-            #series = data[data.find('series":"')+9:data.find('","announce')]
             series = data[data.find('series":"')+9:data.find('","poster"')]
             cover = data[data.find('poster":"')+9:data.find('","announce')]
 
@@ -510,21 +530,17 @@ class Anilibria:
             self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
             if not self.database.anime_in_db(anime_id):
-                inf = self.create_info(anime_id)
-                
-                if type(inf) == int:
-                    self.create_line(title=u'[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, anime_id), params={})
-                    continue
+                self.create_info(anime_id)
 
-            label = self.create_title(self.database.get_title(anime_id), series, None)
+            label = self.create_title(anime_id, series)
             
             self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id})
 
         self.progress.close()
         
         if len(data_array) >= 12:
-            self.create_line(title=u'[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={
-                             'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+            label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
+            self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -566,8 +582,8 @@ class Anilibria:
             self.addon.setSetting(id='{}_status'.format(self.params['portal']), value=tuple(anilibria_status.keys())[result])
 #========================#========================#========================#   
     def exec_select_part(self):
-        self.create_line(title=u'[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
-        self.create_line(title=u'[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
+        self.create_line(title=u'[B]Онлайн просмотр[/B]', params={'mode': 'online_part', 'id': self.params['id']})
+        self.create_line(title=u'[B]Торрент просмотр[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
@@ -580,12 +596,10 @@ class Anilibria:
             
             for data in data_array:
                 name = data[data.find('title":"')+8:data.find('","')]
-                #name = data[data.find('title":"')+8:data.find('","sd')]
                 name = digit_list(name)
 
                 sd = data[data.find('sd":"')+5:data.find('","hd')]
                 hd = data[data.find('hd":"')+5:data.find('","fullhd')]
-                #fhd = data[data.find('fullhd":"')+9:data.find('","src')]
                 fhd = data[data.find('fullhd":"')+9:data.find('"}')]
 
                 if sd:

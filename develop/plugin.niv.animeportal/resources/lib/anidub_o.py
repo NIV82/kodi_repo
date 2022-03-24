@@ -493,15 +493,15 @@ class Anidub:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
+        self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
         if self.auth_mode:
-            self.create_line(title='[B]Избранное[/B]', params={'mode': 'favorites_part'})
-        self.create_line(title='[B]Аниме[/B]', params={'mode': 'common_part', 'param': 'anime/'})
-        self.create_line(title='[B]Онгоинги[/B]', params={'mode': 'common_part', 'param': 'anime/anime_ongoing/'})
-        self.create_line(title='[B]Вышедшие сериалы[/B]', params={'mode': 'common_part', 'param': 'anime/full/'})
-        self.create_line(title='[B]Аниме фильмы[/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
-        self.create_line(title='[B]Аниме OVA[/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
-        self.create_line(title='[B]Дорамы[/B]', params={'mode': 'common_part', 'param': 'dorama/'})
+            self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'favorites_part'})
+        self.create_line(title='[B][COLOR=lime]Аниме[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/'})
+        self.create_line(title='[B][COLOR=lime]Онгоинги[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/anime_ongoing/'})
+        self.create_line(title='[B][COLOR=lime]Вышедшие сериалы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime/full/'})
+        self.create_line(title='[B][COLOR=blue]Аниме фильмы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
+        self.create_line(title='[B][COLOR=blue]Аниме OVA[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
+        self.create_line(title='[B][COLOR=gold]Дорамы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
@@ -541,7 +541,7 @@ class Anidub:
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
                 data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')                    
-                while len(data_array) >= 5:
+                while len(data_array) >= 6:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
                 self.addon.setSetting('{}_search'.format(self.params['portal']), data_array)
@@ -552,7 +552,7 @@ class Anidub:
         if 'search_string' in self.params['param']:
             if self.params['search_string'] == '':
                 return False
-            self.progress.create('ANIDUB', 'Инициализация')
+            #self.progress.create('ANIDUB', 'Инициализация')
             
             url = '{}index.php?do=search'.format(self.site_url)
             post = 'do=search&story={}&subaction=search&search_start={}&full_search=0'.format(quote(self.params['search_string']), self.params['page'])
@@ -576,7 +576,7 @@ class Anidub:
             data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!-- END CONTENT -->')]
             data_array = clean_list(data_array).split('<div class="th-item">')
 
-            i = 0
+            #i = 0
             
             for data in data_array:
                 data = unescape(data)
@@ -591,12 +591,12 @@ class Anidub:
                 anime_series = anime_title[anime_title.rfind('[')+1:anime_title.rfind(']')] if '[' in anime_title else ''
                 anime_rating = data[data.find('th-rating">')+11:data.find('</div><div class="th-info')]
                 
-                i = i + 1
-                p = int((float(i) / len(data_array)) * 100)
+                #i = i + 1
+                #p = int((float(i) / len(data_array)) * 100)
                 
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                #if self.progress.iscanceled():
+                #    break
+                #self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
                 if not self.database.anime_in_db(anime_id):
                     self.create_info(anime_id)
@@ -610,7 +610,7 @@ class Anidub:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
                 self.create_line(title=label, params={'mode': 'search_part', 'param': 'search_string', 'search_string': self.params['search_string'], 'page': int(self.params['page']) + 1})
                 
-            self.progress.close()
+            #self.progress.close()
             
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -624,7 +624,7 @@ class Anidub:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
-            
+
         if not '<div class="th-item">' in html:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
