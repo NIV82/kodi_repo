@@ -63,8 +63,8 @@ class DataBase:
     def get_year(self, serial_id):
         self.cu.execute('SELECT aired_on FROM serials_db WHERE serial_id=?', (serial_id,))
         self.c.commit()
-        year = self.cu.fetchone()[0]
-        year = year[:year.find('.')]
+        year = self.cu.fetchone()[0]        
+        year = year[:year.find('.')] if year else 9999
         return year
     
     def get_serial(self, serial_id):

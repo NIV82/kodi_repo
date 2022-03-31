@@ -278,7 +278,7 @@ class Lostfilm:
         
         title = self.database.get_title(se_code[0])        
         year = self.database.get_year(se_code[0])
-        
+
         if series:
             series = series.split('|')
             
@@ -335,13 +335,15 @@ class Lostfilm:
                 "poster": cover,
                 "icon": cover
                 })
-            
+
             se_info = self.database.get_serial(se_code[0])
+
+            year = int(se_info[0][0:4]) if se_info[0] else 9999
 
             info = {
                 'genre':se_info[1],
                 'country':se_info[3],
-                'year': int(se_info[0][0:4]),
+                'year': year,
                 'plot':se_info[4],
                 'title':title,
                 'studio':se_info[2],
