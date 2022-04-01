@@ -126,7 +126,6 @@ class Anilibria:
         if self.params['mode'] == 'torrent_part':
             post = 'query=release&id={}&filter=torrents%2Cposter'.format(self.params['id'])
 
-        data_print(post)
         return post
 #========================#========================#========================#
     def create_title(self, anime_id, series, announce=''):

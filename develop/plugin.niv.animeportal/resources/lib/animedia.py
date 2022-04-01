@@ -12,11 +12,11 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-from utility import tag_list, clean_list
+from utility import clean_list, clean_tags, data_encode, data_decode
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
-    
+
 class Animedia:
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()
@@ -54,7 +54,6 @@ class Animedia:
         self.network.auth_post_data = 'ACT=14&RET=%2F&site_id=1&username={}&password={}'.format(
             self.addon.getSetting('animedia_username'), self.addon.getSetting('animedia_password'))
         self.network.auth_url = self.site_url
-        #self.network.auth_url = 'https://m44.animedia.pro/'
         del WebTools
 #========================#========================#========================#
         if self.auth_mode:
@@ -157,26 +156,27 @@ class Animedia:
 #========================#========================#========================#
     def create_title(self, anime_id, series=None):
         title = self.database.get_title(anime_id)
-
-        if series:
-            series = series.strip()
-            series = u' - [COLOR=gold][ {} ][/COLOR]'.format(series)
-        else:
-            series = ''
-       
+                
+        year = self.database.get_year(anime_id)
+        year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
+        
+        series = u' | [COLOR=gold]{}[/COLOR]'.format(series.strip()) if series else ''
+            
         if '0' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
-            label = u'{}{}'.format(title[0], series)
+            label = u'{}{}{}'.format(year, title[0], series)
         if '1' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
-            label = u'{}{}'.format(title[1], series)
+            label = u'{}{}{}'.format(year, title[1], series)
         if '2' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
-            label = u'{} / {}{}'.format(title[0], title[1], series)
+            label = u'{}{} / {}{}'.format(year, title[0], title[1], series)
 
+        if 'anime_id:' in label:
+            label = u'[COLOR=red]ERROR[/COLOR] | Ошибка 403-404 | [COLOR=gold]{}[/COLOR]'.format(
+                title[0].replace('anime_id: ',''))
+            
         return label
 #========================#========================#========================#
-    def create_image(self, anime_id):        
-        url = self.database.get_cover(anime_id)
-
-        if self.addon.getSetting('animedia_covers') == '0':
+    def create_image(self, url, anime_id):
+        if '0' in self.addon.getSetting('animedia_covers'):
             return url
         else:
             local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
@@ -188,21 +188,19 @@ class Animedia:
                 file_name = os.path.join(self.images_dir, local_img)
                 return self.network.get_file(target_name=url, destination_name=file_name)
 #========================#========================#========================#
-    def create_context(self, anime_id, title_data):
+    def create_context(self, anime_id):
         context_menu = []
-
-        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=animedia")'))
-
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
             context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=animedia")'))
 
         if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]',
-                                 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&title_data={}&portal=animedia")'.format(anime_id, title_data)))
-
+            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]','Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=animedia")'.format(anime_id)))
+            
+        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal=animedia")'))
+        
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=animedia")'))
-        context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=animedia")'))
-        context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=animedia")'))
+        #context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal=animedia")'))
+        #context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal=animedia")'))
 
         return context_menu
 #========================#========================#========================#
@@ -210,40 +208,48 @@ class Animedia:
         li = xbmcgui.ListItem(title)
 
         if anime_id:
-            cover = self.create_image(anime_id)
+            cover = self.create_image(cover, anime_id)
 
             li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
                        "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
-# 0     1       2           3           4           5       6       7       8       9           10          11      12          13      14      15          16      17      18      19
-#kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios
-            anime_info = self.database.get_anime(anime_id)
             
-            description = u'{}\n\n[COLOR=steelblue]Озвучивание[/COLOR]: {}'.format(anime_info[10], anime_info[11])
-            description = u'{}\n[COLOR=steelblue]Перевод[/COLOR]: {}'.format(description, anime_info[12])
-            description = u'{}\n[COLOR=steelblue]Тайминг[/COLOR]: {}'.format(description, anime_info[13])
-            description = u'{}\n[COLOR=steelblue]Работа над звуком[/COLOR]: {}'.format(description, anime_info[14])
-            description = u'{}\n[COLOR=steelblue]Mastering[/COLOR]: {}'.format(description, anime_info[15])
-            description = u'{}\n[COLOR=steelblue]Редактирование[/COLOR]: {}'.format(description, anime_info[16])
-            description = u'{}\n[COLOR=steelblue]Другое[/COLOR]: {}'.format(description, anime_info[17])
+            anime_info = self.database.get_anime(anime_id)
+
+            description = anime_info[10] if anime_info[10] else ''
+            
+            if anime_info[11]:
+                description = u'{}\n\n[B]Озвучивание[/B]: {}'.format(anime_info[10], anime_info[11])
+            if anime_info[12]:
+                description = u'{}\n[B]Перевод[/B]: {}'.format(description, anime_info[12])
+            if anime_info[13]:
+                description = u'{}\n[B]Тайминг[/B]: {}'.format(description, anime_info[13])
+            if anime_info[14]:
+                description = u'{}\n[B]Работа над звуком[/B]: {}'.format(description, anime_info[14])
+            if anime_info[15]:
+                description = u'{}\n[B]Mastering[/B]: {}'.format(description, anime_info[15])
+            if anime_info[16]:
+                description = u'{}\n[B]Редактирование[/B]: {}'.format(description, anime_info[16])
+            if anime_info[17]:
+                description = u'{}\n[B]Другое[/B]: {}'.format(description, anime_info[17])
 
             duration = anime_info[6] * 60 if anime_info[6] else 0
 
             info = {
-                'genre':anime_info[7], #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
-                'country':anime_info[18],#string (Germany) or list of strings (["Germany", "Italy", "France"])
-                'year':anime_info[3],#	integer (2009)
-                'episode':anime_info[2],#	integer (4)
-                'director':anime_info[9],#	string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
-                'mpaa':anime_info[5],#	string (PG-13)
-                'plot':description,#	string (Long Description)
-                'title':title,#	string (Big Fan)
-                'duration':duration,#	integer (245) - duration in seconds
-                'studio':anime_info[19],#	string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-                'writer':anime_info[8],#	string (Robert D. Siegel) or list of strings (["Robert D. Siegel", "Jonathan Nolan", "J.K. Rowling"])
-                'tvshowtitle':title,#	string (Heroes)
-                'premiered':anime_info[3],#	string (2005-03-04)
-                'status':anime_info[1],#	string (Continuing) - status of a TVshow
-                'aired':anime_info[3],#	string (2008-12-07)
+                'genre':anime_info[7],
+                'country':anime_info[18],
+                'year':anime_info[3],
+                'episode':anime_info[2],
+                'director':anime_info[9],
+                'mpaa':anime_info[5],
+                'plot':description,
+                'title':title,
+                'duration':duration,
+                'studio':anime_info[19],
+                'writer':anime_info[8],
+                'tvshowtitle':title,
+                'premiered':anime_info[3],
+                'status':anime_info[1],
+                'aired':anime_info[3]
             }
 
             if size:
@@ -251,7 +257,8 @@ class Animedia:
 
             li.setInfo(type='video', infoLabels=info)
 
-        li.addContextMenuItems(self.create_context(anime_id, metadata))
+        #li.addContextMenuItems(self.create_context(anime_id, metadata))
+        li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -274,72 +281,60 @@ class Animedia:
         data = {'title_ru': title_ru, 'title_en': title_en}
         return data
 #========================#========================#========================#
-    def create_info(self, anime_id, title_data=None, update=False):
-        info = dict.fromkeys(['anime_tid','title_ru', 'title_en', 'genres', 'year', 'studios', 'dubbing', 'description', 'image'], '')
+    def create_info(self, anime_id, update=False):
+        info = dict.fromkeys(['title_ru', 'title_en', 'genres', 'aired_on', 'studios', 'dubbing', 'description'], '')
 
-        if title_data:
-            info.update(self.create_title_info(title_data))
-        else:
-            info.update(self.create_title_info(self.params['title_data']))
+        url = '{}anime/{}'.format(self.site_url, quote(anime_id))
 
-        try:
-            info['title_ru'] = info['title_ru'].decode(encoding='utf-8', errors='replace')
-            info['title_en'] = info['title_en'].decode(encoding='utf-8', errors='replace')
-        except:
-            pass
-
-        url = '{}anime/{}'.format(self.site_url, anime_id)
         html = self.network.get_html(target_name=url)
         
-        if type(html) == int:
-            label_ru = u'[B][COLOR=red]ERROR-404 - {}[/COLOR][/B]'.format(info['title_ru'])
-            label_en = u'[B][COLOR=red]ERROR-404 - {}[/COLOR][/B]'.format(info['title_ru'])
-            self.database.add_anime(anime_id=anime_id, title_ru=label_ru, title_en=label_en)
+        if not html:
+            self.database.add_anime(
+                anime_id=anime_id,
+                title_ru='anime_id: {}'.format(anime_id),
+                title_en='anime_id: {}'.format(anime_id)
+                )
             return
 
         html = unescape(html)
 
-        if html.find(u'Скачать торрент') > -1:
-            anime_tid = html[html.find('torrents-list/')+14:html.find('" class="btn btn__big btn__g')]
-            info['anime_tid'] = quote(anime_tid.encode('utf-8'))
-
-        if html.find(u'Релиз озвучивали:') > -1:
+        if u'Релиз озвучивали:' in html:
             dubbing = html[html.find(u'Релиз озвучивали:')+17:html.find(u'Новые серии')]
-            info['dubbing'] = tag_list(dubbing)
+            info['dubbing'] = clean_tags(dubbing)
 
-        info['image'] = html[html.find('image" content="')+16:html.find('<meta property="og:type')-5]
-
-        data_array = html[html.find('post__body">')+12:html.find('</article>')]
+        data_array = html[html.find('class="media__post">')+20:html.find('</article>')]
         data_array = data_array.splitlines()
 
         for data in data_array:
+            if 'post__title">' in data:
+                info['title_ru'] = clean_tags(data.replace(u'смотреть онлайн', ''))
+            if 'original-title">' in data:
+                info['title_en'] = clean_tags(data)
             if '<p>' in data:
-                description = tag_list(data)
-                info['description'] = u'{}\n{}'.format(info['description'],description).strip()
+                info['description'] = u'{}\n{}'.format(info['description'], clean_tags(data).strip())
             if u'Дата выпуска:' in data:
-                data = tag_list(data)
+                data = clean_tags(data)
                 for year in range(1975, 2030, 1):
                     if str(year) in data:
-                        info['year'] = year
+                        info['aired_on'] = year
             if u'Жанр:' in data:
-                data = tag_list(data.replace('</a><a',', <a'))
-                info['genres'] = data.replace(u'Жанр:','').strip()
+                info['genres'] = clean_tags(data[data.find(':')+1:].replace('</a><a',', <a'))
             if u'Студия:' in data:
-                data = tag_list(data).replace(u'Студия:','')
-                info['studios'] = data.strip()
+                info['studios'] = clean_tags(data[data.find(':')+1:])
+
+        if not info['aired_on']:
+            info['aired_on'] = 9999
 
         try:
             self.database.add_anime(
-                anime_id = anime_id,
-                anime_tid = info['anime_tid'],
+                anime_id = quote(anime_id),
                 title_ru = info['title_ru'],
                 title_en = info['title_en'],
                 dubbing = info['dubbing'],
                 genres = info['genres'],
                 studios = info['studios'],
-                aired_on = info['year'],
+                aired_on = info['aired_on'],
                 description = info['description'],
-                image = info['image'],
                 update=update
                 )
         except:
@@ -354,7 +349,8 @@ class Animedia:
         self.addon.openSettings()
 #========================#========================#========================#
     def exec_update_anime_part(self):
-        self.create_info(anime_id=self.params['id'], title_data=self.params['title_data'], update=True)
+        # self.create_info(anime_id=self.params['id'], title_data=self.params['title_data'], update=True)
+        self.create_info(anime_id=self.params['id'], update=True)
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_mirror_part(self):
@@ -427,18 +423,18 @@ class Animedia:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        self.create_line(title='[B][COLOR=red][ Поиск ][/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=yellow][ Анонсы ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'announcements'})
-        self.create_line(title='[B][COLOR=lime][ ТОП-100 ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'top-100-anime'})
-        self.create_line(title='[B][COLOR=lime][ Популярное ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'populyarnye-anime-nedeli'})
-        self.create_line(title='[B][COLOR=lime][ Новинки ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'novinki-anime'})
-        self.create_line(title='[B][COLOR=lime][ Завершенные ][/COLOR][/B]', params={'mode': 'common_part', 'param': 'completed'})
-        self.create_line(title='[B][COLOR=blue][ Каталог ][/COLOR][/B]', params={'mode': 'catalog_part'})
+        self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title='[B][COLOR=yellow]Анонсы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'announcements'})
+        self.create_line(title='[B][COLOR=lime]ТОП-100[/COLOR][/B]', params={'mode': 'common_part', 'param': 'top-100-anime'})
+        self.create_line(title='[B][COLOR=lime]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'populyarnye-anime-nedeli'})
+        self.create_line(title='[B][COLOR=lime]Новинки[/COLOR][/B]', params={'mode': 'common_part', 'param': 'novinki-anime'})
+        self.create_line(title='[B][COLOR=lime]Завершенные[/COLOR][/B]', params={'mode': 'common_part', 'param': 'completed'})
+        self.create_line(title='[B][COLOR=blue]Каталог[/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
-            self.create_line(title='[B][COLOR=red][ Поиск по названию ][/COLOR][/B]', params={'mode': 'search_part', 'param': 'search'})
+            self.create_line(title='[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search'})
 
             data_array = self.addon.getSetting('animedia_search').split('|')
             data_array.reverse()
@@ -446,7 +442,7 @@ class Animedia:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='{}'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
+                self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
 
         if self.params['param'] == 'search':
             skbd = xbmc.Keyboard()
@@ -455,7 +451,7 @@ class Animedia:
             if skbd.isConfirmed():
                 self.params['search_string'] = quote(skbd.getText())
                 data_array = self.addon.getSetting('animedia_search').split('|')                    
-                while len(data_array) >= 10:
+                while len(data_array) >= 6:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
                 self.addon.setSetting('animedia_search', data_array)
@@ -471,53 +467,57 @@ class Animedia:
 
         html = self.network.get_html(target_name=self.create_url())
 
-        if type(html) == int:
-            self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
+        if not html:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
-        if '<div class="ads-list__item">' in html:
-            data_array = html[html.find('<div class="ads-list__item">')+28:html.find('<div class="about-page">')]
-            data_array = data_array.split('<div class="ads-list__item">')
+        if not '<div class="ads-list__item">' in html:
+            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
 
-            i = 0
+        data_array = html[html.find('<div class="ads-list__item">')+28:html.find('<div class="about-page">')]
+        data_array = data_array.split('<div class="ads-list__item">')
 
-            for data in data_array:
-                data = unescape(data)
+        i = 0
 
-                i = i + 1
-                p = int((float(i) / len(data_array)) * 100)
+        for data in data_array:
+            data = unescape(data)
 
-                anime_id = data[data.rfind('col-l"><a href="')+16:data.find(u'" title="Подробнее')]
-                anime_id = anime_id[anime_id.rfind('/')+1:]
-                anime_id = quote(anime_id.encode('utf-8'))
+            i = i + 1
+            p = int((float(i) / len(data_array)) * 100)
 
-                title_data = data[data.find(u'смотреть аниме онлайн')+21:data.find('" class="btn btn__black')]
+            anime_id = data[data.rfind('col-l"><a href="')+16:data.find(u'" title="Подробнее')]
+            anime_id = anime_id[anime_id.rfind('/')+1:]
+            anime_id = quote(anime_id.encode('utf-8'))
+            
+            anime_cover = data[data.find('<img data-src="')+15:data.find('?h=')]
 
-                # if '></div></div>' in anime_id:
-                #     continue
+            torrent_url = data[data.find('tt.animedia.tv'):data.find(u'" title="Скачать')]
+            if torrent_url:
+                torrent_url = 'https://{}'.format(torrent_url)
 
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            anime_code = data_encode('{}|{}'.format(anime_id, torrent_url))
 
-                if not self.database.anime_in_db(anime_id):
-                    inf = self.create_info(anime_id, title_data)
+            # if '></div></div>' in anime_id:
+            #     continue
 
-                    if type(inf) == int:
-                        self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=lime]ID: {} ][/COLOR][/B]'.format(inf, anime_id), params={})
-                        continue
+            if self.progress.iscanceled():
+                break
+            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
-                label = self.create_title(anime_id)
-                self.create_line(title=label, anime_id=anime_id, metadata=title_data.encode('utf-8'), params={'mode': 'select_part', 'id': anime_id})
-        else:
-            self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
-        
+            if not self.database.anime_in_db(anime_id):
+                self.create_info(anime_id)
+
+            label = self.create_title(anime_id)
+            self.create_line(title=label, anime_id=anime_id, cover=anime_cover, params={'mode': 'select_part', 'id': anime_code})
+
         self.progress.close()
 
         if u'Загрузить ещё' in html:
-            self.create_line(title='[B][COLOR=orange][ Следующая страница ][/COLOR][/B]', params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
-
+            label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
+            self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_catalog_part(self):
@@ -563,167 +563,144 @@ class Animedia:
             self.addon.setSetting(id='animedia_sort', value=tuple(animedia_sort.keys())[result])
 #========================#========================#========================#
     def exec_select_part(self):
-        self.create_line(title=u'[B][ Онлайн просмотр ][/B]', params={'mode': 'online_part', 'id': self.params['id']})
-        if self.database.get_tid(self.params['id']):
-            self.create_line(title=u'[B][ Торрент просмотр ][/B]', params={'mode': 'torrent_part', 'id': self.params['id']})
+        anime_code = data_decode(self.params['id'])
+        self.create_line(title=u'[B]Онлайн просмотр[/B]', params={'mode': 'online_part', 'id': anime_code[0]})
+        if anime_code[1]:
+            self.create_line(title=u'[B]Торрент просмотр[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
-        if not self.params['param']:
-            html = self.network.get_html(
-                target_name='{}anime/{}'.format(self.site_url,self.params['id']))
+        html = self.network.get_html(
+            target_name='{}anime/{}'.format(self.site_url,self.params['id']))
             
-            html = unescape(html)
+        if not html:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+            
+        if not 'data-entry_id=' in html:
+            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+            
+        html = unescape(html)
+            
+        data_entry = html[html.find('data-entry_id="')+15:html.find('<li class="media__tabs__nav__item')]
+        data_entry = data_entry[:data_entry.find('">')]
 
-            if 'data-entry_id=' in html:
-                data_entry = html[html.find('data-entry_id="')+15:html.find('<li class="media__tabs__nav__item')]
-                data_entry = data_entry[:data_entry.find('">')]
+        data_array = html[html.find('<a href="#tab'):html.find('<div class="media__tabs__content')]
+        data_array = data_array.strip()
+        data_array = data_array.split('<li class="media__tabs__nav__item">')
 
-                data_array = html[html.find('<a href="#tab'):html.find('<div class="media__tabs__content')]
-                data_array = data_array.strip()
-                data_array = data_array.split('<li class="media__tabs__nav__item">')
+        for data in data_array:
+            tab_num = data[data.find('"#tab')+5:data.find('" role')]
+            tab_name = data[data.find('"tab">')+6:data.find('</a></li>')]
 
-                for data in data_array:
-                    tab_num = data[data.find('"#tab')+5:data.find('" role')]
-                    tab_name = data[data.find('"tab">')+6:data.find('</a></li>')]
-
-                    tab_entry = '|||{}/{}'.format(data_entry, int(tab_num)+1)
-                    
-                    self.create_line(title=tab_name, params={'mode': 'online_part', 'param': tab_entry, 'id': self.params['id']})
-            else:
-                self.create_line(title='[COLOR=yellow][ Ничего не найдено ][/COLOR]', params={'mode': 'main_part'})
-
-        if '|||' in self.params['param']:
-            url = '{}ajax/episodes/{}/undefined'.format(self.site_url, self.params['param'].replace('|||',''))
+            self.create_line(title='[B]{}[/B]'.format(tab_name), params={})
+                
+            url = '{}/embeds/playlist-j.txt/{}/{}'.format(self.site_url, data_entry, int(tab_num)+1)
 
             html = self.network.get_html(target_name=url)
-            
             html = unescape(html)
 
-            data_array = html[html.find('list__item">')+12:html.find('<div class="clearfix">')]
-            data_array = data_array.split('<div class="media__tabs__series__list__item">')
+            data_array = html.split('},')
 
             for data in data_array:
-                data = data.strip()
+                series_title = data[data.find('title":"')+8:data.find('","file')]
+                    
+                series_file = data[data.find('file":"')+7:data.find('","poster')]
+                if not 'https:' in series_file:
+                    series_file = 'https:{}'.format(series_file)
+                    
+                series_poster = data[data.find('poster":"')+9:data.find('","id"')]
+                series_poster = 'https:{}'.format(series_poster)
 
-                series_url = data[data.find('<a href="/')+10:data.find('" title')]
-                series_title = data[data.find('title="')+7:data.find('"><img data-src')]                
-
-                self.create_line(title=series_title, anime_id=self.params['id'], params={'mode': 'online_part', 'param': series_url, 'id': self.params['id']})
-
-        if 'anime/' in self.params['param']:
-            html = self.network.get_html(
-                target_name='{}{}'.format(self.site_url, self.params['param']))
-            
-            html = unescape(html)
-
-            video_url = html[html.find('iframe" content="')+17:html.find('<meta property="ya:ovs:allow_embed')]
-            video_url = video_url[:video_url.find('" />')]
-
-            if video_url:
-                html = self.network.get_html(target_name=video_url)
-
-                online_url = html[html.find('file: "')+7:html.find('",poster')]
-                if not 'https:' in online_url:
-                    online_url = online_url.replace('//','https://')
-
-                label = 'Смотреть'
-                self.create_line(title=label, params={}, anime_id=self.params['id'], online=online_url, folder=False)
+                series_id = data[data.find('id":"')+5:data.rfind('"')]
+                series_id = series_id.replace('s', '').split('e')
+                series_id = '[COLOR=blue]SE{:>02}[/COLOR][COLOR=lime]EP{:>02}[/COLOR]'.format(series_id[0],series_id[1])
+                    
+                label = '{} | [B]{}[/B]'.format(series_id, series_title)                    
+                    
+                self.create_line(title=label, cover=series_poster, anime_id=self.params['id'], params={}, online=series_file, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
     def exec_torrent_part(self):
         if not self.params['param']:
-            html = self.network.get_html(
-                target_name='https://tt.animedia.tv/anime/{}'.format(self.database.get_tid(self.params['id']))
-                )
-
+            anime_code = data_decode(self.params['id'])
+            
+            html = self.network.get_html(target_name=anime_code[1])
             html = unescape(html)
 
-            metadata = dict.fromkeys(['series', 'quality', 'size', 'container', 'video', 'audio', 'translate', 'timing'], '')
-
-            tab = []
+            cover = html[html.find('poster"><a href="')+17:html.find('" class="zoomLink')]
+            #cover = html[html.rfind('<img src="')+10:html.rfind('" alt=')]
+            
+            info = dict.fromkeys(['series', 'quality', 'size'], '')
 
             if '<div class="media__tabs" id="down_load">' in html:
-                tabs_nav = html[html.find('data-toggle="tab">')+18:html.find('<!-- tabs navigation end-->')]
+                tabs_nav = html[html.find('data-toggle="tab">')+18:html.find('<div class="media__tabs_')]
                 tabs_nav = tabs_nav.split('data-toggle="tab">')
 
-                for tabs in tabs_nav:
-                    nav = tabs[:tabs.find('</a></li>')]
-                    tab.append(nav)
-
-                tabs_content = html[html.find('<div class="tracker_info">')+26:html.find('<!-- tabs content end-->')]
+                tabs_content = html[html.find('<div class="tracker_info">')+26:html.rfind(u'Скачать торрент')]
                 tabs_content = tabs_content.split('<div class="tracker_info">')
-                
-                for x, content in enumerate(tabs_content):
-                    title = tab[x].strip()
 
-                    seed = content[content.find('green_text_top">')+16:content.find('</div></div></div>')]
-                    peer = content[content.find('red_text_top">')+14:content.find('</div></div></div></div>')]
+                for x, tabs in enumerate(tabs_nav):
+                    title = tabs[:tabs.find('</a></li>')]
 
-                    torrent_url = content[content.find('<a href="')+9:content.find('" class')]
-                    #magnet_url = content[content.rfind('<a href="')+9:content.rfind('" class')]
+                    seed = tabs_content[x][tabs_content[x].find('green_text_top">')+16:tabs_content[x].find('</div></div></div>')]
+                    peer = tabs_content[x][tabs_content[x].find('red_text_top">')+14:tabs_content[x].find('</div></div></div></div>')]
+                    torrent_url = tabs_content[x][tabs_content[x].find('<a href="')+9:tabs_content[x].find('" class')]
 
-                    content = content.splitlines()
+                    content = tabs_content[x].splitlines()
 
                     for line in content:
                         if '<h3 class=' in line:
                             if title in line:
-                                metadata['series'] = ''
+                                info['series'] = ''
                             else:
                                 series = line[line.find('">')+2:line.find('</h3>')].replace(u'из XXX','')
-                                series = series.replace(u'Серии','').replace(u'Серия','').strip()
-                                metadata['series'] = u' - [ {} ]'.format(series)
+                                info['series'] = series.replace(u'Серии','').replace(u'Серия','').strip()
 
-                            metadata['quality'] = line[line.find('</h3>')+5:]
-                            metadata['quality'] = metadata['quality'].replace(u'Качество','').strip()
+                            info['quality'] = line[line.find('</h3>')+5:]
+                            info['quality'] = info['quality'].replace(u'Качество','').strip()
                         if u'>Размер:' in line:
-                            metadata['size'] = tag_list(line[line.find('<span>'):])
-                        # if u'Контейнер:' in line:
-                        #     metadata['container'] = line[line.find('<span>')+6:line.find('</span>')]
-                        # if u'Видео:' in line:
-                        #     metadata['video'] = line[line.find('<span>')+6:line.find('</span>')]
-                        # if u'Аудио:' in line:                        
-                        #     metadata['audio'] = line[line.find('<span>')+6:line.find('</span>')].strip()
-                        # if u'Перевод:' in line:                        
-                        #     metadata['translate'] = line[line.find('<span>')+6:line.find('</span>')]
-                        # if u'Тайминг и сведение звука:' in line:
-                        #     metadata['timing'] = line[line.find('<span>')+6:line.find('</span>')]
+                            info['size'] = clean_tags(line[line.find('<span>'):])
+                            
+                    anime_code2 = data_encode('{}|{}'.format(anime_code[0], cover))
                         
-                    label = u'{}{} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сиды: [COLOR=lime]{}[/COLOR] , Пиры: [COLOR=red]{}[/COLOR]'.format(
-                        title, metadata['series'], metadata['size'], metadata['quality'], seed, peer)                    
+                    label = u'{} | {} | [COLOR=yellow]{}[/COLOR] : [COLOR=blue]{}[/COLOR] | Сиды: [COLOR=lime]{}[/COLOR] , Пиры: [COLOR=red]{}[/COLOR]'.format(
+                        title, info['series'], info['size'], info['quality'], seed, peer)
                     
-                    #self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'torrent_url': torrent_url},  anime_id=self.params['id'], metadata=metadata)
-                    #self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'], metadata=metadata)
-                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'])
+                    self.create_line(title=label, anime_id=anime_code[0], cover=cover, params={'mode': 'torrent_part', 'id': anime_code2, 'param': torrent_url})
             else:
                 tabs_content = html[html.find('<li class="tracker_info_pop_left">')+34:html.find('<!-- Media series tabs End-->')]
                 tabs_content = tabs_content.split('<li class="tracker_info_pop_left">')
 
                 for content in tabs_content:
-                    content = clean_list(content)
                     title = content[content.find('left_top">')+10:content.find('</span>')]
-                    title = title.replace(u'Серии ','').replace(u'Серия ','').strip()
+
+                    quality = content[content.find('intup_left_ser'):content.find('intup_left_op')]
+                    quality = [i for i in ('1080','720','480') if i in quality][0]
                     
-                    quality = content[content.find(')')+1:content.find('</span><p>')]
-
-                    quality = quality.replace(u'р', u'p').strip()
-
                     torr_inf = content[content.find('left_op">')+9:content.rfind(';</span></span></p>')]
-                    torr_inf = tag_list(torr_inf)
+                    torr_inf = clean_tags(torr_inf)
                     torr_inf = torr_inf.replace(u'Размер: ','').replace(u'Сидов: ','').replace(u'Пиров: ','')
                     torr_inf = torr_inf.split(';')
 
                     # magnet_url = content[content.find('href="')+6:content.find('" class=')]
                     torrent_url = content[content.rfind('href="')+6:content.rfind('" class=')]
+                    
+                    anime_code2 = data_encode('{}|{}'.format(anime_code[0], cover))
+                    
+                    label = u'{} | [COLOR=blue]{}[/COLOR] : [COLOR=gold]{}[/COLOR] | Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
+                        title, quality, torr_inf[0], torr_inf[2], torr_inf[3])
 
-                    label = u'Серии: {} , [COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
-                        title, torr_inf[0], quality, torr_inf[2], torr_inf[3])
-
-                    self.create_line(title=label, params={'mode': 'torrent_part', 'id': self.params['id'], 'param': torrent_url},  anime_id=self.params['id'])
+                    self.create_line(title=label, anime_id=anime_code[0], cover=cover, params={'mode': 'torrent_part', 'id': anime_code2, 'param': torrent_url})
 
         if self.params['param']:
+            anime_code = data_decode(self.params['id'])
+            data_print(anime_code)
             url = self.params['param']
 
             file_name = '{}_{}'.format(self.params['portal'], self.params['id'])
@@ -746,9 +723,9 @@ class Animedia:
                     size[i] = x['length']
                     series[i] = x['path'][-1]
                 for i in sorted(series, key=series.get):
-                    self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False, size=size[i])
+                    self.create_line(title=series[i], anime_id=anime_code[0], cover=anime_code[1], params={'mode': 'play_part', 'index': i, 'id': file_name}, folder=False, size=size[i])
             else:
-                self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, size=info['length'])
+                self.create_line(title=info['name'], anime_id=anime_code[0], cover=anime_code[1], params={'mode': 'play_part', 'index': 0, 'id': file_name}, folder=False, size=info['length'])
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#

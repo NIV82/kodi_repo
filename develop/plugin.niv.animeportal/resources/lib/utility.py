@@ -13,8 +13,8 @@ def data_decode(data):
     data = data.decode('utf-8')
     data = data.split('|')
     return data
-        
-def clean_tags(data, tag_start, tag_end):
+
+def clean_tags(data, tag_start='<', tag_end='>'):
     start = data.find(tag_start)
     end = data.find(tag_end)
     while start < end and start > -1:
@@ -22,6 +22,15 @@ def clean_tags(data, tag_start, tag_end):
         start = data.find(tag_start)
         end = data.find(tag_end)
     return data
+
+# def clean_tags(data, tag_start, tag_end):
+#     start = data.find(tag_start)
+#     end = data.find(tag_end)
+#     while start < end and start > -1:
+#         data = data.replace(data[start:end+1], '').strip()
+#         start = data.find(tag_start)
+#         end = data.find(tag_end)
+#     return data
 
 def fs_dec(path):
     sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
