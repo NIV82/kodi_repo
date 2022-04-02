@@ -276,8 +276,10 @@ class Lostfilm:
         else:
             code = ''
         
-        title = self.database.get_title(se_code[0])        
+        title = self.database.get_title(se_code[0])
+                
         year = self.database.get_year(se_code[0])
+        year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
 
         if series:
             series = series.split('|')
@@ -292,7 +294,7 @@ class Lostfilm:
             code, title[int(addon.getSetting('titles'))], series_title)
         
         if 'search_part' in self.params['param'] or 'catalog_part' in self.params['mode'] or 'serials_part' in self.params['mode']:
-            label = u'[COLOR=blue]{}[/COLOR] | [B]{}{}[/B]{}'.format(
+            label = u'{}[B]{}{}[/B]{}'.format(
                 year, code, title[int(addon.getSetting('titles'))], series_title)
 
         return label

@@ -31,7 +31,6 @@ class Animedia:
         self.database_dir = os.path.join(addon_data_dir, 'database')
         self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
 
-        #self.proxy_data = self.create_proxy_data()
         self.proxy_data = None
         self.site_url = self.create_site_url()
         self.auth_mode = bool(self.addon.getSetting('{}_auth_mode'.format(self.params['portal'])) == '1')
@@ -77,38 +76,6 @@ class Animedia:
         self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
         del DataBase
 #========================#========================#========================#
-    # def create_proxy_data(self):
-    #     if '0' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
-    #         return None
-
-    #     try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
-    #     except: proxy_time = 0
-
-    #     if time.time() - proxy_time > 86400:
-    #         self.addon.setSetting('animeportal_proxy_time', str(time.time()))
-    #         proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-    #         try: proxy_pac = proxy_pac.decode('utf-8')
-    #         except: pass
-            
-    #         proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #         self.addon.setSetting('animeportal_proxy', proxy)
-    #         proxy_data = {'https': proxy}
-    #     else:
-    #         if self.addon.getSetting('animeportal_proxy'):
-    #             proxy_data = {'https': self.addon.getSetting('animeportal_proxy')}
-    #         else:
-    #             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
-
-    #             try: proxy_pac = proxy_pac.decode('utf-8')
-    #             except: pass
-                
-    #             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #             self.addon.setSetting('animeportal_proxy', proxy)
-    #             proxy_data = {'https': proxy}
-
-    #     return proxy_data
-#========================#========================#========================#
     def create_site_url(self):
         site_url = self.addon.getSetting('animedia_mirror_0')
         current_mirror = 'animedia_mirror_{}'.format(self.addon.getSetting('animedia_mirror_mode'))
@@ -135,9 +102,10 @@ class Animedia:
             )
 
         if 'search_part' in self.params['param']:
+            search_string = quote(self.params['search_string'])
+            
             url = '{}ajax/search_result_search_page_2/P0?limit=25&keywords={}&orderby_sort=entry_date|desc'.format(
-                self.site_url, self.params['search_string']
-            )
+                self.site_url, search_string)
 
         if 'catalog' in self.params['param']:
             from info import animedia_form, animedia_genre, animedia_voice, animedia_studio, animedia_year, animedia_status, animedia_sort
@@ -257,7 +225,6 @@ class Animedia:
 
             li.setInfo(type='video', infoLabels=info)
 
-        #li.addContextMenuItems(self.create_context(anime_id, metadata))
         li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
@@ -349,26 +316,18 @@ class Animedia:
         self.addon.openSettings()
 #========================#========================#========================#
     def exec_update_anime_part(self):
-        # self.create_info(anime_id=self.params['id'], title_data=self.params['title_data'], update=True)
         self.create_info(anime_id=self.params['id'], update=True)
         xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_mirror_part(self):
-        # auth = self.addon.getSetting('animedia_auth_mode')
-        
-        # self.addon.setSetting('animedia_auth_mode', '0')
-
         from network import WebTools
         self.net = WebTools()
         del WebTools
 
         mirror = self.net.get_animedia_actual(
-            self.addon.getSetting('{}_mirror_0'.format(self.params['portal']))
-        )
+            self.addon.getSetting('{}_mirror_0'.format(self.params['portal'])))
 
         self.addon.setSetting('{}_mirror_1'.format(self.params['portal']), 'https://{}/'.format(mirror))
-        
-        #self.addon.setSetting('animedia_auth_mode', auth)
         return
 #========================#========================#========================#
     def exec_update_database_part(self):
@@ -442,18 +401,18 @@ class Animedia:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
+                self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': data})
 
         if self.params['param'] == 'search':
             skbd = xbmc.Keyboard()
             skbd.setHeading('Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
-                self.params['search_string'] = quote(skbd.getText())
+                self.params['search_string'] = skbd.getText()
                 data_array = self.addon.getSetting('animedia_search').split('|')                    
-                while len(data_array) >= 6:
+                while len(data_array) >= 5:
                     data_array.pop(0)
-                data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
+                data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
                 self.addon.setSetting('animedia_search', data_array)
                 self.params['param'] = 'search_part'
                 self.exec_common_part()
@@ -499,9 +458,6 @@ class Animedia:
                 torrent_url = 'https://{}'.format(torrent_url)
 
             anime_code = data_encode('{}|{}'.format(anime_id, torrent_url))
-
-            # if '></div></div>' in anime_id:
-            #     continue
 
             if self.progress.iscanceled():
                 break
@@ -596,7 +552,7 @@ class Animedia:
             tab_num = data[data.find('"#tab')+5:data.find('" role')]
             tab_name = data[data.find('"tab">')+6:data.find('</a></li>')]
 
-            self.create_line(title='[B]{}[/B]'.format(tab_name), params={})
+            self.create_line(title=u'[B]{}[/B]'.format(tab_name), params={})
                 
             url = '{}/embeds/playlist-j.txt/{}/{}'.format(self.site_url, data_entry, int(tab_num)+1)
 
@@ -619,7 +575,7 @@ class Animedia:
                 series_id = series_id.replace('s', '').split('e')
                 series_id = '[COLOR=blue]SE{:>02}[/COLOR][COLOR=lime]EP{:>02}[/COLOR]'.format(series_id[0],series_id[1])
                     
-                label = '{} | [B]{}[/B]'.format(series_id, series_title)                    
+                label = u'{} | [B]{}[/B]'.format(series_id, series_title)                    
                     
                 self.create_line(title=label, cover=series_poster, anime_id=self.params['id'], params={}, online=series_file, folder=False)
 
@@ -631,12 +587,16 @@ class Animedia:
             anime_code = data_decode(self.params['id'])
             
             html = self.network.get_html(target_name=anime_code[1])
+            
+            if not html:
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+
             html = unescape(html)
 
             cover = html[html.find('poster"><a href="')+17:html.find('" class="zoomLink')]
             #cover = html[html.rfind('<img src="')+10:html.rfind('" alt=')]
-            
-            info = dict.fromkeys(['series', 'quality', 'size'], '')
 
             if '<div class="media__tabs" id="down_load">' in html:
                 tabs_nav = html[html.find('data-toggle="tab">')+18:html.find('<div class="media__tabs_')]
@@ -648,8 +608,6 @@ class Animedia:
                 for x, tabs in enumerate(tabs_nav):
                     title = tabs[:tabs.find('</a></li>')]
 
-                    seed = tabs_content[x][tabs_content[x].find('green_text_top">')+16:tabs_content[x].find('</div></div></div>')]
-                    peer = tabs_content[x][tabs_content[x].find('red_text_top">')+14:tabs_content[x].find('</div></div></div></div>')]
                     torrent_url = tabs_content[x][tabs_content[x].find('<a href="')+9:tabs_content[x].find('" class')]
 
                     content = tabs_content[x].splitlines()
@@ -657,50 +615,52 @@ class Animedia:
                     for line in content:
                         if '<h3 class=' in line:
                             if title in line:
-                                info['series'] = ''
+                                series = ''
                             else:
                                 series = line[line.find('">')+2:line.find('</h3>')].replace(u'из XXX','')
-                                info['series'] = series.replace(u'Серии','').replace(u'Серия','').strip()
+                                series = series.replace(u'Серии','').replace(u'Серия','').strip()
 
-                            info['quality'] = line[line.find('</h3>')+5:]
-                            info['quality'] = info['quality'].replace(u'Качество','').strip()
-                        if u'>Размер:' in line:
-                            info['size'] = clean_tags(line[line.find('<span>'):])
+                            quality = line[line.find('</h3>')+5:]
                             
+                        if u'>Размер:' in line:
+                            size = clean_tags(line[line.find('<span>'):])
+
+                    size = u' | [COLOR=blue]{}[/COLOR]'.format(size)
+                    series = u' | [COLOR=gold]{}[/COLOR]'.format(series) if series else ''
+                    quality = u' | [COLOR=blue]{}[/COLOR]'.format(quality) if quality else ''
+
                     anime_code2 = data_encode('{}|{}'.format(anime_code[0], cover))
-                        
-                    label = u'{} | {} | [COLOR=yellow]{}[/COLOR] : [COLOR=blue]{}[/COLOR] | Сиды: [COLOR=lime]{}[/COLOR] , Пиры: [COLOR=red]{}[/COLOR]'.format(
-                        title, info['series'], info['size'], info['quality'], seed, peer)
+                    
+                    label = u'{}{}{}{}'.format(title, quality, size, series)
                     
                     self.create_line(title=label, anime_id=anime_code[0], cover=cover, params={'mode': 'torrent_part', 'id': anime_code2, 'param': torrent_url})
             else:
-                tabs_content = html[html.find('<li class="tracker_info_pop_left">')+34:html.find('<!-- Media series tabs End-->')]
-                tabs_content = tabs_content.split('<li class="tracker_info_pop_left">')
-
+                tabs_content = html[html.find('intup_left_top">')+16:html.rfind(u'Скачать</a>')]
+                tabs_content = tabs_content.split('intup_left_top">')
+                
                 for content in tabs_content:
-                    title = content[content.find('left_top">')+10:content.find('</span>')]
+                    data = content[0:content.find('<p>')]
+                    title = content[0:content.find('</span>')]
 
-                    quality = content[content.find('intup_left_ser'):content.find('intup_left_op')]
-                    quality = [i for i in ('1080','720','480') if i in quality][0]
+                    if ')' in data:
+                        quality = data[data.find(')')+1:data.rfind('</span>')]
+                        quality = u' | [COLOR=blue]{}[/COLOR]'.format(quality.strip())
+                    else:
+                        quality = ''
+                        
+                    size = content[content.find('left_op_in">')+12:content.find('</abbr>')]
+                    size = u' | [COLOR=blue]{}[/COLOR]'.format(clean_tags(size))
                     
-                    torr_inf = content[content.find('left_op">')+9:content.rfind(';</span></span></p>')]
-                    torr_inf = clean_tags(torr_inf)
-                    torr_inf = torr_inf.replace(u'Размер: ','').replace(u'Сидов: ','').replace(u'Пиров: ','')
-                    torr_inf = torr_inf.split(';')
-
-                    # magnet_url = content[content.find('href="')+6:content.find('" class=')]
                     torrent_url = content[content.rfind('href="')+6:content.rfind('" class=')]
                     
                     anime_code2 = data_encode('{}|{}'.format(anime_code[0], cover))
                     
-                    label = u'{} | [COLOR=blue]{}[/COLOR] : [COLOR=gold]{}[/COLOR] | Сидов: [COLOR=lime]{}[/COLOR] , Пиров: [COLOR=red]{}[/COLOR]'.format(
-                        title, quality, torr_inf[0], torr_inf[2], torr_inf[3])
+                    label = u'{}{}{}'.format(title, quality, size)
 
                     self.create_line(title=label, anime_id=anime_code[0], cover=cover, params={'mode': 'torrent_part', 'id': anime_code2, 'param': torrent_url})
 
         if self.params['param']:
             anime_code = data_decode(self.params['id'])
-            data_print(anime_code)
             url = self.params['param']
 
             file_name = '{}_{}'.format(self.params['portal'], self.params['id'])
