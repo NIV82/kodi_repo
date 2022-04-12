@@ -12,7 +12,7 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-from utility import tag_list, fix_list, digit_list
+from utility import tag_list, fix_list, digit_list, clean_tags
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
@@ -258,54 +258,87 @@ class Anilibria:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def create_info(self, anime_id, update=False):
-        url = 'https://api.anilibria.tv/v2/getTitle?id={}{}'.format(
-            anime_id, '&filter=id,names,type.code,type.length,genres,team,season.year,description')
+        if '0' in self.addon.getSetting('anilibria_api'):
+            url = self.site_url
+            post = urlencode({"query": "release", "id": anime_id,
+                             "filter": "id,names,genres,voices,year,description"})
+            post = post.replace('%27','%22')
+            
+            html = self.network.get_html(target_name=url, post=post)
+            html = unescape(html)
 
-        html = self.network.get_html(target_name=url)
-        
-        if not html:
-            self.database.add_anime(
-                anime_id=anime_id,
-                title_ru='anime_id: {}'.format(anime_id),
-                title_en='anime_id: {}'.format(anime_id)
-                )
-            return
+            anime_id = html[html.find('id":')+4:html.find(',"names')]
+            names = html[html.find('names":["')+9:html.find('"],"statusCode')]
+            names = names.split('","')
+            genres = html[html.find('genres":["')+10:html.find('"],"voices')]                   
+            voices = html[html.find('voices":["')+10:html.find('"],"year')]
+            year = html[html.find('year":"')+7:html.find('","season')]
+            description = html[html.find('description":"')+14:html.find('","blockedInfo')]
+            description = clean_tags(description)
+            description = fix_list(description)
+            
+            try:
+                self.database.add_anime(
+                    anime_id = anime_id,
+                    title_ru = names[0],
+                    title_en = names[1],
+                    genres = genres.replace('"','').replace(',', ', '),
+                    dubbing = voices.replace('"','').replace(',', ', '),
+                    aired_on = year,
+                    description = fix_list(description),
+                    update=update
+                    )
+            except:
+                return 101
+        else:
+            url = 'https://api.anilibria.tv/v2/getTitle?id={}{}'.format(
+                anime_id, '&filter=id,names,type.code,type.length,genres,team,season.year,description')
 
-        html = unescape(html)
+            html = self.network.get_html(target_name=url)
+            
+            if not html:
+                self.database.add_anime(
+                    anime_id=anime_id,
+                    title_ru='anime_id: {}'.format(anime_id),
+                    title_en='anime_id: {}'.format(anime_id)
+                    )
+                return
 
-        anime_id = html[html.find(':')+1:html.find(',')]
-        title_ru = html[html.find('ru":"')+5:html.find('","en')]
-        title_en = html[html.find('en":"')+5:html.find('","alt')]
-        kind = html[html.find('code":')+6:html.find(',"length')]
-        length = html[html.find('length":')+8:html.find('},"genres')]
-        genres = html[html.find('genres":[')+9:html.find('],"team')]
-        voice = html[html.find('voice":[')+8:html.find('],"translator')]
-        translator = html[html.find('translator":[')+13:html.find('],"editing')]
-        editing = html[html.find('editing":[')+10:html.find('],"decor')]
-        decor = html[html.find('decor":[')+8:html.find('],"timing')]
-        timing = html[html.find('timing":[')+9:html.find(']},"season')]
-        year = html[html.find('year":')+6:html.find('},"descrip')]
-        description = html[html.find('description":"')+14:html.rfind('"}')]
+            html = unescape(html)
 
-        try:
-            self.database.add_anime(
-                anime_id = anime_id,
-                title_ru = title_ru,
-                title_en = title_en,
-                kind = kind,
-                duration = digit_list(length),
-                genres = genres.replace('"','').replace(',', ', '),
-                dubbing = voice.replace('"','').replace(',', ', '),
-                translation = translator.replace('"','').replace(',', ', '),
-                editing = editing.replace('"','').replace(',', ', '),
-                mastering = decor.replace('"','').replace(',', ', '),
-                timing = timing.replace('"','').replace(',', ', '),
-                aired_on = year,
-                description = fix_list(description),
-                update=update
-                )                    
-        except:
-            return 101
+            anime_id = html[html.find(':')+1:html.find(',')]
+            title_ru = html[html.find('ru":"')+5:html.find('","en')]
+            title_en = html[html.find('en":"')+5:html.find('","alt')]
+            kind = html[html.find('code":')+6:html.find(',"length')]
+            length = html[html.find('length":')+8:html.find('},"genres')]
+            genres = html[html.find('genres":[')+9:html.find('],"team')]
+            voice = html[html.find('voice":[')+8:html.find('],"translator')]
+            translator = html[html.find('translator":[')+13:html.find('],"editing')]
+            editing = html[html.find('editing":[')+10:html.find('],"decor')]
+            decor = html[html.find('decor":[')+8:html.find('],"timing')]
+            timing = html[html.find('timing":[')+9:html.find(']},"season')]
+            year = html[html.find('year":')+6:html.find('},"descrip')]
+            description = html[html.find('description":"')+14:html.rfind('"}')]
+
+            try:
+                self.database.add_anime(
+                    anime_id = anime_id,
+                    title_ru = title_ru,
+                    title_en = title_en,
+                    kind = kind,
+                    duration = digit_list(length),
+                    genres = genres.replace('"','').replace(',', ', '),
+                    dubbing = voice.replace('"','').replace(',', ', '),
+                    translation = translator.replace('"','').replace(',', ', '),
+                    editing = editing.replace('"','').replace(',', ', '),
+                    mastering = decor.replace('"','').replace(',', ', '),
+                    timing = timing.replace('"','').replace(',', ', '),
+                    aired_on = year,
+                    description = fix_list(description),
+                    update=update
+                    )                    
+            except:
+                return 101
 
         return
 #========================#========================#========================#
@@ -404,13 +437,23 @@ class Anilibria:
         return
 #========================#========================#========================#
     def exec_main_part(self):
+        from utility_module import create_line
+        
         if self.auth_mode:
-            self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
-        self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
-        self.create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part'})
-        self.create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
-        self.create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
-        self.create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part'})
+            create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites', 'portal': 'anilibria'})
+        create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part', 'portal': 'anilibria'})
+        create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part', 'portal': 'anilibria'})
+        create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated', 'portal': 'anilibria'})
+        create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular', 'portal': 'anilibria'})
+        create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part', 'portal': 'anilibria'})
+        
+        # if self.auth_mode:
+        #     self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
+        # self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
+        # self.create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part'})
+        # self.create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
+        # self.create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
+        # self.create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
