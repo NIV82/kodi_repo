@@ -437,23 +437,23 @@ class Anilibria:
         return
 #========================#========================#========================#
     def exec_main_part(self):
-        from utility_module import create_line
-        
-        if self.auth_mode:
-            create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites', 'portal': 'anilibria'})
-        create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part', 'portal': 'anilibria'})
-        create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part', 'portal': 'anilibria'})
-        create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated', 'portal': 'anilibria'})
-        create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular', 'portal': 'anilibria'})
-        create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part', 'portal': 'anilibria'})
+        #from utility_module import create_line
         
         # if self.auth_mode:
-        #     self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
-        # self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
-        # self.create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part'})
-        # self.create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
-        # self.create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
-        # self.create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part'})
+        #     create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites', 'portal': 'anilibria'})
+        # create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part', 'portal': 'anilibria'})
+        # create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part', 'portal': 'anilibria'})
+        # create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated', 'portal': 'anilibria'})
+        # create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular', 'portal': 'anilibria'})
+        # create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part', 'portal': 'anilibria'})
+        
+        if self.auth_mode:
+            self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
+        self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part'})
+        self.create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
+        self.create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
+        self.create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
