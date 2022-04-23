@@ -12,15 +12,15 @@ except:
     from urllib.request import urlopen
     from html import unescape
 
-from utility import tag_list, fix_list, digit_list, clean_tags
-
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
-    
+
 class Anilibria:
     def __init__(self, addon_data_dir, params, addon, icon):
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
+        
+        self.progress_bg = xbmcgui.DialogProgressBG()
 
         self.params = params
         self.addon = addon
@@ -32,32 +32,34 @@ class Anilibria:
         self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
 
         self.proxy_data = None
-        # self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
+        self.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
 
         self.auth_mode = bool(self.addon.getSetting('{}_auth_mode'.format(self.params['portal'])) == '1')
 #========================#========================#========================#
         try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
         except: session = 0
 
-        if time.time() - session > 28800:
+        if time.time() - session > 604800:
             self.addon.setSetting('{}_session'.format(self.params['portal']), str(time.time()))
-            try: os.remove(os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal'])))
-            except: pass
+            # try: os.remove(os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal'])))
+            # except: pass
             self.addon.setSetting('{}_auth'.format(self.params['portal']), 'false')
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
-            auth_usage=self.auth_mode,
-            auth_status=bool(self.addon.getSetting('{}_auth'.format(self.params['portal'])) == 'true'),
-            proxy_data=self.proxy_data, portal=self.params['portal'])
+            auth_usage = self.auth_mode,
+            auth_status = bool(self.addon.getSetting('{}_auth'.format(self.params['portal'])) == 'true'),
+            proxy_data = self.proxy_data,
+            portal = self.params['portal'],
+            addon = self.addon
+            )
         self.auth_post_data = 'mail={}&passwd={}'.format(
             self.addon.getSetting('{}_username'.format(self.params['portal'])),
             self.addon.getSetting('{}_password'.format(self.params['portal']))
             )
         self.network.auth_post_data = self.auth_post_data
-        self.network.auth_url = self.site_url.replace('api/index.php','login.php')
-        self.network.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
+        self.network.sid_file = self.sid_file
         del WebTools
 #========================#========================#========================#  
         if self.auth_mode:
@@ -83,63 +85,29 @@ class Anilibria:
 #========================#========================#========================#
     def create_site_url(self):
         site_url = self.addon.getSetting('{}_mirror_0'.format(self.params['portal']))
-        current_mirror = '{}_mirror_{}'.format(self.params['portal'], self.addon.getSetting('{}_mirror_mode'.format(self.params['portal'])))
-
-        if not self.addon.getSetting(current_mirror):
-            try:
-                self.exec_mirror_part()
-                site_url = '{}public/api/index.php'.format(self.addon.getSetting(current_mirror))
-            except:
-                site_url = '{}public/api/index.php'.format(site_url)
-        else:
-            site_url = '{}public/api/index.php'.format(self.addon.getSetting(current_mirror))
-
         return site_url
 #========================#========================#========================#
-    def create_post(self):
-        from info import anilibria_status, anilibria_sort
-
-        if self.params['param'] == 'fav_add':
-            post = 'query=favorites&id={}&action=add&filter=id%2Cseries%2Cannounce'.format(self.params['id'])
-        if self.params['param'] == 'fav_del':
-            post = 'query=favorites&id={}&action=delete&filter=id%2Cseries%2Cannounce'.format(self.params['id'])
-        if self.params['param'] == 'favorites':
-            post = 'query=favorites&filter=id%2Cseries%2Cannounce%2Cposter'
-        if self.params['param'] == 'search_part':
-            post = 'query=search&search={}&filter=id%2Cseries%2Cannounce%2Cposter'.format(self.params['search_string'])
-        if self.params['mode'] == 'schedule_part':
-            post = 'query=schedule&filter=id%2Cseries%2Cannounce%2Cposter'
-        if self.params['param'] == 'updated':
-            post = 'query=catalog&page={}&xpage=catalog&sort=1&filter=id%2Cseries%2Cannounce%2Cposter'.format(self.params['page'])
-        if self.params['param'] == 'popular':
-            post = 'query=catalog&page={}&xpage=catalog&sort=2&filter=id%2Cseries%2Cannounce%2Cposter'.format(self.params['page'])
-        if self.params['param'] == 'catalog':
-            post = 'query=catalog&page={}&filter=id%2Cseries%2Cannounce%2Cposter&xpage=catalog&search=%7B%22year%22%3A%22{}%22%2C%22genre%22%3A%22{}%22%2C%22season%22%3A%22{}%22%7D&sort={}&finish={}'.format(
-                self.params['page'],
-                self.addon.getSetting('{}_year'.format(self.params['portal'])),
-                self.addon.getSetting('{}_genre'.format(self.params['portal'])),
-                self.addon.getSetting('{}_season'.format(self.params['portal'])),
-                anilibria_sort[self.addon.getSetting('{}_sort'.format(self.params['portal']))],
-                anilibria_status[self.addon.getSetting('{}_status'.format(self.params['portal']))])
-        if self.params['mode'] == 'online_part':
-            post = 'query=release&id={}&filter=playlist%2Cposter'.format(self.params['id'])
-        if self.params['mode'] == 'torrent_part':
-            post = 'query=release&id={}&filter=torrents%2Cposter'.format(self.params['id'])
-
-        return post
-#========================#========================#========================#
-    def create_title(self, anime_id, series, announce=''):
+    def create_title(self, anime_id, series='', series_cur='', series_max='', announce=''):
         title = self.database.get_title(anime_id)
-
+        
         year = self.database.get_year(anime_id)
-        year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
-
-        if series:
-            series = u' | [COLOR=gold]{}[/COLOR]'.format(series.strip()) if series else ''
+        year = u'[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
+                
+        announce = u' | [COLOR=gold]{}[/COLOR]'.format(announce.strip()) if announce else ''
+        
+        if series_cur:
+            if 'null' in series_cur:
+                series_cur = 'XXX'
+            #data_print(series_cur)
+            series_cur = u' | [COLOR=gold]{}[/COLOR]'.format(series_cur)
             
-        if announce:
-            announce = u' | [COLOR=gold]{}[/COLOR]'.format(announce.strip()) if announce else ''
-            
+        if series_max:
+            if series_max == '0' or 'null' in series_max:
+                series_max = u'XXX'            
+            series_max = u'[COLOR=gold] из {}[/COLOR]'.format(series_max)
+        
+        series = u'{}{}'.format(series_cur, series_max)
+        
         if '0' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
             label = u'{}{}{}{}'.format(year, title[0], series, announce)
         if '1' in self.addon.getSetting('{}_titles'.format(self.params['portal'])):
@@ -150,46 +118,35 @@ class Anilibria:
         if 'anime_id:' in label:
             label = u'[COLOR=red]ERROR[/COLOR] | Ошибка 403-404 | [COLOR=gold]{}[/COLOR]'.format(
                 title[0].replace('anime_id: ',''))
-            
+
         return label
 #========================#========================#========================#
     def create_image(self, cover):
-        anime_cover = cover.replace('\/','/').replace('/', '', 1)
-        anime_url = self.site_url.replace('public/api/index.php','').replace('//www.','//static.')
-        cover = '{}{}'.format(anime_url, anime_cover)
-        return cover
-
-        # if '0' in self.addon.getSetting('{}_covers'.format(self.params['portal'])):
-        #     return url
-        # else:
-        #     local_img = '{}_{}{}'.format(self.params['portal'], anime_id, url[url.rfind('.'):])
-        #     if local_img in os.listdir(self.images_dir):
-        #         local_path = os.path.join(self.images_dir, local_img)
-        #         return local_path
-        #     else:
-        #         file_name = os.path.join(self.images_dir, local_img)
-        #         return self.network.get_file(target_name=url, destination_name=file_name)
+        anime_cover = 'https://static.anilibria.tv{}'.format(cover)
+        return anime_cover
 #========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
         
-        context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal={}")'.format(self.params['portal'])))
-        context_menu.append((u'[COLOR=darkorange]Обновить Зеркала[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal={}")'.format(self.params['portal'])))
-
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append((u'[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal={}")'.format(self.params['portal'])))
+            context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal={}")'.format(self.params['portal'])))
 
         if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
+            context_menu.append(('[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
 
-        if self.auth_mode and 'common_part' in self.params['mode'] or self.auth_mode and 'schedule_part' in self.params['mode']:
-            context_menu.append((u'[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_add&portal={}")'.format(anime_id, self.params['portal'])))
-            context_menu.append((u'[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=fav_del&portal={}")'.format(anime_id, self.params['portal'])))
+        if self.auth_mode:
+            if self.params['mode'] in ('common_part','schedule_part','favorites_part'):
+                context_menu.append(('[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=PUT&portal={}")'.format(anime_id, self.params['portal'])))
+                context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=DELETE&portal={}")'.format(anime_id, self.params['portal'])))
+            if 'catalog_part' in self.params['mode'] and 'catalog' in self.params['param'] or 'search_part' in self.params['mode'] and 'search_string' in self.params['param']:
+                context_menu.append(('[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=PUT&portal={}")'.format(anime_id, self.params['portal'])))
+                context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=DELETE&portal={}")'.format(anime_id, self.params['portal'])))
+                
+        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_database_part&portal={}")'.format(self.params['portal'])))
         
-        context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal={}")'.format(self.params['portal'])))
-        context_menu.append((u'[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal={}")'.format(self.params['portal'])))
-        context_menu.append((u'[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal={}")'.format(self.params['portal'])))
-
+        # context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal={}")'.format(self.params['portal'])))
+        # context_menu.append((u'[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=play&portal={}")'.format(self.params['portal'])))
+        # context_menu.append((u'[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=bugs&portal={}")'.format(self.params['portal'])))
         return context_menu
 #========================#========================#========================#
     def create_line(self, title=None, cover=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
@@ -198,9 +155,7 @@ class Anilibria:
         if anime_id:
             cover = self.create_image(cover)
 
-            li.setArt({"thumb": cover, "poster": cover, "tvshowposter": cover, "fanart": cover,
-                       "clearart": cover, "clearlogo": cover, "landscape": cover, "icon": cover})
-
+            li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
             anime_info = self.database.get_anime(anime_id)
             
             description = anime_info[10] if anime_info[10] else ''
@@ -258,87 +213,67 @@ class Anilibria:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def create_info(self, anime_id, update=False):
-        if '0' in self.addon.getSetting('anilibria_api'):
-            url = self.site_url
-            post = urlencode({"query": "release", "id": anime_id,
-                             "filter": "id,names,genres,voices,year,description"})
-            post = post.replace('%27','%22')
+        from utility import fix_list
+        
+        url = 'https://api.anilibria.tv/v2/getTitle?id={}{}'.format(
+            anime_id, '&filter=id,names,type.code,type.length,genres,team,season.year,description')
+
+        html = self.network.get_html_data(target_name=url)
             
-            html = self.network.get_html(target_name=url, post=post)
-            html = unescape(html)
+        if not html:
+            self.database.add_anime(
+                anime_id=anime_id,
+                title_ru='anime_id: {}'.format(anime_id),
+                title_en='anime_id: {}'.format(anime_id)
+                )
+            return
 
-            anime_id = html[html.find('id":')+4:html.find(',"names')]
-            names = html[html.find('names":["')+9:html.find('"],"statusCode')]
-            names = names.split('","')
-            genres = html[html.find('genres":["')+10:html.find('"],"voices')]                   
-            voices = html[html.find('voices":["')+10:html.find('"],"year')]
-            year = html[html.find('year":"')+7:html.find('","season')]
-            description = html[html.find('description":"')+14:html.find('","blockedInfo')]
-            description = clean_tags(description)
-            description = fix_list(description)
-            
-            try:
-                self.database.add_anime(
-                    anime_id = anime_id,
-                    title_ru = names[0],
-                    title_en = names[1],
-                    genres = genres.replace('"','').replace(',', ', '),
-                    dubbing = voices.replace('"','').replace(',', ', '),
-                    aired_on = year,
-                    description = fix_list(description),
-                    update=update
-                    )
-            except:
-                return 101
-        else:
-            url = 'https://api.anilibria.tv/v2/getTitle?id={}{}'.format(
-                anime_id, '&filter=id,names,type.code,type.length,genres,team,season.year,description')
+        html = unescape(html)
 
-            html = self.network.get_html(target_name=url)
-            
-            if not html:
-                self.database.add_anime(
-                    anime_id=anime_id,
-                    title_ru='anime_id: {}'.format(anime_id),
-                    title_en='anime_id: {}'.format(anime_id)
-                    )
-                return
+        anime_id = html[html.find(':')+1:html.find(',')]
+        title_ru = html[html.find('ru":"')+5:html.find('","en')]
+        title_en = html[html.find('en":"')+5:html.find('","alt')]
+        kind = html[html.find('code":')+6:html.find(',"length')]
+        length = html[html.find('length":')+8:html.find('},"genres')]
+        genres = html[html.find('genres":[')+9:html.find('],"team')]
+        voice = html[html.find('voice":[')+8:html.find('],"translator')]
+        translator = html[html.find('translator":[')+13:html.find('],"editing')]
+        editing = html[html.find('editing":[')+10:html.find('],"decor')]
+        decor = html[html.find('decor":[')+8:html.find('],"timing')]
+        timing = html[html.find('timing":[')+9:html.find(']},"season')]
+        year = html[html.find('year":')+6:html.find('},"descrip')]
 
-            html = unescape(html)
-
-            anime_id = html[html.find(':')+1:html.find(',')]
-            title_ru = html[html.find('ru":"')+5:html.find('","en')]
-            title_en = html[html.find('en":"')+5:html.find('","alt')]
-            kind = html[html.find('code":')+6:html.find(',"length')]
-            length = html[html.find('length":')+8:html.find('},"genres')]
-            genres = html[html.find('genres":[')+9:html.find('],"team')]
-            voice = html[html.find('voice":[')+8:html.find('],"translator')]
-            translator = html[html.find('translator":[')+13:html.find('],"editing')]
-            editing = html[html.find('editing":[')+10:html.find('],"decor')]
-            decor = html[html.find('decor":[')+8:html.find('],"timing')]
-            timing = html[html.find('timing":[')+9:html.find(']},"season')]
-            year = html[html.find('year":')+6:html.find('},"descrip')]
-            description = html[html.find('description":"')+14:html.rfind('"}')]
-
-            try:
-                self.database.add_anime(
-                    anime_id = anime_id,
-                    title_ru = title_ru,
-                    title_en = title_en,
-                    kind = kind,
-                    duration = digit_list(length),
-                    genres = genres.replace('"','').replace(',', ', '),
-                    dubbing = voice.replace('"','').replace(',', ', '),
-                    translation = translator.replace('"','').replace(',', ', '),
-                    editing = editing.replace('"','').replace(',', ', '),
-                    mastering = decor.replace('"','').replace(',', ', '),
-                    timing = timing.replace('"','').replace(',', ', '),
-                    aired_on = year,
-                    description = fix_list(description),
-                    update=update
-                    )                    
-            except:
-                return 101
+        description = html[html.find('description":')+13:]
+        if '"' in description[0]:
+            description = description[1:]
+        if '"' in description[len(description)-1]:
+            description = description[0:-1]
+        if 'null' in description:
+            description = ''
+        description = fix_list(description)
+        
+        try: length = int(length)
+        except: length = ''
+        
+        try:
+            self.database.add_anime(
+                anime_id = anime_id,
+                title_ru = title_ru,
+                title_en = title_en,
+                kind = kind,
+                duration = length,
+                genres = genres.replace('"','').replace(',', ', '),
+                dubbing = voice.replace('"','').replace(',', ', '),
+                translation = translator.replace('"','').replace(',', ', '),
+                editing = editing.replace('"','').replace(',', ', '),
+                mastering = decor.replace('"','').replace(',', ', '),
+                timing = timing.replace('"','').replace(',', ', '),
+                aired_on = year,
+                description = description,
+                update=update
+                )                    
+        except:
+            return 101
 
         return
 #========================#========================#========================#
@@ -353,20 +288,6 @@ class Anilibria:
     def exec_update_anime_part(self):
         self.create_info(anime_id=self.params['id'], update=True)
         xbmc.executebuiltin('Container.Refresh')
-#========================#========================#========================#
-    def exec_mirror_part(self):
-        proxy_data = {'https': 'proxy-nossl.antizapret.prostovpn.org:29976'}
-
-        from network import WebTools
-        self.net = WebTools(auth_usage=False, auth_status=False, proxy_data=proxy_data, portal=self.params['portal'])
-        del WebTools
-
-        html = self.net.get_html(target_name='https://darklibria.it/redirect/mirror/1')
-        
-        mirror = html[html.find('mt-1" href="')+12:html.find('" target="_blank" rel="')]
-
-        self.addon.setSetting('{}_mirror_1'.format(self.params['portal']), '{}/'.format(mirror))
-        return
 #========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
@@ -395,28 +316,82 @@ class Anilibria:
                         break
                     percent = bytes_read * 100 / file_size
                     self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                self.progress.close()
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=lime]УСПЕШНО ЗАГРУЖЕНА[/COLOR]', 5000, self.icon))
+            self.progress.close()
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ERROR: 100[/COLOR]', 5000, self.icon))
+            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ОШИБКА ЗАГРУЗКИ[/COLOR]', 5000, self.icon))
             pass
 #========================#========================#========================#
     def exec_favorites_part(self):
-        html = self.network.get_html(self.site_url, self.create_post())
-       
-        if 'status":false' in html:
-            if 'fav_add' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
-            if 'fav_del' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
+        if not self.params['param']:
+            self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+            
+            session_id = self.addon.getSetting('anilibria_session_id')
+            filters = '&filter=id,posters.medium,type,player.series.string'
+            url = '{}/v2/getFavorites?session={}{}'.format(self.site_url, session_id, filters)
+            
+            html = self.network.get_html_data(target_name=url)
 
-        if 'status":true' in html:
-            if 'fav_add' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
-            if 'fav_del' in self.params['param']:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, self.icon))
-        
-        xbmc.executebuiltin('Container.Refresh')
+            if not html:
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+
+            if not '},{' in html:
+                if not '}]' in html:
+                    self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                    return
+            
+            data_array = html.split('},{')
+
+            i = 0
+            
+            for data in data_array:
+                anime_id = data[data.find(':')+1:data.find(',')]
+                type_code = data[data.find('code":')+6:data.find(',"string')]
+                series_max = data[data.find('series":')+8:data.find(',"length')]
+                series_cur = data[data.rfind('string":"')+9:data.rfind('"}')]    
+                poster = data[data.find('url":"')+6:data.find('","raw_base64')]
+
+                if type_code == '0':
+                    series_cur = u'Фильм'
+                    series_max = ''
+                    
+                i = i + 1
+                p = int((float(i) / len(data_array)) * 100)
+                
+                if self.progress.iscanceled():
+                    break
+                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            
+                if not self.database.anime_in_db(anime_id):
+                    self.create_info(anime_id)
+
+                label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max)
+                self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
+
+            self.progress.close()
+
+            if len(data_array) >= int(self.params['limit']):
+                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
+                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+                
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
+        else:
+            if 'PUT' in self.params['param']:
+                url = '{}addFavorite?session={}&title_id={}'.format(
+                    self.site_url, self.addon.getSetting('anilibria_session_id'), self.params['id'])
+                
+            if 'DELETE' in self.params['param']:
+                url = '{}delFavorite?session={}&title_id={}'.format(
+                    self.site_url, self.addon.getSetting('anilibria_session_id'), self.params['id'])
+
+            html = self.network.get_html_data(target_name=url, method=self.params['param'])
+                
+            if 'success":true' in html:
+                pass
+            else:
+                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ОШИБКА[/COLOR]', 5000, self.icon))
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
@@ -426,39 +401,30 @@ class Anilibria:
             xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=gold]ERROR: 102[/COLOR]', 5000, self.icon))
             pass
 #========================#========================#========================#
-    def exec_information_part(self):
-        from info import animeportal_data as info
+#     def exec_information_part(self):
+#         from info import animeportal_data as info
             
-        start = '[{}]'.format(self.params['param'])
-        end = '[/{}]'.format(self.params['param'])
-        data = info[info.find(start)+6:info.find(end)].strip()
+#         start = '[{}]'.format(self.params['param'])
+#         end = '[/{}]'.format(self.params['param'])
+#         data = info[info.find(start)+6:info.find(end)].strip()
 
-        self.dialog.textviewer(u'Информация', data)
-        return
+#         self.dialog.textviewer(u'Информация', data)
+#         return
 #========================#========================#========================#
     def exec_main_part(self):
-        #from utility_module import create_line
-        
-        # if self.auth_mode:
-        #     create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites', 'portal': 'anilibria'})
-        # create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part', 'portal': 'anilibria'})
-        # create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part', 'portal': 'anilibria'})
-        # create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated', 'portal': 'anilibria'})
-        # create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular', 'portal': 'anilibria'})
-        # create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part', 'portal': 'anilibria'})
-        
         if self.auth_mode:
-            self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites'})
+            self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'favorites_part'})
         self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
         self.create_line(title='[B][COLOR=white]Расписание[/COLOR][/B]', params={'mode': 'schedule_part'})
         self.create_line(title='[B][COLOR=yellow]Новое[/COLOR][/B]', params={'mode': 'common_part', 'param': 'updated'})
-        self.create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'popular'})
+        self.create_line(title='[B][COLOR=blue]Популярное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'in_favorites'})
         self.create_line(title='[B][COLOR=lime]Каталог[/COLOR][/B]', params={'mode': 'catalog_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
-        if self.params['param'] == '':
-            self.create_line(title=u'[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search'})
+        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+        if not self.params['param']:
+            self.create_line(title=u'[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search_word'})
 
             data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
             data_array.reverse()
@@ -466,74 +432,124 @@ class Anilibria:
             for data in data_array:
                 if data == '':
                     continue
-                self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'common_part', 'param':'search_part', 'search_string': quote(data)})
-
-        if self.params['param'] == 'search':
+                #self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'search_part', 'param': 'search_string', 'search_string': quote(data)})
+                self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'search_part', 'param': 'search_string', 'search_string': data})
+        
+        if 'search_word' in self.params['param']:
             skbd = xbmc.Keyboard()
-            skbd.setHeading('Поиск:')
+            skbd.setHeading(u'Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
-                self.params['search_string'] = quote(skbd.getText())
-                data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
+                #self.params['search_string'] = quote(skbd.getText())
+                self.params['search_string'] = skbd.getText()
+                data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')                    
                 while len(data_array) >= 6:
                     data_array.pop(0)
-                data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
+                #data_array = '{}|{}'.format('|'.join(data_array), unquote(self.params['search_string']))
+                data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
                 self.addon.setSetting('{}_search'.format(self.params['portal']), data_array)
-
-                self.params['param'] = 'search_part'
-                self.exec_common_part()
+                self.params['param'] = 'search_string'
             else:
                 return False
+        
+        if 'search_string' in self.params['param']:
+            if not self.params['search_string']:
+                return False
+            
+            url = '{}searchTitles?search={}&limit=100&filter=id,posters.medium,type,player.series.string'.format(
+                self.site_url, quote(self.params['search_string']))
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-#========================#========================#========================#
-    def exec_schedule_part(self):
-        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+            html = self.network.get_html_data(target_name=url)
+            
+            if not html:
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
 
-        from info import anilibria_week
+            if not '},{' in html:
+                if not '}]' in html:
+                    self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                    return
 
-        html = self.network.get_html(target_name=self.site_url, post=self.create_post())
+            data_array = html.split('},{')
 
-        if not html:
-            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
+            i = 0
+            
+            for data in data_array:
+                anime_id = data[data.find(':')+1:data.find(',')]
+                type_code = data[data.find('code":')+6:data.find(',"string')]
+                series_max = data[data.find('series":')+8:data.find(',"length')]
+                series_cur = data[data.rfind('string":"')+9:data.rfind('"}')]    
+                poster = data[data.find('url":"')+6:data.find('","raw_base64')]
 
-        # if not '<div class="th-item">' in html:
-        #     self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-        #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        #     return
-
-        data_array = html.split(']},{')
-
-        i = 0
-
-        for data in data_array:
-            data = data[data.find('"id"'):].split('},{')
-            week_day = anilibria_week[i]
-
-            i = i + 1
-            p = int((float(i) / len(data_array)) * 100)
-
-            self.create_line(title='[B][COLOR=lime]{}[/COLOR][/B]'.format(week_day), params={})
-
-            for node in data:
-                anime_id = node[node.find(':')+1:node.find(',')]              
-                series = node[node.find('series":"')+9:node.find('","poster')]
-                cover = node[node.find('poster":"')+9:node.find('","announce')]
-                announce = node[node.find('announce":')+10:node.find(',"status')]
-                announce = announce.replace('null','').replace('"','')
+                if type_code == '0':
+                    series_cur = u'Фильм'
+                    series_max = ''
+                    
+                i = i + 1
+                p = int((float(i) / len(data_array)) * 100)
 
                 if self.progress.iscanceled():
                     break
                 self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            
+                if not self.database.anime_in_db(anime_id):
+                    self.create_info(anime_id)
+
+                label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max)
+                self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
+
+        self.progress.close()
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+#========================#========================#========================#
+    def exec_schedule_part(self):
+        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+        #url = '{}getSchedule?filter=id,posters.medium,announce,type,player.series.string'.format(self.site_url,)
+        url = '{}getSchedule?filter=id,posters.medium,announce,type'.format(self.site_url,)
+#?filter=id,posters.medium,announce,type,player.series.string
+        html = self.network.get_html_data(target_name=url)
+
+        week = ('Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье')
+
+        nodes = html.split(']},{')
+
+        i = 0
+
+        for node in nodes:
+            day = week[i]
+            data_array = node[node.find(':[{')+3:].split('},{')
+            self.create_line(title='[B][COLOR=lime]{}[/COLOR][/B]'.format(day), params={})
+            
+            i = i + 1
+            p = int((float(i) / len(nodes)) * 100)
+
+            if self.progress.iscanceled():
+                break
+            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(nodes)))
+                
+            for data in data_array:
+                data = unescape(data)
+                
+                anime_id = data[data.find(':')+1:data.find(',')]
+                poster = data[data.find('medium":{"url":"')+16:data.find('","raw_base64')]
+
+                announce = data[data.find('announce":')+10:data.find(',"type"')]
+                announce = announce.replace('"','').replace('null','')
+
+                # series_max = data[data.find(',"series":')+10:data.find('"length')]
+                # series_max = series_max.replace(',', '')
+
+                # series_cur = data[data.rfind('string":')+8:data.find('"}')]
+                # series_cur = series_cur.replace('"', '').replace('}', '')
 
                 if not self.database.anime_in_db(anime_id):
                     self.create_info(anime_id)
 
-                label = self.create_title(anime_id, series, announce)
-                self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id, 'node':cover})
-        
+                #label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max,announce=announce)
+                label = self.create_title(anime_id=anime_id, announce=announce)
+                self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
+                
         self.progress.close()
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -541,52 +557,66 @@ class Anilibria:
 #========================#========================#========================#
     def exec_common_part(self):
         self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
-        html = self.network.get_html(self.site_url, self.create_post())
+
+        api_page = (int(self.params['page']) - 1) * int(self.params['limit'])
+        api_filter = '&filter=id,posters.medium,type,player.series.string'
+        
+        url = '{}getUpdates?limit=12{}&after={}'.format(self.site_url, api_filter, api_page)
+        
+        if 'in_favorites' in self.params['param']:
+            url = '{}advancedSearch?query={{id}}&order_by={}&limit=12{}&sort_direction=1&after={}'.format(
+                self.site_url, self.params['param'], api_filter, api_page)
+            
+        html = self.network.get_html_data(target_name=url)
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
-            
-        # if not '<div class="th-item">' in html:
-        #     self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-        #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        #     return
+
+        if not '},{' in html:
+            if not '}]' in html:
+                self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
         
-        data_array = html[html.find('"id"'):].split('},{')
+        data_array = html.split('},{')
 
         i = 0
-
+        
         for data in data_array:
-            data = unescape(data)
-
             anime_id = data[data.find(':')+1:data.find(',')]
-            series = data[data.find('series":"')+9:data.find('","poster"')]
-            cover = data[data.find('poster":"')+9:data.find('","announce')]
+            type_code = data[data.find('code":')+6:data.find(',"string')]
+            series_max = data[data.find('series":')+8:data.find(',"length')]
+            series_cur = data[data.rfind('string":"')+9:data.rfind('"}')]    
+            poster = data[data.find('url":"')+6:data.find('","raw_base64')]
 
+            if type_code == '0':
+                series_cur = u'Фильм'
+                series_max = ''
+                
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
 
             if self.progress.iscanceled():
                 break
             self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
-
+        
             if not self.database.anime_in_db(anime_id):
                 self.create_info(anime_id)
 
-            label = self.create_title(anime_id, series)
-            
-            self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_id})
+            label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max)
+            self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
 
         self.progress.close()
-        
-        if len(data_array) >= 12:
+
+        if len(data_array) >= int(self.params['limit']):
             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
             self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
-    def exec_catalog_part(self):
+    def exec_catalog_part(self):        
         from info import anilibria_year, anilibria_season, anilibria_genre, anilibria_status, anilibria_sort
 
         if self.params['param'] == '':
@@ -600,101 +630,196 @@ class Anilibria:
                 self.addon.getSetting('{}_sort'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'sort'})
             self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
                 self.addon.getSetting('{}_status'.format(self.params['portal']))), params={'mode': 'catalog_part', 'param': 'status'})
-            self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'common_part', 'param':'catalog'})
+            self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'catalog_part', 'param':'catalog'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
-        if self.params['param'] == 'genre':
+        if 'genre' in self.params['param']:
             result = self.dialog.select('Жанр:', anilibria_genre)
             self.addon.setSetting(id='{}_genre'.format(self.params['portal']), value=anilibria_genre[result])
-        
-        if self.params['param'] == 'year':
+
+        if 'year' in self.params['param']:
             result = self.dialog.select('Год:', anilibria_year)
             self.addon.setSetting(id='{}_year'.format(self.params['portal']), value=anilibria_year[result])
-        
-        if self.params['param'] == 'season':
-            result = self.dialog.select('Сезон:', anilibria_season)
-            self.addon.setSetting(id='{}_season'.format(self.params['portal']), value=anilibria_season[result])            
 
-        if self.params['param'] == 'sort':
+        if 'season' in self.params['param']:
+            result = self.dialog.select('Сезон:', tuple(anilibria_season.keys()))
+            self.addon.setSetting(id='{}_season'.format(self.params['portal']), value=tuple(anilibria_season.keys())[result])
+
+        if 'sort' in self.params['param']:
             result = self.dialog.select('Сортировать по:', tuple(anilibria_sort.keys()))
             self.addon.setSetting(id='{}_sort'.format(self.params['portal']), value=tuple(anilibria_sort.keys())[result])
-        
-        if self.params['param'] == 'status':
+
+        if 'status' in self.params['param']:
             result = self.dialog.select('Статус релиза:', tuple(anilibria_status.keys()))
             self.addon.setSetting(id='{}_status'.format(self.params['portal']), value=tuple(anilibria_status.keys())[result])
-#========================#========================#========================#   
+        
+        if 'catalog' in self.params['param']:
+            self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+            
+            year = '%20and%20{{season.year}}=={}'.format(self.addon.getSetting('anilibria_year')) if self.addon.getSetting('anilibria_year') else ''
+            genre = '%20and%20"{}"%20in%20{{genres}}'.format(quote(self.addon.getSetting('anilibria_genre'))) if self.addon.getSetting('anilibria_genre') else ''
+            season = '%20and%20{{season.code}}=={}'.format(anilibria_season[self.addon.getSetting('anilibria_season')]) if self.addon.getSetting('anilibria_season') else ''
+
+            status = '%20and%20{{status.code}}=={}'.format(anilibria_status[self.addon.getSetting(
+                'anilibria_status')]) if anilibria_status[self.addon.getSetting('anilibria_status')] else ''
+
+            sort = '&order_by={}&sort_direction=1'.format(anilibria_sort[self.addon.getSetting('anilibria_sort')])
+    
+            api_filter = '&filter=id,posters.medium,type,player.series.string'
+            api_page = '&after={}'.format((int(self.params['page'])-1) * int(self.params['limit']))
+            api_limit = '&limit={}'.format(self.params['limit'])
+                
+            url = '{}advancedSearch?query={{id}}{}{}{}{}{}{}{}{}'.format(
+                self.site_url, status, year, genre, season, sort, api_limit, api_filter, api_page)
+
+            html = self.network.get_html_data(target_name=url)
+
+            if not html:
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+
+            if not '},{' in html:
+                if not '}]' in html:
+                    self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                    return
+
+            data_array = html.split('},{')
+
+            i = 0
+                
+            for data in data_array:
+                anime_id = data[data.find(':')+1:data.find(',')]
+                type_code = data[data.find('code":')+6:data.find(',"string')]
+                series_max = data[data.find('series":')+8:data.find(',"length')]
+                series_cur = data[data.rfind('string":"')+9:data.rfind('"}')]    
+                poster = data[data.find('url":"')+6:data.find('","raw_base64')]
+
+                if type_code == '0':
+                    series_cur = 'Фильм'
+                    series_max = ''
+                        
+                i = i + 1
+                p = int((float(i) / len(data_array)) * 100)
+
+                if self.progress.iscanceled():
+                    break
+                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                
+                if not self.database.anime_in_db(anime_id):
+                    self.create_info(anime_id)
+
+                label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max)
+                self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
+
+            if len(data_array) >= int(self.params['limit']):
+                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
+                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+
+            self.progress.close()
+            
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+#========================#========================#========================#
     def exec_select_part(self):
-        self.create_line(title=u'[B]Онлайн просмотр[/B]', params={'mode': 'online_part', 'id': self.params['id']})
-        self.create_line(title=u'[B]Торрент просмотр[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})        
+        if '0' in self.addon.getSetting('anilibria_mode'):
+            self.exec_torrent_part()
+        if '1' in self.addon.getSetting('anilibria_mode'):
+            self.exec_online_part()
+        if '2' in self.addon.getSetting('anilibria_mode'):
+            self.create_line(title='[B]ONLINE[/B]', params={'mode': 'online_part', 'id': self.params['id']})
+            self.create_line(title='[B]TORRENT[/B]', params={'mode': 'torrent_part', 'id': self.params['id']})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
         if not self.params['param']:
-            html = self.network.get_html(self.site_url, self.create_post())
-            array = {'480p': [], '720p': [], '1080p': []}
-
-            cover = html[html.find('poster":"')+9:html.find('","status')]
-            data_array = html[html.find('[{"id"')+2:].split('},{')
+            array = {'1080p': [], '720p': [], '480p': []}
             
+            url = '{}getTitle?id={}&playlist_type=array&filter=posters.medium,player'.format(
+                self.site_url, self.params['id'])
+            
+            html = self.network.get_html_data(target_name=url)
+        
+            cover = html[html.find('url":')+5:html.find(',"raw_base64')]
+            cover = cover.replace('"', '')
+            host = html[html.find('host":"')+7:html.find('","series')]
+        
+            data_array = html[html.find('playlist":[{')+12:]
+            data_array = data_array.split('},{')
+
             for data in data_array:
-                name = data[data.find('title":"')+8:data.find('","')]
-                name = digit_list(name)
+                name = data[data.find(':')+1:data.find(',')]
+                            
+                data = data[data.find('hls":{')+6:data.rfind('}')].replace('"', '')
+                if '}' in data:
+                    data = data[:data.find('}')]
 
-                sd = data[data.find('sd":"')+5:data.find('","hd')]
-                hd = data[data.find('hd":"')+5:data.find('","fullhd')]
-                fhd = data[data.find('fullhd":"')+9:data.find('"}')]
+                fhd = data[data.find('fhd:')+4:data.find(',hd:')].replace('null', '')
+                hd = data[data.find(',hd:')+4:data.find(',sd:')].replace('null', '')
+                sd = data[data.find(',sd:')+4:].replace('null', '')
 
-                if sd:
-                    array['480p'].append('{}||{}'.format(name, sd.replace('\/','/')))
-                if hd:
-                    array['720p'].append('{}||{}'.format(name, hd.replace('\/','/')))
                 if fhd:
-                    array['1080p'].append('{}||{}'.format(name, fhd.replace('\/','/')))
+                    array['1080p'].append('{}||{}{}'.format(name, host, fhd))
+                if hd:
+                    array['720p'].append('{}||{}{}'.format(name, host, hd))
+                if sd:
+                    array['480p'].append('{}||{}{}'.format(name, host, sd))
 
             for i in array.keys():
                 if array[i]:
-                    array[i].reverse()
-                    label = u'[B]Качество: {}[/B]'.format(i)
-                    self.create_line(title=label, params={'mode': 'online_part', 'param': ','.join(array[i]), 'id': self.params['id'], 'node': cover})
-        
+                    label = '[COLOR=lime]ONLINE[/COLOR] | [B]{}[/B]'.format(i)
+                    self.create_line(title=label, params={'mode': 'online_part', 'param': ','.join(array[i]), 'id': self.params['id'],'node':cover})
+                    
         if self.params['param']:
             data_array = self.params['param'].split(',')
             for data in data_array:
                 data = data.split('||')
                 label = u'Серия: {}'.format(data[0])
-                self.create_line(title=label, params={}, anime_id=self.params['id'], cover=self.params['node'], online=data[1], folder=False)
-
+                online_url = 'https://{}'.format(data[1])
+                self.create_line(title=label, cover=self.params['node'] ,params={}, anime_id=self.params['id'], online=online_url, folder=False)
+                
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_torrent_part(self):
         if not self.params['param']:
-            html = self.network.get_html(self.site_url, self.create_post())
-
-            cover = html[html.find('poster":"')+9:html.find('","status')]
-            data_array = html[html.find('[{"id"')+2:].split('},{')
+            url = '{}getTitle?id={}&playlist_type=array&filter=posters.medium,torrents'.format(
+                self.site_url, self.params['id'])
+            
+            html = self.network.get_html_data(target_name=url)
+        
+            cover = html[html.find('url":')+5:html.find(',"raw_base64')]
+            cover = cover.replace('"', '')
+            
+            data_array = html[html.find('list":[{')+8:]
+            data_array = data_array.split(',{')
 
             for data in data_array:
                 torrent_id = data[data.find(':')+1:data.find(',')]
-                leechers = data[data.find('leechers":')+10:data.find(',"seeders')]
-                seeders = data[data.find('seeders":')+9:data.find(',"completed')]            
-                quality = data[data.find('quality":"')+10:data.find('","series')]
-                series = data[data.find('series":"')+9:data.find('","size')]
+                series = data[data.find('string":"')+9:data.find('"},"quality')]
+                quality = data[data.find('lity":{"string":"')+17:data.find('","type')]
+                leechers = data[data.find('leechers":')+10:data.find(',"seeders')]            
+                seeders = data[data.find('seeders":')+9:data.find(',"downloads')]
 
-                torrent_size = data[data.find('size":')+6:data.find(',"url')]
+                torrent_size = data[data.find('total_size":')+12:data.find(',"url')]
                 torrent_size = float('{:.2f}'.format(int(torrent_size)/1024.0/1024/1024))
 
-                label = u'Серии: {} : {} , [COLOR=F0FFD700]{} GB[/COLOR], Сидов: [COLOR=F000F000]{}[/COLOR] , Пиров: [COLOR=F0F00000]{}[/COLOR]'.format(
-                    series, quality, torrent_size, seeders, leechers)
+                label = '[COLOR=orange]TORRENT[/COLOR] | Серии: {} | [COLOR=blue]{}[/COLOR] | [COLOR=F0FFD700]{} GB[/COLOR] | [COLOR=F000F000]{}[/COLOR] / [COLOR=F0F00000]{}[/COLOR]'.format(
+                                series, quality, torrent_size, seeders, leechers)
+                
                 self.create_line(title=label, params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id'], 'node': cover})
-
+                
         if self.params['param']:
-            host_site = self.site_url.replace('public/api/index.php','')
-
+            host_site = 'https://www.anilibria.tv/'
             full_url = '{}public/torrent/download.php?id={}'.format(host_site,self.params['param'])
             file_name = '{}_{}'.format(self.params['portal'], self.params['param'])            
             full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+            proxy_data = {'https': 'proxy-nossl.antizapret.prostovpn.org:29976'}
+
+            from network import WebTools
+            net = WebTools(proxy_data=proxy_data)
+            del WebTools
             
-            torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
+            torrent_file = net.get_file(target_name=full_url, destination_name=full_name)
 
             import bencode
             

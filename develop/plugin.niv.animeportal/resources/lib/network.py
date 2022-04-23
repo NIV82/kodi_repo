@@ -7,8 +7,12 @@ except:
     from urllib.request import ProxyHandler, HTTPCookieProcessor, build_opener, Request, HTTPError
     from http.cookiejar import MozillaCookieJar
 
+import xbmc
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+    
 class WebTools:
-    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None):
+    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None, addon=None):
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
             'Accept': '*/*',
@@ -23,6 +27,7 @@ class WebTools:
         self.proxy_data = proxy_data
         self.proxy = ProxyHandler(self.proxy_data)
         self.portal = portal
+        self.addon = addon
 
         if self.auth_usage:
             self.mcj = MozillaCookieJar()
@@ -35,7 +40,39 @@ class WebTools:
         else:
             self.url_opener = build_opener(self.proxy)
 
-    def get_html(self, target_name, post=None):
+    def get_html_data(self, target_name, post=None, method='GET'):
+        if self.auth_usage and not self.auth_check():
+            return None
+
+        if 'shizaproject' in self.portal:
+            self.headers['Content-Type'] = 'application/json'
+        
+        try: post = post.encode(encoding='utf-8')
+        except: pass
+
+        try:
+            request = Request(url=target_name, data=post, headers=self.headers)
+            request.get_method = lambda: method
+            url = self.url_opener.open(request)
+            
+            try: charset = url.headers.getparam('charset')
+            except: charset = url.headers.get_content_charset()
+
+            data = url.read()
+
+            if charset:
+                if not 'utf-8' in charset.lower():
+                    data = data.decode(charset).encode('utf8')
+
+            try: data = data.decode(encoding='utf-8', errors='replace')
+            except: pass
+
+            return data
+        except HTTPError as e:
+            data_print(e)
+            return False
+        
+    def get_html(self, target_name, post=None, method=None):
         if self.auth_usage and not self.auth_check():
             return None
 
@@ -46,7 +83,7 @@ class WebTools:
         except: pass
 
         try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers, method=method))
 
             try: charset = url.headers.getparam('charset')
             except: charset = url.headers.get_content_charset()
@@ -91,15 +128,7 @@ class WebTools:
             return data
         except HTTPError as error:
             return error.code
-        
-    # def get_status(self, target_name, post=None):
-    #     try:
-    #         self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-    #     except HTTPError as e:
-    #         return False
-    #     else:
-    #         return True
-        
+                
     def get_animedia_actual(self, target_name):
         cj = MozillaCookieJar()
         opener = build_opener(HTTPCookieProcessor(cj))
@@ -116,10 +145,6 @@ class WebTools:
             return False
         if self.portal == 'anidub':
             return self.anidub_authorization()
-        # if self.portal == 'anidub_o':
-        #     return self.anidub_o_authorization()
-        # if self.portal == 'anidub_t':
-        #     return self.anidub_t_authorization()
         if self.portal == 'anilibria':
              return self.anilibria_authorization()
         if self.portal == 'anistar':
@@ -151,28 +176,6 @@ class WebTools:
             self.mcj.save(self.sid_file)
         self.auth_status = auth
         return auth
-    
-    # def anidub_o_authorization(self):
-    #     try: post_data = bytes(self.auth_post_data, encoding='utf-8')
-    #     except: post_data = self.auth_post_data
-
-    #     if not self.auth_usage or self.sid_file == '' or self.auth_url == '':
-    #         return False
-
-    #     if self.auth_status:
-    #         try:
-    #             self.mcj.load(self.sid_file)
-    #             auth = True if 'dle_user_id' in str(self.mcj) else False
-    #         except:
-    #             self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-    #             auth = True if 'dle_user_id' in str(self.mcj) else False
-    #             self.mcj.save(self.sid_file)
-    #     else:
-    #         self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-    #         auth = True if 'dle_user_id' in str(self.mcj) else False
-    #         self.mcj.save(self.sid_file)
-    #     self.auth_status = auth
-    #     return auth
 
     def anidub_t_authorization(self):
         try: post_data = bytes(self.auth_post_data, encoding='utf-8')
@@ -197,40 +200,34 @@ class WebTools:
         return auth
 
     def anilibria_authorization(self):
-        if not self.auth_usage or self.sid_file == '':
+        if not self.auth_usage:
             return False
-
+        
+        if 'true' in self.addon.getSetting('anilibria_auth'):
+            return True
+        
+        auth_url = 'https://www.anilibria.tv/public/login.php'
+        proxy_data = {'https': 'proxy-nossl.antizapret.prostovpn.org:29976'}
+        proxy = ProxyHandler(proxy_data)
+        url_opener = build_opener(proxy)
+            
         try: post_data = bytes(self.auth_post_data, encoding='utf-8')
         except: post_data = self.auth_post_data
 
-        if self.auth_status:
-            try:
-                self.mcj.load(self.sid_file)
-                auth = True
-            except:
-                data = self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-                response = data.read()
+        data = url_opener.open(Request(auth_url, post_data, self.headers))
+        response = data.read()
 
-                try: response = str(response, encoding='utf-8')
-                except: pass
-                
-                if 'success' in response:
-                    auth = True
-                    self.mcj.save(self.sid_file)
-                else:
-                    auth = False
-        else:
-            data = self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-            response = data.read()
+        try: response = str(response, encoding='utf-8')
+        except: pass
+
+        if 'success' in response:
+            auth = True
+            sessionid = response[response.find('sessionId":"')+12:]
+            sessionid = sessionid[:sessionid.find('"')]
             
-            try: response = str(response, encoding='utf-8')
-            except: pass
-
-            if 'success' in response:
-                auth = True
-                self.mcj.save(self.sid_file)
-            else:
-                auth = False
+            self.addon.setSetting('anilibria_session_id', sessionid)
+        else:
+            auth = False
 
         self.auth_status = auth
         return auth
