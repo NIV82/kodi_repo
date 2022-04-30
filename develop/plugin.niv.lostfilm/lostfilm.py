@@ -977,8 +977,11 @@ class Lostfilm:
                 array = clean_list(array)
                 
                 title = array[:array.find('</h2>')]
-                
-                code = array[array.find('PlayEpisode(')+12:array.find(')">')]
+
+                if not 'PlayEpisode(' in array:
+                    code = '\'000\',\'0\',\'999\''
+                else:
+                    code = array[array.find('PlayEpisode(')+12:array.find(')">')]
                 
                 if code:
                     code = code.replace('\'', '').replace(',', '/')
