@@ -730,7 +730,7 @@ class Lostfilm:
             label = self.create_title(se_code, series)
             
             if 'new/' in self.params['param']:
-                self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'id': se_code[0], 'param': u'|'.join(se_code)})
+                self.create_line(title=label, se_code=se_code, watched=is_watched, folder=False, params={'mode': 'play_now_part', 'param': u'|'.join(se_code)})
             else:
                 self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'id': se_code[0]})
 
@@ -741,6 +741,104 @@ class Lostfilm:
             self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+    def exec_play_now_part(self):
+            se_code = self.params['param'].split('|')            
+            image_id = self.database.get_image_id(se_code[0])
+
+            url = '{}v_search.php?c={}&s={}&e={}'.format(
+                self.site_url, image_id,int(se_code[1].replace('SE','')),int(se_code[2].replace('EP','')))
+
+            html = self.network.get_html(target_name=url)
+            
+            new_url = html[html.find('url=http')+4:html.find('&newbie=')]
+
+            html = self.network.get_html(new_url)
+            
+            data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
+            data_array = clean_list(data_array).split('<div class="inner-box--label">')
+            
+            quality = {'FHD': '', 'HD': '', 'SD': ''}
+            
+            for data in data_array:
+                data = data.replace('</div>', '|').replace('||', '')    
+                data = clean_tags(data, '<', '>').split('|')
+
+                if 'SD' in data[0]:
+                    quality['SD'] = data[2]
+                if 'MP4' in data[0]:
+                    quality['HD'] = data[2]
+                if '1080' in data[0]:
+                    quality['FHD'] = data[2]
+
+            url = quality[addon.getSetting('quality2')]
+            
+            if not url:
+                choice = []
+                for i in quality.keys():
+                    if quality[i]:
+                        choice.append(i)
+                
+                result = self.dialog.select('Доступное качество: ', choice)
+                url = quality[choice[int(result)]]
+
+            file_name = '{}_{}{}_{}'.format(se_code[0],se_code[1],se_code[2], addon.getSetting('quality2'))
+            full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+
+            torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
+
+            import bencode
+                        
+            with open(torrent_file, 'rb') as read_file:
+                torrent_data = read_file.read()
+
+            torrent = bencode.bdecode(torrent_data)
+
+            info = torrent['info']
+            series = {}
+            size = {}
+
+            if 'files' in info:
+                index = int(se_code[2].replace('EP',''))
+                if index > 0:
+                    index = index - 1
+            else:
+                index = 0
+
+            data_code = '{}{:>03}{:>03}'.format(
+                image_id,se_code[1].replace('SE', ''),se_code[2].replace('EP', ''))
+
+            html = self.network.get_html(
+                target_name='{}ajaxik.php'.format(self.site_url),
+                post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
+                    addon.getSetting('user_session'), data_code, 'on'))
+                
+            if '0' in addon.getSetting('engine'):
+                tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver', 'torrserver_tam', 'lt2http')
+                engine = tam_engine[int(addon.getSetting('tam'))]
+                purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(full_name), index, engine)
+                item = xbmcgui.ListItem(path=purl)
+                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+
+            if '1' in addon.getSetting('engine'):
+                purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(full_name), index)
+                item = xbmcgui.ListItem(path=purl)
+                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+            
+            if '2' in addon.getSetting('engine'):
+                import player
+
+                if addon.getSetting('download_directory'):
+                    download_dir = addon.getSetting('download_directory')
+                else:
+                    download_dir = self.addon_data_dir
+
+                player.play_t2h(
+                    handle = int(sys.argv[1]),
+                    preload_size = 20,
+                    uri = 'file:///{}'.format(full_name.replace('\\','/')),
+                    file_id = index,
+                    download_path = download_dir)
 #========================#========================#========================#
     def exec_catalog_part(self):
         from info import genre, year, channel, types, status, sort
@@ -865,6 +963,11 @@ class Lostfilm:
             url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
             html = self.network.get_html(target_name=url)
 
+            if not html:
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return        
+
             watched_data = self.network.get_html('{}ajaxik.php'.format(self.site_url), self.create_post())
 
             data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
@@ -911,121 +1014,8 @@ class Lostfilm:
                         label = u'[COLOR=dimgray]{}[/COLOR]'.format(self.create_title(se_code, series_title, True))
                         self.create_line(title=label, se_code=se_code, params={})
                     else:
-                        self.create_line(title=label, se_code=se_code, watched=is_watched, params={'mode': 'select_part', 'param': u'|'.join(se_code)})
-
-        if self.params['param']:
-            serial_data = self.params['param'].replace('SE', '')
-            serial_data = serial_data.replace('EP','').split('|')
-
-            image_id = self.database.get_image_id(serial_data[0])
-            url = '{}v_search.php?c={}&s={}&e={}'.format(
-                self.site_url,image_id,int(serial_data[1]),int(serial_data[2])
-                )
-
-            html = self.network.get_html(target_name=url)
-            
-            new_url = html[html.find('url=http')+4:html.find('&newbie=')]
-            
-            html = self.network.get_html(new_url)
-            
-            data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
-            data_array = clean_list(data_array).split('<div class="inner-box--label">')
-            
-            quality_array = []
-            
-            for data in data_array:
-                data = data.replace('</div>', '|').replace('||', '')
-                data = clean_tags(data, '<', '>')
-                
-                quality_array.append(data)
-            
-            if '0' in addon.getSetting('quality'):
-                for data in quality_array:
-                    data = data.split('|')
-                    
-                    label = u'[COLOR=blue]{: >04}[/COLOR] | {}'.format(data[0], data[3])
-                    
-                    self.create_line(title=label, params={'mode': 'torrent_part', 'torrent_url': unquote(data[2]), 'id': self.params['param'], 'node':data[0]})
-            else:
-                selector = {'1':'SD|', '2':'MP4|', '3':'1080|'}
-                quality = selector[addon.getSetting('quality')]
-                
-                result = [data for data in quality_array if quality in data]
-                
-                if result:
-                    data = result[0].split('|')
-                    self.params = {'mode': 'torrent_part', 'torrent_url': unquote(data[2]), 'id': self.params['param'], 'node':data[0]}
-                    self.exec_torrent_part()
-                else:
-                    self.create_line(title='Требуемое качество отсутствует', params={'mode': self.params['mode']})
-
+                        self.create_line(title=label, se_code=se_code, watched=is_watched, folder=False, params={'mode': 'play_now_part', 'param': u'|'.join(se_code)})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-#========================#========================#========================#
-    def exec_torrent_part(self):
-        url = self.params['torrent_url']
-            
-        full_url = '{}?s={}'.format(url[:url.find('?s=')], quote(url[url.find('?s=')+3:]))
-        se_code = self.params['id'].split('|')
-        file_name = '{}_{}{}_{}'.format(se_code[0],se_code[1],se_code[2],self.params['node'])
-        full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
-        
-        if '0' in addon.getSetting('local_torrent'):
-            if os.path.isfile(full_name):
-                result = self.dialog.yesno(
-                    'Обнаружен загруженный торрент файл',
-                    'загрузить [COLOR=blue]Новый[/COLOR] или использовать [COLOR=lime]Загруженный[/COLOR] ?',
-                    yeslabel='Новый', nolabel ='Загруженный', autoclose=3000)
-
-                if result:
-                    torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-                else:
-                    torrent_file = full_name
-            else:
-                torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-        else:
-            torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-                
-        #torrent_file = self.network.get_file(target_name=full_url, destination_name=full_name)
-        
-        import bencode
-            
-        with open(torrent_file, 'rb') as read_file:
-            torrent_data = read_file.read()
-
-        torrent = bencode.bdecode(torrent_data)
-
-        info = torrent['info']
-        series = {}
-        size = {}
-        
-        if 'files' in info:
-            for i, x in enumerate(info['files']):
-                size[i] = x['length']
-                series[i] = x['path'][-1]
-            for i in sorted(series, key=series.get):
-                self.create_line(title=series[i], params={'mode': 'play_part', 'index': i, 'id': file_name, 'node': self.params['id']}, se_code=se_code, folder=False, size=size[i])
-        else:
-            self.create_line(title=info['name'], params={'mode': 'play_part', 'index': 0, 'id': file_name, 'node': self.params['id']}, se_code=se_code, folder=False, size=info['length'])
-
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-#========================#========================#========================#
-    def exec_play_part(self):
-        url = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
-        index = int(self.params['index'])
-
-        if '0' in addon.getSetting('engine'):
-            tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
-            engine = tam_engine[int(addon.getSetting('tam'))]
-            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
-            item = xbmcgui.ListItem(path=purl)
-            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-
-        if '1' in addon.getSetting('engine'):
-            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
-            item = xbmcgui.ListItem(path=purl)
-            xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-
-        self.exec_mark_part(notice=False, se_code=self.params['node'].replace('|', ','), mode='on')
 
 if __name__ == "__main__":
     lostfilm = Lostfilm()
