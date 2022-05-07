@@ -72,7 +72,7 @@ class WebTools:
             data_print(e)
             return False
         
-    def get_html(self, target_name, post=None, method=None):
+    def get_html(self, target_name, post=None):
         if self.auth_usage and not self.auth_check():
             return None
 
@@ -83,7 +83,7 @@ class WebTools:
         except: pass
 
         try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers, method=method))
+            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
 
             try: charset = url.headers.getparam('charset')
             except: charset = url.headers.get_content_charset()
@@ -102,6 +102,37 @@ class WebTools:
         #     return error.code
         except HTTPError:
             return False
+        
+    # def get_html(self, target_name, post=None, method=None):
+    #     if self.auth_usage and not self.auth_check():
+    #         return None
+
+    #     if 'shizaproject' in self.portal:
+    #         self.headers['Content-Type'] = 'application/json'
+
+    #     try: post = post.encode(encoding='utf-8')
+    #     except: pass
+
+    #     try:
+    #         url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers, method=method))
+
+    #         try: charset = url.headers.getparam('charset')
+    #         except: charset = url.headers.get_content_charset()
+
+    #         data = url.read()
+
+    #         if charset:
+    #             if not 'utf-8' in charset.lower():
+    #                 data = data.decode(charset).encode('utf8')
+
+    #         try: data = data.decode(encoding='utf-8', errors='replace')
+    #         except: pass
+
+    #         return data
+    #     # except HTTPError as error:
+    #     #     return error.code
+    #     except HTTPError:
+    #         return False
         
     def get_file(self, target_name, post=None, destination_name=None):
         if self.auth_usage and not self.auth_check():

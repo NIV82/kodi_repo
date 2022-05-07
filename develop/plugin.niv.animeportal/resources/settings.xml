@@ -10,12 +10,12 @@
     <setting id="anidub_t_username" label="Логин [COLOR=lime][Torrent][/COLOR]:" type="text" default="" subsetting="true" visible="eq(-3,1)"/>
     <setting id="anidub_t_password" label="Пароль [COLOR=lime][Torrent][/COLOR]:" type="text" default="" option="hidden" subsetting="true" visible="eq(-4,1)"/>
     <setting type="sep"/>
-    <setting id="anidub_mode" type="enum" label="Режим Работы:" default="1" values="Online|Torrent" enable="eq(-8,true)"/>
+    <setting id="anidub_mode" type="enum" label="Режим Работы:" default="0" values="Online|Torrent" enable="eq(-8,true)"/>
     <setting id="anidub_local_torrent" type="enum" label="Загруженные торренты" default="0" values="Использовать|Не использовать" enable="eq(-9,true)"/>
     <setting id="anidub_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-10,true)"/>
     <setting id="anidub_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-11,true)"/>    
     <setting type="sep"/>
-    <setting id="anidub_mirror_mode" label="URL - Адрес:" type="enum" default="0" values="Базовый сайт|Зеркало" enable="eq(-13,true)"/>
+    <setting id="anidub_mirror_mode" label="URL - Адрес:" type="enum" default="1" values="Базовый сайт|Зеркало" enable="eq(-13,true)"/>
     <setting id="anidub_o_mirror_0" label="[COLOR=gold][Online][/COLOR] Адрес:" type="text" default="https://online.anidub.com/" subsetting="true" visible="eq(-1,0)" enable="false"/>
     <setting id="anidub_o_mirror_1" label="[COLOR=gold][Online][/COLOR] Адрес:" type="text" default="https://online.anidub.life/" subsetting="true" visible="eq(-2,1)" enable="eq(-15,true)"/>
     <setting id="anidub_t_mirror_0" label="[COLOR=lime][Torrent][/COLOR] Адрес:" type="text" default="https://tr.anidub.com/" subsetting="true" visible="eq(-3,0)" enable="false"/>
