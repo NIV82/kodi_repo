@@ -861,6 +861,25 @@ class Lostfilm:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
         return
 #========================#========================#========================#
+    def create_image2(self, se_code):
+        # serial_season = int(se_code[1].replace('SE','').replace('999','1'))
+        # serial_episode = int(se_code[2].replace('EP','').replace('999','1'))
+        
+        # image_id = self.database.get_image_id(se_code[0])
+
+        # if 'schedule_part' in self.params['mode']:
+        #     if serial_season == 1 and serial_episode == 1:
+        #         image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(image_id)
+        #         return image
+                
+        #     if serial_episode == 1 and serial_season > 1:
+        #         serial_season = serial_season - 1
+
+        # image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(
+        #     image_id, serial_season)
+        
+        return image
+#========================#========================#========================#
     def exec_select_part(self):
         if not self.params['param']:
             url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
@@ -871,57 +890,133 @@ class Lostfilm:
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return        
 
-            watched_data = self.network.get_html('{}ajaxik.php'.format(self.site_url), self.create_post())
+            data_array = html[html.find('</option>')+9:html.find('</select>')]
+            data_array = data_array[0:data_array.rfind('</option>')]
+            data_array = clean_list(data_array).split('</option>')
 
-            data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
-            data_array = data_array.split('<h2>')
+            if len(data_array) < 2:
+                data = data_array[0]
+                season = data[data.find('="')+2:data.find('">')]
+                self.params={'mode': 'select_part', 'param': season, 'id': self.params['id']}
+                self.exec_select_part()
+                return
+
+            for data in data_array:
+                season = data[data.find('="')+2:data.find('">')]
+                
+                label = season.replace('season_', u'Сезон ')
+                label = label.replace('additional', u'Дополнительные материалы')
+                
+                self.create_line(title=u'[B]{}[/B]'.format(label), params={'mode': 'select_part', 'param': season, 'id': self.params['id']})
+        
+        if self.params['param']:
+            url = '{}series/{}/{}'.format(self.site_url, self.params['id'], self.params['param'])
+            html = self.network.get_html(target_name=url)
+
+            if not html:
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return    
+
+            try:
+                watched_data = self.network.get_html('{}ajaxik.php'.format(self.site_url), self.create_post())
+            except:
+                watched_data = []
             
-            for array in data_array:
-                array = clean_list(array)
+            data = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
+
+            array = data.split('<tr')
+            array.pop(0)
+
+            for data in array:
+                series_title = data[data.find('<td class="gamma'):data.find('<td class="delta"')]
+                series_title = series_title.replace('<br />','|').replace('<br>','|')
+                series_title = clean_list(clean_tags(series_title, '<', '>'))
+
+                series_url = data[data.rfind('/series/')+8:data.rfind('\',false)')]
+                if '/' in series_url[len(series_url)-1]:
+                    series_url = series_url[:-1]
+                    
+                se_code = self.create_code(series_url)
                 
-                title = array[:array.find('</h2>')]
+                data_code = '{:>03}{:>03}'.format(
+                    se_code[1].replace('SE', ''), se_code[2].replace('EP', ''))
+                is_watched = True if data_code in watched_data else False
 
-                if not 'PlayEpisode(' in array:
-                    code = '\'000\',\'0\',\'999\''
+                title = self.create_title(se_code)
+
+                label = u'{}'.format(self.create_title(se_code, series_title))
+                    
+                if '"not-available"' in data:
+                    label = u'[COLOR=dimgray]{}[/COLOR]'.format(self.create_title(se_code, series_title, True))
+                    self.create_line(title=label, se_code=se_code, params={})
                 else:
-                    code = array[array.find('PlayEpisode(')+12:array.find(')">')]
-                
-                if code:
-                    code = code.replace('\'', '').replace(',', '/')
-                    code = code.replace(code[:code.find('/')], self.params['id'])
-                    
-                    self.create_line(title=u'[B][COLOR=white]{}[/COLOR][/B]'.format(
-                        title.capitalize()), params={'mode': 'select_part', 'param': u'|'.join(self.create_code(code))})
-                else:
-                    self.create_line(title=u'[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title.capitalize()), params={})
-
-                array = array.split('<tr')
-                array.pop(0)
-
-                for data in array:
-                    series_title = data[data.find('<td class="gamma'):data.find('<td class="delta"')]
-                    series_title = clean_tags(series_title.replace('<br />','|').replace('<br>','|'), '<', '>')
-
-                    series_url = data[data.rfind('/series/')+8:data.rfind('\',false)')]
-                    if '/' in series_url[len(series_url)-1]:
-                        series_url = series_url[:-1]
-
-                    se_code = self.create_code(series_url)
-                    
-                    data_code = '{:>03}{:>03}'.format(
-                        se_code[1].replace('SE', ''), se_code[2].replace('EP', ''))
-                    is_watched = True if data_code in watched_data else False
-
-                    title = self.create_title(se_code)
-
-                    label = u'{}'.format(self.create_title(se_code, series_title))
-                    
-                    if '"not-available"' in data:
-                        label = u'[COLOR=dimgray]{}[/COLOR]'.format(self.create_title(se_code, series_title, True))
-                        self.create_line(title=label, se_code=se_code, params={})
-                    else:
-                        self.create_line(title=label, se_code=se_code, watched=is_watched, folder=False, params={'mode': 'play_part', 'param': u'|'.join(se_code)})
+                    self.create_line(title=label, se_code=se_code, watched=is_watched, folder=False, params={'mode': 'play_part', 'param': u'|'.join(se_code)})
+                        
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        
+    # def exec_select_part(self):
+    #     if not self.params['param']:
+    #         url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
+    #         html = self.network.get_html(target_name=url)
+
+    #         if not html:
+    #             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+    #             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #             return        
+
+    #         watched_data = self.network.get_html('{}ajaxik.php'.format(self.site_url), self.create_post())
+
+    #         data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
+    #         data_array = data_array.split('<h2>')
+            
+    #         for array in data_array:
+    #             array = clean_list(array)
+                
+    #             title = array[:array.find('</h2>')]
+
+    #             if not 'PlayEpisode(' in array:
+    #                 code = '\'000\',\'0\',\'999\''
+    #             else:
+    #                 code = array[array.find('PlayEpisode(')+12:array.find(')">')]
+                
+    #             if code:
+    #                 code = code.replace('\'', '').replace(',', '/')
+    #                 code = code.replace(code[:code.find('/')], self.params['id'])
+                    
+    #                 self.create_line(title=u'[B][COLOR=white]{}[/COLOR][/B]'.format(
+    #                     title.capitalize()), params={'mode': 'select_part', 'param': u'|'.join(self.create_code(code))})
+    #             else:
+    #                 self.create_line(title=u'[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title.capitalize()), params={})
+
+    #             array = array.split('<tr')
+    #             array.pop(0)
+
+    #             for data in array:
+    #                 series_title = data[data.find('<td class="gamma'):data.find('<td class="delta"')]
+    #                 series_title = clean_tags(series_title.replace('<br />','|').replace('<br>','|'), '<', '>')
+
+    #                 series_url = data[data.rfind('/series/')+8:data.rfind('\',false)')]
+    #                 if '/' in series_url[len(series_url)-1]:
+    #                     series_url = series_url[:-1]
+
+    #                 se_code = self.create_code(series_url)
+                    
+    #                 data_code = '{:>03}{:>03}'.format(
+    #                     se_code[1].replace('SE', ''), se_code[2].replace('EP', ''))
+    #                 is_watched = True if data_code in watched_data else False
+
+    #                 title = self.create_title(se_code)
+
+    #                 label = u'{}'.format(self.create_title(se_code, series_title))
+                    
+    #                 if '"not-available"' in data:
+    #                     label = u'[COLOR=dimgray]{}[/COLOR]'.format(self.create_title(se_code, series_title, True))
+    #                     self.create_line(title=label, se_code=se_code, params={})
+    #                 else:
+    #                     self.create_line(title=label, se_code=se_code, watched=is_watched, folder=False, params={'mode': 'play_part', 'param': u'|'.join(se_code)})
+                        
+    #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_play_part(self):
         se_code = self.params['param'].split('|')

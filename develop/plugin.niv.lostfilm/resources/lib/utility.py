@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sys
+import sys, base64
 
 def clean_list(data):
     clean_list = ['\n', '\t', '\r', '\v', '\f', '  ']
@@ -14,6 +14,19 @@ def clean_tags(data, tag_start, tag_end):
         data = data.replace(data[start:end+1], '').strip()
         start = data.find(tag_start)
         end = data.find(tag_end)
+    return data
+
+def data_encode(data):
+    data = data.encode('utf-8')
+    data = base64.b64encode(data)
+    data = data.decode('utf-8')
+    return data
+
+def data_decode(data):
+    data = data.encode('utf-8')
+    data = base64.b64decode(data)
+    data = data.decode('utf-8')
+    data = data.split('|')
     return data
 
 # def fs_dec(path):
