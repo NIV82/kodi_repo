@@ -901,11 +901,11 @@ class Lostfilm:
                 code = [self.params['id'], season.replace('additional', '999'), '999']
                 
                 if 'PlayEpisode(' in data:
-                    season_title = '[B]{}[/B] - {}'.format(serial_title[0], title)
+                    season_title = u'[B]{}:[/B] {}'.format(serial_title[0], title)                    
                     self.create_line(title=u'{}'.format(season_title), se_code=code ,params={
                         'mode': 'select_part', 'param': 'season_{}'.format(season), 'id': self.params['id']})
                 else:
-                    season_title = '[COLOR=dimgray][B]{}[/B] - {}[/COLOR]'.format(serial_title[0], title)
+                    season_title = u'[COLOR=dimgray][B]{}:[/B] {}[/COLOR]'.format(serial_title[0], title)
                     self.create_line(title=u'{}'.format(season_title), params={
                         'mode': 'select_part', 'param': 'season_{}'.format(season), 'id': self.params['id']})
 
