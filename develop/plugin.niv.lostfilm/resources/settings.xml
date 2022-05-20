@@ -5,8 +5,8 @@
     <setting id="username" label="Логин:" type="text" default=""/>
     <setting id="password" label="Пароль:" type="text" default="" option="hidden"/>
     <setting type="sep"/>
-    <setting id="titles" type="enum" label="Формат названий:" default="0" values="Ru|En" />
-    <setting id="quality2" label="Выбор Качества:" type="select" values="FHD|HD|SD" default="FHD" />
+    <!-- <setting id="titles" type="enum" label="Формат названий:" default="0" values="Ru|En" /> -->
+    <setting id="quality" label="Выбор Качества:" type="select" values="FHD|HD|SD" default="FHD" />
     <setting id="parser_mode" type="enum" label="Режим парсера:" default="0" values="Быстро|Медленно" />
     <setting type="sep"/>
     <setting id="mirror_mode" label="Зеркало:" type="enum" default="1" values="Базовый сайт|Зеркало" />
