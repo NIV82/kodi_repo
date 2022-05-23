@@ -174,16 +174,10 @@ class Lostfilm:
         
         return label
 #========================#========================#========================#
-    def create_image(self, se_code):        
-        #657001007
+    def create_image(self, se_code):
         image_id = int(se_code[0:3])
         serial_season = int(se_code[3:6])
         serial_episode = int(se_code[6:9])
-        
-        #serial_season = int(se_code[1].replace('SE','').replace('999','1'))
-        #serial_episode = int(se_code[2].replace('EP','').replace('999','1'))
-        
-        #image_id = self.database.get_image_id(se_code[0])
 
         if 'schedule_part' in self.params['mode']:
             if serial_season == 1 and serial_episode == 1:
@@ -195,26 +189,8 @@ class Lostfilm:
 
         image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(
             image_id, serial_season)
-        
+
         return image
-    # def create_image(self, se_code):
-    #     serial_season = int(se_code[1].replace('SE','').replace('999','1'))
-    #     serial_episode = int(se_code[2].replace('EP','').replace('999','1'))
-        
-    #     image_id = self.database.get_image_id(se_code[0])
-
-    #     if 'schedule_part' in self.params['mode']:
-    #         if serial_season == 1 and serial_episode == 1:
-    #             image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(image_id)
-    #             return image
-                
-    #         if serial_episode == 1 and serial_season > 1:
-    #             serial_season = serial_season - 1
-
-    #     image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(
-    #         image_id, serial_season)
-        
-    #     return image
 #========================#========================#========================#
     def create_cast(self, data, actors=False):
         cast = []
@@ -254,37 +230,6 @@ class Lostfilm:
 
         return data
 #========================#========================#========================#
-    def create_post(self):
-        from info import genre, year, channel, types, sort, status
-        
-        post = None
-
-        if 'catalog' in self.params['param']:
-            lostfilm_genre = '&g={}'.format(genre[addon.getSetting('genre')]) if genre[addon.getSetting('genre')] else ''
-            lostfilm_year = '&y={}'.format(year[addon.getSetting('year')]) if year[addon.getSetting('year')] else ''
-            lostfilm_channel = '&c={}'.format(channel[addon.getSetting('channel')]) if channel[addon.getSetting('channel')] else ''
-            lostfilm_types = '&r={}'.format(types[addon.getSetting('types')]) if types[addon.getSetting('types')] else ''
-            lostfilm_sort = sort[addon.getSetting('sort')]
-            lostfilm_status = status[addon.getSetting('status')]
-            lostfilm_page = self.params['node']
-            
-            post = 'act=serial&type=search&o={}{}{}{}{}&s={}&t={}'.format(
-                lostfilm_page,lostfilm_genre,lostfilm_year,lostfilm_channel,lostfilm_types,lostfilm_sort,lostfilm_status)
-
-        if 'favorites_part' in self.params['mode']:
-            post = 'session={}&act=serial&type=follow&id={}'.format(
-                addon.getSetting('user_session'), self.database.get_image_id(self.params['id'])
-                )
-        
-        if 'favorites' in self.params['param']:
-            post = 'act=serial&type=search&o={}&s=2&t=99'.format(self.params['node'])
-            
-        # if 'select_part' in self.params['mode']:
-        #     post = 'act=serial&type=getmarks&id={}'.format(
-        #         self.database.get_image_id(self.params['id'])
-        #         )
-        return post
-#========================#========================#========================#
     def create_title(self, serial_title=None, episode_title=None, data_code=None, serial_id=None, watched=False):
         if serial_title:
             serial_title = '[B]{}[/B]'.format(serial_title)
@@ -313,43 +258,6 @@ class Lostfilm:
             label = '[COLOR=goldenrod]{}{}[/COLOR]'.format(serial_code, serial_title)
 
         return label
-    
-    # def create_title(self, se_code, series=None, mode=False):
-    #     code = '[COLOR=blue]{}[/COLOR][COLOR=lime]{}[/COLOR] | '.format(
-    #         se_code[1].replace('SE999',''), se_code[2].replace('EP999','')
-    #         )
-        
-    #     if mode:
-    #         code = '{}{} | '.format(
-    #             se_code[1].replace('SE999',''), se_code[2].replace('EP999',''))
-            
-    #     if 'EP' in code or 'SE' in code:
-    #         code = code
-    #     else:
-    #         code = ''
-        
-    #     title = self.database.get_title(se_code[0])
-                
-    #     year = self.database.get_year(se_code[0])
-    #     year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
-
-    #     if series:
-    #         series = series.split('|')
-            
-    #         series_title = u': {}'.format(
-    #             series[int(addon.getSetting('titles'))]
-    #             )
-    #     else:
-    #         series_title = ''
-
-    #     label = u'{}[B]{}[/B]{}'.format(
-    #         code, title[int(addon.getSetting('titles'))], series_title)
-        
-    #     if 'search_part' in self.params['param'] or 'catalog_part' in self.params['mode'] or 'serials_part' in self.params['mode']:
-    #         label = u'{}[B]{}{}[/B]{}'.format(
-    #             year, code, title[int(addon.getSetting('titles'))], series_title)
-
-    #     return label
 #========================#========================#========================#
     def create_context(self, serial_id=None, se_code=None):
         context_menu = []
@@ -362,9 +270,6 @@ class Lostfilm:
 
         if serial_id:
             context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(serial_id)))
-            # context_menu.append((
-            #     '[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}&node={}")'.format(serial_id,'{}{}'.format(sys.argv[0],sys.argv[2]))
-            #     ))
 
         if se_code:
             context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
@@ -429,65 +334,6 @@ class Lostfilm:
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
-        
-    # def create_line(self, title, serial_id=None, se_code=None, watched=False, params=None, folder=True):
-    # #title=label, serial_id=serial_id, se_code=data_code, watched=is_watched
-        
-    #     if watched:
-    #         title = clean_tags(title, '[', ']')
-    #         title = u'[COLOR=goldenrod]{}[/COLOR]'.format(title)
-            
-    #     li = xbmcgui.ListItem(title)
-
-    #     if se_code:
-    #         cover = self.create_image(se_code)
-            
-    #         li.setArt({
-    #             "poster": cover,
-    #             "icon": cover
-    #             })
-
-    #         se_info = self.database.get_serial(se_code[0])
-
-    #         year = int(se_info[0][0:4]) if se_info[0] else 9999
-
-    #         info = {
-    #             'genre':se_info[1],
-    #             'country':se_info[3],
-    #             'year': year,
-    #             'plot':se_info[4],
-    #             'title':title,
-    #             'studio':se_info[2],
-    #             'tvshowtitle':title,
-    #             'premiered':se_info[0],
-    #             'aired':se_info[0]
-    #         }
-            
-    #         if self.database.cast_in_db(se_code[0]):
-    #             cast = self.database.get_cast(se_code[0])
-    #             if cast['actors']:
-    #                 li.setCast(cast['actors'])
-    #             if cast['directors']:
-    #                 info['director'] = cast['directors']
-    #             if cast['writers']:
-    #                 info['writer'] = cast['writers']
-            
-    #         if watched:
-    #             info['playcount'] = 1
-
-    #         # if size:
-    #         #     info['size'] = size
-
-    #         li.setInfo(type='video', infoLabels=info)
-
-    #     li.addContextMenuItems(self.create_context(se_code))
-
-    #     if folder==False:
-    #             li.setProperty('isPlayable', 'true')
-
-    #     url = '{}?{}'.format(sys.argv[0], urlencode(params))
-
-    #     xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def create_info(self, serial_id, update=False):
         url = '{}series/{}/'.format(self.site_url, serial_id)
@@ -642,7 +488,9 @@ class Lostfilm:
         #xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_favorites_part(self):
-        html = self.network.get_html('{}ajaxik.php'.format(self.site_url), self.create_post())
+        post = 'session={}&act=serial&type=follow&id={}'.format(
+            addon.getSetting('user_session'), self.database.get_image_id(self.params['id']))
+        html = self.network.get_html('{}ajaxik.php'.format(self.site_url), post)
 
         if '"on' in str(html):
             self.dialog.notification(heading='LostFilm',message='ДОБАВЛЕНО',icon=icon,time=3000,sound=False)
@@ -650,8 +498,6 @@ class Lostfilm:
             self.dialog.notification(heading='LostFilm',message='УДАЛЕНО',icon=icon,time=3000,sound=False)
         if 'error' in str(html):
             self.dialog.notification(heading='LostFilm',message='ОШИБКА',icon=icon,time=3000,sound=False)
-
-        #xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
@@ -942,45 +788,62 @@ class Lostfilm:
             addon.setSetting(id='status', value=tuple(status.keys())[result])
         
         if 'catalog' in self.params['param'] or 'favorites' in self.params['param']:
-            self.progress.create('LostFilm', 'Инициализация')
-            
-            html = self.network.get_html(
-                '{}ajaxik.php'.format(self.site_url), self.create_post()
-                )
 
-            html = html[html.find('":[')+3:html.find('],"')]
+            from info import genre, year, channel, types, sort, status
+
+            if 'catalog' in self.params['param']:
+                lostfilm_genre = '&g={}'.format(genre[addon.getSetting('genre')]) if genre[addon.getSetting('genre')] else ''
+                lostfilm_year = '&y={}'.format(year[addon.getSetting('year')]) if year[addon.getSetting('year')] else ''
+                lostfilm_channel = '&c={}'.format(channel[addon.getSetting('channel')]) if channel[addon.getSetting('channel')] else ''
+                lostfilm_types = '&r={}'.format(types[addon.getSetting('types')]) if types[addon.getSetting('types')] else ''
+                lostfilm_sort = sort[addon.getSetting('sort')]
+                lostfilm_status = status[addon.getSetting('status')]
+                lostfilm_page = self.params['node']
+                
+                post = 'act=serial&type=search&o={}{}{}{}{}&s={}&t={}'.format(
+                    lostfilm_page,lostfilm_genre,lostfilm_year,lostfilm_channel,lostfilm_types,lostfilm_sort,lostfilm_status)
+            
+            if 'favorites' in self.params['param']:
+                post = 'act=serial&type=search&o={}&s=2&t=99'.format(self.params['node'])
+
+            html = self.network.get_html('{}ajaxik.php'.format(self.site_url), post)
 
             if not html:
                 self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
+            self.progress.create('LostFilm', 'Инициализация')
+            
+            html = html[html.find('":[')+3:html.find('],"')]
+            
             data_array = html.split('},{')
 
             i = 0
-            
+
             for data in data_array:
-                data = clean_list(data)
-                series_url = data[data.find('series\/')+8:data.find('","alias')]
+                serial_title = data[data.find('title":"')+8:data.find('","title_orig')]
                 
-                se_code = self.create_code(series_url)
-                
+                try: serial_title = serial_title.encode('utf-8').decode('unicode_escape')
+                except: pass
+
+                serial_id = data[data.find('series\/')+8:data.find('","alias')]
+                image_id = data[data.find('id":"')+5:data.find('","has_icon')]
+                se_code = '{:>03}001999'.format(int(image_id))
+
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
                 
                 if self.progress.iscanceled():
                     break
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
-                
-                if not self.database.serial_in_db(se_code[0]):
-                    inf = self.create_info(se_code[0])
-                    
-                    if type(inf) == int:
-                        self.create_line(title='[B][[COLOR=red]ERROR: {}[/COLOR] - [COLOR=red]ID:[/COLOR] {} ][/B]'.format(inf, serial_id), params={})
-                        continue
-                
-                label = self.create_title(se_code)
-                self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
+
+                if not self.database.serial_in_db(serial_id):
+                    self.create_info(serial_id)
+
+                label = self.create_title(serial_id=serial_id, serial_title=serial_title)
+                self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={
+                    'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
             self.progress.close()
 
@@ -996,11 +859,12 @@ class Lostfilm:
 
         data_array = self.database.get_serials_id()
         data_array.sort(key=lambda tup: tup[int(addon.getSetting('titles'))+1])
-            
+
         i = 0
         
         for data in data_array:
-            se_code = self.create_code(data[0])
+            serial_id = data[0]
+            se_code = '{:>03}001999'.format(int(data[2]))
 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
@@ -1009,10 +873,12 @@ class Lostfilm:
                 break
             self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
             
-            label = self.create_title(se_code)
-            self.create_line(title=label, se_code=se_code, params={'mode': 'select_part', 'id': se_code[0]})
-        
+            label = self.create_title(serial_id=serial_id, serial_title=data[1])
+            self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={
+                'mode': 'select_part', 'id': serial_id, 'code': se_code})
+
         self.progress.close()
+        
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
         return
 #========================#========================#========================#
@@ -1109,9 +975,6 @@ class Lostfilm:
         
                 is_watched = True if se_code in watched_data else False
 
-                se_code = '{:>09}'.format(int(se_code))
-                label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
-
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
                 
@@ -1120,12 +983,14 @@ class Lostfilm:
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
                 
                 if 'data-code=' in data:
+                    se_code = '{:>09}'.format(int(se_code))
+                    label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
                         'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
                 else:
-                    label = '[COLOR=dimgray]SE{:>02}EP{:>02} | {}[/COLOR]'.format(int(se_code[3:6]), int(se_code[6:9]), episode_title)
-                    self.create_line(title=label, params={})
-                    
+                    label = '[COLOR=dimgray]{}[/COLOR]'.format(episode_title)
+                    self.create_line(title=label, folder=False, params={})
+
             self.progress.close()
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
