@@ -218,17 +218,17 @@ class Lostfilm:
 
         return cast
 #========================#========================#========================#
-    def create_description(self, data):
-        data = unescape(data)
-        data = clean_list(data)
+    # def create_description(self, data):
+    #     data = unescape(data)
+    #     data = clean_list(data)
 
-        data = data.replace(u'Описание', u'Описание: ', 1)
-        data = data.replace(u'Сюжет</strong>', u'\n\nСюжет:')
-        data = data.replace(u'Сюжет:</strong>', u'\n\nСюжет:')
+    #     data = data.replace(u'Описание', u'Описание: ', 1)
+    #     data = data.replace(u'Сюжет</strong>', u'\n\nСюжет:')
+    #     data = data.replace(u'Сюжет:</strong>', u'\n\nСюжет:')
         
-        data = clean_tags(data, '<', '>')
+    #     data = clean_tags(data, '<', '>')
 
-        return data
+    #     return data
 #========================#========================#========================#
     def create_title(self, serial_title=None, episode_title=None, data_code=None, serial_id=None, watched=False):
         if serial_title:
@@ -341,44 +341,44 @@ class Lostfilm:
         html = self.network.get_html(url)
 
         if not html:
-            self.database.add_anime(
-                serial_id=anime_id,
-                title_ru='serial_id: {}'.format(serial_id),
-                title_en='serial_id: {}'.format(serial_id)
+            self.database.add_serial(
+                serial_id=serial_id,
+                title_ru='serial_id: {}'.format(serial_id)
                 )
             return
 
-        html = unescape(html)
+        #html = unescape(html)
 
-        info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
-              
+        info = dict.fromkeys(['title_ru', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
+                    
         info['image_id'] = html[html.find('/Images/')+8:html.find('/Posters/')]
-                
         info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
-        info['title_en'] = html[html.find('alternativeHeadline">')+21:html.find('</h2>')]
-        
-        description_data = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
-        info['description'] = self.create_description(description_data)
 
-        data_array = html[html.find(u'Премьера:'):html.find(u'Тип:')]
-        data_array = clean_list(data_array).split('<br />')
-        
-        for data in data_array:            
-            if u'Премьера:' in data:
+        description = html[html.find('</strong><br />')+15:html.find('<div class="social-pane">')]
+        description = description[:description.find('</div>')]
+        description = unescape(description)
+        info['description'] = clean_tags(description)
+
+        data_array = html[html.find('dateCreated"'):html.find('</a></span><br />')]
+        data_array = data_array.split('<br />')
+
+        for data in data_array:
+            if 'dateCreated' in data:
                 aired_on = data[data.find('content="')+9:data.find('" />')]
                 info['aired_on'] = aired_on.replace('-', '.')
-            if u'Канал, Страна:' in data:
-                data = clean_tags(data.replace(u'Канал, Страна:', ''), '<','>')
-                info['studios'] = data[:data.find('(')]
-                info['country'] = data[data.rfind('(')+1:data.rfind(')')]
-            if u'Жанр:' in data:
-                info['genres'] = clean_tags(data.replace(u'Жанр:', ''), '<','>')
+            if 'search&c=' in data:
+                data = data[data.find('">')+2:]
+                info['studios'] = data[:data.find('</a>')]
+                info['country'] = data[data.find('(')+1:data.find(')')]
+            if 'prop="genre' in data:
+                data = data[data.find('<a href="'):].split(',')
+                data = [d[d.find('">')+2:d.find('</a>')] for d in data]
+                info['genres'] = ','.join(data)
 
         try:
             self.database.add_serial(
                 serial_id=serial_id,
                 title_ru=info['title_ru'],
-                title_en=info['title_en'],
                 aired_on=info['aired_on'],
                 genres=info['genres'],
                 studios=info['studios'],
@@ -388,8 +388,14 @@ class Lostfilm:
                 update=update                
             )
         except:
+            self.database.add_serial(
+                serial_id=serial_id,
+                title_ru='serial_id: {}'.format(serial_id)
+                )
             return 101
-
+##############################################################################################################################
+##############################################################################################################################
+##############################################################################################################################
         cast = {'actors': [], 'directors': [], 'producers': [], 'writers': []}
         
         html2 = self.network.get_html('{}cast'.format(url))
@@ -425,6 +431,95 @@ class Lostfilm:
             return 101
         
         return
+    # def create_info(self, serial_id, update=False):
+    #     url = '{}series/{}/'.format(self.site_url, serial_id)
+
+    #     html = self.network.get_html(url)
+
+    #     if not html:
+    #         self.database.add_serial(
+    #             serial_id=serial_id,
+    #             title_ru='serial_id: {}'.format(serial_id)
+    #             )
+    #         return
+
+    #     html = unescape(html)
+
+    #     info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
+              
+    #     info['image_id'] = html[html.find('/Images/')+8:html.find('/Posters/')]
+                
+    #     info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
+    #     info['title_en'] = html[html.find('alternativeHeadline">')+21:html.find('</h2>')]
+        
+    #     description_data = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
+    #     info['description'] = self.create_description(description_data)
+
+    #     data_array = html[html.find(u'Премьера:'):html.find(u'Тип:')]
+    #     data_array = clean_list(data_array).split('<br />')
+        
+    #     for data in data_array:            
+    #         if u'Премьера:' in data:
+    #             aired_on = data[data.find('content="')+9:data.find('" />')]
+    #             info['aired_on'] = aired_on.replace('-', '.')
+    #         if u'Канал, Страна:' in data:
+    #             data = clean_tags(data.replace(u'Канал, Страна:', ''), '<','>')
+    #             info['studios'] = data[:data.find('(')]
+    #             info['country'] = data[data.rfind('(')+1:data.rfind(')')]
+    #         if u'Жанр:' in data:
+    #             info['genres'] = clean_tags(data.replace(u'Жанр:', ''), '<','>')
+
+    #     try:
+    #         self.database.add_serial(
+    #             serial_id=serial_id,
+    #             title_ru=info['title_ru'],
+    #             title_en=info['title_en'],
+    #             aired_on=info['aired_on'],
+    #             genres=info['genres'],
+    #             studios=info['studios'],
+    #             country=info['country'],
+    #             description=info['description'],
+    #             image_id=info['image_id'],
+    #             update=update                
+    #         )
+    #     except:
+    #         return 101
+
+    #     cast = {'actors': [], 'directors': [], 'producers': [], 'writers': []}
+        
+    #     html2 = self.network.get_html('{}cast'.format(url))
+
+    #     info_array = html2[html2.find('<div class="header-simple">'):html2.find('rightt-pane">')]        
+    #     info_array = info_array.split('<div class="hor-breaker dashed"></div>')
+
+    #     for cast_info in info_array:
+    #         cast_info = clean_list(cast_info)
+
+    #         if u'simple">Актеры' in cast_info:
+    #             cast['actors'] = self.create_cast(cast_info, actors=True)
+
+    #         if u'simple">Режиссеры' in cast_info:
+    #             cast['directors'] = self.create_cast(cast_info)
+
+    #         if u'simple">Продюсеры' in cast_info:
+    #             cast['producers'] = self.create_cast(cast_info)
+
+    #         if u'simple">Сценаристы' in cast_info:
+    #             cast['writers'] = self.create_cast(cast_info)
+
+    #     try:
+    #         self.database.add_cast(
+    #             serial_id=serial_id,
+    #             actors='||'.join(cast['actors']),
+    #             directors=','.join(cast['directors']),
+    #             producers=','.join(cast['producers']),
+    #             writers=','.join(cast['writers']),
+    #             update=update
+    #         )
+    #     except:
+    #         return 101
+        
+    #     return
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
