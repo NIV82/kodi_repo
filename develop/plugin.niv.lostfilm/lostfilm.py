@@ -131,27 +131,27 @@ class Lostfilm:
 
         return site_url
 #========================#========================#========================#
-    def create_code(self, data):
-        if '/' in data[len(data)-1]:
-            data = data[0:-1]
+    # def create_code(self, data):
+    #     if '/' in data[len(data)-1]:
+    #         data = data[0:-1]
 
-        data = data.strip()
+    #     data = data.strip()
         
-        data = data.replace('season_', '')
-        data = data.replace('episode_', '')
+    #     data = data.replace('season_', '')
+    #     data = data.replace('episode_', '')
         
-        data = data.split('/')
+    #     data = data.split('/')
         
-        while len(data) < 3:
-            data.append('999')
+    #     while len(data) < 3:
+    #         data.append('999')
 
-        if 'additional' in data[1]:
-            data[1] = '999'
+    #     if 'additional' in data[1]:
+    #         data[1] = '999'
             
-        data[1] = 'SE{:>02}'.format(data[1])
-        data[2] = 'EP{:>02}'.format(data[2])
+    #     data[1] = 'SE{:>02}'.format(data[1])
+    #     data[2] = 'EP{:>02}'.format(data[2])
 
-        return data
+    #     return data
 #========================#========================#========================#
     def create_colorize(self, data):
         setting_id = {
@@ -192,31 +192,31 @@ class Lostfilm:
 
         return image
 #========================#========================#========================#
-    def create_cast(self, data, actors=False):
-        cast = []
+    # def create_cast(self, data, actors=False):
+    #     cast = []
         
-        data = data[:data.rfind('</a>')]      
-        data = clean_list(data).split('</a>')
+    #     data = data[:data.rfind('</a>')]      
+    #     data = clean_list(data).split('</a>')
         
-        for d in data:
-            d = unescape(d)
+    #     for d in data:
+    #         d = unescape(d)
             
-            d = d[d.find('<div class="name-ru">'):]
-            d = d.replace('<div class="clr">', '|')
-            d = d.replace('<div class="role-pane">', '|')
-            d = clean_tags(d, '<', '>')
-            d = d.replace('||', '')            
-            d = d.split('|')
+    #         d = d[d.find('<div class="name-ru">'):]
+    #         d = d.replace('<div class="clr">', '|')
+    #         d = d.replace('<div class="role-pane">', '|')
+    #         d = clean_tags(d, '<', '>')
+    #         d = d.replace('||', '')            
+    #         d = d.split('|')
             
-            while len(d) < 4:
-                d.append('')
+    #         while len(d) < 4:
+    #             d.append('')
 
-            if actors:
-                cast.append(u'{}|{}'.format(d[0], d[2]))
-            else:
-                cast.append(u'{}'.format(d[0]))
+    #         if actors:
+    #             cast.append(u'{}|{}'.format(d[0], d[2]))
+    #         else:
+    #             cast.append(u'{}'.format(d[0]))
 
-        return cast
+    #     return cast
 #========================#========================#========================#
     # def create_description(self, data):
     #     data = unescape(data)
@@ -404,19 +404,26 @@ class Lostfilm:
         info_array = info_array.split('<div class="hor-breaker dashed"></div>')
 
         for cast_info in info_array:
-            cast_info = clean_list(cast_info)
+            title = cast_info[cast_info.find('simple">')+8:cast_info.find('</div>')]
+            title = title.replace(u'Актеры', 'actors').replace(u'Режиссеры', 'directors')
+            title = title.replace(u'Продюсеры', 'producers').replace(u'Сценаристы', 'writers')
+            
+            cast_info = cast_info[:cast_info.rfind('</a>')]
+            cast_info = cast_info.split('</a>')
 
-            if u'simple">Актеры' in cast_info:
-                cast['actors'] = self.create_cast(cast_info, actors=True)
+            for c in cast_info:
+                person = c[c.find('name-ru">')+9:]
+                person = person[:person.find('</div>')]
 
-            if u'simple">Режиссеры' in cast_info:
-                cast['directors'] = self.create_cast(cast_info)
+                node = '{}'.format(person.strip())
 
-            if u'simple">Продюсеры' in cast_info:
-                cast['producers'] = self.create_cast(cast_info)
+                if 'actors' in title:
+                    role = c[c.find('role-ru">')+9:]
+                    role = role[:role.find('</div>')]
 
-            if u'simple">Сценаристы' in cast_info:
-                cast['writers'] = self.create_cast(cast_info)
+                    node = '{}|{}'.format(person.strip(), role.strip())
+
+                cast[title].append(node)
 
         try:
             self.database.add_cast(
