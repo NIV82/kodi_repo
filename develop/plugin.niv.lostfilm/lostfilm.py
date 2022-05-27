@@ -175,20 +175,24 @@ class Lostfilm:
         return label
 #========================#========================#========================#
     def create_image(self, se_code):
-        image_id = int(se_code[0:3])
-        serial_season = int(se_code[3:6])
-        serial_episode = int(se_code[6:9])
+        serial_episode = int(se_code[len(se_code)-3:len(se_code)])
+        serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+        serial_image = int(se_code[:len(se_code)-6])
 
         if 'schedule_part' in self.params['mode']:
             if serial_season == 1 and serial_episode == 1:
-                image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(image_id)
+                image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
                 return image
                 
             if serial_episode == 1 and serial_season > 1:
                 serial_season = serial_season - 1
-
+                
+        if serial_season == 999:
+            image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
+            return image
+            
         image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(
-            image_id, serial_season)
+            serial_image, serial_season)
 
         return image
 #========================#========================#========================#
@@ -246,14 +250,25 @@ class Lostfilm:
         
         serial_code = ''
         if data_code:
-            if watched:
-                serial_code = 'SE{:>02}EP{:>02} | '.format(int(data_code[3:6]), int(data_code[6:9]))
-            else:
-                serial_code = '[COLOR=blue]SE{:>02}[/COLOR][COLOR=lime]EP{:>02}[/COLOR] | '.format(
-                    int(data_code[3:6]), int(data_code[6:9]))
+            serial_episode = int(data_code[len(data_code)-3:len(data_code)])
+            serial_season = data_code[len(data_code)-6:len(data_code)-3]
 
-        label = '{}{}{}'.format(year, serial_code, serial_title)
-         
+            if watched:
+                if '999' in serial_season:
+                    serial_code = 'SP00EP{:>02} | '.format(serial_episode)
+                else:
+                    serial_code = 'SE{:>02}EP{:>02} | '.format(int(serial_season), serial_episode)
+            else:
+                if '999' in serial_season:
+                    serial_code = '[COLOR=blue]SP00[/COLOR][COLOR=lime]EP{:>02}[/COLOR] | '.format(serial_episode)
+                else:
+                    serial_code = '[COLOR=blue]SE{:>02}[/COLOR][COLOR=lime]EP{:>02}[/COLOR] | '.format(int(serial_season), serial_episode)
+
+        if 'schedule_part' in self.params['mode']:
+            label = '{}{}'.format(serial_code, serial_title)
+        else:
+            label = '{}{}{}'.format(year, serial_code, serial_title)
+
         if watched:
             label = '[COLOR=goldenrod]{}{}[/COLOR]'.format(serial_code, serial_title)
 
@@ -688,7 +703,8 @@ class Lostfilm:
                 
                 image_id = data[data.find('/Images/')+8:data.find('/Posters/')]
 
-                se_code = '{:>03}001001'.format(int(image_id))
+                #se_code = '{:>03}001001'.format(int(image_id))
+                se_code = '{}001999'.format(image_id)
                 
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
@@ -702,6 +718,7 @@ class Lostfilm:
 
                 label = self.create_title(serial_title=serial_title, serial_id=serial_id)
                 self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
+                #self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id})
 
             self.progress.close()
             
@@ -751,10 +768,12 @@ class Lostfilm:
 
                 episode_title = d[d.find('<td class="gamma'):]
                 episode_title = episode_title[episode_title.find(';">')+3:episode_title.find('<br />')]
-                
-                code = d[d.rfind('season_')+7:d.rfind('/\'')]
-                code = code.replace('episode_','').split('/')                
-                data_code = '{:>03}{:>03}{:>03}'.format(int(image_id),int(code[0]),int(code[1]))
+
+                code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
+                code = code.replace('season_','').replace('episode_','')
+                code = code.replace('additional','999').split('/')
+                          
+                se_code = '{}{:>03}{:>03}'.format(image_id,int(code[0]),int(code[1]))
 
                 day_release = d[d.rfind('false);">')+9:d.rfind('<br />')].strip()
                 
@@ -774,10 +793,10 @@ class Lostfilm:
                 if not self.database.serial_in_db(serial_id):
                     self.create_info(serial_id)
 
-                label = self.create_title(serial_title, episode_title, data_code, serial_id)
+                label = self.create_title(serial_title, episode_title, se_code, serial_id)
                 label = '{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
 
-                self.create_line(title=label, serial_id=serial_id, se_code=data_code, params={'mode': 'select_part', 'id': serial_id, 'code': data_code})
+                self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
         self.progress.close()
 
@@ -800,7 +819,7 @@ class Lostfilm:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
-        data_array = html[html.find('<div class="hor-breaker dashed">')+32:html.rfind('<div class="hor-breaker dashed">')]
+        data_array = html[html.find('breaker dashed">')+16:html.rfind('<div class="hor-breaker dashed">')]
         data_array = data_array.split('<div class="hor-breaker dashed">')
         
         i = 0
@@ -996,42 +1015,43 @@ class Lostfilm:
     def exec_select_part_fast(self):
         if not self.params['param']:
             url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
-
             html = self.network.get_html(target_name=url)
 
             if not html:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return        
+                return    
+
+            image_id = self.params['code'][:len(self.params['code'])-6]
 
             data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
             data_array = data_array.split('<h2>')
 
             if len(data_array) < 2:
                 data = data_array[0]
-                self.params={'mode': 'select_part', 'param': self.params['code'], 'id': self.params['id']}
+                self.params={'mode': 'select_part', 'param': '{}001999'.format(image_id), 'id': self.params['id']}
                 self.exec_select_part_fast()
                 return
             
             self.progress.create('LostFilm', 'Инициализация')
-            
+    
             i = 0
             
             for data in data_array:
                 title = data[:data.find('</h2>')]
 
                 season = title.replace(u'сезон','').strip()
-                season = season.replace(u'Дополнительные материалы', 'additional')
+                season = season.replace(u'Дополнительные материалы', '999')
 
-                se_code = '{}{:>03}999'.format(self.params['code'][0:3], int(season.replace('additional', '999')))
-                
+                se_code = '{}{:>03}999'.format(image_id, int(season))
+
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
                 
                 if self.progress.iscanceled():
                     break
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
-                
+
                 if 'PlayEpisode(' in data:
                     label = u'[B]{}[/B]'.format(title)
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code ,params={
@@ -1044,7 +1064,11 @@ class Lostfilm:
             self.progress.close()
             
         if self.params['param']:
-            url = '{}series/{}/season_{}'.format(self.site_url, self.params['id'], int(self.params['param'][3:6]))
+            code = self.params['param']
+            image_id = code[:len(code)-6]
+            season_id = code[len(code)-6:len(code)-3]
+            
+            url = '{}series/{}/season_{}'.format(self.site_url, self.params['id'], int(season_id))
             html = self.network.get_html(target_name=url)
 
             if not html:
@@ -1053,11 +1077,11 @@ class Lostfilm:
                 return    
 
             try:
-                post = 'act=serial&type=getmarks&id={}'.format(int(self.params['param'][0:3]))
+                post = 'act=serial&type=getmarks&id={}'.format(image_id)
                 watched_data = self.network.get_html('{}ajaxik.php'.format(self.site_url), post)
             except:
                 watched_data = []
-
+            
             self.progress.create('LostFilm', 'Инициализация')
             
             data_array = html[html.find('<div class="have'):html.rfind('holder"></td>')]
@@ -1085,12 +1109,13 @@ class Lostfilm:
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
                 
                 if 'data-code=' in data:
-                    se_code = '{:>09}'.format(int(se_code))
+                    #se_code = '{:>09}'.format(int(se_code))
                     label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
                         'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
                 else:
-                    label = '[COLOR=dimgray]{}[/COLOR]'.format(episode_title)
+                    label = '[COLOR=dimgray]SE{:>02}EP{:02} | {}[/COLOR]'.format(
+                        int(season_id), len(data_array), episode_title)
                     self.create_line(title=label, folder=False, params={})
 
             self.progress.close()
