@@ -299,6 +299,8 @@ def get_index(torrent_file, index):
         new_index = series_sorted[index][1]
         
         return new_index
+    else:
+        return 0
     
 def torrent2magnet(torrent_file):
     import hashlib, bencode
