@@ -131,28 +131,6 @@ class Lostfilm:
 
         return site_url
 #========================#========================#========================#
-    # def create_code(self, data):
-    #     if '/' in data[len(data)-1]:
-    #         data = data[0:-1]
-
-    #     data = data.strip()
-        
-    #     data = data.replace('season_', '')
-    #     data = data.replace('episode_', '')
-        
-    #     data = data.split('/')
-        
-    #     while len(data) < 3:
-    #         data.append('999')
-
-    #     if 'additional' in data[1]:
-    #         data[1] = '999'
-            
-    #     data[1] = 'SE{:>02}'.format(data[1])
-    #     data[2] = 'EP{:>02}'.format(data[2])
-
-    #     return data
-#========================#========================#========================#
     def create_colorize(self, data):
         setting_id = {
             'Поиск':'search_color',
@@ -175,7 +153,9 @@ class Lostfilm:
         return label
 #========================#========================#========================#
     def create_image(self, se_code):
-        serial_episode = int(se_code[len(se_code)-3:len(se_code)])
+        serial_episode = se_code[len(se_code)-3:len(se_code)]
+        serial_episode = int(serial_episode.replace('999','1'))
+        
         serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
         serial_image = int(se_code[:len(se_code)-6])
 
@@ -186,7 +166,7 @@ class Lostfilm:
                 
             if serial_episode == 1 and serial_season > 1:
                 serial_season = serial_season - 1
-                
+
         if serial_season == 999:
             image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
             return image
@@ -196,82 +176,37 @@ class Lostfilm:
 
         return image
 #========================#========================#========================#
-    # def create_cast(self, data, actors=False):
-    #     cast = []
-        
-    #     data = data[:data.rfind('</a>')]      
-    #     data = clean_list(data).split('</a>')
-        
-    #     for d in data:
-    #         d = unescape(d)
-            
-    #         d = d[d.find('<div class="name-ru">'):]
-    #         d = d.replace('<div class="clr">', '|')
-    #         d = d.replace('<div class="role-pane">', '|')
-    #         d = clean_tags(d, '<', '>')
-    #         d = d.replace('||', '')            
-    #         d = d.split('|')
-            
-    #         while len(d) < 4:
-    #             d.append('')
-
-    #         if actors:
-    #             cast.append(u'{}|{}'.format(d[0], d[2]))
-    #         else:
-    #             cast.append(u'{}'.format(d[0]))
-
-    #     return cast
-#========================#========================#========================#
-    # def create_description(self, data):
-    #     data = unescape(data)
-    #     data = clean_list(data)
-
-    #     data = data.replace(u'Описание', u'Описание: ', 1)
-    #     data = data.replace(u'Сюжет</strong>', u'\n\nСюжет:')
-    #     data = data.replace(u'Сюжет:</strong>', u'\n\nСюжет:')
-        
-    #     data = clean_tags(data, '<', '>')
-
-    #     return data
-#========================#========================#========================#
-    def create_title(self, serial_title=None, episode_title=None, data_code=None, serial_id=None, watched=False):
+    def create_title(self, serial_title='', episode_title='', data_code='', serial_id='', watched=False):
         if serial_title:
-            serial_title = '[B]{}[/B]'.format(serial_title)
-
-        if episode_title:
-            if not serial_title:
-                serial_title = '{}'.format(episode_title)
-            else:
-                serial_title = '{}: {}'.format(serial_title , episode_title)
-
-        year = ''
-        if serial_id:
-            year = '[COLOR=blue]{}[/COLOR] | '.format(self.database.get_year(serial_id))
+            serial_title = u'[B]{}[/B]'.format(serial_title)
         
-        serial_code = ''
+        if episode_title:
+            if serial_title:
+                serial_title = u'{}: '.format(serial_title)
+            
+            episode_title = u'{}'.format(episode_title)
+
         if data_code:
+            serial_season = int(data_code[len(data_code)-6:len(data_code)-3])
+            serial_season = 'SE{:>02}'.format(serial_season)
+            serial_season = serial_season.replace('SE999', 'SPXX')
+
             serial_episode = int(data_code[len(data_code)-3:len(data_code)])
-            serial_season = data_code[len(data_code)-6:len(data_code)-3]
+            serial_episode = 'EP{:>02}'.format(serial_episode)
 
             if watched:
-                if '999' in serial_season:
-                    serial_code = 'SP00EP{:>02} | '.format(serial_episode)
-                else:
-                    serial_code = 'SE{:>02}EP{:>02} | '.format(int(serial_season), serial_episode)
+                data_code = '[COLOR=goldenrod]{}{} | [/COLOR]'.format(serial_season, serial_episode)
             else:
-                if '999' in serial_season:
-                    serial_code = '[COLOR=blue]SP00[/COLOR][COLOR=lime]EP{:>02}[/COLOR] | '.format(serial_episode)
-                else:
-                    serial_code = '[COLOR=blue]SE{:>02}[/COLOR][COLOR=lime]EP{:>02}[/COLOR] | '.format(int(serial_season), serial_episode)
+                data_code = '[COLOR=blue]{}[/COLOR][COLOR=lime]{}[/COLOR] | '.format(serial_season, serial_episode)
 
-        if 'schedule_part' in self.params['mode']:
-            label = '{}{}'.format(serial_code, serial_title)
-        else:
-            label = '{}{}{}'.format(year, serial_code, serial_title)
-
+        if serial_id:
+            serial_id = '[COLOR=blue]{}[/COLOR] | '.format(self.database.get_year(serial_id))
+        
         if watched:
-            label = '[COLOR=goldenrod]{}{}[/COLOR]'.format(serial_code, serial_title)
-
+            label = u'{}{}[COLOR=goldenrod]{}{}[/COLOR]'.format(serial_id, data_code, serial_title, episode_title)
+        else:
+            label = u'{}{}{}{}'.format(serial_id, data_code, serial_title, episode_title)
+            
         return label
 #========================#========================#========================#
     def create_context(self, serial_id=None, se_code=None):
@@ -304,19 +239,17 @@ class Lostfilm:
         if serial_id and se_code:
             cover = self.create_image(se_code)
 
-            li.setArt({
-                "poster": cover,
-                "icon": cover
-                })
+            li.setArt({"poster": cover,"icon": cover})
 
             se_info = self.database.get_serial(serial_id)
 
-            year = int(se_info[0][0:4]) if se_info[0] else 9999
+            #year = int(se_info[0][0:4]) if se_info[0] else 9999
 
             info = {
                 'genre':se_info[1],
                 'country':se_info[3],
-                'year': year,
+                #'year': year,
+                'year': se_info[0][0:4],
                 'plot':se_info[4],
                 'title':title,
                 'studio':se_info[2],
@@ -369,7 +302,11 @@ class Lostfilm:
         info['image_id'] = html[html.find('/Images/')+8:html.find('/Posters/')]
         info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
 
-        description = html[html.find('</strong><br />')+15:html.find('<div class="social-pane">')]
+        description = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
+        if u'Сюжет</strong><br />' in description:
+            description = description[description.find(u'Сюжет</strong><br />')+20:]
+        else:
+            description = description[description.find('description">')+13:]
         description = description[:description.find('</div>')]
         description = unescape(description)
         info['description'] = clean_tags(description)
@@ -430,13 +367,13 @@ class Lostfilm:
                 person = c[c.find('name-ru">')+9:]
                 person = person[:person.find('</div>')]
 
-                node = '{}'.format(person.strip())
+                node = u'{}'.format(person.strip())
 
                 if 'actors' in title:
                     role = c[c.find('role-ru">')+9:]
                     role = role[:role.find('</div>')]
 
-                    node = '{}|{}'.format(person.strip(), role.strip())
+                    node = u'{}|{}'.format(person.strip(), role.strip())
 
                 cast[title].append(node)
 
@@ -453,95 +390,6 @@ class Lostfilm:
             return 101
         
         return
-    # def create_info(self, serial_id, update=False):
-    #     url = '{}series/{}/'.format(self.site_url, serial_id)
-
-    #     html = self.network.get_html(url)
-
-    #     if not html:
-    #         self.database.add_serial(
-    #             serial_id=serial_id,
-    #             title_ru='serial_id: {}'.format(serial_id)
-    #             )
-    #         return
-
-    #     html = unescape(html)
-
-    #     info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
-              
-    #     info['image_id'] = html[html.find('/Images/')+8:html.find('/Posters/')]
-                
-    #     info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
-    #     info['title_en'] = html[html.find('alternativeHeadline">')+21:html.find('</h2>')]
-        
-    #     description_data = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
-    #     info['description'] = self.create_description(description_data)
-
-    #     data_array = html[html.find(u'Премьера:'):html.find(u'Тип:')]
-    #     data_array = clean_list(data_array).split('<br />')
-        
-    #     for data in data_array:            
-    #         if u'Премьера:' in data:
-    #             aired_on = data[data.find('content="')+9:data.find('" />')]
-    #             info['aired_on'] = aired_on.replace('-', '.')
-    #         if u'Канал, Страна:' in data:
-    #             data = clean_tags(data.replace(u'Канал, Страна:', ''), '<','>')
-    #             info['studios'] = data[:data.find('(')]
-    #             info['country'] = data[data.rfind('(')+1:data.rfind(')')]
-    #         if u'Жанр:' in data:
-    #             info['genres'] = clean_tags(data.replace(u'Жанр:', ''), '<','>')
-
-    #     try:
-    #         self.database.add_serial(
-    #             serial_id=serial_id,
-    #             title_ru=info['title_ru'],
-    #             title_en=info['title_en'],
-    #             aired_on=info['aired_on'],
-    #             genres=info['genres'],
-    #             studios=info['studios'],
-    #             country=info['country'],
-    #             description=info['description'],
-    #             image_id=info['image_id'],
-    #             update=update                
-    #         )
-    #     except:
-    #         return 101
-
-    #     cast = {'actors': [], 'directors': [], 'producers': [], 'writers': []}
-        
-    #     html2 = self.network.get_html('{}cast'.format(url))
-
-    #     info_array = html2[html2.find('<div class="header-simple">'):html2.find('rightt-pane">')]        
-    #     info_array = info_array.split('<div class="hor-breaker dashed"></div>')
-
-    #     for cast_info in info_array:
-    #         cast_info = clean_list(cast_info)
-
-    #         if u'simple">Актеры' in cast_info:
-    #             cast['actors'] = self.create_cast(cast_info, actors=True)
-
-    #         if u'simple">Режиссеры' in cast_info:
-    #             cast['directors'] = self.create_cast(cast_info)
-
-    #         if u'simple">Продюсеры' in cast_info:
-    #             cast['producers'] = self.create_cast(cast_info)
-
-    #         if u'simple">Сценаристы' in cast_info:
-    #             cast['writers'] = self.create_cast(cast_info)
-
-    #     try:
-    #         self.database.add_cast(
-    #             serial_id=serial_id,
-    #             actors='||'.join(cast['actors']),
-    #             directors=','.join(cast['directors']),
-    #             producers=','.join(cast['producers']),
-    #             writers=','.join(cast['writers']),
-    #             update=update
-    #         )
-    #     except:
-    #         return 101
-        
-    #     return
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
@@ -601,8 +449,6 @@ class Lostfilm:
                 self.dialog.notification(heading='LostFilm',message='ВЫПОЛНЕНО',icon=icon,time=3000,sound=False)
             if 'error' in str(html):
                 self.dialog.notification(heading='LostFilm',message='ОШИБКА',icon=icon,time=3000,sound=False)
-            
-        #xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_favorites_part(self):
         post = 'session={}&act=serial&type=follow&id={}'.format(
@@ -700,10 +546,10 @@ class Lostfilm:
                 
                 serial_id = data[data.find('series/')+7:]
                 serial_id = serial_id[:serial_id.find('"')]
+                serial_id = serial_id.strip()
                 
                 image_id = data[data.find('/Images/')+8:data.find('/Posters/')]
 
-                #se_code = '{:>03}001001'.format(int(image_id))
                 se_code = '{}001999'.format(image_id)
                 
                 i = i + 1
@@ -718,7 +564,6 @@ class Lostfilm:
 
                 label = self.create_title(serial_title=serial_title, serial_id=serial_id)
                 self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
-                #self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id})
 
             self.progress.close()
             
@@ -761,6 +606,8 @@ class Lostfilm:
             
             for d in data:
                 serial_id = d[d.find('/series/')+8:d.find('\',false')]
+                serial_id = serial_id.strip()
+                
                 image_id = d[d.find('/Images/')+8:d.find('/Posters/')]
                 
                 serial_title = d[d.find('class="ru">')+11:]
@@ -772,7 +619,7 @@ class Lostfilm:
                 code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
                 code = code.replace('season_','').replace('episode_','')
                 code = code.replace('additional','999').split('/')
-                          
+
                 se_code = '{}{:>03}{:>03}'.format(image_id,int(code[0]),int(code[1]))
 
                 day_release = d[d.rfind('false);">')+9:d.rfind('<br />')].strip()
@@ -787,14 +634,19 @@ class Lostfilm:
                 
                 if self.progress.iscanceled():
                     break
-                self.progress.update(p, u'Обработано: [COLOR=gold]{}%[/COLOR]\n[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
-                    p, i, len(data_array), a, len(data)))
+                
+                if sys.version_info.major > 2:
+                    self.progress.update(p, u'Обработано: [COLOR=gold]{}%[/COLOR]\n[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
+                        p, i, len(data_array), a, len(data)))
+                else:
+                    self.progress.update(p, u'Обработано: [COLOR=gold]{}%[/COLOR]','[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
+                        p, i, len(data_array), a, len(data)))
 
                 if not self.database.serial_in_db(serial_id):
                     self.create_info(serial_id)
 
-                label = self.create_title(serial_title, episode_title, se_code, serial_id)
-                label = '{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
+                label = self.create_title(serial_title, episode_title, se_code)
+                label = u'{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
 
                 self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
@@ -832,6 +684,7 @@ class Lostfilm:
 
             serial_id = data[data.find('series/')+7:]
             serial_id = serial_id[:serial_id.find('/')]
+            serial_id = serial_id.strip()
             
             se_code = data[data.find('episode="')+9:data.find('" data-code')]
 
@@ -949,6 +802,7 @@ class Lostfilm:
                 except: pass
 
                 serial_id = data[data.find('series\/')+8:data.find('","alias')]
+                serial_id = serial_id.strip()
                 image_id = data[data.find('id":"')+5:data.find('","has_icon')]
                 se_code = '{:>03}001999'.format(int(image_id))
 
@@ -979,13 +833,12 @@ class Lostfilm:
         self.progress.create('LostFilm', 'Инициализация')
 
         data_array = self.database.get_serials_id()
-        data_array.sort(key=lambda tup: tup[int(addon.getSetting('titles'))+1])
 
         i = 0
         
         for data in data_array:
             serial_id = data[0]
-            se_code = '{:>03}001999'.format(int(data[2]))
+            se_code = '{}001999'.format(data[2])
 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
@@ -1109,7 +962,6 @@ class Lostfilm:
                 self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
                 
                 if 'data-code=' in data:
-                    #se_code = '{:>09}'.format(int(se_code))
                     label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
                         'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
@@ -1182,7 +1034,7 @@ class Lostfilm:
                     p, i, len(data_array), a, len(data)))
                 
                 if 'data-code=' in d:
-                    se_code = '{:>09}'.format(int(se_code))
+                    #se_code = '{:>09}'.format(int(se_code))
                     label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
                         'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
@@ -1195,10 +1047,11 @@ class Lostfilm:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_play_part(self):
-        image_id = int(self.params['param'][0:3])
-        serial_season = int(self.params['param'][3:6])
-        serial_episode = int(self.params['param'][6:9])
-        
+        se_code = self.params['param']
+        serial_episode = int(se_code[len(se_code)-3:len(se_code)])
+        serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+        image_id = int(se_code[:len(se_code)-6])
+
         url = '{}v_search.php?c={}&s={}&e={}'.format(
             self.site_url, image_id, serial_season, serial_episode)
         html = self.network.get_html(target_name=url)
@@ -1207,17 +1060,20 @@ class Lostfilm:
         html = self.network.get_html(new_url)
 
         data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
-        data_array = clean_list(data_array).split('<div class="inner-box--label">')
+        data_array = data_array.split('<div class="inner-box--label">')
 
         quality = {'FHD': '', 'HD': '', 'SD': ''}
-        
+                
         for data in data_array:
+            quality_data = data[:data.find('</div>')].strip()
+            
             torrent_url = data[data.find('<a href="')+9:]
-            if 'SD</div>' in data:
+                
+            if 'SD' in quality_data:
                 quality['SD'] = torrent_url[:torrent_url.find('">')]
-            if 'MP4' in data:
+            if 'MP4' in quality_data:
                 quality['HD'] = torrent_url[:torrent_url.find('">')]
-            if '1080' in data:
+            if '1080' in quality_data:
                 quality['FHD'] = torrent_url[:torrent_url.find('">')]
 
         url = quality[addon.getSetting('quality')]
@@ -1228,7 +1084,7 @@ class Lostfilm:
             for i in quality.keys():
                 if quality[i]:
                     choice.append(i)
-                
+
             result = self.dialog.select('Доступное качество: ', choice)
             url = quality[choice[int(result)]]
             current_quality = choice[int(result)]
@@ -1252,6 +1108,65 @@ class Lostfilm:
                 post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
                     addon.getSetting('user_session'), self.params['param'], 'on'))
             
+    # def exec_play_part(self):
+    #     se_code = self.params['param']
+    #     serial_episode = int(se_code[len(se_code)-3:len(se_code)])
+    #     serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+    #     image_id = int(se_code[:len(se_code)-6])
+
+    #     url = '{}v_search.php?c={}&s={}&e={}'.format(
+    #         self.site_url, image_id, serial_season, serial_episode)
+    #     html = self.network.get_html(target_name=url)
+        
+    #     new_url = html[html.find('url=http')+4:html.find('&newbie=')]
+    #     html = self.network.get_html(new_url)
+
+    #     data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
+    #     data_array = clean_list(data_array).split('<div class="inner-box--label">')
+
+    #     quality = {'FHD': '', 'HD': '', 'SD': ''}
+        
+    #     for data in data_array:
+    #         torrent_url = data[data.find('<a href="')+9:]
+    #         if 'SD</div>' in data:
+    #             quality['SD'] = torrent_url[:torrent_url.find('">')]
+    #         if 'MP4' in data:
+    #             quality['HD'] = torrent_url[:torrent_url.find('">')]
+    #         if '1080' in data:
+    #             quality['FHD'] = torrent_url[:torrent_url.find('">')]
+
+    #     url = quality[addon.getSetting('quality')]
+        
+    #     current_quality = addon.getSetting('quality')
+    #     if not url:
+    #         choice = []
+    #         for i in quality.keys():
+    #             if quality[i]:
+    #                 choice.append(i)
+                
+    #         result = self.dialog.select('Доступное качество: ', choice)
+    #         url = quality[choice[int(result)]]
+    #         current_quality = choice[int(result)]
+
+    #     file_name = '{}_{}_{}'.format(
+    #         self.params['id'], self.params['param'], current_quality)        
+    #     full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+
+    #     torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
+
+    #     import player
+    #     confirm = player.selector(
+    #         torrent_index=serial_episode,
+    #         torrent_url=torrent_file,
+    #         download_dir=addon_data_dir
+    #         )
+
+    #     if confirm:
+    #         html = self.network.get_html(
+    #             target_name='{}ajaxik.php'.format(self.site_url),
+    #             post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
+    #                 addon.getSetting('user_session'), self.params['param'], 'on'))
+
 if __name__ == "__main__":
     lostfilm = Lostfilm()
     lostfilm.execute()

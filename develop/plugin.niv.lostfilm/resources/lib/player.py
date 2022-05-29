@@ -230,33 +230,52 @@ def get_t2h_status():
     except:
         return 'err'
 
-def rt(node):
+def is_libreelec():
     try:
-        node = node.decode('utf-8')
+        if os.path.isfile('/etc/os-release'):
+            f = open('/etc/os-release', 'r')
+            str = f.read()
+            f.close()
+            if "LibreELEC" in str and "Generic" in str:
+                return True
+    except: pass
+    return False
+
+def rt(s):
+    try:
+        s=s.decode('utf-8')
     except:
         pass
     
-    if os.path.isfile('/etc/os-release'):
-        with open('/etc/os-release', 'r') as read_file:
-            data = read_file.read()
-        if not 'LibreELEC' in data and 'Generic' in data:
-            try:
-                node=node.decode('windows-1251')
-            except:
-                pass
-    
-    # if not is_libreelec():
-    #     try:
-    #         node=node.decode('windows-1251')
-    #     except:
-    #         pass
+    if not is_libreelec():
+        try:
+            s=s.decode('windows-1251')
+        except:
+            pass
 
     try:
-        node=node.encode('utf-8')
+        s=s.encode('utf-8')
     except:
         pass
     
-    return node
+    return s
+
+
+def media(t):
+    L = ['.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts']
+    for i in L:
+        if i in t.lower():
+            return True
+    return False
+
+def clean_series(series_list):
+    valid_series = []
+    
+    for series in series_list:
+        if media(series[0]):
+            valid_series.append(series)
+
+    return valid_series
 
 def get_index(torrent_file, index):
     with open(torrent_file, 'rb') as read_file:
@@ -265,29 +284,22 @@ def get_index(torrent_file, index):
     import bencode
     torrent = bencode.bdecode(torrent_data)
 
-    series_current = []
     series_sorted = []
-#lostfix index start ===============================================
+
     if 'files' in torrent['info']:
-        if int(index) > 0:
-            index = int(index) - 1
-#lostfix index end ===============================================
+        x = 0
+
         for i in torrent['info']['files']:
-            series_current.append(i['path'][-1])
-            series_sorted.append(i['path'][-1])
+            series_sorted.append([i['path'][-1],x])
+            x = x + 1
 
         series_sorted.sort()
-        current_file = series_current[index]
-            
-        new_index = 0
+        series_sorted = clean_series(series_sorted)
 
-        for i in series_sorted:
-            if current_file in i:
-                return new_index
-            new_index = new_index + 1
-    else:
-        return 0
-
+        new_index = series_sorted[index][1]
+        
+        return new_index
+    
 def torrent2magnet(torrent_file):
     import hashlib, bencode
         
@@ -311,11 +323,16 @@ def torrent2magnet(torrent_file):
     return magneturi
 
 def selector(torrent_index, torrent_url, download_dir):
+    if int(torrent_index) > 0:
+        torrent_index = int(torrent_index) - 1
+
+    index = get_index(torrent_url, torrent_index)
+
     if '0' in addon.getSetting('engine'):
         try:
             tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver', 'torrserver_tam', 'lt2http')
             engine = tam_engine[int(addon.getSetting('tam'))]
-            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(torrent_url,torrent_index,engine)
+            purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(torrent_url, index, engine)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
             return True
@@ -324,7 +341,7 @@ def selector(torrent_index, torrent_url, download_dir):
 
     if '1' in addon.getSetting('engine'):
         try:
-            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(torrent_url), torrent_index)
+            purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(torrent_url), index)
             item = xbmcgui.ListItem(path=purl)
             xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
             return True
@@ -334,7 +351,6 @@ def selector(torrent_index, torrent_url, download_dir):
     if '2' in addon.getSetting('engine'):
         try:
             url = 'file:///{}'.format(torrent_url.replace('\\','/'))
-            index = get_index(torrent_url, torrent_index)
             ddir = addon.getSetting('t2h_ddir') or download_dir
             buffer = int(addon.getSetting('t2h_preload'))
             play_t2h(uri=url, file_id=index, preload_size=buffer, download_path=ddir)
@@ -345,7 +361,6 @@ def selector(torrent_index, torrent_url, download_dir):
     if '3' in addon.getSetting('engine'):
         try:
             url = torrent2magnet(torrent_url)
-            index = get_index(torrent_url, torrent_index)
             import torrserver_player
             torrserver_player.Player(
                 torrent=url,
