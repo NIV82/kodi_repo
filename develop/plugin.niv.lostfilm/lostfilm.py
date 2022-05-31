@@ -296,8 +296,6 @@ class Lostfilm:
                 )
             return
 
-        #html = unescape(html)
-
         info = dict.fromkeys(['title_ru', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
                     
         info['image_id'] = html[html.find('/Images/')+8:html.find('/Posters/')]
@@ -346,9 +344,7 @@ class Lostfilm:
                 title_ru='serial_id: {}'.format(serial_id)
                 )
             return 101
-##############################################################################################################################
-##############################################################################################################################
-##############################################################################################################################
+
         cast = {'actors': [], 'directors': [], 'producers': [], 'writers': []}
         
         html2 = self.network.get_html('{}cast'.format(url))
@@ -420,7 +416,6 @@ class Lostfilm:
             try: file_size = int(data.info().getheaders("Content-Length")[0])
             except: file_size = int(data.getheader('Content-Length'))
 
-            #self.progress.create('Загрузка Базы Данных')
             self.progress_bg.create('Downloading DB', 'Downloading...')
 
             with open(db_file, 'wb') as write_file:
@@ -431,9 +426,7 @@ class Lostfilm:
                     if len(chunk) < chunk_size:
                         break
                     percent = bytes_read * 100 / file_size
-                    #self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
                     self.progress_bg.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-            #self.progress.close()
             self.progress_bg.close()
             #self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=icon,time=3000,sound=False)
         except:
@@ -792,6 +785,11 @@ class Lostfilm:
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
+            if not 'data":[{' in html:
+                self.create_line(title='[B][COLOR=white]Контента больше нет[/COLOR][/B]', params={'mode': self.params['mode']})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+            
             self.progress.create('LostFilm', 'Инициализация')
             
             html = html[html.find('":[')+3:html.find('],"')]
@@ -809,7 +807,8 @@ class Lostfilm:
                 serial_id = data[data.find('series\/')+8:data.find('","alias')]
                 serial_id = serial_id.strip()
                 image_id = data[data.find('id":"')+5:data.find('","has_icon')]
-                se_code = '{:>03}001999'.format(int(image_id))
+                
+                se_code = '{}001999'.format(image_id)
 
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
@@ -1042,12 +1041,11 @@ class Lostfilm:
                 a = a + 1
                 
                 if self.progress.iscanceled():
-                    break
-                self.progress.update(p, u'Построение списка: [COLOR=gold]{}%[/COLOR]\n[COLOR=lime]Сезон:[/COLOR] {} из {} | [COLOR=blue]Серия:[/COLOR] {} из {} '.format(
-                    p, i, len(data_array), a, len(data)))
+                    break                
+                self.progress.update(p, u'Выполнено: [COLOR=gold]{}%[/COLOR] | [COLOR=lime]Сезон:[/COLOR] {} из {} | [COLOR=blue]Серия:[/COLOR] {} из {} '.format(
+                        p, i, len(data_array), a, len(data)))
                 
                 if 'data-code=' in d:
-                    #se_code = '{:>09}'.format(int(se_code))
                     label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
                         'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
@@ -1120,65 +1118,6 @@ class Lostfilm:
                 target_name='{}ajaxik.php'.format(self.site_url),
                 post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
                     addon.getSetting('user_session'), self.params['param'], 'on'))
-            
-    # def exec_play_part(self):
-    #     se_code = self.params['param']
-    #     serial_episode = int(se_code[len(se_code)-3:len(se_code)])
-    #     serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
-    #     image_id = int(se_code[:len(se_code)-6])
-
-    #     url = '{}v_search.php?c={}&s={}&e={}'.format(
-    #         self.site_url, image_id, serial_season, serial_episode)
-    #     html = self.network.get_html(target_name=url)
-        
-    #     new_url = html[html.find('url=http')+4:html.find('&newbie=')]
-    #     html = self.network.get_html(new_url)
-
-    #     data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
-    #     data_array = clean_list(data_array).split('<div class="inner-box--label">')
-
-    #     quality = {'FHD': '', 'HD': '', 'SD': ''}
-        
-    #     for data in data_array:
-    #         torrent_url = data[data.find('<a href="')+9:]
-    #         if 'SD</div>' in data:
-    #             quality['SD'] = torrent_url[:torrent_url.find('">')]
-    #         if 'MP4' in data:
-    #             quality['HD'] = torrent_url[:torrent_url.find('">')]
-    #         if '1080' in data:
-    #             quality['FHD'] = torrent_url[:torrent_url.find('">')]
-
-    #     url = quality[addon.getSetting('quality')]
-        
-    #     current_quality = addon.getSetting('quality')
-    #     if not url:
-    #         choice = []
-    #         for i in quality.keys():
-    #             if quality[i]:
-    #                 choice.append(i)
-                
-    #         result = self.dialog.select('Доступное качество: ', choice)
-    #         url = quality[choice[int(result)]]
-    #         current_quality = choice[int(result)]
-
-    #     file_name = '{}_{}_{}'.format(
-    #         self.params['id'], self.params['param'], current_quality)        
-    #     full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
-
-    #     torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
-
-    #     import player
-    #     confirm = player.selector(
-    #         torrent_index=serial_episode,
-    #         torrent_url=torrent_file,
-    #         download_dir=addon_data_dir
-    #         )
-
-    #     if confirm:
-    #         html = self.network.get_html(
-    #             target_name='{}ajaxik.php'.format(self.site_url),
-    #             post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
-    #                 addon.getSetting('user_session'), self.params['param'], 'on'))
 
 if __name__ == "__main__":
     lostfilm = Lostfilm()
