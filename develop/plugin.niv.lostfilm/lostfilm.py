@@ -63,8 +63,9 @@ class Lostfilm:
             os.mkdir(self.database_dir)
 
         self.progress = xbmcgui.DialogProgress()
+        self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
-
+    
         self.params = {'mode': 'main_part','param': '','page': '1','node': '0', 'code':''}
 
         args = parse_qs(sys.argv[2][1:])
@@ -419,7 +420,9 @@ class Lostfilm:
             try: file_size = int(data.info().getheaders("Content-Length")[0])
             except: file_size = int(data.getheader('Content-Length'))
 
-            self.progress.create('Загрузка Базы Данных')
+            #self.progress.create('Загрузка Базы Данных')
+            self.progress_bg.create('Downloading DB', 'Downloading...')
+
             with open(db_file, 'wb') as write_file:
                 while True:
                     chunk = data.read(chunk_size)
@@ -428,9 +431,11 @@ class Lostfilm:
                     if len(chunk) < chunk_size:
                         break
                     percent = bytes_read * 100 / file_size
-                    self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                self.progress.close()
-            self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=icon,time=3000,sound=False)
+                    #self.progress.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                    self.progress_bg.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+            #self.progress.close()
+            self.progress_bg.close()
+            #self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=icon,time=3000,sound=False)
         except:
             self.dialog.notification(heading='База Данных',message='ОШИБКА',icon=icon,time=3000,sound=False)
             pass
@@ -837,8 +842,16 @@ class Lostfilm:
         i = 0
         
         for data in data_array:
-            serial_id = data[0]
-            se_code = '{}001999'.format(data[2])
+            
+            try:
+                serial_id = data[0]
+                se_code = '{}001999'.format(data[2])
+            except:
+                data_print(se_code)
+                data_print(data)
+                label = '[COLOR=red][B]{}[/B][/COLOR]'.format(serial_id)
+                self.create_line(title=label, params={})
+                continue
 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
@@ -853,7 +866,7 @@ class Lostfilm:
 
         self.progress.close()
         
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
     def exec_select_part(self):

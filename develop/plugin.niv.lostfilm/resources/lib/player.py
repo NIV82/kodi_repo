@@ -368,7 +368,7 @@ def selector(torrent_index, torrent_url, download_dir):
                 torrent=url,
                 sort_index=index,
                 host=addon.getSetting('ts_host'),
-                port=addon.getSetting('ts_port'))            
+                port=addon.getSetting('ts_port'))
             return True
         except:
             return False
