@@ -62,7 +62,6 @@ class Lostfilm:
         if not os.path.exists(self.database_dir):
             os.mkdir(self.database_dir)
 
-        self.progress = xbmcgui.DialogProgress()
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
     
@@ -189,11 +188,11 @@ class Lostfilm:
 
         if data_code:
             serial_season = int(data_code[len(data_code)-6:len(data_code)-3])
-            serial_season = 'SE{:>02}'.format(serial_season)
-            serial_season = serial_season.replace('SE999', 'SPXX')
+            serial_season = 'S{:>02}'.format(serial_season)
+            serial_season = serial_season.replace('S999', 'A00')
 
             serial_episode = int(data_code[len(data_code)-3:len(data_code)])
-            serial_episode = 'EP{:>02}'.format(serial_episode)
+            serial_episode = 'E{:>02}'.format(serial_episode)
 
             if watched:
                 data_code = '[COLOR=goldenrod]{}{} | [/COLOR]'.format(serial_season, serial_episode)
@@ -517,8 +516,8 @@ class Lostfilm:
         if 'search_string' in self.params['param']:            
             if self.params['search_string'] == '':
                 return False
-            
-            self.progress.create('LostFilm', 'Инициализация')
+
+            self.progress_bg.create('LostFilm', 'Инициализация')
             
             url = '{}search/?q={}'.format(self.site_url, quote(self.params['search_string']))
             html = self.network.get_html(target_name=url)
@@ -553,17 +552,15 @@ class Lostfilm:
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
 
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
-
+                self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                
                 if not self.database.serial_in_db(serial_id):
                     self.create_info(serial_id)
 
                 label = self.create_title(serial_title=serial_title, serial_id=serial_id)
                 self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
-            self.progress.close()
+            self.progress_bg.close()
             
             if '<div class="next-link active">' in html:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
@@ -581,8 +578,8 @@ class Lostfilm:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
-        
-        self.progress.create('LostFilm', 'Инициализация')
+
+        self.progress_bg.create('LostFilm', 'Инициализация')
         
         data_array = html[html.find('<th colspan="6">')+16:html.rfind('<td class="placeholder">')]        
         data_array = data_array.split('<th colspan="6">')
@@ -629,16 +626,9 @@ class Lostfilm:
                     when_release = u'Дней осталось: {}'.format(when_release)
                 
                 a = a + 1
-                
-                if self.progress.iscanceled():
-                    break
-                
-                if sys.version_info.major > 2:
-                    self.progress.update(p, u'Обработано: [COLOR=gold]{}%[/COLOR]\n[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
-                        p, i, len(data_array), a, len(data)))
-                else:
-                    self.progress.update(p, u'Обработано: [COLOR=gold]{}%[/COLOR]','[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
-                        p, i, len(data_array), a, len(data)))
+
+                self.progress_bg.update(p, u'[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
+                    i, len(data_array), a, len(data)))
 
                 if not self.database.serial_in_db(serial_id):
                     self.create_info(serial_id)
@@ -648,14 +638,12 @@ class Lostfilm:
 
                 self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
-        self.progress.close()
+        self.progress_bg.close()
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
     def exec_common_part(self):
-        self.progress.create('LostFilm', 'Инициализация')
-
         url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
         html = self.network.get_html(target_name=url)
 
@@ -669,6 +657,8 @@ class Lostfilm:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
+        self.progress_bg.create('LostFilm', 'Инициализация')
+        
         data_array = html[html.find('breaker dashed">')+16:html.rfind('<div class="hor-breaker dashed">')]
         data_array = data_array.split('<div class="hor-breaker dashed">')
         
@@ -694,9 +684,7 @@ class Lostfilm:
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
 
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
             if not self.database.serial_in_db(serial_id):
                 self.create_info(serial_id)
@@ -706,7 +694,7 @@ class Lostfilm:
             self.create_line(title=label, serial_id=serial_id, se_code=se_code, watched=is_watched, folder=False, params={
                         'mode': 'play_part', 'id': serial_id, 'param': se_code})
 
-        self.progress.close()
+        self.progress_bg.close()
         
         if '<div class="next-link active">' in html:
             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
@@ -789,8 +777,8 @@ class Lostfilm:
                 self.create_line(title='[B][COLOR=white]Контента больше нет[/COLOR][/B]', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
-            
-            self.progress.create('LostFilm', 'Инициализация')
+
+            self.progress_bg.create('LostFilm', 'Инициализация')
             
             html = html[html.find('":[')+3:html.find('],"')]
             
@@ -812,11 +800,9 @@ class Lostfilm:
 
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
-                
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
+                self.progress_bg.update(p, 'Обработано - {} из {} '.format(i, len(data_array)))
+                
                 if not self.database.serial_in_db(serial_id):
                     self.create_info(serial_id)
 
@@ -824,7 +810,7 @@ class Lostfilm:
                 self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={
                     'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
-            self.progress.close()
+            self.progress_bg.close()
 
             if len(data_array) >= 10:
                 page_count = (int(self.params['node']) / 10) + 1
@@ -834,7 +820,7 @@ class Lostfilm:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_serials_part(self):
-        self.progress.create('LostFilm', 'Инициализация')
+        self.progress_bg.create('LostFilm', 'Инициализация')
 
         data_array = self.database.get_serials_id()
 
@@ -846,24 +832,20 @@ class Lostfilm:
                 serial_id = data[0]
                 se_code = '{}001999'.format(data[2])
             except:
-                data_print(se_code)
-                data_print(data)
                 label = '[COLOR=red][B]{}[/B][/COLOR]'.format(serial_id)
                 self.create_line(title=label, params={})
                 continue
 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
-            
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+
+            self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
             
             label = self.create_title(serial_id=serial_id, serial_title=data[1])
             self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={
                 'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
-        self.progress.close()
+        self.progress_bg.close()
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
@@ -897,8 +879,8 @@ class Lostfilm:
                 self.params={'mode': 'select_part', 'param': '{}001999'.format(image_id), 'id': self.params['id']}
                 self.exec_select_part_fast()
                 return
-            
-            self.progress.create('LostFilm', 'Инициализация')
+
+            self.progress_bg.create('LostFilm', 'Инициализация')
     
             i = 0
             
@@ -912,10 +894,8 @@ class Lostfilm:
 
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
-                
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+
+                self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                 if 'PlayEpisode(' in data:
                     label = u'[B]{}[/B]'.format(title)
@@ -925,8 +905,8 @@ class Lostfilm:
                     label = u'[COLOR=dimgray][B]{}[/B][/COLOR]'.format(title)
                     self.create_line(title=label, params={
                         'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
-                                        
-            self.progress.close()
+
+            self.progress_bg.close()
             
         if self.params['param']:
             code = self.params['param']
@@ -939,15 +919,19 @@ class Lostfilm:
             if not html:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return    
+                return
+            
+            atl_names = bool(addon.getSetting('use_atl_names') == 'true')
 
             try:
                 post = 'act=serial&type=getmarks&id={}'.format(image_id)
                 watched_data = self.network.get_html('{}ajaxik.php'.format(self.site_url), post)
             except:
                 watched_data = []
-            
-            self.progress.create('LostFilm', 'Инициализация')
+
+            self.progress_bg.create('LostFilm', 'Инициализация')
+
+            serial_title = html[html.find('ativeHeadline">')+15:html.find('</h2>')]
             
             data_array = html[html.find('<div class="have'):html.rfind('holder"></td>')]
             data_array = data_array.split('<td class="alpha">')
@@ -969,20 +953,21 @@ class Lostfilm:
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
                 
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                 
                 if 'data-code=' in data:
                     label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
+                    if atl_names:
+                        label = u'{}.{}'.format(serial_title, label)                    
+
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
-                        'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
+                                     'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
                 else:
-                    label = '[COLOR=dimgray]SE{:>02}EP{:02} | {}[/COLOR]'.format(
+                    label = '[COLOR=dimgray]S{:>02}E{:02} | {}[/COLOR]'.format(
                         int(season_id), len(data_array), episode_title)
                     self.create_line(title=label, folder=False, params={})
 
-            self.progress.close()
+            self.progress_bg.close()
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -1003,7 +988,7 @@ class Lostfilm:
         except:
             watched_data = []
 
-        self.progress.create('LostFilm', 'Инициализация')
+        self.progress_bg.create('LostFilm', 'Инициализация')
        
         data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
         data_array = data_array.split('<h2>')
@@ -1040,10 +1025,8 @@ class Lostfilm:
 
                 a = a + 1
                 
-                if self.progress.iscanceled():
-                    break                
-                self.progress.update(p, u'Выполнено: [COLOR=gold]{}%[/COLOR] | [COLOR=lime]Сезон:[/COLOR] {} из {} | [COLOR=blue]Серия:[/COLOR] {} из {} '.format(
-                        p, i, len(data_array), a, len(data)))
+                self.progress_bg.update(p, u'[COLOR=lime]Сезон:[/COLOR] {} из {} | [COLOR=blue]Серия:[/COLOR] {} из {} '.format(
+                    i, len(data_array), a, len(data)))
                 
                 if 'data-code=' in d:
                     label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
@@ -1052,8 +1035,8 @@ class Lostfilm:
                 else:
                     label = u'[COLOR=dimgray]{}[/COLOR]'.format(episode_title)
                     self.create_line(title=label, folder=False, params={})
-                     
-        self.progress.close()
+
+        self.progress_bg.close()
             
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
