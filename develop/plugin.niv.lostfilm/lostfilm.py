@@ -907,7 +907,7 @@ class Lostfilm:
                         'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
 
             self.progress_bg.close()
-            
+
         if self.params['param']:
             code = self.params['param']
             image_id = code[:len(code)-6]
@@ -931,6 +931,14 @@ class Lostfilm:
 
             self.progress_bg.create('LostFilm', 'Инициализация')
 
+            season_label = html[html.find('<h2>')+4:html.rfind('</h2>')]
+
+            if '999999' in self.params['param']:
+                pass
+            else:
+                self.create_line(title=u'[B]{}[/B]'.format(season_label), params={
+                    'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
+            
             serial_title = html[html.find('ativeHeadline">')+15:html.find('</h2>')]
             
             data_array = html[html.find('<div class="have'):html.rfind('holder"></td>')]
@@ -947,7 +955,9 @@ class Lostfilm:
                     episode_title = episode_title[episode_title.find('">')+2:episode_title.find('<br>')].strip()        
                 if '<br />' in episode_title:
                     episode_title = episode_title[episode_title.find('<div>')+5:episode_title.find('<br />')].strip()
-        
+                if not episode_title:
+                    continue
+                
                 is_watched = True if se_code in watched_data else False
 
                 i = i + 1
@@ -997,14 +1007,22 @@ class Lostfilm:
         
         for data in data_array:
             title = data[:data.find('</h2>')]
-
-            i = i + 1
-            p = int((float(i) / len(data_array)) * 100)
             
-            if 'PlayEpisode(' in data:
-                self.create_line(title=u'[B]{}[/B]'.format(title), params={})
+            if 'season_series_' in data:
+                season_code = data[data.find('season_series_')+14:]
+                season_code = season_code[:season_code.find('">')]
+                
+                if '999999' in season_code:
+                    self.create_line(title=u'[B]{}[/B]'.format(title), params={'mode': self.params['mode'], 'id': self.params['id']})
+                else:
+                    self.create_line(title=u'[B]{}[/B]'.format(title), params={
+                        'mode': 'torrent_part', 'code': season_code, 'id': self.params['id']})
             else:
                 self.create_line(title=u'[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title), params={})
+                continue
+                
+            i = i + 1
+            p = int((float(i) / len(data_array)) * 100)
 
             data = data[data.find('<div class="have'):]
             data = data.split('<td class="alpha">')
@@ -1020,7 +1038,9 @@ class Lostfilm:
                     episode_title = episode_title[episode_title.find('">')+2:episode_title.find('<br>')].strip()        
                 if '<br />' in episode_title:
                     episode_title = episode_title[episode_title.find('<div>')+5:episode_title.find('<br />')].strip()
-            
+                if not episode_title:
+                    continue
+
                 is_watched = True if se_code in watched_data else False
 
                 a = a + 1
@@ -1038,6 +1058,99 @@ class Lostfilm:
 
         self.progress_bg.close()
             
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+#========================#========================#========================#
+    def exec_torrent_part(self):
+        if not self.params['param']:
+            se_code = self.params['code']
+            serial_episode = int(se_code[len(se_code)-3:len(se_code)])
+            serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+            image_id = int(se_code[:len(se_code)-6])
+
+            if serial_episode == 999 and serial_season == 999:
+                pass
+
+            url = '{}v_search.php?c={}&s={}&e={}'.format(
+                self.site_url, image_id, serial_season, serial_episode)
+
+            html = self.network.get_html(target_name=url)
+                
+            new_url = html[html.find('url=http')+4:html.find('&newbie=')]
+            html = self.network.get_html(new_url)
+
+            data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
+            data_array = data_array.split('<div class="inner-box--label">')
+
+            quality = {'FHD': '', 'HD': '', 'SD': ''}
+                        
+            for data in data_array:
+                quality_data = data[:data.find('</div>')].strip()
+                    
+                torrent_url = data[data.find('<a href="')+9:]
+                        
+                if 'SD' in quality_data:
+                    quality['SD'] = torrent_url[:torrent_url.find('">')]
+                if 'MP4' in quality_data:
+                    quality['HD'] = torrent_url[:torrent_url.find('">')]
+                if '1080' in quality_data:
+                    quality['FHD'] = torrent_url[:torrent_url.find('">')]
+
+            url = quality[addon.getSetting('quality')]
+                
+            current_quality = addon.getSetting('quality')
+            if not url:
+                choice = []
+                for i in quality.keys():
+                    if quality[i]:
+                        choice.append(i)
+
+                result = self.dialog.select('Доступное качество: ', choice)
+                url = quality[choice[int(result)]]
+                current_quality = choice[int(result)]
+
+            file_name = '{}_{}_{}'.format(
+                self.params['id'], self.params['code'], current_quality)        
+            full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+
+            torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
+                
+            import bencode
+                
+            with open(torrent_file, 'rb') as read_file:
+                torrent_data = read_file.read()
+
+            torrent = bencode.bdecode(torrent_data)
+
+            valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
+            
+            if 'files' in torrent['info']:
+                
+                series = {}
+                    
+                for i, x in enumerate(torrent['info']['files']):
+                    extension = x['path'][-1][x['path'][-1].rfind('.'):]
+                        
+                    if extension in valid_media:
+                        series[i] = x['path'][-1]
+
+                for i in sorted(series, key=series.get):
+                    self.create_line(title=series[i], serial_id=self.params['id'], se_code=se_code, folder=False, params={
+                        'mode': 'torrent_part', 'id': file_name, 'param': i})
+            else:
+                self.create_line(title=torrent['info']['name'], serial_id=self.params['id'], se_code=se_code, folder=False, params={
+                    'mode': 'torrent_part', 'param': 0, 'id': file_name,})
+                
+        if self.params['param']:
+            torrent_file = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
+
+            import player
+            confirm = player.selector(
+                torrent_index=self.params['param'],
+                torrent_url=torrent_file,
+                download_dir=addon_data_dir,
+                real_index = self.params['param']
+                )
+
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_play_part(self):
