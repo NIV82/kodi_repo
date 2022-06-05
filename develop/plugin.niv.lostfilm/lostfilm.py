@@ -860,6 +860,8 @@ class Lostfilm:
             self.exec_select_part_slow()
 #========================#========================#========================#
     def exec_select_part_fast(self):
+        atl_names = bool(addon.getSetting('use_atl_names') == 'true')
+        
         if not self.params['param']:
             url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
             html = self.network.get_html(target_name=url)
@@ -875,7 +877,9 @@ class Lostfilm:
             data_array = data_array.split('<h2>')
 
             if len(data_array) < 2:
+###=================================== проверить и доделать
                 data = data_array[0]
+###===================================
                 self.params={'mode': 'select_part', 'param': '{}001999'.format(image_id), 'id': self.params['id']}
                 self.exec_select_part_fast()
                 return
@@ -902,9 +906,10 @@ class Lostfilm:
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code ,params={
                         'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
                 else:
-                    label = u'[COLOR=dimgray][B]{}[/B][/COLOR]'.format(title)
-                    self.create_line(title=label, params={
-                        'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
+                    if not atl_names:
+                        label = u'[COLOR=dimgray][B]{}[/B][/COLOR]'.format(title)
+                        self.create_line(title=label, params={
+                            'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
 
             self.progress_bg.close()
 
@@ -920,8 +925,6 @@ class Lostfilm:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
-            
-            atl_names = bool(addon.getSetting('use_atl_names') == 'true')
 
             try:
                 post = 'act=serial&type=getmarks&id={}'.format(image_id)
@@ -930,14 +933,15 @@ class Lostfilm:
                 watched_data = []
 
             self.progress_bg.create('LostFilm', 'Инициализация')
+            
+            if not atl_names:
+                season_label = html[html.find('<h2>')+4:html.rfind('</h2>')]
 
-            season_label = html[html.find('<h2>')+4:html.rfind('</h2>')]
-
-            if '999999' in self.params['param']:
-                pass
-            else:
-                self.create_line(title=u'[B]{}[/B]'.format(season_label), params={
-                    'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
+                if '999999' in self.params['param']:
+                    pass
+                else:
+                    self.create_line(title=u'[B]{}[/B]'.format(season_label), params={
+                        'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
             
             serial_title = html[html.find('ativeHeadline">')+15:html.find('</h2>')]
             
@@ -973,9 +977,10 @@ class Lostfilm:
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
                                      'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
                 else:
-                    label = '[COLOR=dimgray]S{:>02}E{:02} | {}[/COLOR]'.format(
-                        int(season_id), len(data_array), episode_title)
-                    self.create_line(title=label, folder=False, params={})
+                    if not atl_names:
+                        label = '[COLOR=dimgray]S{:>02}E{:02} | {}[/COLOR]'.format(
+                            int(season_id), len(data_array), episode_title)
+                        self.create_line(title=label, folder=False, params={})
 
             self.progress_bg.close()
 
@@ -1066,10 +1071,10 @@ class Lostfilm:
             serial_episode = int(se_code[len(se_code)-3:len(se_code)])
             serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
             image_id = int(se_code[:len(se_code)-6])
-
+###========================== проверить , доделать
             if serial_episode == 999 and serial_season == 999:
                 pass
-
+###========================== 
             url = '{}v_search.php?c={}&s={}&e={}'.format(
                 self.site_url, image_id, serial_season, serial_episode)
 
