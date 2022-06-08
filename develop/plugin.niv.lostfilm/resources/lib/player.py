@@ -260,48 +260,6 @@ def rt(s):
     
     return s
 
-
-# def media(t):
-#     L = ['.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts']
-#     for i in L:
-#         if i in t.lower():
-#             return True
-#     return False
-
-# def clean_series(series_list):
-#     valid_series = []
-    
-#     for series in series_list:
-#         if media(series[0]):
-#             valid_series.append(series)
-
-#     return valid_series
-
-# def get_index(torrent_file, index):
-#     with open(torrent_file, 'rb') as read_file:
-#         torrent_data = read_file.read()
-    
-#     import bencode
-#     torrent = bencode.bdecode(torrent_data)
-
-#     series_sorted = []
-
-#     if 'files' in torrent['info']:
-#         x = 0
-
-#         for i in torrent['info']['files']:
-#             series_sorted.append([i['path'][-1],x])
-#             x = x + 1
-
-#         series_sorted.sort()
-#         series_sorted = clean_series(series_sorted)
-
-#         new_index = series_sorted[index][1]
-        
-#         return new_index
-#     else:
-#         return 0
-
 def get_index(torrent_file, index):
     valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
     

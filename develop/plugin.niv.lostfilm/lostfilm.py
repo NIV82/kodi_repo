@@ -26,7 +26,7 @@ else:
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape
 
-from utility import clean_list, clean_tags, fs_dec, fs_enc
+from utility import clean_tags, fs_enc
 
 addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
 
@@ -209,7 +209,11 @@ class Lostfilm:
             
         return label
 #========================#========================#========================#
-    def create_context(self, serial_id=None, se_code=None):
+    def create_context(self, serial_id='', se_code=''):
+        serial_episode = se_code[len(se_code)-3:len(se_code)]
+        #serial_season = se_code[len(se_code)-6:len(se_code)-3]
+        serial_image = se_code[:len(se_code)-6]
+
         context_menu = []
         
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
@@ -221,19 +225,20 @@ class Lostfilm:
         if serial_id:
             context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(serial_id)))
 
-        if se_code:
+        if se_code and not '999' in serial_episode:
+            context_menu.append(('[COLOR=yellow]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
             context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
-        
-        #context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
+
+        context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         #context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=play")'))
         #context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=bugs")'))
 
         return context_menu
 #========================#========================#========================#
-    def create_line(self, title, serial_id=None, se_code=None, watched=False, params=None, folder=True):
+    def create_line(self, title, serial_id='', se_code='', watched=False, params=None, folder=True):
         li = xbmcgui.ListItem(title)
 
         if serial_id and se_code:
@@ -468,13 +473,13 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        from info import lostfilm_data as info
-            
-        start = '[{}]'.format(self.params['param'])
-        end = '[/{}]'.format(self.params['param'])
-        data = info[info.find(start)+6:info.find(end)].strip()
-
-        self.dialog.textviewer('Информация', data)
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.2[/COLOR][/B]\n\
+        - Добавлен переход в раздел Сериала через контекстное меню\n\
+        - Добавлен просмотр Новостей Обновлений через контекстное меню\n\
+        \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
+        - Исправления инфо-парсера (кушает последний символ в жанрах)\n\
+        - Модификация перехода в базовый торрент файл'
+        self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
     def exec_main_part(self):

@@ -16,19 +16,6 @@ def clean_tags(data, tag_start='<', tag_end='>'):
         end = data.find(tag_end)
     return data
 
-def data_encode(data):
-    data = data.encode('utf-8')
-    data = base64.b64encode(data)
-    data = data.decode('utf-8')
-    return data
-
-def data_decode(data):
-    data = data.encode('utf-8')
-    data = base64.b64decode(data)
-    data = data.decode('utf-8')
-    data = data.split('|')
-    return data
-
 # def fs_dec(path):
 #     sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
 #     return path.decode(sys_enc).encode('utf-8')
