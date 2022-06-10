@@ -210,6 +210,7 @@ class Lostfilm:
         return label
 #========================#========================#========================#
     def create_context(self, serial_id='', se_code=''):
+        #params={'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
         serial_episode = se_code[len(se_code)-3:len(se_code)]
         #serial_season = se_code[len(se_code)-6:len(se_code)-3]
         serial_image = se_code[:len(se_code)-6]
@@ -226,7 +227,8 @@ class Lostfilm:
             context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(serial_id)))
 
         if se_code and not '999' in serial_episode:
-            context_menu.append(('[COLOR=yellow]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
+            context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
+            context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
             context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
@@ -326,10 +328,13 @@ class Lostfilm:
                 info['studios'] = data[:data.find('</a>')]
                 info['country'] = data[data.find('(')+1:data.find(')')]
             if 'prop="genre' in data:
-                data = data[data.find('<a href="'):].split(',')
-                data = [d[d.find('">')+2:d.find('</a>')] for d in data]
-                info['genres'] = ','.join(data)
-
+                genre = []
+                data = data[data.find('<a href="'):].split('</a>')
+                for d in data:
+                    d = d[d.find('">')+2:].strip()
+                    genre.append(d)
+                info['genres'] = ', '.join(genre)
+                
         try:
             self.database.add_serial(
                 serial_id=serial_id,
@@ -473,11 +478,9 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.2[/COLOR][/B]\n\
-        - Добавлен переход в раздел Сериала через контекстное меню\n\
-        - Добавлен просмотр Новостей Обновлений через контекстное меню\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.3[/COLOR][/B]\n\
+        - Исправлена ошибка с жанрами в инфо-парсере\n\
         \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
-        - Исправления инфо-парсера (кушает последний символ в жанрах)\n\
         - Модификация перехода в базовый торрент файл'
         self.dialog.textviewer('Информация', lostfilm_data)
         return
@@ -864,7 +867,7 @@ class Lostfilm:
         if '1' in addon.getSetting('parser_mode'):
             self.exec_select_part_slow()
 #========================#========================#========================#
-    def exec_select_part_fast(self):
+    def exec_select_part_fast(self, data_string=''):
         atl_names = bool(addon.getSetting('use_atl_names') == 'true')
         
         if not self.params['param']:
@@ -878,15 +881,13 @@ class Lostfilm:
 
             image_id = self.params['code'][:len(self.params['code'])-6]
 
-            data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')]
+            # data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')+29]
+            data_array = html[html.find('<h2>')+4:html.rfind('holder"></td>')+13]
             data_array = data_array.split('<h2>')
 
             if len(data_array) < 2:
-###=================================== проверить и доделать
-                data = data_array[0]
-###===================================
                 self.params={'mode': 'select_part', 'param': '{}001999'.format(image_id), 'id': self.params['id']}
-                self.exec_select_part_fast()
+                self.exec_select_part_fast(data_string=data_array[0])
                 return
 
             self.progress_bg.create('LostFilm', 'Инициализация')
@@ -918,13 +919,17 @@ class Lostfilm:
 
             self.progress_bg.close()
 
-        if self.params['param']:
+        if self.params['param']:                
             code = self.params['param']
             image_id = code[:len(code)-6]
             season_id = code[len(code)-6:len(code)-3]
             
-            url = '{}series/{}/season_{}'.format(self.site_url, self.params['id'], int(season_id))
-            html = self.network.get_html(target_name=url)
+            if data_string:
+                html = data_string
+            else:
+                url = '{}series/{}/season_{}'.format(self.site_url, self.params['id'], int(season_id))
+                html = self.network.get_html(target_name=url)
+                
 
             if not html:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -939,15 +944,14 @@ class Lostfilm:
 
             self.progress_bg.create('LostFilm', 'Инициализация')
             
-            if not atl_names:
-                season_label = html[html.find('<h2>')+4:html.rfind('</h2>')]
+            # if not atl_names:
+            #     season_label = html[html.find('<h2>')+4:html.rfind('</h2>')]
 
-                if '999999' in self.params['param']:
-                    pass
-                else:
-                    self.create_line(title=u'[B]{}[/B]'.format(season_label), params={
-                        'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
-            
+            #     if '999999' in self.params['param']:
+            #         pass
+            #     else:
+            #         self.create_line(title=u'[B]{}[/B]'.format(season_label), params={
+            #             'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
             serial_title = html[html.find('ativeHeadline">')+15:html.find('</h2>')]
             
             data_array = html[html.find('<div class="have'):html.rfind('holder"></td>')]
@@ -958,7 +962,7 @@ class Lostfilm:
             for data in data_array:
                 se_code = data[data.find('episode="')+9:]
                 se_code = se_code[:se_code.find('"')]
-                
+
                 episode_title = data[data.find('<td class="gamma'):data.find('<td class="delta"')]
                 if '<br>' in episode_title:
                     episode_title = episode_title[episode_title.find('">')+2:episode_title.find('<br>')].strip()        
