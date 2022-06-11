@@ -46,10 +46,6 @@ class Lostfilm:
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
 
-        self.images_dir = os.path.join(addon_data_dir, 'images')
-        if not os.path.exists(self.images_dir):
-            os.mkdir(self.images_dir)
-
         self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
         if not os.path.exists(self.torrents_dir):
             os.mkdir(self.torrents_dir)
@@ -210,9 +206,7 @@ class Lostfilm:
         return label
 #========================#========================#========================#
     def create_context(self, serial_id='', se_code=''):
-        #params={'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
         serial_episode = se_code[len(se_code)-3:len(se_code)]
-        #serial_season = se_code[len(se_code)-6:len(se_code)-3]
         serial_image = se_code[:len(se_code)-6]
 
         context_menu = []
@@ -233,11 +227,8 @@ class Lostfilm:
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
-
+        
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
-        #context_menu.append(('[COLOR=lime]Настройки воспроизведения[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=play")'))
-        #context_menu.append(('[COLOR=lime]Описание ошибок плагина[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=bugs")'))
-
         return context_menu
 #========================#========================#========================#
     def create_line(self, title, serial_id='', se_code='', watched=False, params=None, folder=True):
@@ -250,12 +241,9 @@ class Lostfilm:
 
             se_info = self.database.get_serial(serial_id)
 
-            #year = int(se_info[0][0:4]) if se_info[0] else 9999
-
             info = {
                 'genre':se_info[1],
                 'country':se_info[3],
-                #'year': year,
                 'year': se_info[0][0:4],
                 'plot':se_info[4],
                 'title':title,
@@ -264,7 +252,7 @@ class Lostfilm:
                 'premiered':se_info[0],
                 'aired':se_info[0]
             }
-            
+
             if self.database.cast_in_db(serial_id):
                 cast = self.database.get_cast(serial_id)
                 if cast['actors']:
@@ -305,7 +293,10 @@ class Lostfilm:
         info = dict.fromkeys(['title_ru', 'aired_on', 'genres', 'studios', 'country', 'description', 'image_id'], '')
                     
         info['image_id'] = html[html.find('/Images/')+8:html.find('/Posters/')]
+        
         info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
+        info['title_ru'] = info['title_ru'].replace('/', '-')
+        
 
         description = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
         if u'Сюжет</strong><br />' in description:
@@ -437,7 +428,7 @@ class Lostfilm:
                     percent = bytes_read * 100 / file_size
                     self.progress_bg.update(int(percent), 'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
             self.progress_bg.close()
-            #self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=icon,time=3000,sound=False)
+            self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=icon,time=3000,sound=False)
         except:
             self.dialog.notification(heading='База Данных',message='ОШИБКА',icon=icon,time=3000,sound=False)
             pass
@@ -478,10 +469,13 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.3[/COLOR][/B]\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.4[/COLOR][/B]\n\
         - Исправлена ошибка с жанрами в инфо-парсере\n\
+        - Переход в торрент файл теперь в контекстном меню\n\
+        - Модификация обработки односезонных сериалов\n\
         \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
-        - Модификация перехода в базовый торрент файл'
+        - Мелкие исправления, оптимизация'
+
         self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
@@ -775,7 +769,7 @@ class Lostfilm:
                 post = 'act=serial&type=search&o={}&s=2&t=99'.format(self.params['node'])
 
             html = self.network.get_html('{}ajaxik.php'.format(self.site_url), post)
-
+            data_print(html)
             if not html:
                 self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -881,7 +875,6 @@ class Lostfilm:
 
             image_id = self.params['code'][:len(self.params['code'])-6]
 
-            # data_array = html[html.find('<h2>')+4:html.rfind('<td class="placeholder"></td>')+29]
             data_array = html[html.find('<h2>')+4:html.rfind('holder"></td>')+13]
             data_array = data_array.split('<h2>')
 
@@ -944,14 +937,6 @@ class Lostfilm:
 
             self.progress_bg.create('LostFilm', 'Инициализация')
             
-            # if not atl_names:
-            #     season_label = html[html.find('<h2>')+4:html.rfind('</h2>')]
-
-            #     if '999999' in self.params['param']:
-            #         pass
-            #     else:
-            #         self.create_line(title=u'[B]{}[/B]'.format(season_label), params={
-            #             'mode': 'torrent_part', 'code': self.params['param'], 'id': self.params['id']})
             serial_title = html[html.find('ativeHeadline">')+15:html.find('</h2>')]
             
             data_array = html[html.find('<div class="have'):html.rfind('holder"></td>')]
@@ -1023,17 +1008,9 @@ class Lostfilm:
             title = data[:data.find('</h2>')]
             
             if 'season_series_' in data:
-                season_code = data[data.find('season_series_')+14:]
-                season_code = season_code[:season_code.find('">')]
-                
-                if '999999' in season_code:
-                    self.create_line(title=u'[B]{}[/B]'.format(title), params={'mode': self.params['mode'], 'id': self.params['id']})
-                else:
-                    self.create_line(title=u'[B]{}[/B]'.format(title), params={
-                        'mode': 'torrent_part', 'code': season_code, 'id': self.params['id']})
+                self.create_line(title=u'[B]{}[/B]'.format(title), params={})
             else:
                 self.create_line(title=u'[B][COLOR=dimgray]{}[/COLOR][/B]'.format(title), params={})
-                continue
                 
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)

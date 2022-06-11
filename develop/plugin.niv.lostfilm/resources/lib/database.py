@@ -27,7 +27,7 @@ class DataBase:
             self.cu.execute('CREATE UNIQUE INDEX i_c ON cast_db (serial_id)')
             self.c.commit()
 
-    def add_serial(self, serial_id, title_ru='', title_en='', aired_on='99.99.9999', genres='', studios='', country='', description='', image_id='', update=False):
+    def add_serial(self, serial_id, title_ru='', title_en='', aired_on='9999.01.01', genres='', studios='', country='', description='', image_id='', update=False):
         if not update:
             self.cu.execute('INSERT INTO serials_db (serial_id, title_ru, title_en, aired_on, genres, studios, country, description, image_id) VALUES (?,?,?,?,?,?,?,?,?)',
                             (serial_id, title_ru, title_en, aired_on, genres, studios, country, description, image_id))
