@@ -61,7 +61,7 @@ class Lostfilm:
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
     
-        self.params = {'mode': 'main_part','param': '','page': '1','node': '0', 'code':''}
+        self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'code': ''}
 
         args = parse_qs(sys.argv[2][1:])
         for a in args:
@@ -469,7 +469,9 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.4[/COLOR][/B]\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.5[/COLOR][/B]\n\
+        - мелкие доработки, оптимизация\n\
+        \n[B][COLOR=darkorange]Version 0.7.4[/COLOR][/B]\n\
         - Исправлена ошибка с жанрами в инфо-парсере\n\
         - Переход в торрент файл теперь в контекстном меню\n\
         - Модификация обработки односезонных сериалов\n\
@@ -707,6 +709,9 @@ class Lostfilm:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_catalog_part(self):
+        if self.params['page'] == '1':
+            self.params['page'] = '0'
+        
         from info import genre, year, channel, types, status, sort
         
         if self.params['param'] == '':
@@ -760,16 +765,16 @@ class Lostfilm:
                 lostfilm_types = '&r={}'.format(types[addon.getSetting('types')]) if types[addon.getSetting('types')] else ''
                 lostfilm_sort = sort[addon.getSetting('sort')]
                 lostfilm_status = status[addon.getSetting('status')]
-                lostfilm_page = self.params['node']
+                lostfilm_page = self.params['page']
                 
                 post = 'act=serial&type=search&o={}{}{}{}{}&s={}&t={}'.format(
                     lostfilm_page,lostfilm_genre,lostfilm_year,lostfilm_channel,lostfilm_types,lostfilm_sort,lostfilm_status)
             
             if 'favorites' in self.params['param']:
-                post = 'act=serial&type=search&o={}&s=2&t=99'.format(self.params['node'])
+                post = 'act=serial&type=search&o={}&s=2&t=99'.format(self.params['page'])
 
             html = self.network.get_html('{}ajaxik.php'.format(self.site_url), post)
-            data_print(html)
+            
             if not html:
                 self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -814,10 +819,10 @@ class Lostfilm:
 
             self.progress_bg.close()
 
-            if len(data_array) >= 10:
-                page_count = (int(self.params['node']) / 10) + 1
-                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(page_count), int(page_count)+1)                
-                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'node': (int(self.params['node']) + 10)})
+            if len(data_array) >= 10:                    
+                page_count = (int(self.params['page']) / 10) + 1
+                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(page_count), int(page_count)+1)
+                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 10)})
                 
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -1057,10 +1062,7 @@ class Lostfilm:
             serial_episode = int(se_code[len(se_code)-3:len(se_code)])
             serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
             image_id = int(se_code[:len(se_code)-6])
-###========================== проверить , доделать
-            if serial_episode == 999 and serial_season == 999:
-                pass
-###========================== 
+
             url = '{}v_search.php?c={}&s={}&e={}'.format(
                 self.site_url, image_id, serial_season, serial_episode)
 
