@@ -471,12 +471,14 @@ class Lostfilm:
     def exec_information_part(self):
         lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.5[/COLOR][/B]\n\
         - мелкие доработки, оптимизация\n\
+        - исправление ошибки названий в режиме add to lib\n\
         \n[B][COLOR=darkorange]Version 0.7.4[/COLOR][/B]\n\
         - Исправлена ошибка с жанрами в инфо-парсере\n\
         - Переход в торрент файл теперь в контекстном меню\n\
         - Модификация обработки односезонных сериалов\n\
         \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
-        - Мелкие исправления, оптимизация'
+        - Мелкие исправления, оптимизация\n\
+        - Просмотр файлов из папки плагина с торрентами'
 
         self.dialog.textviewer('Информация', lostfilm_data)
         return
@@ -885,7 +887,7 @@ class Lostfilm:
 
             if len(data_array) < 2:
                 self.params={'mode': 'select_part', 'param': '{}001999'.format(image_id), 'id': self.params['id']}
-                self.exec_select_part_fast(data_string=data_array[0])
+                self.exec_select_part_fast(data_string=html)
                 return
 
             self.progress_bg.create('LostFilm', 'Инициализация')
@@ -927,7 +929,6 @@ class Lostfilm:
             else:
                 url = '{}series/{}/season_{}'.format(self.site_url, self.params['id'], int(season_id))
                 html = self.network.get_html(target_name=url)
-                
 
             if not html:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
