@@ -135,7 +135,8 @@ class Lostfilm:
             'Новинки':'new_color',
             'Все сериалы':'serials_color',
             'Каталог Сериалов':'catalog_color',
-            'Поиск по названию':'search_name_color'
+            'Поиск по названию':'search_name_color',
+            'Архив Торрентов': 'archive_color'
             }
         
         color_id = {'0':'none','1':'red','2':'lime','3':'blue','4':'gold','5':'orange'}
@@ -469,13 +470,10 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.5[/COLOR][/B]\n\
-        - мелкие доработки, оптимизация\n\
-        - исправление ошибки названий в режиме add to lib\n\
-        \n[B][COLOR=darkorange]Version 0.7.4[/COLOR][/B]\n\
-        - Исправлена ошибка с жанрами в инфо-парсере\n\
-        - Переход в торрент файл теперь в контекстном меню\n\
-        - Модификация обработки односезонных сериалов\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.7[/COLOR][/B]\n\
+        - T2HTTP теперь доступен только через ТАМ\n\
+        - исправление получения ссылок HD качества на старых торрентах\n\
+        - добавлен Архив торрентов (пока без функционала, просто просмотр)\n\
         \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
         - Мелкие исправления, оптимизация\n\
         - Просмотр файлов из папки плагина с торрентами'
@@ -490,6 +488,7 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Новинки'), params={'mode': 'common_part', 'param':'new/'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог Сериалов'), params={'mode': 'catalog_part'})
+        self.create_line(title=self.create_colorize('Архив Торрентов'), params={'mode': 'archive_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
@@ -1084,6 +1083,8 @@ class Lostfilm:
                         
                 if 'SD' in quality_data:
                     quality['SD'] = torrent_url[:torrent_url.find('">')]
+                if 'HD' in quality_data:
+                    quality['HD'] = torrent_url[:torrent_url.find('">')]
                 if 'MP4' in quality_data:
                     quality['HD'] = torrent_url[:torrent_url.find('">')]
                 if '1080' in quality_data:
@@ -1102,9 +1103,10 @@ class Lostfilm:
                 url = quality[choice[int(result)]]
                 current_quality = choice[int(result)]
 
-            file_name = '{}_{}_{}'.format(
-                self.params['id'], self.params['code'], current_quality)        
-            full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+            #file_name = '{}_{}_{}'.format(self.params['id'], self.params['code'], current_quality)
+            #full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
+            file_name = '{}_{}_{}.torrent'.format(self.params['id'], self.params['code'], current_quality)
+            full_name = os.path.join(self.torrents_dir, file_name)
 
             torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
                 
@@ -1127,7 +1129,7 @@ class Lostfilm:
                     if extension in valid_media:
                         series[i] = x['path'][-1]
 
-                for i in sorted(series, key=series.get):
+                for i in sorted(series, key=series.get):                    
                     self.create_line(title=series[i], serial_id=self.params['id'], se_code=se_code, folder=False, params={
                         'mode': 'torrent_part', 'id': file_name, 'param': i})
             else:
@@ -1135,15 +1137,52 @@ class Lostfilm:
                     'mode': 'torrent_part', 'param': 0, 'id': file_name,})
                 
         if self.params['param']:
-            torrent_file = os.path.join(self.torrents_dir, '{}.torrent'.format(self.params['id']))
+            torrent_file = os.path.join(self.torrents_dir, self.params['id'])
 
             import player
-            confirm = player.selector(
-                torrent_index=self.params['param'],
-                torrent_url=torrent_file,
-                download_dir=addon_data_dir,
-                real_index = self.params['param']
-                )
+            confirm = player.selector(torrent_url=torrent_file, torrent_index = self.params['param'])
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+#========================#========================#========================#
+    def exec_archive_part(self):
+        if not self.params['param']:
+            data_array = os.listdir(self.torrents_dir)
+            for data in data_array:
+                serial_data = data[:data.rfind('_')]                
+                serial_id = serial_data[:serial_data.rfind('_')]
+                se_code = serial_data[serial_data.rfind('_')+1:]
+
+                self.create_line(title=data, serial_id=serial_id, se_code=se_code, params={'mode': 'archive_part', 'param': data, 'code': se_code, 'id': serial_id})
+
+        if self.params['param']:
+            #{'mode': 'archive_part', 'param': 'Babylon_5_81001022_SD.torrent', 'page': '1', 'code': '81001022', 'id': 'Babylon_5'}
+            torrent_file = os.path.join(self.torrents_dir, self.params['param'])
+
+            import bencode
+                
+            with open(torrent_file, 'rb') as read_file:
+                torrent_data = read_file.read()
+
+            torrent = bencode.bdecode(torrent_data)
+
+            valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
+            
+            if 'files' in torrent['info']:
+                
+                series = {}
+                    
+                for i, x in enumerate(torrent['info']['files']):
+                    extension = x['path'][-1][x['path'][-1].rfind('.'):]
+                        
+                    if extension in valid_media:
+                        series[i] = x['path'][-1]
+
+                for i in sorted(series, key=series.get):
+                    self.create_line(title=series[i], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
+                        'mode': 'torrent_part', 'id': self.params['param'], 'param': i})
+            else:
+                self.create_line(title=torrent['info']['name'], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
+                    'mode': 'torrent_part', 'id': self.params['param'], 'param': 0})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -1172,6 +1211,8 @@ class Lostfilm:
                 
             if 'SD' in quality_data:
                 quality['SD'] = torrent_url[:torrent_url.find('">')]
+            if 'HD' in quality_data:
+                quality['HD'] = torrent_url[:torrent_url.find('">')]
             if 'MP4' in quality_data:
                 quality['HD'] = torrent_url[:torrent_url.find('">')]
             if '1080' in quality_data:
@@ -1198,9 +1239,8 @@ class Lostfilm:
 
         import player
         confirm = player.selector(
-            torrent_index=serial_episode,
+            series_index=serial_episode,
             torrent_url=torrent_file,
-            download_dir=addon_data_dir
             )
 
         if confirm:

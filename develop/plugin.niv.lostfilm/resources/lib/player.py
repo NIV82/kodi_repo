@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-### За основу взят код и часть функций из ТАМ (xPlayer, play_t2h и вторичные функции под них)
-### код частично модифицирован
+### основа некоторых фукнций была взята из ТАМ
 
 import xbmc, xbmcgui, xbmcplugin, xbmcvfs, xbmcaddon
 import sys, os
@@ -21,214 +20,6 @@ else:
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
-
-class xPlayer(xbmc.Player):
-    def __init__(self):        
-        self.tsserv = None
-        self.active = True
-        self.started = False
-        self.ended = False
-        self.paused = False
-        self.buffering = False
-        
-        xbmc.Player.__init__(self)
-        width, height = xPlayer.get_skin_resolution()
-        w = width
-        h = int(0.14 * height)
-        x = 0
-        y = int((height - h) / 2)
-        
-        self._ov_window = xbmcgui.Window(12005)
-        self._ov_label = xbmcgui.ControlLabel(x, y, w, h, '', alignment=6)        
-        self._ov_background = xbmcgui.ControlImage(x, y, w, h, fs_dec(xPlayer.get_ov_image()))        
-        self._ov_background.setColorDiffuse('0xD0000000')
-        self.ov_visible = False
-        self.onPlayBackStarted()
-    
-    def onPlayBackPaused(self):
-        self.ov_show()
-        if not xbmc.Player().isPlaying(): xbmc.sleep(2000)
-        status = ''
-        while xbmc.Player().isPlaying():
-            if self.ov_visible == True:
-                try:
-                    if '2' in addon.getSetting('engine'):
-                        status = get_t2h_status()
-                except:
-                    pass
-                self.ov_update(status)
-            xbmc.sleep(800)
-    
-    def onPlayBackStarted(self):
-        self.ov_hide()
-    
-    def onPlayBackResumed(self):
-        self.ov_hide()
-    
-    def onPlayBackStopped(self):
-        self.ov_hide()
-    
-    def __del__(self):
-        self.ov_hide()
-    
-    @staticmethod
-    def get_ov_image():
-        import base64
-        ov_image = os.path.join(addon_data_dir, 'bg.png')
-        if not os.path.isfile(ov_image):            
-            with open(ov_image, 'wb') as write_file:
-                write_file.write(
-                    base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
-                    )                
-        return ov_image
-    
-    @staticmethod
-    def get_skin_resolution():
-        import xml.etree.ElementTree as Et
-        tree = Et.parse(os.path.join(skin_path, 'addon.xml'))
-        res = tree.findall('./extension/res')[0]
-        return int(res.attrib['width']), int(res.attrib['height'])
-    
-    def ov_show(self):
-        if not self.ov_visible:
-            self._ov_window.addControls([self._ov_background, self._ov_label])
-            self.ov_visible = True
-    
-    def ov_hide(self):
-        if self.ov_visible:
-            self._ov_window.removeControls([self._ov_background, self._ov_label])
-            self.ov_visible = False
-    
-    def ov_update(self, txt=" "):
-        if self.ov_visible:
-            self._ov_label.setLabel(txt)
-
-def play_t2h(uri, file_id, preload_size, download_path):
-    from torrent2http import State, Engine, MediaType
-    from contextlib import closing
-    
-    global engine_t2h
-    
-    if sys.version_info.major > 2:
-        monitor = xbmc.Monitor().abortRequested()
-    else:
-        monitor = xbmc.abortRequested
-
-    try:
-        #resume=None
-        
-        progressBar = xbmcgui.DialogProgress()
-        progressBar.create('Torrent2Http', 'Запуск')
-        ready = False
-        pre_buffer_bytes = preload_size*1024*1024
-
-        engine = Engine(uri, download_path=download_path, enable_dht=True, dht_routers=["router.bittorrent.com:6881","router.utorrent.com:6881"], user_agent = 'uTorrent/2200(24683)')
-        engine_t2h = engine
-        with closing(engine):
-            engine.start(file_id)
-            
-            try:
-                progressBar.update(0, 'Torrent2Http', 'Загрузка торрента', "")
-            except:
-                progressBar.update(0, 'Загрузка торрента')
-
-            while not monitor and not ready:
-                xbmc.sleep(500)
-                status = engine.status()
-                engine.check_torrent_error(status)
-                
-                if file_id is None:
-                    if monitor:
-                        break
-                    files = engine.list(media_types=[MediaType.VIDEO])
-                    if files is None:
-                        continue
-                    if not files:
-                        break
-                        progressBar.close()
-                    file_id = files[0].index
-                    file_status = files[0]
-                else:
-                    try:
-                        file_status = engine.file_status(file_id)
-                    except:
-                        file_status = engine.file_status(0)
-                    
-                    if not file_status:
-                        if progressBar.iscanceled():
-                            break
-                        continue
-                    
-                if status.state == State.DOWNLOADING:
-                    if file_status.download >= pre_buffer_bytes:
-                        ready = True
-                        break
-                    getDownloadRate = status.download_rate / 1024 * 8
-                    #getUploadRate = status.upload_rate / 1024 * 8
-                    getSeeds = status.num_seeds
-
-                    if sys.version_info.major > 2:
-                        progressBar.update(
-                            int(100*file_status.download/pre_buffer_bytes),
-                            'Предварительная буферизация: {} MB\nСиды: {}\nСкорость: {:.2f} Mbit/s'.format(
-                                file_status.download/1024/1024, getSeeds, getDownloadRate))
-                    else:
-                        progressBar.update(
-                            100*file_status.download/pre_buffer_bytes,
-                            'Предварительная буферизация: {} MB'.format(file_status.download/1024/1024),
-                            'Сиды: {}'.format(getSeeds),
-                            'Скорость: {:.2f} Mbit/s'.format(getDownloadRate))
-
-                elif status.state in [State.FINISHED, State.SEEDING]:
-                    ready = True
-                    break
-                
-                if progressBar.iscanceled():
-                    progressBar.update(0)
-                    progressBar.close()
-                    break
-            
-            progressBar.update(0)
-            progressBar.close()
-
-            if ready:
-                Player=xPlayer()
-                item = xbmcgui.ListItem(path=file_status.url)
-                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-                xbmc.sleep(3000)
-
-                while not monitor and xbmc.Player().isPlaying():
-                    xbmc.sleep(3000)
-    except:
-        pass
-
-def get_t2h_status():
-    try:
-        from torrent2http import MediaType
-        try:
-            status   = engine_t2h.status()
-            speed    = status.download_rate / 1024 * 8
-            seeds    = status.num_seeds
-        except:
-            speed    = '?????'
-            seeds    = '?'
-        
-        try:
-            tdownload = status.total_download / 1024 / 1024
-        except:
-            tdownload = '???'
-        
-        try:
-            files = engine_t2h.list(media_types=[MediaType.VIDEO])
-            file_id = files[0].index
-            file_status = engine_t2h.file_status(file_id)
-            download = file_status.download / 1024 / 1024
-        except:
-            download = tdownload
-            
-        return 'Загружено {} MB\nСиды: {}\nСкорость: {:.2f} Mbit/s'.format(download, seeds, speed)
-    except:
-        return 'err'
 
 def is_libreelec():
     try:
@@ -261,6 +52,8 @@ def rt(s):
     return s
 
 def get_index(torrent_file, index):
+    data_print(index)
+    
     valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
     
     with open(torrent_file, 'rb') as read_file:
@@ -280,8 +73,10 @@ def get_index(torrent_file, index):
                     continue                
                 series.append([x['path'][-1], i])
                 
-        series.sort()        
+        series.sort()
+
         real_index = series[index][1]
+        data_print(real_index)
     else:
         real_index = 0
     
@@ -308,14 +103,24 @@ def torrent2magnet(torrent_file):
     magneturi = 'magnet:?xt=urn:btih:{}&dn={}{}'.format(infohash, quote(rt(metainfo['info']['name'])),announce)
     
     return magneturi
+ 
+def selector(torrent_url, series_index='', torrent_index=''):
+    if series_index:
+        try:
+            index = int(series_index)
+        except:
+            index = series_index
 
-def selector(torrent_index, torrent_url, download_dir, real_index=''):
-    if real_index:
-        index = real_index
-    else:
-        if int(torrent_index) > 0:
-            torrent_index = int(torrent_index) - 1
-        index = get_index(torrent_url, torrent_index)
+        if index > 0:
+            index = index - 1
+
+        index = get_index(torrent_url, index)
+    
+    if torrent_index:
+        try:
+            index = int(torrent_index)
+        except:
+            index = torrent_index
 
     if '0' in addon.getSetting('engine'):
         try:
@@ -338,16 +143,6 @@ def selector(torrent_index, torrent_url, download_dir, real_index=''):
             return False
 
     if '2' in addon.getSetting('engine'):
-        try:
-            url = 'file:///{}'.format(torrent_url.replace('\\','/'))
-            ddir = addon.getSetting('t2h_ddir') or download_dir
-            buffer = int(addon.getSetting('t2h_preload'))
-            play_t2h(uri=url, file_id=index, preload_size=buffer, download_path=ddir)
-            return True
-        except:
-            return False
-
-    if '3' in addon.getSetting('engine'):
         try:
             url = torrent2magnet(torrent_url)
             import torrserver_player
