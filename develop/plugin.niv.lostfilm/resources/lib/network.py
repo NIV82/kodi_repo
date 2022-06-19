@@ -8,7 +8,7 @@ except:
     from http.cookiejar import MozillaCookieJar
     
 class WebTools:
-    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
+    def __init__(self, auth_usage=True, auth_status=False, proxy_data=None):
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
             #'Accept': '*/*',
@@ -20,7 +20,7 @@ class WebTools:
             'Origin':'https://www.lostfilm.tv/',
             'Referer': 'https://www.lostfilm.tv/'
             }
-        
+
         self.auth_usage = auth_usage
         self.proxy_data = proxy_data
         self.proxy = ProxyHandler(self.proxy_data)
@@ -65,33 +65,32 @@ class WebTools:
         #     return error.code
         except HTTPError:
             return False
-        
-    def get_file(self, target_name, post=None, destination_name=None):
-        if self.auth_usage and not self.authorization():
-            return None
-            
+
+    def get_file(self, target_url, post=None, target_path=None, se_code=None):
         try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-            with open(destination_name, 'wb') as write_file:
+            url = self.url_opener.open(Request(url=target_url, data=post, headers=self.headers))
+            
+            try:
+                info_name = url.headers['content-disposition']
+                file_name = info_name[info_name.find('filename=')+9:]
+                
+                if '"' in file_name[0] and '"' in file_name[len(file_name)-1]:
+                    file_name = file_name[1:len(file_name)-1]
+            except:
+                file_name = 'default.torrent'
+            
+            file_name = '{}000_{}'.format(se_code[:len(se_code)-3], file_name)
+
+            from os.path import join            
+            target_path = join(target_path, file_name)
+            
+            with open(target_path, 'wb') as write_file:
                 write_file.write(url.read())
-            return destination_name
-        except HTTPError as error:
-            return error.code
 
-    def get_bytes(self, target_name, post=None):
-        if self.auth_usage and not self.authorization():
-            return None
-
-        try: post = bytes(post, encoding='utf-8')
-        except: pass
-
-        try:
-            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
-            data = url.read()
-            
-            return data
-        except HTTPError as error:
-            return error.code
+            return file_name
+        
+        except:
+            return False
 
     def authorization(self):
         if not self.auth_usage or self.sid_file == '':

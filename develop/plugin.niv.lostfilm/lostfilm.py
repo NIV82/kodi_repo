@@ -68,6 +68,12 @@ class Lostfilm:
             self.params[a] = unquote(args[a][0])
 
         self.site_url = self.create_site_url()
+        
+        if 'false' in addon.getSetting('clean_old_torrents'):
+            for torrent_file in os.listdir(self.torrents_dir):
+                file_path = os.path.join(self.torrents_dir, torrent_file)
+                os.remove(file_path)
+            addon.setSetting('clean_old_torrents', 'true')
 #========================#========================#========================#
         try: session = float(addon.getSetting('auth_session'))
         except: session = 0
@@ -79,7 +85,7 @@ class Lostfilm:
             addon.setSetting('auth', 'false')
 #========================#========================#========================#
         from network import WebTools
-        self.network = WebTools(auth_usage=True,auth_status=bool(addon.getSetting('auth') == 'true'))        
+        self.network = WebTools(auth_status=bool(addon.getSetting('auth') == 'true'))
         self.network.auth_post_data = 'act=users&type=login&mail={}&pass={}&need_captcha=1&rem=1'.format(
             addon.getSetting('username'), addon.getSetting('password'))
         self.network.auth_url = '{}ajaxik.users.php'.format(self.site_url)
@@ -470,13 +476,15 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.7.7[/COLOR][/B]\n\
-        - T2HTTP теперь доступен только через ТАМ\n\
-        - исправление получения ссылок HD качества на старых торрентах\n\
-        - добавлен Архив торрентов (пока без функционала, просто просмотр)\n\
-        \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
-        - Мелкие исправления, оптимизация\n\
-        - Просмотр файлов из папки плагина с торрентами'
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.8.0[/COLOR][/B]\n\
+    - Мелкие исправления, оптимизация\n\
+    - Переработана система получения качества\n\
+        *Названия как на сайте (1080 и т.д.)\n\
+        *Парсер теперь загребает все существующие виды качества\n\
+    - Торрент файлы теперь сохраняются с Оригинальным названием\n\
+        *Оригинальные названия удобнее для Архива торрентов\n\
+    \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
+    - Мелкие исправления, оптимизация\n'
 
         self.dialog.textviewer('Информация', lostfilm_data)
         return
@@ -1074,42 +1082,33 @@ class Lostfilm:
             data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
             data_array = data_array.split('<div class="inner-box--label">')
 
-            quality = {'FHD': '', 'HD': '', 'SD': ''}
+            quality = {}
                         
             for data in data_array:
                 quality_data = data[:data.find('</div>')].strip()
                     
                 torrent_url = data[data.find('<a href="')+9:]
-                        
-                if 'SD' in quality_data:
-                    quality['SD'] = torrent_url[:torrent_url.find('">')]
-                if 'HD' in quality_data:
-                    quality['HD'] = torrent_url[:torrent_url.find('">')]
-                if 'MP4' in quality_data:
-                    quality['HD'] = torrent_url[:torrent_url.find('">')]
-                if '1080' in quality_data:
-                    quality['FHD'] = torrent_url[:torrent_url.find('">')]
-
-            url = quality[addon.getSetting('quality')]
+                torrent_url = torrent_url[:torrent_url.find('">')]
                 
+                quality[quality_data] = torrent_url
+
             current_quality = addon.getSetting('quality')
+
+            try:
+                url = quality[current_quality]
+            except:
+                url = ''
+
             if not url:
-                choice = []
-                for i in quality.keys():
-                    if quality[i]:
-                        choice.append(i)
-
+                choice = list(quality.keys())
+                        
                 result = self.dialog.select('Доступное качество: ', choice)
-                url = quality[choice[int(result)]]
-                current_quality = choice[int(result)]
+                result_quality = choice[int(result)]
+                url = quality[result_quality]
 
-            #file_name = '{}_{}_{}'.format(self.params['id'], self.params['code'], current_quality)
-            #full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
-            file_name = '{}_{}_{}.torrent'.format(self.params['id'], self.params['code'], current_quality)
-            full_name = os.path.join(self.torrents_dir, file_name)
+            file_name = self.network.get_file(target_url=url, target_path=self.torrents_dir, se_code=se_code)
+            torrent_file = os.path.join(self.torrents_dir, file_name)
 
-            torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
-                
             import bencode
                 
             with open(torrent_file, 'rb') as read_file:
@@ -1119,8 +1118,7 @@ class Lostfilm:
 
             valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
             
-            if 'files' in torrent['info']:
-                
+            if 'files' in torrent['info']:                
                 series = {}
                     
                 for i, x in enumerate(torrent['info']['files']):
@@ -1134,7 +1132,7 @@ class Lostfilm:
                         'mode': 'torrent_part', 'id': file_name, 'param': i})
             else:
                 self.create_line(title=torrent['info']['name'], serial_id=self.params['id'], se_code=se_code, folder=False, params={
-                    'mode': 'torrent_part', 'param': 0, 'id': file_name,})
+                    'mode': 'torrent_part', 'id': file_name, 'param': 0})
                 
         if self.params['param']:
             torrent_file = os.path.join(self.torrents_dir, self.params['id'])
@@ -1147,15 +1145,18 @@ class Lostfilm:
     def exec_archive_part(self):
         if not self.params['param']:
             data_array = os.listdir(self.torrents_dir)
-            for data in data_array:
-                serial_data = data[:data.rfind('_')]                
-                serial_id = serial_data[:serial_data.rfind('_')]
-                se_code = serial_data[serial_data.rfind('_')+1:]
 
-                self.create_line(title=data, serial_id=serial_id, se_code=se_code, params={'mode': 'archive_part', 'param': data, 'code': se_code, 'id': serial_id})
+            for data in data_array:
+                se_code = data[:data.find('_')]
+                file_name = data[data.find('_')+1:].replace('.torrent', '')
+
+                serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+                image_id = int(se_code[:len(se_code)-6])                
+                serial_id = self.database.get_serial_id(image_id)
+                    
+                self.create_line(title=file_name, serial_id=serial_id, se_code=se_code, params={'mode': 'archive_part', 'param': data, 'code': se_code, 'id': serial_id})
 
         if self.params['param']:
-            #{'mode': 'archive_part', 'param': 'Babylon_5_81001022_SD.torrent', 'page': '1', 'code': '81001022', 'id': 'Babylon_5'}
             torrent_file = os.path.join(self.torrents_dir, self.params['param'])
 
             import bencode
@@ -1202,40 +1203,26 @@ class Lostfilm:
         data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
         data_array = data_array.split('<div class="inner-box--label">')
 
-        quality = {'FHD': '', 'HD': '', 'SD': ''}
-                
+        quality = {}
+                        
         for data in data_array:
             quality_data = data[:data.find('</div>')].strip()
-            
+                    
             torrent_url = data[data.find('<a href="')+9:]
+            torrent_url = torrent_url[:torrent_url.find('">')]
                 
-            if 'SD' in quality_data:
-                quality['SD'] = torrent_url[:torrent_url.find('">')]
-            if 'HD' in quality_data:
-                quality['HD'] = torrent_url[:torrent_url.find('">')]
-            if 'MP4' in quality_data:
-                quality['HD'] = torrent_url[:torrent_url.find('">')]
-            if '1080' in quality_data:
-                quality['FHD'] = torrent_url[:torrent_url.find('">')]
+            quality[quality_data] = torrent_url
 
-        url = quality[addon.getSetting('quality')]
-        
-        current_quality = addon.getSetting('quality')
-        if not url:
-            choice = []
-            for i in quality.keys():
-                if quality[i]:
-                    choice.append(i)
-
+        try:
+            url = quality[addon.getSetting('quality')]
+        except:
+            choice = list(quality.keys())
             result = self.dialog.select('Доступное качество: ', choice)
-            url = quality[choice[int(result)]]
-            current_quality = choice[int(result)]
+            result_quality = choice[int(result)]
+            url = quality[result_quality]
 
-        file_name = '{}_{}_{}'.format(
-            self.params['id'], self.params['param'], current_quality)        
-        full_name = os.path.join(self.torrents_dir, '{}.torrent'.format(file_name))
-
-        torrent_file = self.network.get_file(target_name=url, destination_name=full_name)
+        file_name = self.network.get_file(target_url=url, target_path=self.torrents_dir, se_code=se_code)
+        torrent_file = os.path.join(self.torrents_dir, file_name)
 
         import player
         confirm = player.selector(

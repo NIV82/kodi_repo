@@ -51,9 +51,7 @@ def rt(s):
     
     return s
 
-def get_index(torrent_file, index):
-    data_print(index)
-    
+def get_index(torrent_file, index):    
     valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
     
     with open(torrent_file, 'rb') as read_file:
@@ -76,7 +74,6 @@ def get_index(torrent_file, index):
         series.sort()
 
         real_index = series[index][1]
-        data_print(real_index)
     else:
         real_index = 0
     

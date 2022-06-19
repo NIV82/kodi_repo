@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.niv.lostfilm" name="LostFilm" version="0.7.7" provider-name="NIV">
-  <requires>
-    <import addon="script.module.torrent2http" optional="true"/>
-  </requires>
+<addon id="plugin.niv.lostfilm" name="LostFilm" version="0.8.0" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="lostfilm.py">
     <provides>video</provides>
   </extension>
