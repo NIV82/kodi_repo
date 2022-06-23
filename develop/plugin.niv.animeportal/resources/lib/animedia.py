@@ -19,7 +19,7 @@ def data_print(data):
 
 class Animedia:
     def __init__(self, addon_data_dir, params, addon, icon):
-        self.progress = xbmcgui.DialogProgress()
+        self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
 
         self.params = params
@@ -58,13 +58,13 @@ class Animedia:
         if self.auth_mode:
             if not self.addon.getSetting('{}_username'.format(self.params['portal'])) or not self.addon.getSetting('{}_password'.format(self.params['portal'])):
                 self.params['mode'] = 'addon_setting'
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Авторизация',message='ВВЕДИТЕ ЛОГИН И ПАРОЛЬ',icon=self.icon,time=5000,sound=False)
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
+                    self.dialog.notification(heading='Авторизация',message='ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ',icon=self.icon,time=5000,sound=False)
                     return
                 else:
                     self.addon.setSetting('{}_auth'.format(self.params['portal']), str(self.network.auth_status).lower())
@@ -317,7 +317,6 @@ class Animedia:
 #========================#========================#========================#
     def exec_update_anime_part(self):
         self.create_info(anime_id=self.params['id'], update=True)
-        xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_mirror_part(self):
         from network import WebTools
@@ -347,7 +346,7 @@ class Animedia:
             try: file_size = int(data.info().getheaders("Content-Length")[0])
             except: file_size = int(data.getheader('Content-Length'))
 
-            self.progress.create(u'Загрузка Базы Данных')
+            self.progress_bg.create(u'Загрузка Базы Данных')
             with open(db_file, 'wb') as write_file:
                 while True:
                     chunk = data.read(chunk_size)
@@ -356,19 +355,19 @@ class Animedia:
                     if len(chunk) < chunk_size:
                         break
                     percent = bytes_read * 100 / file_size
-                    self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                self.progress.close()
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=lime]УСПЕШНО ЗАГРУЖЕНА[/COLOR]', 5000, self.icon))
+                    self.progress_bg.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+            self.progress_bg.close()
+            self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=self.icon,time=3000,sound=False)
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ERROR: 100[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='База Данных',message='ОШИБКА',icon=self.icon,time=3000,sound=False)
             pass
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=lime]УСПЕШНО ВЫПОЛНЕНО[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='Поиск',message='УСПЕШНО УДАЛЕНО',icon=self.icon,time=5000,sound=False)
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=gold]ERROR: 102[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='База Данных',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
             pass
 #========================#========================#========================#
     def exec_information_part(self):
@@ -422,8 +421,6 @@ class Animedia:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_common_part(self, url=None):
-        self.progress.create('Animedia', u'Инициализация')
-
         html = self.network.get_html(target_name=self.create_url())
 
         if not html:
@@ -436,6 +433,8 @@ class Animedia:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
+        self.progress_bg.create('Animedia', u'Инициализация')
+        
         data_array = html[html.find('<div class="ads-list__item">')+28:html.find('<div class="about-page">')]
         data_array = data_array.split('<div class="ads-list__item">')
 
@@ -459,9 +458,7 @@ class Animedia:
 
             anime_code = data_encode('{}|{}'.format(anime_id, torrent_url))
 
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            self.progress_bg.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
             if not self.database.anime_in_db(anime_id):
                 self.create_info(anime_id)
@@ -469,7 +466,7 @@ class Animedia:
             label = self.create_title(anime_id)
             self.create_line(title=label, anime_id=anime_id, cover=anime_cover, params={'mode': 'select_part', 'id': anime_code})
 
-        self.progress.close()
+        self.progress_bg.close()
 
         if u'Загрузить ещё' in html:
             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)

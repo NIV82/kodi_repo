@@ -16,7 +16,7 @@ from utility import tag_list, clean_list
 
 class Anistar:
     def __init__(self, addon_data_dir, params, addon, icon):
-        self.progress = xbmcgui.DialogProgress()
+        self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
 
         self.params = params
@@ -65,13 +65,13 @@ class Anistar:
         if self.auth_mode:
             if not self.addon.getSetting('{}_username'.format(self.params['portal'])) or not self.addon.getSetting('{}_password'.format(self.params['portal'])):
                 self.params['mode'] = 'addon_setting'
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Авторизация',message='ВВЕДИТЕ ЛОГИН И ПАРОЛЬ',icon=self.icon,time=5000,sound=False)
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
+                    self.dialog.notification(heading='Авторизация',message='ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ',icon=self.icon,time=5000,sound=False)
                     return
                 else:
                     self.addon.setSetting('{}_auth'.format(self.params['portal']), str(self.network.auth_status).lower())
@@ -362,7 +362,6 @@ class Anistar:
 #========================#========================#========================#
     def exec_update_anime_part(self):        
         self.create_info(anime_id=self.params['id'], update=True, schedule=True, data=None)
-        xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
@@ -381,7 +380,7 @@ class Anistar:
             try: file_size = int(data.info().getheaders("Content-Length")[0])
             except: file_size = int(data.getheader('Content-Length'))
 
-            self.progress.create(u'Загрузка Базы Данных')
+            self.progress_bg.create(u'Загрузка Базы Данных')
             with open(db_file, 'wb') as write_file:
                 while True:
                     chunk = data.read(chunk_size)
@@ -390,11 +389,11 @@ class Anistar:
                     if len(chunk) < chunk_size:
                         break
                     percent = bytes_read * 100 / file_size
-                    self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                self.progress.close()
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=lime]УСПЕШНО ЗАГРУЖЕНА[/COLOR]', 5000, self.icon))
+                    self.progress_bg.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+            self.progress_bg.close()
+            self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=self.icon,time=3000,sound=False)
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ERROR: 100[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='База Данных',message='ОШИБКА',icon=self.icon,time=3000,sound=False)
             pass
 #========================#========================#========================#
     def exec_mirror_part(self):
@@ -415,13 +414,10 @@ class Anistar:
             actual_url = tag_list(actual_url).lower()
             actual_url = 'https://{}/'.format(actual_url)
             
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - [COLOR=lime]Выполнено[/COLOR]'.format(
-                self.params['portal'].capitalize()), 'Применяем новый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url), 5000, self.icon))          
+            self.dialog.notification(heading='УСПЕШНО',message='Применяем новый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url),icon=self.icon,time=5000,sound=False)
         except:
             actual_url = site_url
-            
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('{} - [COLOR=red]Ошибка[/COLOR]'.format(
-                self.params['portal'].capitalize()), 'Применяем базовый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url), 5000, self.icon))
+            self.dialog.notification(heading='ОШИБКА',message='Применяем базовый адрес:\n[COLOR=blue]{}[/COLOR]'.format(actual_url),icon=self.icon,time=5000,sound=False)
 
         self.addon.setSetting(current_mirror, actual_url)
 #========================#========================#========================#
@@ -431,23 +427,23 @@ class Anistar:
         if 'plus' in self.params['node']:
             try:
                 self.network.get_html(target_name=url)
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО ДОБАВЛЕНО[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Избранное',message='УСПЕШНО ДОБАВЛЕНО',icon=self.icon,time=5000,sound=False)
             except:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Избранное',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
 
         if 'minus' in self.params['node']:
             try:
                 self.network.get_html(target_name=url)
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=lime]УСПЕШНО УДАЛЕНО[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Избранное',message='УСПЕШНО УДАЛЕНО',icon=self.icon,time=5000,sound=False)
             except:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ERROR: 103[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Избранное',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=lime]УСПЕШНО ВЫПОЛНЕНО[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='Поиск',message='УСПЕШНО УДАЛЕНО',icon=self.icon,time=5000,sound=False)
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=gold]ERROR: 102[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='Поиск',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
             pass
 #========================#========================#========================#
     def exec_information_part(self):
@@ -540,8 +536,6 @@ class Anistar:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_schedule_part(self):
-        self.progress.create("AniStar", "Инициализация")
-
         html = self.network.get_html(
             target_name='{}{}'.format(self.site_url, 'raspisanie-vyhoda-seriy-ongoingov.html'))
 
@@ -549,8 +543,10 @@ class Anistar:
 
         if type(html) == int:
             self.create_line(title='[B][COLOR=red]ERROR: {}[/COLOR][/B]'.format(html), params={})
-            return  
-
+            return
+        
+        self.progress_bg.create("AniStar", "Инициализация")
+        
         week_title = []
 
         today_title = html[html.find('<span>[')+7:html.find(']</span>')]
@@ -580,10 +576,8 @@ class Anistar:
 
             day_title = u'{}'.format(week_title[w])
             self.create_line(title=u'[B][COLOR=lime]{}[/COLOR][/B]'.format(day_title), params={})
-            
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+
+            self.progress_bg.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
             for data in array:
                 anime_id = data[data.find(self.site_url):data.find('.html">')].replace(self.site_url, '')
@@ -603,13 +597,13 @@ class Anistar:
                 self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
 
             w = w + 1
-        self.progress.close()
+        self.progress_bg.close()
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_common_part(self):
         from info import anistar_ignor_list
 
-        self.progress.create("AniStar", u"Инициализация")
+        self.progress_bg.create("AniStar", u"Инициализация")
         
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
         post = ''
@@ -675,9 +669,7 @@ class Anistar:
             if anime_id in anistar_ignor_list:
                 continue
 
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            self.progress_bg.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
             if not self.database.anime_in_db(anime_id):
                 inf = self.create_info(anime_id, data)
@@ -690,7 +682,7 @@ class Anistar:
             label = self.create_title(self.database.get_title(anime_id), series)
             self.create_line(title=label, anime_id=anime_id, params={'mode': 'select_part', 'id': anime_id})
 
-        self.progress.close()
+        self.progress_bg.close()
 
         if 'button_nav r"><a' in html:
             if 'search_part' in self.params['param']:

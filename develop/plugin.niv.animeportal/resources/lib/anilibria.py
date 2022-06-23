@@ -17,10 +17,10 @@ def data_print(data):
 
 class Anilibria:
     def __init__(self, addon_data_dir, params, addon, icon):
-        self.progress = xbmcgui.DialogProgress()
+        self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
         
-        self.progress_bg = xbmcgui.DialogProgressBG()
+        
 
         self.params = params
         self.addon = addon
@@ -65,13 +65,13 @@ class Anilibria:
         if self.auth_mode:
             if not self.addon.getSetting('{}_username'.format(self.params['portal'])) or not self.addon.getSetting('{}_password'.format(self.params['portal'])):
                 self.params['mode'] = 'addon_setting'
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ВВЕДИТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Авторизация',message='ВВЕДИТЕ ЛОГИН И ПАРОЛЬ',icon=self.icon,time=5000,sound=False)
                 return
 
             if not self.network.auth_status:
                 if not self.network.auth_check():
                     self.params['mode'] = 'addon_setting'
-                    xbmc.executebuiltin('Notification({},{},{},{})'.format('Авторизация', '[COLOR=gold]ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ[/COLOR]', 5000, self.icon))
+                    self.dialog.notification(heading='Авторизация',message='ПРОВЕРЬТЕ ЛОГИН И ПАРОЛЬ',icon=self.icon,time=5000,sound=False)
                     return
                 else:
                     self.addon.setSetting('{}_auth'.format(self.params['portal']), str(self.network.auth_status).lower())
@@ -287,7 +287,6 @@ class Anilibria:
 #========================#========================#========================#
     def exec_update_anime_part(self):
         self.create_info(anime_id=self.params['id'], update=True)
-        xbmc.executebuiltin('Container.Refresh')
 #========================#========================#========================#
     def exec_update_database_part(self):
         try: self.database.end()
@@ -306,7 +305,7 @@ class Anilibria:
             try: file_size = int(data.info().getheaders("Content-Length")[0])
             except: file_size = int(data.getheader('Content-Length'))
 
-            self.progress.create(u'Загрузка Базы Данных')
+            self.progress_bg.create(u'Загрузка Базы Данных')
             with open(db_file, 'wb') as write_file:
                 while True:
                     chunk = data.read(chunk_size)
@@ -315,16 +314,15 @@ class Anilibria:
                     if len(chunk) < chunk_size:
                         break
                     percent = bytes_read * 100 / file_size
-                    self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-            self.progress.close()
+                    self.progress_bg.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+            self.progress_bg.close()
+            self.dialog.notification(heading='База Данных',message='ЗАГРУЖЕНА',icon=self.icon,time=3000,sound=False)
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('База Данных', '[COLOR=gold]ОШИБКА ЗАГРУЗКИ[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='База Данных',message='ОШИБКА',icon=self.icon,time=3000,sound=False)
             pass
 #========================#========================#========================#
     def exec_favorites_part(self):
         if not self.params['param']:
-            self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
-            
             session_id = self.addon.getSetting('anilibria_session_id')
             filters = '&filter=id,posters.medium,type,player.series.string'
             url = '{}/v2/getFavorites?session={}{}'.format(self.site_url, session_id, filters)
@@ -341,6 +339,8 @@ class Anilibria:
                     self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
                     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                     return
+                
+            self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
             
             data_array = html.split('},{')
 
@@ -360,9 +360,7 @@ class Anilibria:
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
                 
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                self.progress_bg.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
             
                 if not self.database.anime_in_db(anime_id):
                     self.create_info(anime_id)
@@ -370,7 +368,7 @@ class Anilibria:
                 label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max)
                 self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
 
-            self.progress.close()
+            self.progress_bg.close()
 
             if len(data_array) >= int(self.params['limit']):
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
@@ -391,14 +389,14 @@ class Anilibria:
             if 'success":true' in html:
                 pass
             else:
-                xbmc.executebuiltin('Notification({},{},{},{})'.format('Избранное', '[COLOR=gold]ОШИБКА[/COLOR]', 5000, self.icon))
+                self.dialog.notification(heading='Избранное',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('{}_search'.format(self.params['portal']), '')
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=lime]УСПЕШНО ВЫПОЛНЕНО[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='Поиск',message='УСПЕШНО ВЫПОЛНЕНО',icon=self.icon,time=5000,sound=False)
         except:
-            xbmc.executebuiltin('Notification({},{},{},{})'.format('Удаление истории', '[COLOR=gold]ERROR: 102[/COLOR]', 5000, self.icon))
+            self.dialog.notification(heading='Поиск',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
             pass
 #========================#========================#========================#
 #     def exec_information_part(self):
@@ -422,7 +420,6 @@ class Anilibria:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
-        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
         if not self.params['param']:
             self.create_line(title=u'[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search_word'})
 
@@ -471,7 +468,9 @@ class Anilibria:
                     self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
                     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                     return
-
+                
+            self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+            
             data_array = html.split('},{')
 
             i = 0
@@ -490,9 +489,7 @@ class Anilibria:
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
 
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                self.progress_bg.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
             
                 if not self.database.anime_in_db(anime_id):
                     self.create_info(anime_id)
@@ -500,14 +497,13 @@ class Anilibria:
                 label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max)
                 self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
 
-        self.progress.close()
+        self.progress_bg.close()
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_schedule_part(self):
-        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
-        #url = '{}getSchedule?filter=id,posters.medium,announce,type,player.series.string'.format(self.site_url,)
+        self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+
         url = '{}getSchedule?filter=id,posters.medium,announce,type'.format(self.site_url,)
-#?filter=id,posters.medium,announce,type,player.series.string
         html = self.network.get_html_data(target_name=url)
 
         week = ('Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье')
@@ -524,9 +520,7 @@ class Anilibria:
             i = i + 1
             p = int((float(i) / len(nodes)) * 100)
 
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(nodes)))
+            self.progress_bg.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(nodes)))
                 
             for data in data_array:
                 data = unescape(data)
@@ -550,14 +544,12 @@ class Anilibria:
                 label = self.create_title(anime_id=anime_id, announce=announce)
                 self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
                 
-        self.progress.close()
+        self.progress_bg.close()
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
     def exec_common_part(self):
-        self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
-
         api_page = (int(self.params['page']) - 1) * int(self.params['limit'])
         api_filter = '&filter=id,posters.medium,type,player.series.string'
         
@@ -580,6 +572,8 @@ class Anilibria:
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
         
+        self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+        
         data_array = html.split('},{')
 
         i = 0
@@ -598,9 +592,7 @@ class Anilibria:
             i = i + 1
             p = int((float(i) / len(data_array)) * 100)
 
-            if self.progress.iscanceled():
-                break
-            self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+            self.progress_bg.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
         
             if not self.database.anime_in_db(anime_id):
                 self.create_info(anime_id)
@@ -608,7 +600,7 @@ class Anilibria:
             label = self.create_title(anime_id=anime_id,series_cur=series_cur,series_max=series_max)
             self.create_line(title=label, anime_id=anime_id, cover=poster ,params={'mode': 'select_part', 'id': anime_id})
 
-        self.progress.close()
+        self.progress_bg.close()
 
         if len(data_array) >= int(self.params['limit']):
             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
@@ -654,7 +646,7 @@ class Anilibria:
             self.addon.setSetting(id='{}_status'.format(self.params['portal']), value=tuple(anilibria_status.keys())[result])
         
         if 'catalog' in self.params['param']:
-            self.progress.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+            self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
             
             year = '%20and%20{{season.year}}=={}'.format(self.addon.getSetting('anilibria_year')) if self.addon.getSetting('anilibria_year') else ''
             genre = '%20and%20"{}"%20in%20{{genres}}'.format(quote(self.addon.getSetting('anilibria_genre'))) if self.addon.getSetting('anilibria_genre') else ''
@@ -703,9 +695,7 @@ class Anilibria:
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
 
-                if self.progress.iscanceled():
-                    break
-                self.progress.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
+                self.progress_bg.update(p, u'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
                 
                 if not self.database.anime_in_db(anime_id):
                     self.create_info(anime_id)
@@ -717,7 +707,7 @@ class Anilibria:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
                 self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
-            self.progress.close()
+            self.progress_bg.close()
             
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
