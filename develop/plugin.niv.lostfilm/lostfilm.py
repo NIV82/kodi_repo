@@ -156,28 +156,52 @@ class Lostfilm:
         return label
 #========================#========================#========================#
     def create_image(self, se_code):
-        serial_episode = se_code[len(se_code)-3:len(se_code)]
-        serial_episode = int(serial_episode.replace('999','1'))
-        
+        serial_episode = int(se_code[len(se_code)-3:len(se_code)])
         serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
         serial_image = int(se_code[:len(se_code)-6])
 
-        if 'schedule_part' in self.params['mode']:
-            if serial_season == 1 and serial_episode == 1:
-                image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
-                return image
-                
-            if serial_episode == 1 and serial_season > 1:
-                serial_season = serial_season - 1
+        image = (
+            'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season),
+            'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image),
+            'https://static.lostfilm.top/Images/{}/Posters/e_{}_{}.jpg'.format(serial_image, serial_season, serial_episode)
+        )
+        image = image[int(addon.getSetting('series_image_mode'))]
 
-        if serial_season == 999:
-            image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
-            return image
-            
-        image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(
-            serial_image, serial_season)
+        if 'schedule_part' in self.params['mode']:
+            image = (
+                'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, 1),
+                'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
+                )
+            image = image[int(addon.getSetting('schedule_image_mode'))]
+
+        if serial_episode == 999:
+            image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season)
 
         return image
+    
+    # def create_image(self, se_code):
+    #     serial_episode = se_code[len(se_code)-3:len(se_code)]
+    #     serial_episode = int(serial_episode.replace('999','1'))
+        
+    #     serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+    #     serial_image = int(se_code[:len(se_code)-6])
+
+    #     if 'schedule_part' in self.params['mode']:
+    #         if serial_season == 1 and serial_episode == 1:
+    #             image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
+    #             return image
+                
+    #         if serial_episode == 1 and serial_season > 1:
+    #             serial_season = serial_season - 1
+            
+    #     if serial_season == 999:
+    #         image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
+    #         return image
+            
+    #     image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(
+    #         serial_image, serial_season)
+
+    #     return image
 #========================#========================#========================#
     def create_title(self, serial_title='', episode_title='', data_code='', serial_id='', watched=False):
         if serial_title:
@@ -217,26 +241,60 @@ class Lostfilm:
         serial_image = se_code[:len(se_code)-6]
 
         context_menu = []
-        
-        if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
+        if not 'archive_part' in self.params['mode']:
+            if 'search_part' in self.params['mode'] and self.params['param'] == '':
+                context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
 
-        if serial_id and self.params['mode'] in ('common_part','favorites_part','catalog_part','schedule_part','search_part','serials_part'):
-            context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&id={}")'.format(serial_id)))
+            if serial_id and self.params['mode'] in ('common_part','favorites_part','catalog_part','schedule_part','search_part','serials_part'):
+                context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&id={}")'.format(serial_id)))
 
-        if serial_id:
-            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(serial_id)))
+            if serial_id:
+                context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(serial_id)))
 
-        if se_code and not '999' in serial_episode:
-            context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
-            context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
-            context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
-            context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
+            if se_code and not '999' in serial_episode:
+                context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
+                context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
+                context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
+                context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
-        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
-        
+            context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
+            
+        if 'archive_part' in self.params['mode']:
+            context_menu.append(('[COLOR=blue]Удалить данный файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&id={}&code={}")'.format(serial_id,se_code)))
+            context_menu.append(('[COLOR=red]Удалить все файлы[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&param=clean")'.format(serial_id,se_code)))            
+            
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         return context_menu
+#========================#========================#========================#
+    def exec_torrclean_part(self):
+        data_array = os.listdir(self.torrents_dir)
+
+        if 'clean' in self.params['param']:
+            try:
+                for data in data_array:
+                    file_path = os.path.join(self.torrents_dir, data)
+                    try: os.remove(file_path)
+                    except: pass
+                self.dialog.notification(heading='Архив',message='УСПЕШНО',icon=icon,time=5000,sound=False)
+                
+                xbmc.executebuiltin("Container.Refresh()")
+            except:
+                self.dialog.notification(heading='Архив',message='ОШИБКА',icon=icon,time=5000,sound=False)
+        
+        if not self.params['param']:
+            try:
+                for data in data_array:
+                    file_path = os.path.join(self.torrents_dir, data)
+
+                    if self.params['code'] in data:
+                        try: os.remove(file_path)
+                        except: pass
+                self.dialog.notification(heading='Архив',message='УСПЕШНО',icon=icon,time=5000,sound=False)
+                
+                xbmc.executebuiltin("Container.Refresh()")
+            except:
+                self.dialog.notification(heading='Архив',message='ОШИБКА',icon=icon,time=5000,sound=False)
+
 #========================#========================#========================#
     def create_line(self, title, serial_id='', se_code='', watched=False, params=None, folder=True):
         li = xbmcgui.ListItem(title)
@@ -476,13 +534,17 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.8.0[/COLOR][/B]\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.8.1[/COLOR][/B]\n\
     - Мелкие исправления, оптимизация\n\
     - Переработана система получения качества\n\
         *Названия как на сайте (1080 и т.д.)\n\
         *Парсер теперь загребает все существующие виды качества\n\
     - Торрент файлы теперь сохраняются с Оригинальным названием\n\
         *Оригинальные названия удобнее для Архива торрентов\n\
+    - Добавлены основные пукнты в контекстное меню архива\n\
+        * Удалить файл и Удалить Все\n\
+    - Клиентская часть Торрсерва основана на script.module.torrserver (3.3)\n\
+        * Работает и под K18 и под K19\n\
     \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
     - Мелкие исправления, оптимизация\n'
 
@@ -1137,8 +1199,7 @@ class Lostfilm:
         if self.params['param']:
             torrent_file = os.path.join(self.torrents_dir, self.params['id'])
 
-            import player
-            confirm = player.selector(torrent_url=torrent_file, torrent_index = self.params['param'])
+            self.exec_selector_part(torrent_index=self.params['param'], torrent_url=torrent_file)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -1224,17 +1285,67 @@ class Lostfilm:
         file_name = self.network.get_file(target_url=url, target_path=self.torrents_dir, se_code=se_code)
         torrent_file = os.path.join(self.torrents_dir, file_name)
 
-        import player
-        confirm = player.selector(
-            series_index=serial_episode,
-            torrent_url=torrent_file,
-            )
-
+        confirm = self.exec_selector_part(series_index=serial_episode, torrent_url=torrent_file)
+        
         if confirm:
             html = self.network.get_html(
                 target_name='{}ajaxik.php'.format(self.site_url),
                 post = 'session={}&act=serial&type=markepisode&val={}&auto=0&mode={}'.format(
                     addon.getSetting('user_session'), self.params['param'], 'on'))
+#========================#========================#========================#
+    def exec_selector_part(self, torrent_url, series_index='', torrent_index=''):
+        if series_index:
+            try:
+                index = int(series_index)
+            except:
+                index = series_index
+
+            if index > 0:
+                index = index - 1
+
+            from utility import get_index
+            index = get_index(torrent_url, index)
+
+        if torrent_index:
+            try:
+                index = int(torrent_index)
+            except:
+                index = torrent_index
+
+        if '0' in addon.getSetting('engine'):
+            try:
+                tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver', 'torrserver_tam', 'lt2http')
+                engine = tam_engine[int(addon.getSetting('tam'))]
+                purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(torrent_url, index, engine)
+                item = xbmcgui.ListItem(path=purl)
+                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+                return True
+            except:
+                return False
+
+        if '1' in addon.getSetting('engine'):
+            try:
+                purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(torrent_url), index)
+                item = xbmcgui.ListItem(path=purl)
+                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
+                return True
+            except:
+                return False
+
+        if '2' in addon.getSetting('engine'):
+            try:
+                from utility import torrent2magnet
+                url = torrent2magnet(torrent_url)
+                import torrserver_player
+                torrserver_player.Player(
+                    torrent=url,
+                    sort_index=index,
+                    host=addon.getSetting('ts_host'),
+                    port=addon.getSetting('ts_port'))
+                return True
+            except:
+                return False
+            return
 
 if __name__ == "__main__":
     lostfilm = Lostfilm()

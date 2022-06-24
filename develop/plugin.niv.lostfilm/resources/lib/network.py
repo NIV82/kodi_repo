@@ -66,6 +66,34 @@ class WebTools:
         except HTTPError:
             return False
 
+    def get_data(self, target_name, post=None):
+        if self.auth_usage and not self.authorization():
+            return None
+
+        try: post = post.encode(encoding='utf-8')
+        except: pass
+
+        try:
+            url = self.url_opener.open(Request(url=target_name, data=post, headers=self.headers))
+            code = url.getcode()
+
+            try: charset = url.headers.getparam('charset')
+            except: charset = url.headers.get_content_charset()
+
+            data = url.read()
+
+            if charset:
+                if not 'utf-8' in charset.lower():
+                    data = data.decode(charset).encode('utf8')
+
+            try: data = data.decode(encoding='utf-8', errors='replace')
+            except: pass
+
+            #return data
+            return [code, data]
+        except HTTPError:
+            return False
+
     def get_file(self, target_url, post=None, target_path=None, se_code=None):
         try:
             url = self.url_opener.open(Request(url=target_url, data=post, headers=self.headers))

@@ -22,15 +22,15 @@
   </extension>
 </addon>
 
-<addon id="plugin.niv.lostfilm" name="LostFilm" version="0.7.7" provider-name="NIV">
-  <requires>
-    <import addon="script.module.torrent2http" optional="true"/>
-  </requires>
+<addon id="plugin.niv.lostfilm" name="LostFilm" version="0.8.1" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="lostfilm.py">
     <provides>video</provides>
   </extension>
   <requires>
     <import addon="xbmc.python" version="2.26.0" />
+  </requires>
+  <requires>
+    <import addon="script.module.requests"/>
   </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">LostFilm</summary>
