@@ -100,7 +100,7 @@ class WebTools:
             return data
         # except HTTPError as error:
         #     return error.code
-        except HTTPError:
+        except:
             return False
         
     # def get_html(self, target_name, post=None, method=None):

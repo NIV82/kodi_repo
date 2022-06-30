@@ -30,6 +30,9 @@ class DataBase:
     #     self.c.commit()
 
     def add_anime(self, anime_id, anime_tid='', title_ru='', title_en='', title_jp='', kind='', status='', episodes='', aired_on='', released_on='', rating='', duration='', genres='', writer='', director='', description='', dubbing='', translation='', timing='', sound='', mastering='', editing='', other='', country='', studios='', image='', update=False):
+        if not aired_on:
+            aired_on = '9999'
+
         if not update:
             self.cu.execute('INSERT INTO anime_db (anime_id, anime_tid, title_ru, title_en, title_jp, kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios, image) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                             (anime_id, anime_tid, title_ru, title_en, title_jp, kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios, image))

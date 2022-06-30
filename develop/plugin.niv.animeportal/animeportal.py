@@ -28,7 +28,17 @@ except:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
-
+#=======================================================================================
+try:
+    xbmcaddon.Addon('script.module.requests')
+except:
+    xbmcgui.Dialog().notification(
+        heading='Установка Библиотеки',
+        message='script.module.requests',
+        icon=icon,time=3000,sound=False
+        )
+    xbmc.executebuiltin('RunPlugin("plugin://script.module.requests")')
+#=======================================================================================
 if not os.path.exists(addon_data_dir):
     os.makedirs(addon_data_dir)
 
@@ -61,7 +71,7 @@ params = {
 
 args = parse_qs(sys.argv[2][1:])
 for a in args:
-    params[a] = unquote(args[a][0])            
+    params[a] = unquote(args[a][0])
 #=======================================================================================
 if not addon.getSetting('animeportal_proxy'):
     addon.setSetting('animeportal_proxy', '')
@@ -73,7 +83,8 @@ if 'animeportal' in params['portal']:
     for portal in portal_list:
         if 'true' in addon.getSetting('use_{}'.format(portal)):
             li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper()))
-            li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
+            #li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
+            li.setArt({"fanart": fanart,"icon": icon})
             info = {'plot': animeportal_plot[portal], 'title': portal.upper(), 'tvshowtitle': portal.upper()}
             li.setInfo(type='video', infoLabels=info)
             url = '{}?{}'.format(sys.argv[0], urlencode({'mode': 'main_part', 'portal': portal}))
@@ -88,16 +99,11 @@ if 'animeportal' in params['portal']:
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 if 'anidub' in params['portal']:
-    if '0' in addon.getSetting('anidub_mode'):
-        from anidub_o import Anidub
-        anidub = Anidub(addon_data_dir, params, addon, icon)
-        anidub.execute()
-        del Anidub
-    else:
-        from anidub_t import Anidub
-        anidub = Anidub(addon_data_dir, params, addon, icon)
-        anidub.execute()
-        del Anidub
+    from anidub import Anidub
+    anidub = Anidub(addon_data_dir, params, addon, icon)
+    anidub.execute()
+    del Anidub
+
     
 if 'anilibria' in params['portal']:
     from anilibria import Anilibria
@@ -126,24 +132,5 @@ if 'shizaproject' in params['portal']:
     shiza = Shiza(addon_data_dir, params, addon, icon)
     shiza.execute()
     del Shiza
-
-# if 'play_part' in params['portal_mode']:
-#     torrents_dir = os.path.join(addon_data_dir, 'torrents')
-    
-#     url = os.path.join(torrents_dir, '{}.torrent'.format(params['id']))
-#     index = int(params['index'])
-#     portal_engine = '{}_engine'.format(params['portal'])
-
-#     if '0' in addon.getSetting(portal_engine):
-#         tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver')
-#         engine = tam_engine[int(addon.getSetting('{}_tam'.format(params['portal'])))]
-#         purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(url), index, engine)
-#         item = xbmcgui.ListItem(path=purl)
-#         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-
-#     if '1' in addon.getSetting(portal_engine):
-#         purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(url), index)
-#         item = xbmcgui.ListItem(path=purl)
-#         xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
         
 gc.collect()

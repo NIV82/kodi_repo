@@ -12,13 +12,8 @@
 
 """bencode.py - bencode encoder + decoder."""
 
-# from bencode.BTL import BTFailure
-# from bencode.exceptions import BencodeDecodeError
-class BencodeDecodeError(Exception):
-    pass
-
-class BTFailure(Exception):
-    pass
+from bencode.BTL import BTFailure
+from bencode.exceptions import BencodeDecodeError
 
 from collections import deque
 import sys
@@ -91,8 +86,7 @@ def decode_string(x, f, try_decode_utf8=True, force_decode_utf8=False):
 
     if try_decode_utf8:
         try:
-            #return s.decode('utf-8'), colon + n
-            return s.decode(encoding='utf-8', errors='replace'), colon + n
+            return s.decode('utf-8'), colon + n
         except UnicodeDecodeError:
             if force_decode_utf8:
                 raise
