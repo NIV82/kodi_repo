@@ -174,8 +174,6 @@ class WebTools:
     def auth_check(self):
         if self.portal == None:
             return False
-        if self.portal == 'anidub':
-            return self.anidub_authorization()
         if self.portal == 'anilibria':
              return self.anilibria_authorization()
         if self.portal == 'anistar':
@@ -186,49 +184,6 @@ class WebTools:
         #     return self.shizaproject_authorization()
         return
 
-    def anidub_authorization(self):
-        try: post_data = bytes(self.auth_post_data, encoding='utf-8')
-        except: post_data = self.auth_post_data
-
-        if not self.auth_usage or self.sid_file == '' or self.auth_url == '':
-            return False
-
-        if self.auth_status:
-            try:
-                self.mcj.load(self.sid_file)
-                auth = True if 'dle_user_id' in str(self.mcj) else False
-            except:
-                self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-                auth = True if 'dle_user_id' in str(self.mcj) else False
-                self.mcj.save(self.sid_file)
-        else:
-            self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-            auth = True if 'dle_user_id' in str(self.mcj) else False
-            self.mcj.save(self.sid_file)
-        self.auth_status = auth
-        return auth
-
-    def anidub_t_authorization(self):
-        try: post_data = bytes(self.auth_post_data, encoding='utf-8')
-        except: post_data = self.auth_post_data
-
-        if not self.auth_usage or self.sid_file == '' or self.auth_url == '':
-            return False
-
-        if self.auth_status:
-            try:
-                self.mcj.load(self.sid_file)
-                auth = True if 'dle_user_id' in str(self.mcj) else False
-            except:
-                self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-                auth = True if 'dle_user_id' in str(self.mcj) else False
-                self.mcj.save(self.sid_file)
-        else:
-            self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-            auth = True if 'dle_user_id' in str(self.mcj) else False
-            self.mcj.save(self.sid_file)
-        self.auth_status = auth
-        return auth
 
     def anilibria_authorization(self):
         if not self.auth_usage:
