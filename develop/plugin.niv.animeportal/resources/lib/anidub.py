@@ -55,7 +55,10 @@ class Anidub:
         self.database_dir = os.path.join(addon_data_dir, 'database')
         self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
 
-        self.proxy_data = self.create_proxy_data()
+        if 'true' in self.addon.getSetting('anidub_unblock'):
+            self.addon.setSetting('anidub_torrents','1')
+        
+        self.proxy_data = self.exec_proxy_data()
         self.site_url = self.create_site_url()
         self.sid_file = os.path.join(self.cookie_dir, 'anidub.sid')
         self.authorization = self.exec_authorization_part()
@@ -66,96 +69,6 @@ class Anidub:
         from database import DataBase
         self.database = DataBase(os.path.join(self.database_dir, 'ap_anidub.db'))
         del DataBase
-#========================#========================#========================#
-    def create_proxy_data(self):
-        if 'false' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
-            return None
-        
-        try: proxy_time = float(self.addon.getSetting('{}_proxy_time'.format(self.params['portal'])))
-        except: proxy_time = 0
-    
-        if time.time() - proxy_time > 604800:
-            self.addon.setSetting('{}_proxy_time'.format(self.params['portal']), str(time.time()))
-            proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
-
-            if proxy_request.status_code == requests.codes.ok:
-                proxy_pac = proxy_request.text
-
-                proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
-                proxy = proxy[:proxy.find(';')].strip()
-                proxy = 'https://{}'.format(proxy)
-
-                self.addon.setSetting('{}_proxy'.format(self.params['portal']), proxy)
-                proxy_data = {'https': proxy}
-            else:
-                proxy_data = None
-        else:
-            if self.addon.getSetting('{}_proxy'.format(self.params['portal'])):
-                proxy_data = {'https': self.addon.getSetting('{}_proxy'.format(self.params['portal']))}
-            else:
-                proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
-
-                if proxy_request.status_code == requests.codes.ok:
-                    proxy_pac = proxy_request.text
-                    
-                    proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
-                    proxy = proxy[:proxy.find(';')].strip()
-                    proxy = 'https://{}'.format(proxy)
-
-                    self.addon.setSetting('{}_proxy'.format(self.params['portal']), proxy)
-                    proxy_data = {'https': proxy}
-                else:
-                    proxy_data = None
-
-        return proxy_data
-    
-    # def create_proxy_data(self):
-    #     if 'false' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
-    #         return None
-        
-    #     proxy_data = {
-    #         #'http': 'http://proxy-nossl.antizapret.prostovpn.org:29976',
-    #         'https': 'https://proxy-ssl.antizapret.prostovpn.org:3143'
-    #         }
-        
-    #     # try: proxy_time = float(self.addon.getSetting('animeportal_proxy_time'))
-    #     # except: proxy_time = 0
-    
-    #     # if time.time() - proxy_time > 604800:
-    #     #     self.addon.setSetting('animeportal_proxy_time', str(time.time()))
-    #     #     proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac')
-            
-    #     #     if proxy_request.status_code == requests.codes.ok:
-    #     #         proxy_pac = proxy_request.text
-                
-    #     #         proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #     #         proxy = 'http://{}'.format(proxy)
-
-    #     #         self.addon.setSetting('animeportal_proxy', proxy)
-    #     #         proxy_data = {'https': proxy}
-    #     #         #proxy_data = {'http': proxy}
-    #     #     else:
-    #     #         proxy_data = None
-    #     # else:
-    #     #     if self.addon.getSetting('animeportal_proxy'):
-    #     #         proxy_data = {'https': self.addon.getSetting('animeportal_proxy')}
-    #     #         #proxy_data = {'http': self.addon.getSetting('animeportal_proxy')}
-    #     #     else:
-    #     #         proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac')
-
-    #     #         if proxy_request.status_code == requests.codes.ok:
-    #     #             proxy_pac = proxy_request.text
-                    
-    #     #             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #     #             proxy = 'http://{}'.format(proxy)
-
-    #     #             self.addon.setSetting('animeportal_proxy', proxy)
-    #     #             proxy_data = {'https': proxy}
-    #     #             #proxy_data = {'http': proxy}
-    #     #         else:
-    #     #             proxy_data = None
-
-    #     return proxy_data
 #========================#========================#========================#
     def create_site_url(self):
         current_mirror = 'anidub_mirror_{}'.format(self.addon.getSetting('anidub_mirror_mode'))
@@ -294,6 +207,7 @@ class Anidub:
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal=anidub")'))
         context_menu.append(('[COLOR=darkorange]Загрузить Обложки[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&param=cover_set&portal=anidub")'))
         context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=authorization_part&param=update&portal=anidub")'))
+        context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=proxy_data&param=renew&portal=anidub")'))
         return context_menu
 #========================#========================#========================#
     def create_line(self, title=None, cover=None, rating=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
@@ -457,6 +371,60 @@ class Anidub:
     def exec_addon_setting(self):
         self.addon.openSettings()
 #========================#========================#========================#
+    def exec_proxy_data(self):
+        if 'renew' in self.params['param']:
+            self.addon.setSetting('anidub_proxy','')
+            self.addon.setSetting('anidub_proxy_time','')
+
+        if 'false' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
+            return None
+        
+        try: proxy_time = float(self.addon.getSetting('{}_proxy_time'.format(self.params['portal'])))
+        except: proxy_time = 0
+    
+        if time.time() - proxy_time > 604800:
+            self.addon.setSetting('{}_proxy_time'.format(self.params['portal']), str(time.time()))
+            proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+
+            if proxy_request.status_code == requests.codes.ok:
+                proxy_pac = proxy_request.text
+
+                if sys.version_info.major > 2:                    
+                    proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
+                    proxy = proxy[:proxy.find(';')].strip()
+                    proxy = 'https://{}'.format(proxy)
+                else:
+                    proxy = proxy_pac[proxy_pac.rfind('PROXY')+5:]
+                    proxy = proxy[:proxy.find(';')].strip()
+
+                self.addon.setSetting('{}_proxy'.format(self.params['portal']), proxy)
+                proxy_data = {'https': proxy}
+            else:
+                proxy_data = None
+        else:
+            if self.addon.getSetting('{}_proxy'.format(self.params['portal'])):
+                proxy_data = {'https': self.addon.getSetting('{}_proxy'.format(self.params['portal']))}
+            else:
+                proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+
+                if proxy_request.status_code == requests.codes.ok:
+                    proxy_pac = proxy_request.text
+                    
+                    if sys.version_info.major > 2:                    
+                        proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
+                        proxy = proxy[:proxy.find(';')].strip()
+                        proxy = 'https://{}'.format(proxy)
+                    else:
+                        proxy = proxy_pac[proxy_pac.rfind('PROXY')+5:]
+                        proxy = proxy[:proxy.find(';')].strip()
+
+                    self.addon.setSetting('{}_proxy'.format(self.params['portal']), proxy)
+                    proxy_data = {'https': proxy}
+                else:
+                    proxy_data = None
+
+        return proxy_data
+#========================#========================#========================#
     def exec_authorization_part(self):
         if '0' in self.addon.getSetting('anidub_auth_mode'):
             return False
@@ -484,7 +452,7 @@ class Anidub:
             "login_password": self.addon.getSetting('anidub_password'),
             "login": "submit"
             }
-        
+
         import pickle
 
         if 'true' in self.addon.getSetting('anidub_auth'):
@@ -867,7 +835,9 @@ class Anidub:
 
         if anime_tid:
             if '0' in self.addon.getSetting('anidub_torrents'):
-                self.proxy_data = {'https':'https://proxy-ssl.antizapret.prostovpn.org:3143'}
+                self.addon.setSetting('{}_unblock'.format(self.params['portal']), 'true')
+                self.proxy_data = self.exec_proxy_data()
+                self.addon.setSetting('{}_unblock'.format(self.params['portal']), 'false')
 
             try:
                 torrent_request = requests.get(url=anime_tid, proxies=self.proxy_data)
@@ -934,7 +904,9 @@ class Anidub:
 
         else:
             if '0' in self.addon.getSetting('anidub_torrents'):
-                self.proxy_data = {'https':'https://proxy-ssl.antizapret.prostovpn.org:3143'}
+                self.addon.setSetting('{}_unblock'.format(self.params['portal']), 'true')
+                self.proxy_data = self.exec_proxy_data()
+                self.addon.setSetting('{}_unblock'.format(self.params['portal']), 'false')
                 
             url = 'https://tr.anidub.com/engine/download.php?id={}'.format(self.params['param'])
             data_request = self.session.get(url=url, proxies=self.proxy_data)
