@@ -527,6 +527,7 @@ class Anidub:
         if not self.params['node']:
             url = '{}mylists/page/{}/'.format(self.site_url, self.params['page'])
             data_request = self.session.get(url=url, proxies=self.proxy_data)
+
             if not data_request.status_code == requests.codes.ok:
                 self.create_line(title='ERROR PAGE', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
@@ -549,32 +550,36 @@ class Anidub:
             data_array = data_array.split('<div class="animelist">')
 
             i = 0
-
+                
             for data in data_array:
                 data = unescape(data)
 
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
                 
-                url = data[data.find('href="')+6:]
-                url = url[:url.find('.html')]
-                anime_id = url[url.rfind('/')+1:url.find('-')]
-
-                cover = self.database.get_cover(anime_id)
+                anime_url = data[data.find('href="')+6:]
+                anime_url = anime_url[:anime_url.find('.html')]
+                anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
                 
+                anime_cover = data[data.find('data-src="')+10:]
+                anime_cover = anime_cover[:anime_cover.find('"')].replace('thumbs/','')
+
                 series = data[data.rfind('class="upd-title">')+18:]
                 series = series[:series.find('</a>')]
                 series = series[series.find('[')+1:series.find(']')]
 
+                anime_rating = data[data.find('div class="mlate'):]
+                anime_rating = anime_rating[anime_rating.find('<b>')+3:anime_rating.find('</b>')].strip()
+                
                 self.progress_bg.update(p, 'Обработано: {}% - [ {} из {} ]'.format(p, i, len(data_array)))
 
                 if not self.database.anime_in_db(anime_id):
                     self.create_info(anime_id)
                     
                 label = self.create_title(anime_id, series)
-                anime_code = data_encode('{}|{}'.format(anime_id, cover))
+                anime_code = data_encode('{}|{}'.format(anime_id, anime_cover))
 
-                self.create_line(title=label, anime_id=anime_id, cover=cover, params={'mode': 'select_part', 'id': anime_code})
+                self.create_line(title=label, anime_id=anime_id, cover=anime_cover, rating=anime_rating, params={'mode': 'select_part', 'id': anime_code})
             self.progress_bg.close()
 
             if page and int(self.params['page']) < page:
@@ -612,10 +617,13 @@ class Anidub:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]Version 0.9.88[/COLOR][/B]\n\
-    - Добавлен пункт Обновить Прокси в контекстное меню\n\
-    - Исправлены проблемы с разблокировкой на Kodi-18\n\
-    - Пункт Разблокировать торренты - отключается при включении разблокировки\n\
+        data = u'[B][COLOR=darkorange]Version 0.9.90[/COLOR][/B]\n\
+    - Добавлена возможность обработки режима Список с сайта\n\
+    - Исправлена генерация обложки в разделе Поиск-Жанры\n\
+    - Добавлен Рейтинг в Избранное\n\
+    - Исправлена проблема с поиском\n\
+    \n\
+    * Плагин полностью рабочий, если у вас ошибки - отписывайтесь на форум\n\
     \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
     - Мелкие исправления, оптимизация\n'
         self.dialog.textviewer('Информация', data)
@@ -682,10 +690,17 @@ class Anidub:
             if self.params['search_string'] == '':
                 return False
             
-            url = '{}index.php?do=search'.format(self.site_url)            
-            post = {"do": "search","subaction": "search","search_start": self.params['page'],"full_search": "0","story": self.params['search_string']}
+            url = '{}index.php?do=search'.format(self.site_url)
+            post = {
+                'do': 'search', 
+                'subaction': 'search', 
+                'search_start': self.params['page'], 
+                'full_search': '0', 
+                'result_from': '1', 
+                'story': quote(self.params['search_string'])
+                }
 
-            data_request = self.session.get(url=url, data=post, proxies=self.proxy_data)
+            data_request = self.session.post(url=url, data=post, proxies=self.proxy_data)
 
             if not data_request.status_code == requests.codes.ok:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -694,22 +709,123 @@ class Anidub:
 
             html = data_request.text
             
-            if not '<div class="th-item">' in html:
+            if not '<div class="th-item">' in html and not '<div class="sect ignore' in html:
                 self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
-            self.progress_bg.create('ANIDUB', 'Инициализация')
-            
             navigation = html[html.rfind('<div class="navigation">'):html.rfind('<footer class="footer sect-bg">')]
             navigation = clean_tags(navigation, '<', '>').replace(' ','|')
             page = int(navigation[navigation.rfind('|')+1:]) if navigation else False
+
+            self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+
+            if '<div class="th-item">' in html:
+                data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!-- END CONTENT -->')]
+                data_array = data_array.split('<div class="th-item">')
+
+                i = 0
+
+                for data in data_array:
+                    anime_url = data[data.find('th-in" href="')+13:data.find('.html">')]
+
+                    if any(param in anime_url for param in ('/manga/','/ost/','/podcast/','/anons_ongoing/','/games/','/videoblog/','/anidub_news/')):
+                        continue
+
+                    anime_cover = data[data.find('data-src="')+10:data.find('" title="')]
+                    anime_cover = unescape(anime_cover)
+                    if '"' in anime_cover:
+                        anime_cover = anime_cover[:anime_cover.find('"')]
+                    anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
+                    anime_title = data[data.find('<div class="fx-1">')+18:]
+                    anime_title = anime_title[:anime_title.find('</div>')]
+                    anime_series = anime_title[anime_title.rfind('[')+1:anime_title.rfind(']')] if '[' in anime_title else ''
+                    anime_rating = data[data.find('th-rating">')+11:]
+                    anime_rating = anime_rating[:anime_rating.find('</div>')]
+                    
+                    i = i + 1
+                    p = int((float(i) / len(data_array)) * 100)
+
+                    self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+
+                    if not self.database.anime_in_db(anime_id):
+                        self.create_info(anime_id)
+
+                    label = self.create_title(anime_id, anime_series)            
+                    anime_code = data_encode('{}|{}'.format(anime_id, anime_cover))
+
+                    self.create_line(title=label, anime_id=anime_id, cover=anime_cover, rating=anime_rating, params={'mode': 'select_part', 'id': anime_code})
+
+            if '<div class="sect ignore' in html:
+                data_array = html[html.find('<div class="sect ignore')+23:html.rfind('<!-- END CONTENT -->')]
+                data_array = data_array.split('<div class="sect ignore-select fullshort cat')
+                
+                i = 0
+                
+                for data in data_array:
+                    anime_url = data[data.find('js-tip" href="')+14:data.find('.html"')]
+                    
+                    if any(param in anime_url for param in ('/manga/','/ost/','/podcast/','/anons_ongoing/','/games/','/videoblog/','/anidub_news/')):
+                        continue
+
+                    anime_cover = data[data.find('data-src="')+10:]
+                    anime_cover = unescape(anime_cover[:anime_cover.find('"')])
+                    anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
+                    anime_title = data[data.find('<h2>')+4:]
+                    anime_title = anime_title[:anime_title.find('</')]
+                    anime_series = anime_title[anime_title.rfind('[')+1:anime_title.rfind(']')] if '[' in anime_title else ''
+                    anime_rating = data[data.find('tingscore">')+11:]
+                    anime_rating = anime_rating[:anime_rating.find('<')]
+
+                    i = i + 1
+                    p = int((float(i) / len(data_array)) * 100)
+                    
+                    self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                    
+                    if not self.database.anime_in_db(anime_id):
+                        self.create_info(anime_id)
+
+                    label = self.create_title(anime_id, anime_series)            
+                    anime_code = data_encode('{}|{}'.format(anime_id, anime_cover))
+
+                    self.create_line(title=label, anime_id=anime_id, cover=anime_cover, rating=anime_rating, params={'mode': 'select_part', 'id': anime_code})
+
+            self.progress_bg.close()
+            
+            if page and int(self.params['page']) < page:
+                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
+                self.create_line(title=label, params={'mode': 'search_part', 'param': 'search_string', 'search_string': self.params['search_string'], 'page': int(self.params['page']) + 1})
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+#========================#========================#========================#
+    def exec_common_part(self):
+        url = '{}{}page/{}/'.format(self.site_url, quote(self.params['param']), self.params['page'])
+        data_request = self.session.get(url=url, proxies=self.proxy_data)
         
+        if not data_request.status_code == requests.codes.ok:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+
+        html = data_request.text
+        
+        if not '<div class="th-item">' in html and not '<div class="sect ignore' in html:
+            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+
+        navigation = html[html.rfind('<div class="navigation">'):html.rfind('<footer class="footer sect-bg">')]
+        navigation = clean_tags(navigation, '<', '>').replace(' ','|')
+        page = int(navigation[navigation.rfind('|')+1:]) if navigation else False
+        
+        self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
+        
+        if '<div class="th-item">' in html:
             data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!-- END CONTENT -->')]
             data_array = data_array.split('<div class="th-item">')
-            
+
             i = 0
-            
+
             for data in data_array:
                 anime_url = data[data.find('th-in" href="')+13:data.find('.html">')]
 
@@ -718,13 +834,15 @@ class Anidub:
 
                 anime_cover = data[data.find('data-src="')+10:data.find('" title="')]
                 anime_cover = unescape(anime_cover)
+                if '"' in anime_cover:
+                    anime_cover = anime_cover[:anime_cover.find('"')]
                 anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
                 anime_title = data[data.find('<div class="fx-1">')+18:]
                 anime_title = anime_title[:anime_title.find('</div>')]
                 anime_series = anime_title[anime_title.rfind('[')+1:anime_title.rfind(']')] if '[' in anime_title else ''
                 anime_rating = data[data.find('th-rating">')+11:]
                 anime_rating = anime_rating[:anime_rating.find('</div>')]
-    
+                
                 i = i + 1
                 p = int((float(i) / len(data_array)) * 100)
 
@@ -735,77 +853,43 @@ class Anidub:
 
                 label = self.create_title(anime_id, anime_series)            
                 anime_code = data_encode('{}|{}'.format(anime_id, anime_cover))
-            
+
                 self.create_line(title=label, anime_id=anime_id, cover=anime_cover, rating=anime_rating, params={'mode': 'select_part', 'id': anime_code})
-            self.progress_bg.close()
+        
+        if '<div class="sect ignore' in html:
+            data_array = html[html.find('<div class="sect ignore')+23:html.rfind('<!-- END CONTENT -->')]
+            data_array = data_array.split('<div class="sect ignore-select fullshort cat')
             
-            if page and int(self.params['page']) < page:
-                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
-                self.create_line(title=label, params={'mode': 'search_part', 'param': 'search_string', 'search_string': self.params['search_string'], 'page': int(self.params['page']) + 1})
-
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-#========================#========================#========================#
-    def exec_common_part(self):
-        # p =  {
-        #     'http': 'http://proxy-nossl.antizapret.prostovpn.org:29976',
-        #     #'https': 'https://proxy-ssl.antizapret.prostovpn.org:3143'
-        #     }
-
-        url = '{}{}page/{}/'.format(self.site_url, quote(self.params['param']), self.params['page'])
-        #url = url.replace('https','http')
-        data_request = self.session.get(url=url, proxies=self.proxy_data)
-        #data_request = self.session.get(url=url, proxies=p)
-        
-        if not data_request.status_code == requests.codes.ok:
-            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
-
-        html = data_request.text
-        
-        if not '<div class="th-item">' in html:
-            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
-        
-        self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
-        
-        navigation = html[html.rfind('<div class="navigation">'):html.rfind('<footer class="footer sect-bg">')]
-        navigation = clean_tags(navigation, '<', '>').replace(' ','|')
-        page = int(navigation[navigation.rfind('|')+1:]) if navigation else False
-
-        data_array = html[html.find('<div class="th-item">')+21:html.rfind('<!-- END CONTENT -->')]
-        data_array = data_array.split('<div class="th-item">')
-
-        i = 0
-
-        for data in data_array:
-            anime_url = data[data.find('th-in" href="')+13:data.find('.html">')]
-
-            if any(param in anime_url for param in ('/manga/','/ost/','/podcast/','/anons_ongoing/','/games/','/videoblog/','/anidub_news/')):
-                continue
-
-            anime_cover = data[data.find('data-src="')+10:data.find('" title="')]
-            anime_cover = unescape(anime_cover)
-            anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
-            anime_title = data[data.find('<div class="fx-1">')+18:]
-            anime_title = anime_title[:anime_title.find('</div>')]
-            anime_series = anime_title[anime_title.rfind('[')+1:anime_title.rfind(']')] if '[' in anime_title else ''
-            anime_rating = data[data.find('th-rating">')+11:]
-            anime_rating = anime_rating[:anime_rating.find('</div>')]
+            i = 0
             
-            i = i + 1
-            p = int((float(i) / len(data_array)) * 100)
+            for data in data_array:
+                anime_url = data[data.find('js-tip" href="')+14:data.find('.html"')]
+                
+                if any(param in anime_url for param in ('/manga/','/ost/','/podcast/','/anons_ongoing/','/games/','/videoblog/','/anidub_news/')):
+                    continue
 
-            self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                anime_cover = data[data.find('data-src="')+10:]
+                anime_cover = unescape(anime_cover[:anime_cover.find('"')])
+                anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
+                anime_title = data[data.find('<h2>')+4:]
+                anime_title = anime_title[:anime_title.find('</')]
+                anime_series = anime_title[anime_title.rfind('[')+1:anime_title.rfind(']')] if '[' in anime_title else ''
+                anime_rating = data[data.find('tingscore">')+11:]
+                anime_rating = anime_rating[:anime_rating.find('<')]
 
-            if not self.database.anime_in_db(anime_id):
-                self.create_info(anime_id)
+                i = i + 1
+                p = int((float(i) / len(data_array)) * 100)
+                
+                self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                
+                if not self.database.anime_in_db(anime_id):
+                    self.create_info(anime_id)
 
-            label = self.create_title(anime_id, anime_series)            
-            anime_code = data_encode('{}|{}'.format(anime_id, anime_cover))
+                label = self.create_title(anime_id, anime_series)            
+                anime_code = data_encode('{}|{}'.format(anime_id, anime_cover))
 
-            self.create_line(title=label, anime_id=anime_id, cover=anime_cover, rating=anime_rating, params={'mode': 'select_part', 'id': anime_code})
+                self.create_line(title=label, anime_id=anime_id, cover=anime_cover, rating=anime_rating, params={'mode': 'select_part', 'id': anime_code})
+
         self.progress_bg.close()
         
         if page and int(self.params['page']) < page:

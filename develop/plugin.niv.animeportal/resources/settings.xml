@@ -6,7 +6,7 @@
     <setting type="sep"/>
     <setting id="anidub_unblock" label="Разблокировка" type="bool" default="false" enable="eq(-2,true)" />
     <setting type="sep"/>
-    <setting id="anidub_auth_mode" label="Авторизация:" type="enum" default="0" values="Отключено|Включено" enable="eq(-4,true)"/>
+    <setting id="anidub_auth_mode" label="Авторизация:" type="enum" default="0" values="Отключено|[COLOR=lime]Включено[/COLOR]" enable="eq(-4,true)"/>
     <setting id="anidub_username" label="[COLOR=gold][Online][/COLOR] Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
     <setting id="anidub_password" label="[COLOR=gold][Online][/COLOR]Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
