@@ -12,16 +12,17 @@
     <setting type="sep"/>
     <setting id="anidub_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-8,true)"/>
     <setting id="anidub_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-9,true)"/>
-    <setting id="anidub_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=lime]Разблокировать[/COLOR]|Не разблокировать " enable="eq(-10,true)"/>
+    <setting id="anidub_style" type="enum" label="Год в строке названий:" default="0" values="Отключен|Включен" enable="eq(-10,true)"/>
+    <setting id="anidub_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=lime]Разблокировать[/COLOR]|Не разблокировать " enable="eq(-11,true)"/>
     <setting type="sep"/>
-    <setting id="anidub_mirror_mode" label="URL - Адрес:" type="enum" default="1" values="Базовый сайт|Зеркало" enable="eq(-12,true)"/>
+    <setting id="anidub_mirror_mode" label="URL - Адрес:" type="enum" default="1" values="Базовый сайт|Зеркало" enable="eq(-13,true)"/>
     <setting id="anidub_mirror_0" label="[COLOR=gold][Online][/COLOR] Адрес:" type="text" default="https://online.anidub.com/" subsetting="true" visible="eq(-1,0)" enable="false"/>
-    <setting id="anidub_mirror_1" label="[COLOR=gold][Online][/COLOR] Адрес:" type="text" default="https://online.anidub.life/" subsetting="true" visible="eq(-2,1)" enable="eq(-14,true)"/>
+    <setting id="anidub_mirror_1" label="[COLOR=gold][Online][/COLOR] Адрес:" type="text" default="https://online.anidub.life/" subsetting="true" visible="eq(-2,1)" enable="eq(-15,true)"/>
     <setting type="sep"/>
-    <setting id="anidub_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM|TORRSERVER" enable="eq(-16,true)"/>
+    <setting id="anidub_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM|TORRSERVER" enable="eq(-17,true)"/>
     <setting id="anidub_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
-    <setting id="anidub_ts_host" label="Хост:" type="text" default="127.0.0.1" visible="eq(-2,2)" enable="eq(-18,true)"/>
-    <setting id="anidub_ts_port" label="Порт:" type="text" default="8090" visible="eq(-3,2)" enable="eq(-19,true)"/>
+    <setting id="anidub_ts_host" label="Хост:" type="text" default="127.0.0.1" visible="eq(-2,2)" enable="eq(-19,true)"/>
+    <setting id="anidub_ts_port" label="Порт:" type="text" default="8090" visible="eq(-3,2)" enable="eq(-20,true)"/>
     <setting id="anidub_session" label="session" type="text" default="" visible="false"/>
     <setting id="anidub_search" label="status" type="text" default="" visible="false"/>
     <setting id="anidub_auth" label="auth" type="bool" default="false" visible="false"/>

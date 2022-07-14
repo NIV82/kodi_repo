@@ -120,9 +120,12 @@ class Anidub:
     def create_title(self, anime_id, series):
         title = self.database.get_title(anime_id)
 
-        year = self.database.get_year(anime_id)
+        if '0' in self.addon.getSetting('anidub_style'):
+            year = ''
+        else:
+            year = self.database.get_year(anime_id)        
+            year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
         
-        year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
         series = u' | [COLOR=gold]{}[/COLOR]'.format(series.strip()) if series else ''
         
         if '0' in self.addon.getSetting('anidub_titles'):
@@ -131,10 +134,9 @@ class Anidub:
             label = u'{}{}{}'.format(year, title[1], series)
         if '2' in self.addon.getSetting('anidub_titles'):
             label = u'{}{} / {}{}'.format(year, title[0], title[1], series)
-            
-        if 'anime_id:' in label:
-            label = u'[COLOR=red]ERROR[/COLOR] | Ошибка 403-404 | [COLOR=gold]{}[/COLOR]'.format(
-                title[0].replace('anime_id: ',''))
+
+        year = self.database.get_year(anime_id)        
+        year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
             
         return label
 #========================#========================#========================#
@@ -561,9 +563,15 @@ class Anidub:
                 anime_url = anime_url[:anime_url.find('.html')]
                 anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
                 
-                anime_cover = data[data.find('data-src="')+10:]
-                anime_cover = anime_cover[:anime_cover.find('"')].replace('thumbs/','')
-
+                if 'data-src="' in data:
+                    anime_cover = data[data.find('data-src="')+10:]
+                    anime_cover = anime_cover[:anime_cover.find('"')].replace('thumbs/','')
+                else:
+                    anime_cover = data[data.find('<img src="')+10:]
+                    anime_cover = anime_cover[:anime_cover.find('"')].replace('small/','')
+                    
+                anime_cover = unescape(anime_cover)
+                
                 series = data[data.rfind('class="upd-title">')+18:]
                 series = series[:series.find('</a>')]
                 series = series[series.find('[')+1:series.find(']')]
@@ -617,15 +625,15 @@ class Anidub:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]Version 0.9.90[/COLOR][/B]\n\
+        data = u'[B][COLOR=darkorange]Version 0.9.91[/COLOR][/B]\n\
+    - Правка обложек для старых аниме (Cпасибо msv_asb)\n\
+    - Добавлен пункт настроек отключения Года в строке названий\n\
+    - Обновлена БазаДанных (14.07.2022)\n\
+    \n[B][COLOR=darkorange]Version 0.9.90[/COLOR][/B]\n\
     - Добавлена возможность обработки режима Список с сайта\n\
     - Исправлена генерация обложки в разделе Поиск-Жанры\n\
     - Добавлен Рейтинг в Избранное\n\
-    - Исправлена проблема с поиском\n\
-    \n\
-    * Плагин полностью рабочий, если у вас ошибки - отписывайтесь на форум\n\
-    \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
-    - Мелкие исправления, оптимизация\n'
+    - Исправлена проблема с поиском'
         self.dialog.textviewer('Информация', data)
         return
 #========================#========================#========================#
