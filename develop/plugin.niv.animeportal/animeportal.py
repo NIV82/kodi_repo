@@ -79,11 +79,25 @@ if not addon.getSetting('animeportal_proxy'):
 #=======================================================================================
 if 'animeportal' in params['portal']:
     portal_list = ('anidub','anilibria','animedia','anistar','shizaproject')
-
+    active_portal = []
+    
     for portal in portal_list:
         if 'true' in addon.getSetting('use_{}'.format(portal)):
+            active_portal.append(portal)
+            
+    if len(active_portal) == 0:
+        li = xbmcgui.ListItem('[B][COLOR=white]Нет Активных Сайтов[/COLOR][/B]')
+        li.setArt({"fanart": fanart,"icon": icon})
+        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=sys.argv[0], listitem=li, isFolder=True)
+        
+        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+
+    if len(active_portal) == 1:
+        params['portal'] = active_portal[0]
+    
+    if len(active_portal) > 1:
+        for portal in active_portal:
             li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(portal.upper()))
-            #li.setArt({"fanart": fanart,"icon": icon.replace('icon', portal)})
             li.setArt({"fanart": fanart,"icon": icon})
             info = {'plot': animeportal_plot[portal], 'title': portal.upper(), 'tvshowtitle': portal.upper()}
             li.setInfo(type='video', infoLabels=info)
@@ -95,8 +109,8 @@ if 'animeportal' in params['portal']:
                     )
 
             xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=True)
-
-    xbmcplugin.endOfDirectory(int(sys.argv[1]))
+            
+        xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 if 'anidub' in params['portal']:
     from anidub import Anidub

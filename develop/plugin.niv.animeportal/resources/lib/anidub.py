@@ -574,7 +574,7 @@ class Anidub:
                 
                 series = data[data.rfind('class="upd-title">')+18:]
                 series = series[:series.find('</a>')]
-                series = series[series.find('[')+1:series.find(']')]
+                series = series[series.rfind('[')+1:series.rfind(']')]
 
                 anime_rating = data[data.find('div class="mlate'):]
                 anime_rating = anime_rating[anime_rating.find('<b>')+3:anime_rating.find('</b>')].strip()
