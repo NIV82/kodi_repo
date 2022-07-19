@@ -25,7 +25,7 @@
   </extension>
 </addon>
 
-<addon id="plugin.niv.lostfilm" name="LostFilm" version="0.8.1" provider-name="NIV">
+<addon id="plugin.niv.lostfilm" name="LostFilm" version="0.8.2" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="lostfilm.py">
     <provides>video</provides>
   </extension>
