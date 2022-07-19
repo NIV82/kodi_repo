@@ -68,12 +68,6 @@ class Lostfilm:
             self.params[a] = unquote(args[a][0])
 
         self.site_url = self.create_site_url()
-        
-        if 'false' in addon.getSetting('clean_old_torrents'):
-            for torrent_file in os.listdir(self.torrents_dir):
-                file_path = os.path.join(self.torrents_dir, torrent_file)
-                os.remove(file_path)
-            addon.setSetting('clean_old_torrents', 'true')
 #========================#========================#========================#
         try: session = float(addon.getSetting('auth_session'))
         except: session = 0
@@ -168,40 +162,16 @@ class Lostfilm:
         image = image[int(addon.getSetting('series_image_mode'))]
 
         if 'schedule_part' in self.params['mode']:
-            image = (
-                'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, 1),
-                'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
-                )
-            image = image[int(addon.getSetting('schedule_image_mode'))]
+            
+            if serial_episode == 1 and serial_season == 1:
+                image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
+            else:
+                image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, 1)
 
         if serial_episode == 999:
             image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season)
 
         return image
-    
-    # def create_image(self, se_code):
-    #     serial_episode = se_code[len(se_code)-3:len(se_code)]
-    #     serial_episode = int(serial_episode.replace('999','1'))
-        
-    #     serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
-    #     serial_image = int(se_code[:len(se_code)-6])
-
-    #     if 'schedule_part' in self.params['mode']:
-    #         if serial_season == 1 and serial_episode == 1:
-    #             image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
-    #             return image
-                
-    #         if serial_episode == 1 and serial_season > 1:
-    #             serial_season = serial_season - 1
-            
-    #     if serial_season == 999:
-    #         image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
-    #         return image
-            
-    #     image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(
-    #         serial_image, serial_season)
-
-    #     return image
 #========================#========================#========================#
     def create_title(self, serial_title='', episode_title='', data_code='', serial_id='', watched=False):
         if serial_title:
@@ -901,13 +871,14 @@ class Lostfilm:
         self.progress_bg.create('LostFilm', 'Инициализация')
 
         data_array = self.database.get_serials_id()
+        data_array.sort()
 
         i = 0
         
         for data in data_array:
             
             try:
-                serial_id = data[0]
+                serial_id = data[1]
                 se_code = '{}001999'.format(data[2])
             except:
                 label = '[COLOR=red][B]{}[/B][/COLOR]'.format(serial_id)
@@ -919,7 +890,7 @@ class Lostfilm:
 
             self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
             
-            label = self.create_title(serial_id=serial_id, serial_title=data[1])
+            label = self.create_title(serial_id=serial_id, serial_title=data[0])
             self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={
                 'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
@@ -1189,7 +1160,7 @@ class Lostfilm:
                     if extension in valid_media:
                         series[i] = x['path'][-1]
 
-                for i in sorted(series, key=series.get):                    
+                for i in sorted(series, key=series.get):
                     self.create_line(title=series[i], serial_id=self.params['id'], se_code=se_code, folder=False, params={
                         'mode': 'torrent_part', 'id': file_name, 'param': i})
             else:
@@ -1208,13 +1179,16 @@ class Lostfilm:
             data_array = os.listdir(self.torrents_dir)
 
             for data in data_array:
-                se_code = data[:data.find('_')]
-                file_name = data[data.find('_')+1:].replace('.torrent', '')
+                try:
+                    se_code = data[:data.find('_')]
+                    file_name = data[data.find('_')+1:].replace('.torrent', '')
+                    serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+                    image_id = int(se_code[:len(se_code)-6])
+                except:
+                    continue
 
-                serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
-                image_id = int(se_code[:len(se_code)-6])                
                 serial_id = self.database.get_serial_id(image_id)
-                    
+                
                 self.create_line(title=file_name, serial_id=serial_id, se_code=se_code, params={'mode': 'archive_part', 'param': data, 'code': se_code, 'id': serial_id})
 
         if self.params['param']:
