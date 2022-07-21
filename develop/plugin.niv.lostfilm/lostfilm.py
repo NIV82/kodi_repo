@@ -690,6 +690,7 @@ class Lostfilm:
 #========================#========================#========================#
     def exec_common_part(self):
         url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
+
         html = self.network.get_html(target_name=url)
 
         if not html:
@@ -710,15 +711,31 @@ class Lostfilm:
         i = 0
 
         for data in data_array:
+            
+            if '/movies/' in data:
+                continue
+            
             is_watched = True if 'haveseen-btn checked' in data else False
 
             serial_title = data[data.find('name-ru">')+9:]
             serial_title = serial_title[:serial_title.find('</div>')]
 
+
+            
             serial_id = data[data.find('series/')+7:]
             serial_id = serial_id[:serial_id.find('/')]
             serial_id = serial_id.strip()
             
+            # if '/series/' in data:
+            #     serial_id = data[data.find('series/')+7:]
+            #     serial_id = serial_id[:serial_id.find('/')]
+            
+            # if '/movies/' in data:
+            #     serial_id = data[data.find('movies/')+7:]
+            #     serial_id = serial_id[:serial_id.find('"')]
+
+            #serial_id = serial_id.strip()
+    
             se_code = data[data.find('episode="')+9:data.find('" data-code')]
 
             episode_title = None
