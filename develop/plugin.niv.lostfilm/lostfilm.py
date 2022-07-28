@@ -632,7 +632,9 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.8.8[/COLOR][/B]\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.8.9[/COLOR][/B]\n\
+    - Исправление доступа к файлам в каталоге и избранном\n\
+    \n[B][COLOR=darkorange]Version 0.8.8[/COLOR][/B]\n\
     - Правки, фиксы, оптимизация\n\
     - Контекстное меню : удалены некоторые пункты с фильмов\n\
     - Фильмы и Сериалы теперь в разделе Каталог\n\
@@ -1323,10 +1325,14 @@ class Lostfilm:
                     self.create_info(serial_id)
 
                 label = self.create_title(serial_title=serial_title)
-                    
-                self.create_line(title=label, serial_id=serial_id, se_code=se_code, folder=False, ismovie=is_movie, params={
-                    'mode': 'play_part', 'id': serial_id, 'param': se_code})
-
+                
+                if is_movie:
+                    self.create_line(title=label, serial_id=serial_id, se_code=se_code, folder=False, ismovie=is_movie, params={
+                        'mode': 'play_part', 'id': serial_id, 'param': se_code})
+                else:
+                    self.create_line(title=label, serial_id=serial_id, se_code=se_code, ismovie=is_movie, params={
+                    'mode': 'select_part', 'id': serial_id, 'code': se_code})
+                
             self.progress_bg.close()
 
             if len(data_array) >= 10:
