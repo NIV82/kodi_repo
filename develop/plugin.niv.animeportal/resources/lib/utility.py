@@ -149,6 +149,15 @@ def torrent2magnet(torrent_file):
     magneturi = 'magnet:?xt=urn:btih:{}&dn={}{}'.format(infohash, quote(rt(metainfo['info']['name'])),announce)
     
     return magneturi
+
+def valid_media(data):
+    valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
+    
+    for i in valid_media:
+        if i in data:
+            return True
+        
+    return False
 #############################################################################################################################
 # def rt(s):
 #     try:s=s.decode('utf-8')

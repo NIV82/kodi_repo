@@ -3,12 +3,12 @@
 import os
 import sys
 import time
-import base64
+#import base64
 
 import xbmc
 import xbmcgui
 import xbmcplugin
-import xbmcaddon
+#import xbmcaddon
 
 import requests
 
@@ -60,7 +60,8 @@ class Anidub:
         
         self.proxy_data = self.exec_proxy_data()
         self.site_url = self.create_site_url()
-        self.sid_file = os.path.join(self.cookie_dir, 'anidub.sid')
+        #self.sid_file = os.path.join(self.cookie_dir, 'anidub.sid')
+        self.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
         self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_anidub.db')):
@@ -84,7 +85,7 @@ class Anidub:
         info = dict.fromkeys(['series', 'title_ru', 'title_en'], '')
         splitter = '/'
 
-        title = clean_tags(title, '<', '>')        
+        title = clean_tags(title)        
         title = unescape(title)
 
         if '[' in title:
@@ -375,8 +376,8 @@ class Anidub:
 #========================#========================#========================#
     def exec_proxy_data(self):
         if 'renew' in self.params['param']:
-            self.addon.setSetting('anidub_proxy','')
-            self.addon.setSetting('anidub_proxy_time','')
+            self.addon.setSetting('{}_proxy'.format(self.params['portal']),'')
+            self.addon.setSetting('{}_proxy_time'.format(self.params['portal']),'')
 
         if 'false' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
             return None
@@ -426,6 +427,60 @@ class Anidub:
                     proxy_data = None
 
         return proxy_data
+
+    # def exec_proxy_data(self):
+    #     if 'renew' in self.params['param']:
+    #         self.addon.setSetting('anidub_proxy','')
+    #         self.addon.setSetting('anidub_proxy_time','')
+
+    #     if 'false' in self.addon.getSetting('{}_unblock'.format(self.params['portal'])):
+    #         return None
+        
+    #     try: proxy_time = float(self.addon.getSetting('{}_proxy_time'.format(self.params['portal'])))
+    #     except: proxy_time = 0
+    
+    #     if time.time() - proxy_time > 604800:
+    #         self.addon.setSetting('{}_proxy_time'.format(self.params['portal']), str(time.time()))
+    #         proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+
+    #         if proxy_request.status_code == requests.codes.ok:
+    #             proxy_pac = proxy_request.text
+
+    #             if sys.version_info.major > 2:                    
+    #                 proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
+    #                 proxy = proxy[:proxy.find(';')].strip()
+    #                 proxy = 'https://{}'.format(proxy)
+    #             else:
+    #                 proxy = proxy_pac[proxy_pac.rfind('PROXY')+5:]
+    #                 proxy = proxy[:proxy.find(';')].strip()
+
+    #             self.addon.setSetting('{}_proxy'.format(self.params['portal']), proxy)
+    #             proxy_data = {'https': proxy}
+    #         else:
+    #             proxy_data = None
+    #     else:
+    #         if self.addon.getSetting('{}_proxy'.format(self.params['portal'])):
+    #             proxy_data = {'https': self.addon.getSetting('{}_proxy'.format(self.params['portal']))}
+    #         else:
+    #             proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+
+    #             if proxy_request.status_code == requests.codes.ok:
+    #                 proxy_pac = proxy_request.text
+                    
+    #                 if sys.version_info.major > 2:                    
+    #                     proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
+    #                     proxy = proxy[:proxy.find(';')].strip()
+    #                     proxy = 'https://{}'.format(proxy)
+    #                 else:
+    #                     proxy = proxy_pac[proxy_pac.rfind('PROXY')+5:]
+    #                     proxy = proxy[:proxy.find(';')].strip()
+
+    #                 self.addon.setSetting('{}_proxy'.format(self.params['portal']), proxy)
+    #                 proxy_data = {'https': proxy}
+    #             else:
+    #                 proxy_data = None
+
+    #     return proxy_data
 #========================#========================#========================#
     def exec_authorization_part(self):
         if '0' in self.addon.getSetting('anidub_auth_mode'):
@@ -460,18 +515,30 @@ class Anidub:
         if 'true' in self.addon.getSetting('anidub_auth'):
             try:
                 with open(self.sid_file, 'rb') as read_file:
-                    self.session.cookies.update(pickle.load(read_file))                    
-                auth = True if 'dle_user_id' in str(self.session.cookies) else False
+                    self.session.cookies.update(pickle.load(read_file))
+                auth = True
             except:
-                self.session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
-                auth = True if 'dle_user_id' in str(self.session.cookies) else False
-                with open(self.sid_file, 'wb') as write_file:
-                    pickle.dump(self.session.cookies, write_file)
+                r = requests.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
+                
+                if 'dle_user_id' in str(r.cookies):
+                    with open(self.sid_file, 'wb') as write_file:
+                        pickle.dump(r.cookies, write_file)
+                        
+                    self.session.cookies.update(r.cookies)
+                    auth = True
+                else:
+                    auth = False
         else:
-            self.session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
-            auth = True if 'dle_user_id' in str(self.session.cookies) else False
-            with open(self.sid_file, 'wb') as write_file:
-                pickle.dump(self.session.cookies, write_file)
+            r = requests.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
+            
+            if 'dle_user_id' in str(r.cookies):
+                with open(self.sid_file, 'wb') as write_file:
+                    pickle.dump(r.cookies, write_file)
+                    
+                self.session.cookies.update(r.cookies)
+                auth = True
+            else:
+                auth = False
 
         if not auth:
             self.params['mode'] = 'addon_setting'
@@ -545,7 +612,7 @@ class Anidub:
             self.progress_bg.create('{}'.format(self.params['portal'].upper()), u'Инициализация')
             
             navigation = html[html.find('<div class="navigation">'):html.find('<div class="animelist">')]
-            navigation = clean_tags(navigation, '<', '>').replace(' ','|')
+            navigation = clean_tags(navigation).replace(' ','|')
             page = int(navigation[navigation.rfind('|')+1:]) if navigation else -1
             
             data_array = html[html.find('<div class="animelist">')+23:html.rfind('<label for="mlist">')]
@@ -625,15 +692,8 @@ class Anidub:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]Version 0.9.91[/COLOR][/B]\n\
-    - Правка обложек для старых аниме (Cпасибо msv_asb)\n\
-    - Добавлен пункт настроек отключения Года в строке названий\n\
-    - Обновлена БазаДанных (14.07.2022)\n\
-    \n[B][COLOR=darkorange]Version 0.9.90[/COLOR][/B]\n\
-    - Добавлена возможность обработки режима Список с сайта\n\
-    - Исправлена генерация обложки в разделе Поиск-Жанры\n\
-    - Добавлен Рейтинг в Избранное\n\
-    - Исправлена проблема с поиском'
+        data = u'[B][COLOR=darkorange]AniDUB[/COLOR][/B]\n\
+    - Исправлено отображение названий некоторых онлайн серий (первых обычно)'
         self.dialog.textviewer('Информация', data)
         return
 #========================#========================#========================#
@@ -723,7 +783,7 @@ class Anidub:
                 return
 
             navigation = html[html.rfind('<div class="navigation">'):html.rfind('<footer class="footer sect-bg">')]
-            navigation = clean_tags(navigation, '<', '>').replace(' ','|')
+            navigation = clean_tags(navigation).replace(' ','|')
             page = int(navigation[navigation.rfind('|')+1:]) if navigation else False
 
             self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
@@ -823,7 +883,7 @@ class Anidub:
             return
 
         navigation = html[html.rfind('<div class="navigation">'):html.rfind('<footer class="footer sect-bg">')]
-        navigation = clean_tags(navigation, '<', '>').replace(' ','|')
+        navigation = clean_tags(navigation).replace(' ','|')
         page = int(navigation[navigation.rfind('|')+1:]) if navigation else False
         
         self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
@@ -966,7 +1026,7 @@ class Anidub:
                     quality = qa[len(qa) - 1]
                     if u'Серии в торренте:' in data:
                         series = data[data.find(u'Серии в торренте:')+17:data.find(u'Раздают')]
-                        series = clean_tags(series, '<', '>')
+                        series = clean_tags(series)
 
                         qid = '{} - [ {} ]'.format(quality, series)
                     else:
@@ -1043,7 +1103,8 @@ class Anidub:
                 if '&quot;' in video_url:
                     video_url = video_url[:video_url.find('&quot;')]
 
-                video_title = data[data.find('>')+1:]
+                #video_title = data[data.find('>')+1:]
+                video_title = data[data.rfind('>')+1:]
 
                 self.create_line(title=video_title, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id']})
 

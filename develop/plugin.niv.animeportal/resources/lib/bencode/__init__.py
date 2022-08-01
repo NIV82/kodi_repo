@@ -86,7 +86,8 @@ def decode_string(x, f, try_decode_utf8=True, force_decode_utf8=False):
 
     if try_decode_utf8:
         try:
-            return s.decode('utf-8'), colon + n
+            #return s.decode('utf-8'), colon + n
+            return s.decode(encoding='utf-8', errors='replace'), colon + n
         except UnicodeDecodeError:
             if force_decode_utf8:
                 raise
