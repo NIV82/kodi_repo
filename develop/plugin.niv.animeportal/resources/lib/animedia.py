@@ -14,11 +14,11 @@ if sys.version_info.major > 2:
     from urllib.parse import urlencode
     from urllib.parse import quote
     from urllib.parse import unquote
-    from urllib.request import urlopen
+    #from urllib.request import urlopen
     from html import unescape
 else:
     from urllib import urlencode
-    from urllib import urlopen
+    #from urllib import urlopen
     from urllib import quote
     from urllib import unquote
     import HTMLParser

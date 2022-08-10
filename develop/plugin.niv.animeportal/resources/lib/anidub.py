@@ -121,23 +121,14 @@ class Anidub:
     def create_title(self, anime_id, series):
         title = self.database.get_title(anime_id)
 
-        if '0' in self.addon.getSetting('anidub_style'):
-            year = ''
-        else:
-            year = self.database.get_year(anime_id)        
-            year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
-        
         series = u' | [COLOR=gold]{}[/COLOR]'.format(series.strip()) if series else ''
         
         if '0' in self.addon.getSetting('anidub_titles'):
-            label = u'{}{}{}'.format(year, title[0], series)
+            label = u'{}{}'.format(title[0], series)
         if '1' in self.addon.getSetting('anidub_titles'):
-            label = u'{}{}{}'.format(year, title[1], series)
+            label = u'{}{}'.format(title[1], series)
         if '2' in self.addon.getSetting('anidub_titles'):
-            label = u'{}{} / {}{}'.format(year, title[0], title[1], series)
-
-        year = self.database.get_year(anime_id)        
-        year = '[COLOR=blue]{}[/COLOR] | '.format(year) if year else ''
+            label = u'{} / {}{}'.format(title[0], title[1], series)
             
         return label
 #========================#========================#========================#
@@ -669,9 +660,9 @@ class Anidub:
                 post = {'news_id': self.params['id'], 'status_id': 3}
                 self.session.post(url=url, data=post)
                 xbmc.executebuiltin("Container.Refresh()")
-                self.dialog.notification(heading='Избранное',message='УСПЕШНО ДОБАВЛЕНО',icon=self.icon,time=5000,sound=False)
+                self.dialog.notification(heading='Избранное',message='Выполнено',icon=self.icon,time=3000,sound=False)
             except:
-                self.dialog.notification(heading='Избранное',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
+                self.dialog.notification(heading='Избранное',message='Ошибка',icon=self.icon,time=3000,sound=False)
 
         if 'minus' in self.params['node']:
             try:
@@ -679,9 +670,9 @@ class Anidub:
                 post = {'news_id': self.params['id'], 'status_id': 0}
                 self.session.post(url=url, data=post)
                 xbmc.executebuiltin("Container.Refresh()")
-                self.dialog.notification(heading='Избранное',message='УСПЕШНО УДАЛЕНО',icon=self.icon,time=5000,sound=False)
+                self.dialog.notification(heading='Избранное',message='Выполнено',icon=self.icon,time=3000,sound=False)
             except:
-                self.dialog.notification(heading='Избранное',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
+                self.dialog.notification(heading='Избранное',message='Ошибка',icon=self.icon,time=3000,sound=False)
 #========================#========================#========================#
     def exec_clean_part(self):
         try:

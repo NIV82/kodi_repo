@@ -19,7 +19,7 @@ class Shiza:
 
         self.params = params
         self.addon = addon
-        self.icon = icon.replace('icon', self.params['portal'])
+        self.icon = icon
 
         self.images_dir = os.path.join(addon_data_dir, 'images')
         self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
