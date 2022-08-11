@@ -799,8 +799,14 @@ class Lostfilm:
             a = 0
             
             for d in data:
-                serial_id = d[d.find('/series/')+8:d.find('\',false')]
-                serial_id = serial_id.strip()
+                is_movie = True if '/movies/' in d else False
+                
+                if is_movie:
+                    serial_id = d[d.find('/movies/')+8:d.find('\',false')]
+                    serial_id = serial_id.strip()
+                else:
+                    serial_id = d[d.find('/series/')+8:d.find('\',false')]
+                    serial_id = serial_id.strip()
                 
                 image_id = d[d.find('/Images/')+8:d.find('/Posters/')]
                 
@@ -810,9 +816,12 @@ class Lostfilm:
                 episode_title = d[d.find('<td class="gamma'):]
                 episode_title = episode_title[episode_title.find(';">')+3:episode_title.find('<br />')]
 
-                code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
-                code = code.replace('season_','').replace('episode_','')
-                code = code.replace('additional','999').split('/')
+                if is_movie:
+                    code = ['1','1']
+                else:
+                    code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
+                    code = code.replace('season_','').replace('episode_','')
+                    code = code.replace('additional','999').split('/')
 
                 se_code = '{}{:>03}{:>03}'.format(image_id,int(code[0]),int(code[1]))
 
@@ -832,10 +841,13 @@ class Lostfilm:
                 if not self.database.serial_in_db(serial_id):
                     self.create_info(serial_id)
 
-                label = self.create_title(serial_title, episode_title, se_code)
+                if is_movie:
+                    label = self.create_title(serial_title=serial_title, data_code=se_code,ismovie=is_movie)
+                else:
+                    label = self.create_title(serial_title, episode_title, se_code, ismovie=is_movie)
                 label = u'{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
 
-                self.create_line(title=label, serial_id=serial_id, se_code=se_code, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
+                self.create_line(title=label, serial_id=serial_id, se_code=se_code, ismovie=is_movie, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
 
         self.progress_bg.close()
 
