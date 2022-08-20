@@ -15,7 +15,7 @@ session = requests.Session()
 
 try:
     from urllib import urlencode
-    from urllib import urlopen
+    #from urllib import urlopen
     from urllib import quote
     from urllib import unquote
     import HTMLParser
@@ -24,7 +24,7 @@ except:
     from urllib.parse import urlencode
     from urllib.parse import quote
     from urllib.parse import unquote
-    from urllib.request import urlopen
+    #from urllib.request import urlopen
     from html import unescape
 
 headers = {
@@ -335,10 +335,10 @@ class Anilibria:
             self.addon.setSetting('{}_session'.format(self.params['portal']),'')
             self.addon.setSetting('{}_session_id'.format(self.params['portal']),'')
             
-        try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
-        except: session = 0
+        try: temp_session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
+        except: temp_session = 0
         
-        if time.time() - session > 604800:
+        if time.time() - temp_session > 604800:
             self.addon.setSetting('{}_session'.format(self.params['portal']), str(time.time()))            
             try: os.remove(self.sid_file)
             except: pass            

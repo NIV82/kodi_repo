@@ -486,10 +486,10 @@ class Anidub:
             self.addon.setSetting('anidub_auth', 'false')
             self.addon.setSetting('anidub_session','')
             
-        try: session = float(self.addon.getSetting('anidub_session'))
-        except: session = 0
+        try: temp_session = float(self.addon.getSetting('anidub_session'))
+        except: temp_session = 0
         
-        if time.time() - session > 43200:
+        if time.time() - temp_session > 43200:
             self.addon.setSetting('anidub_session', str(time.time()))            
             try: os.remove(self.sid_file)
             except: pass            
@@ -736,6 +736,7 @@ class Anidub:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = skbd.getText()
+                
                 data_array = self.addon.getSetting('{}_search'.format(self.params['portal'])).split('|')                    
                 while len(data_array) >= 6:
                     data_array.pop(0)

@@ -347,10 +347,10 @@ class Animedia:
             self.addon.setSetting('{}_auth'.format(self.params['portal']), 'false')
             self.addon.setSetting('{}_session'.format(self.params['portal']),'')
             
-        try: session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
-        except: session = 0
+        try: temp_session = float(self.addon.getSetting('{}_session'.format(self.params['portal'])))
+        except: temp_session = 0
         
-        if time.time() - session > 43200:
+        if time.time() - temp_session > 43200:
             self.addon.setSetting('{}_session'.format(self.params['portal']), str(time.time()))            
             try: os.remove(self.sid_file)
             except: pass            
