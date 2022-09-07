@@ -11,7 +11,7 @@ except:
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-from info import animeportal_plot, animeportal_data
+from info import animeportal_plot#, animeportal_data
 from utility import fs_dec, fs_enc
 
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')

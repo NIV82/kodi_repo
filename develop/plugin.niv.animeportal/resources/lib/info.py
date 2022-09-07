@@ -7,32 +7,6 @@ animeportal_plot = {
     'anistar':'Наши переводы самые быстрые и качественные в Рунете! У нас приятная и привычная многим озвучка... ©',
     'shizaproject': 'Мы — безумный коллектив, занимающийся адаптацией зарубежной анимации для русскоязычной публики... ©'
     }
-
-animeportal_data = '[play]\n\
-[COLOR blue]Торрент просмотр:[/COLOR]\n\
-- В настройках плагина зайти в раздел [COLOR blue]P2P[/COLOR], выбрать торрент движок или торрент Менеджер [COLOR gold]TAM[/COLOR] - выставив предпочитаемый движок\n\
-- Просмотр зависит от наличия людей на раздаче искомого торрента файла\n\
-- Вся необходимая информация по загрузке и установке Движков находится на форуме [COLOR gold]xbmc.ru[/COLOR]\n\
-[COLOR gray]=====================================================[/COLOR]\n\
-[COLOR blue]Онлайн просмотр:[/COLOR]\n\
-- Использует [COLOR gold]KODI[/COLOR] проигрыватель. Дополнительные настройки не требуются\n\
-- Просмотр зависит от скорости вашего интернета, нагрузки на сайт и общей нагрузки на сеть интернет\n\
-[/play]\n\
-[news]\n\
-[B][COLOR=darkorange]Version 0.9.50[/COLOR][/B]\n\
-    [B][COLOR=darkorange]*** ANIDUB ***[/COLOR][/B]\n\
-    - Переписан anidub-online, добавлен отдельный парсер для anidub-torrent\n\
-    - Основной сайт переключается в настройках - по умолчанию Торрент\n\
-    - На онлайн сайте - больше тайтлов, при авторизации их Еще больше\n\
-    - Базы данных для online и torrent разделены\n\
-    - Отдельные логины и пароли, сайты и авторизация\n\
-    - Пробный пункт Использования Уже загруженных торрентов\n\
-    - Исправления в логике парсеров и обратотке ошибок\n\
-    - Множество мелких правок и исправлений\n\
-    - Вопрос про торренты - отключается в настройках (Использовать загруженные)\n\
-[COLOR gray]=====================================================[/COLOR]\n\
-[/news]\n\
-'
 #========================#========================#========================#========================#========================#
 anidub_genres = ('сёнэн','романтика','драма','комедия','этти','меха','фантастика',
     'фэнтези','повседневность','школа','война','сёдзё','детектив','ужасы','история','триллер',
@@ -129,38 +103,89 @@ anistar_years = [
     '2003', '2002', '2001', '2000', '1999', '1998', '1997', '1996', '1995', '1994', '1993', '1992', '1991', '1990', '1989', '1988', '1987', '1986', '1985', 
     '1984', '1983', '1982', '1981', '1980', '1979', '1978', '1976', '1975', '1972', '1969', '1968']
 #========================#========================#========================#========================#========================#
-shizaproject_season = {'':'','Весна':'SPRING','Лето':'SUMMER','Осень':'FALL','Зима':'WINTER'}
+shizaproject_season = {
+    '':'',
+    'Весна':'SPRING',
+    'Лето':'SUMMER',
+    'Осень':'FALL',
+    'Зима':'WINTER'
+    }
 
-shizaproject_categories = {'':'','Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=','Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=',
-                    'Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=', 'Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}
+shizaproject_categories = {
+    '':'',
+    'Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=',
+    'Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=',
+    'Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=',
+    'Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='
+    }
 
-shizaproject_status = {'':'','Анонс':'ANNOUNCE','Онгоинг':'ONGOING','Выпущено':'RELEASED','Приостановлено':'SUSPENDED'}
+shizaproject_status = {
+    '':'',
+    'Онгоинг':'ONGOING',
+    'Выпущено':'RELEASED'
+    }
 
-shizaproject_voice_stat = {'':'','Хочучка':'WISH','Заморожено':'FROZEN','В работе':'WORK_IN_PROGRESS','Звершено':'COMPLETED','Брошено':'DROPPED'}
+shizaproject_voice_stat = {
+    '':'',
+    'Заморожено':'FROZEN',
+    'В работе':'WORK_IN_PROGRESS',
+    'Звершено':'COMPLETED',
+    'Брошено':'DROPPED'
+    }
 
-shizaproject_form = {'':'','ТВ':'TV','ТВ-спешл':'TV_SPECIAL','Остальное':'OTHER','Фильм':'MOVIE','Короткий Фильм':'SHORT_MOVIE','OVA':'OVA','ONA':'ONA','Музыкальный':'MUSIC'}
+shizaproject_form = {
+    '':'',
+    'ТВ':'TV',
+    'ТВ-спешл':'TV_SPECIAL',
+    'Остальное':'OTHER',
+    'Фильм':'MOVIE',
+    'Короткий Фильм':'SHORT_MOVIE',
+    'OVA':'OVA',
+    'ONA':'ONA',
+    'Музыкальный':'MUSIC'
+    }
 
-shizaproject_rating = ('','G','PG','PG_13','R','R_PLUS','RX')
+shizaproject_genre = {
+    '':'',
+    'экшен':'R2VucmU6ODM0NDc2MjMxOTY4Njg2MDg=',
+    'комедия':'R2VucmU6ODM0NDc4NDQyNDA4ODM3MTI=',
+    'драма':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njg=',
+    'фантастика':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDE=',
+    'сверхъестественное':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTk=',
+    'фэнтези':'R2VucmU6ODM0NDgxMzc2MDMwODgzODQ=',
+    'романтика':'R2VucmU6ODM0NDc5NTcwNzYwNDk5MjA=',
+    'сёнен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODk=',
+    'приключения':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzE=',
+    'повседневность':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTY=',
+    'сейнен':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMTA=',
+    'этти':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzg=',
+    'детектив':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDU=',
+    'меха':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODQ=',
+    'военное':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDQ=',
+    'психологическое':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzA=',
+    'ужасы':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODI=',
+    'исторический':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODE=',
+    'сёдзё':'R2VucmU6ODE1OTEzMjc3NTM1MDI3MjA=',
+    'спорт':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTA=',
+    'музыка':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzI=',
+    'триллер':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDA=',
+    'игры':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njk=',
+    'пародия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODU=',
+    'боевые искусства':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDg=',
+    'сёдзё-ай':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTc=',
+    'дзёсей':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTg=',
+    }
 
-shizaproject_genre = {'':'','экшен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzM=','комедия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzQ=','романтика':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODc=',
-               'фэнтези':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzk=','фантастика':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDE=','драма':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njg=',
-               'школа':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODg=','сверхъестественное':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTk=','сёнен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODk=',
-               'приключения':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzE=','повседневность':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTY=','сейнен':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMTA=',
-               'детектив':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDU=','этти':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzg=','магия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODM=',
-               'меха':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODQ=','гарем':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTQ=','военное':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDQ=',
-               'космос':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzc=','триллер':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDA=','игры':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njk=',
-               'музыка':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzI=','супер сила':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDM=','психологическое':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzA=',
-               'демоны':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzU=','ужасы':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODI=','сёдзё':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDI=',
-               'исторический':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODE=','спорт':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTA=','вампиры':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTE=',
-               'пародия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODU=','боевые искусства':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDg=','полиция':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzY='}
+shizaproject_direction = {
+    'По убыванию':'DESC',
+    'По возрастанию':'ASC'
+    }
 
-shizaproject_direction = {'По убыванию':'DESC','По возрастанию':'ASC'}
-
-shizaproject_sort = {'Дате публикации':'PUBLISHED_AT','Дате обновление':'UPDATED_AT','Просмотрам':'VIEW_COUNT','Названию EN':'ORIGINAL_NAME','Названию RU':'NAME','Рейтингу':'SCORE'}
-
-shizaproject_tags = {'':'','Дружба':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI0','Повседневность':'VGFnOjQ1ODkxNDE0ODg1NjYyODA3','Кровь':'VGFnOjQ1ODkxNDE0ODg1NjYyODk2',
-              'Будущее':'VGFnOjQ1ODkxNDE0ODg5ODU3MDI5','bdrip':'VGFnOjQ1ODkxNDE0ODgxNDY4NDE4','webrip':'VGFnOjQ1ODkxNDE0ODg1NjYyODAw','Школа':'VGFnOjQ1ODkxNDE0ODg1NjYyNzM2',
-              'Олдскул':'VGFnOjQ1ODkxNDE0ODg1NjYyNzY1','Магия':'VGFnOjQ1ODkxNDE0ODg1NjYyNzk5','hdtvrip':'VGFnOjQ1ODkxNDE0ODg5ODU3MDM0','Демоны':'VGFnOjQ1ODkxNDE0ODg1NjYyNzQ5',
-              'Война':'VGFnOjQ1ODkxNDE0ODg1NjYyODAy','Роботы':'VGFnOjQ1ODkxNDE0ODg1NjYyNzcz','Космос':'VGFnOjQ1ODkxNDE0ODg1NjYyNzI4','Любовь':'VGFnOjQ1ODkxNDE0ODg1NjYyODU0',
-              'Вампиры':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMy','Оружие':'VGFnOjQ1ODkxNDE0ODg1NjYyNzMz'}
-#========================#========================#========================#========================#========================#
+shizaproject_sort = {
+    'Дате публикации':'PUBLISHED_AT',
+    'Дате обновление':'UPDATED_AT',
+    'Просмотрам':'VIEW_COUNT',
+    'Названию EN':'ORIGINAL_NAME',
+    'Названию RU':'NAME',
+    'Рейтингу':'SCORE'
+    }

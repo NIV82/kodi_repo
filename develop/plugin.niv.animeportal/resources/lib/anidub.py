@@ -353,7 +353,7 @@ class Anidub:
                 image = info['image'],
                 update = update)
         except:
-            self.dialog.notification(heading='Инфо-Парсер',message='ОШИБКА',icon=self.icon,time=5000,sound=False)
+            self.dialog.notification(heading='Инфо-Парсер',message='Ошибка',icon=self.icon,time=3000,sound=False)
     
         return 
 #========================#========================#========================#

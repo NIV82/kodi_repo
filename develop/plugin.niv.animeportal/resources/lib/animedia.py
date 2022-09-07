@@ -270,7 +270,8 @@ class Animedia:
                 update=update
                 )
         except:
-            return 101
+            self.dialog.notification(heading='Инфо-Парсер',message='Ошибка',icon=self.icon,time=3000,sound=False)
+            #return 101
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
