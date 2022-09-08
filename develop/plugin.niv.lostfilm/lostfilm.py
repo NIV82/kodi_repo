@@ -362,10 +362,14 @@ class Lostfilm:
         
 
         description = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
+
         if u'Сюжет</strong><br />' in description:
-            description = description[description.find(u'Сюжет</strong><br />')+20:]
+            description = description[description.find(u'Сюжет</strong><br />')+20:]    
+        elif u'Сюжет<br />' in description:
+            description = description[description.find(u'Сюжет<br />')+11:]
         else:
             description = description[description.find('description">')+13:]
+    
         description = description[:description.find('</div>')]
         description = unescape(description)
         info['description'] = clean_tags(description)
@@ -632,18 +636,8 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.8.9[/COLOR][/B]\n\
-    - Исправление доступа к файлам в каталоге и избранном\n\
-    \n[B][COLOR=darkorange]Version 0.8.8[/COLOR][/B]\n\
-    - Правки, фиксы, оптимизация\n\
-    - Контекстное меню : удалены некоторые пункты с фильмов\n\
-    - Фильмы и Сериалы теперь в разделе Каталог\n\
-    - Каталог : добавлены новые разделы и обновлены старые\n\
-    - Исправление Расписания (на сайте сменилась ссылка)\n\
-    \n[B][COLOR=blue]Ожидается:[/COLOR][/B]\n\
-    - Переделка Расписания под месяцы (как появится время)\n\
-    - Отлов багов\n'
-
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.1[/COLOR][/B]\n\
+    - Правка парсера описания для некоторых фильмов'
         self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
