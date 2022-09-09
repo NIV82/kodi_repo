@@ -41,6 +41,7 @@
     <setting id="favorites_color" type="enum" label="Избранное" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
     <setting id="new_color" type="enum" label="Новинки" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
     <setting id="serials_color" type="enum" label="Все сериалы" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="movies_color" type="enum" label="Фильмы" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
     <setting id="catalog_color" type="enum" label="Каталог" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
     <setting id="archive_color" type="enum" label="Архив торрентов" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
     <setting type="sep"/>

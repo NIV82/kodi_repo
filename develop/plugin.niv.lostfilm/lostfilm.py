@@ -139,6 +139,7 @@ class Lostfilm:
             'Избранное':'favorites_color',
             'Новинки':'new_color',
             'Все сериалы':'serials_color',
+            'Фильмы':'movies_color',
             'Каталог':'catalog_color',
             'Поиск по названию':'search_name_color',
             'Архив Торрентов': 'archive_color'
@@ -359,19 +360,20 @@ class Lostfilm:
         
         info['title_ru'] = html[html.find('itemprop="name">')+16:html.find('</h1>')]
         info['title_ru'] = info['title_ru'].replace('/', '-')
-        
 
         description = html[html.find(u'Описание</h2>'):html.find('<div class="social-pane">')]
 
-        if u'Сюжет</strong><br />' in description:
-            description = description[description.find(u'Сюжет</strong><br />')+20:]    
-        elif u'Сюжет<br />' in description:
-            description = description[description.find(u'Сюжет<br />')+11:]
+        if u'<strong class="bb">Сюжет' in description:
+            description = description[description.find(u'<strong class="bb">Сюжет')+24:]    
         else:
             description = description[description.find('description">')+13:]
     
         description = description[:description.find('</div>')]
         description = unescape(description)
+
+        if description and ':' in description[0]:
+            description = description[1:]
+            
         info['description'] = clean_tags(description)
 
         data_array = html[html.find('dateCreated"'):html.find('</a></span><br />')]
@@ -636,8 +638,10 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.1[/COLOR][/B]\n\
-    - Правка парсера описания для некоторых фильмов'
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.3[/COLOR][/B]\n\
+    - Правка парсера описания для некоторых фильмов\n\
+    - Добавлен отдельный раздел Фильмы\n\
+    - Обновлена БазаДанных в репо'
         self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
@@ -646,6 +650,7 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Расписание'), params={'mode': 'schedule_part'})
         self.create_line(title=self.create_colorize('Избранное'), params={'mode': 'catalog_part', 'param': 'favorites'})
         self.create_line(title=self.create_colorize('Новинки'), params={'mode': 'common_part', 'param':'new/'})
+        self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'movies_part'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог'), params={'mode': 'catalog_part'})
         self.create_line(title=self.create_colorize('Архив Торрентов'), params={'mode': 'archive_part'})
@@ -1170,6 +1175,79 @@ class Lostfilm:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
+    def exec_movies_part(self):
+        post_data = {
+            "act": "movies",
+            "type": "search",
+            "o": "0",
+            "s": "3",
+            "t": "0"
+            }
+
+        url = '{}ajaxik.php'.format(self.site_url)
+        data_request = self.session.post(url=url, data=post_data, proxies=self.proxy_data, headers=headers)
+            
+        if not data_request.status_code == requests.codes.ok:
+            self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+
+        html = data_request.text
+            
+        if not ':[{' in html:
+            self.create_line(title='[B][COLOR=white]Контент отсутствует[/COLOR][/B]', params={'mode': self.params['mode']})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+
+        self.progress_bg.create('LostFilm', 'Инициализация')
+            
+        html = html[html.find('[')+1:html.find(']')]
+
+        data_array = html.split('},{')
+            
+        i = 0
+        
+        for data in data_array:                
+            serial_title = data[data.find('title":"')+8:data.find('","title_orig')]
+
+            try:
+                serial_title = serial_title.encode('utf-8').decode('unicode_escape')
+            except:
+                pass
+                
+            serial_id = data[data.find('"link":"')+8:]
+            serial_id = serial_id[:serial_id.find('"')]
+            serial_id = serial_id[serial_id.rfind('/')+1:]
+
+            image_id = data[data.find('"id":"')+6:]
+            image_id = image_id[:image_id.find('"')]
+
+            se_code = '{}001001'.format(image_id)
+                
+            i = i + 1
+            p = int((float(i) / len(data_array)) * 100)
+                
+            self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                
+            if not self.database.serial_in_db(serial_id):
+                self.create_info(serial_id)
+
+            label = self.create_title(serial_title=serial_title)
+
+            self.create_line(title=label, serial_id=serial_id, se_code=se_code, folder=False, ismovie=True, params={
+                'mode': 'play_part', 'id': serial_id, 'param': se_code})
+
+            self.progress_bg.close()
+
+            if len(data_array) >= 10:
+                page_count = (int(self.params['page']) / 10) + 1
+                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(page_count), int(page_count)+1)
+                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 10)})
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+
+        return
+#========================#========================#========================#
     def exec_catalog_part(self):
         if self.params['page'] == '1':
             self.params['page'] = '0'
@@ -1270,8 +1348,7 @@ class Lostfilm:
                 
             post_data.update({'s': sort[addon.getSetting('sort')]})
             
-            if 'favorites' in self.params['param']:
-                
+            if 'favorites' in self.params['param']:                
                 post_data = {
                     'act': 'serial',
                     'type':'search',
@@ -1279,7 +1356,7 @@ class Lostfilm:
                     's': '2',
                     't':'99'
                     }
-                    
+
             url = '{}ajaxik.php'.format(self.site_url)
             data_request = self.session.post(url=url, data=post_data, proxies=self.proxy_data, headers=headers)
             
