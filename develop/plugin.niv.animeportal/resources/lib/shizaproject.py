@@ -130,7 +130,7 @@ class Shiza:
             post['variables']['orderBy'] = {
                 "field":shizaproject_sort[self.addon.getSetting('shizaproject_sort')],
                 "direction":shizaproject_direction[self.addon.getSetting('shizaproject_direction')]}
-        
+
         import json
         post = json.dumps(post, ensure_ascii=False).encode('utf-8')
 
@@ -141,30 +141,73 @@ class Shiza:
 
         episodes = episodes.split('"name"')
         episodes.pop(0)
-
+        
         for ep in episodes:
             episode_name = ep[ep.find(':')+1:]
             episode_name = episode_name[:episode_name.find(',')]
             episode_name = episode_name.replace('"', '').replace('null', '')
-            
-            episode_num = ep[ep.find('"number":')+9:]#:ep.find(',"videos')]
+                
+            episode_num = ep[ep.find('"number":')+9:]
             episode_num = episode_num[:episode_num.find(',')]
+                    
+            if '"SIBNET"' in ep:
+                sibnet_url = ep[ep.find('SIBNET","embedUrl":"')+20:]
+                sibnet_url = sibnet_url[:sibnet_url.find('"')]
+                sibnet_url = '{}'.format(sibnet_url)
+            else:
+                sibnet_url = ''
+                
+            if '"KODIK"' in ep:
+                kodik_url = ep[ep.find('KODIK","embedUrl":"')+19:]
+                kodik_url = kodik_url[:kodik_url.find('"')]
+                kodik_url = '{}'.format(kodik_url)
+            else:
+                kodik_url = ''
+
+            if not sibnet_url and not kodik_url:
+                if episode_name:
+                    episode_name = '[COLOR=red][B]{}[/B][/COLOR]'.format(episode_name)
+                else:
+                    continue
             
             if not episode_name:
                 episode_name = 'Episode {}'.format(episode_num)
-                
-            if '"SIBNET"' in ep:
-                episode_url = ep[ep.find('SIBNET","embedUrl":"')+20:]
-                episode_url = episode_url[:episode_url.find('"')]
-            else:
-                episode_name = '[COLOR=red][B]{}[/B][/COLOR]'.format(episode_name)
-                episode_url = 'https://'
 
-            online_array.append(u'{}||{}||{}'.format(episode_name,episode_num,episode_url))
+            online_array.append(u'{}|{}|{}|{}'.format(episode_name,episode_num,sibnet_url,kodik_url))
         
-        episodes_data = u'|||'.join(online_array)
+        episodes_data = u'***'.join(online_array)
 
         return episodes_data
+
+    # def create_episodes(self, episodes):
+    #     online_array = []
+
+    #     episodes = episodes.split('"name"')
+    #     episodes.pop(0)
+
+    #     for ep in episodes:
+    #         episode_name = ep[ep.find(':')+1:]
+    #         episode_name = episode_name[:episode_name.find(',')]
+    #         episode_name = episode_name.replace('"', '').replace('null', '')
+            
+    #         episode_num = ep[ep.find('"number":')+9:]#:ep.find(',"videos')]
+    #         episode_num = episode_num[:episode_num.find(',')]
+            
+    #         if not episode_name:
+    #             episode_name = 'Episode {}'.format(episode_num)
+                
+    #         if '"SIBNET"' in ep:
+    #             episode_url = ep[ep.find('SIBNET","embedUrl":"')+20:]
+    #             episode_url = episode_url[:episode_url.find('"')]
+    #         else:
+    #             episode_name = '[COLOR=red][B]{}[/B][/COLOR]'.format(episode_name)
+    #             episode_url = 'https://'
+
+    #         online_array.append(u'{}||{}||{}'.format(episode_name,episode_num,episode_url))
+        
+    #     episodes_data = u'|||'.join(online_array)
+
+    #     return episodes_data
 #========================#========================#========================#
     def create_torrent(self, torrent):
         seed = torrent[torrent.find('seeders":')+9:torrent.find(',"leechers')]
@@ -591,7 +634,7 @@ class Shiza:
     def exec_common_part(self):
         self.progress_bg.create("ShizaProject", u"Инициализация")
         post = self.create_post()
-
+        
         data_request = session.post(url=self.site_url, proxies=self.proxy_data, data=post, headers=headers)
         
         if not data_request.status_code == requests.codes.ok:
@@ -747,49 +790,123 @@ class Shiza:
         if not self.params['param']:
             try:
                 data_array = self.params['episodes'].decode('utf-8')
-                data_array = data_array.split('|||')
+                data_array = data_array.split('***')
             except:
-                data_array = self.params['episodes'].split('|||')
+                data_array = self.params['episodes'].split('***')
+            
             cover = self.params['cover']
-
+                
             for data in data_array:
-                data = data.split('||')
+                data = data.split('|')
                 episode_title = data[0]
                 episode_num = data[1]
-                episode_url = data[2]
-
+                
+                sibnet_url = data[2]
+                kodik_url = data[3]
+                
+                episode_url = u'{}|{}'.format(sibnet_url,kodik_url)
+        
                 if '[COLOR=red]' in episode_title:
                     label = u'[COLOR=red][B]{} - [/B][/COLOR]{}'.format(episode_num, episode_title)
                 else:
                     label = u'{} - {}'.format(episode_num, episode_title)
 
-                self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': data[2], 'title':'[COLOR=gold][ PLAY ][/COLOR]', 'cover': cover})
+                #self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': data[2], 'title':'[COLOR=gold][ PLAY ][/COLOR]', 'cover': cover})
+                #self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': episode_url, 'title':'[COLOR=gold][ PLAY ][/COLOR]', 'cover': cover})
+                self.create_line(title=label, anime_id=self.params['id'], cover=cover, params={'mode': 'online_part', 'id': self.params['id'], 'param': episode_url, 'cover': cover})
 
         if self.params['param']:
-            data_request = session.get(url=self.params['param'], proxies=self.proxy_data, headers=headers)
+            sibnet_url, kodik_url = self.params['param'].split('|')
             
-            if not data_request.status_code == requests.codes.ok:
-                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return
+            if sibnet_url:                
+                data_request = session.get(url=self.params['param'], proxies=self.proxy_data, headers=headers)
+                
+                if not data_request.status_code == requests.codes.ok:
+                    self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                    return
             
-            html = data_request.text
-            
-            cover = html[html.find('og:image" content="')+19:html.find('"/><meta property="og:description')]
-            
-            if 'player.src' in html:
-                video_src = html[html.find('player.src([{src: "')+19:html.find(';player.persistvolume')]
-                video_src = video_src[:video_src.find('"')]
-                play_url = 'https://video.sibnet.ru{}|referer={}'.format(video_src, self.params['param'])
+                html = data_request.text
+                
+                cover = html[html.find('og:image" content="')+19:html.find('"/><meta property="og:description')]
+                
+                if 'player.src' in html:
+                    video_src = html[html.find('player.src([{src: "')+19:html.find(';player.persistvolume')]
+                    video_src = video_src[:video_src.find('"')]
+                    play_url = 'https://video.sibnet.ru{}|referer={}'.format(video_src, self.params['param'])
 
-                label = self.params['title']
+                    label = 'Player: Sibnet'  #self.params['title']
 
-            if 'class=videostatus><p>' in html:
-                status = html[html.find('class=videostatus><p>')+21:html.find('</p></div><script')]
-                label = '[COLOR=red][B][ {} ][/B][/COLOR]'.format(status.replace('.',''))
-                play_url = ''
+                if 'class=videostatus><p>' in html:
+                    status = html[html.find('class=videostatus><p>')+21:html.find('</p></div><script')]
+                    label = '[COLOR=red][B]{}[/B][/COLOR]'.format(status.replace('.',''))
+                    play_url = ''
 
-            self.create_line(title=label, cover=cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
+                self.create_line(title=label, cover=cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
+                
+            if kodik_url:
+                data_request = session.get(url=kodik_url, proxies=self.proxy_data, headers=headers)
+                
+                if not data_request.status_code == requests.codes.ok:
+                    self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                    return
+            
+                html = data_request.text
+               
+                if 'data-code=' in html:
+                    episode_cover = html[html.find('thumbnails = ["')+15:]
+                    episode_cover = episode_cover[:episode_cover.find('"')]
+                    episode_cover = 'https:{}'.format(episode_cover)
+                    
+                    episode_url = html[html.find("data-code='//")+13:]
+                    episode_url = episode_url[:episode_url.find("'")]
+                    
+                    episode_url = episode_url.split('/')    
+                    episode_type = episode_url[1]
+                    episode_id = episode_url[2]
+                    episode_hash = episode_url[3]
+                    
+                    post_data = {
+                        'type':episode_type,
+                        'id':episode_id,
+                        'hash':episode_hash
+                        }
+
+                    r = requests.post(url='https://kodik.info/gvi', data=post_data, headers={'Referer':'https://shiza-project.com/'})
+                    
+                    if not r.status_code == requests.codes.ok:
+                        self.create_line(title='Ошибка получения ссылки', params={'mode': 'main_part'})
+                        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                        return
+                    data_print('333')
+                    current_quality = self.addon.getSetting('shizaproject_quality')
+                    
+                    import json, base64
+                    data = json.loads(r.text)                    
+                    
+                    quality_data = {}
+
+                    for quality in data['links']:
+                        quality_url = data['links'][quality][0]['src']
+                        quality_url = quality_url = '{}==='.format(quality_url[::-1])
+                        quality_url = base64.standard_b64decode(quality_url)
+                        quality_url = 'https:{}'.format(quality_url.decode('utf-8'))
+                        
+                        quality_data.update({quality:quality_url})
+                        
+                    try:
+                        play_url = quality_data[current_quality]
+                        q = current_quality
+                    except:
+                        choice = list(quality_data.keys())
+                        result = self.dialog.select('Доступное качество: ', choice)
+                        result_quality = choice[int(result)]
+                        play_url = quality_data[result_quality]
+                        q = result_quality
+                        
+                    label = 'Player: Kodik - {}p'.format(q)
+                    self.create_line(title=label, cover=episode_cover, params={}, anime_id=self.params['id'], online=play_url, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
