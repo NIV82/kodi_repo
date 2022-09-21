@@ -202,7 +202,6 @@ class Lostfilm:
 
                 serial_episode = int(data_code[len(data_code)-3:len(data_code)])
                 serial_episode = 'E{:>02}'.format(serial_episode)
-
             if watched:
                 data_code = u'[COLOR=goldenrod]{}{} | [/COLOR]'.format(serial_season, serial_episode)
             else:
@@ -283,7 +282,7 @@ class Lostfilm:
         if serial_id and se_code:
             cover = self.create_image(se_code, ismovie=ismovie)
 
-            li.setArt({"poster": cover,"icon": cover})
+            li.setArt({"poster": cover,"icon": cover, "thumb": cover})
 
             se_info = self.database.get_serial(serial_id)
 
@@ -650,7 +649,6 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Расписание'), params={'mode': 'schedule_part'})
         self.create_line(title=self.create_colorize('Избранное'), params={'mode': 'catalog_part', 'param': 'favorites'})
         self.create_line(title=self.create_colorize('Новинки'), params={'mode': 'common_part', 'param':'new/'})
-        #self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'movies_part'})
         self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'catalog_part', 'param': 'movies'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог'), params={'mode': 'catalog_part'})
@@ -705,7 +703,6 @@ class Lostfilm:
                 return
             
             html = data_request.text
-            data_print(html)
             
             if not ':[{' in html:
                 self.create_line(title='[B][COLOR=white]Контент отсутствует[/COLOR][/B]', params={'mode': self.params['mode']})
@@ -1071,10 +1068,19 @@ class Lostfilm:
                 self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                 
                 if 'data-code=' in data:
-                    label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
                     if atl_names:
-                        label = u'{}.{}'.format(serial_title, label)                    
+                        #label = label[:label.find('|')].strip()
+                        #label = u'{}.{}'.format(serial_title, label)
 
+                        label = u'{}.S{:>02}E{:>02}'.format(
+                            serial_title,
+                            int(se_code[len(se_code)-6:len(se_code)-3]),
+                            int(se_code[len(se_code)-3:len(se_code)])
+                            )
+                    else:
+                        label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
+                        
+                        
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
                                      'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
                 else:
