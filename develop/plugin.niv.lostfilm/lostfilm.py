@@ -100,6 +100,7 @@ class Lostfilm:
         self.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
         self.proxy_data = None #self.exec_proxy_data()
         self.site_url = self.create_site_url()
+        #self.authorization = self.exec_authorization_part()
         self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'lostfilm.db')):
@@ -240,7 +241,7 @@ class Lostfilm:
         if 'archive_part' in self.params['mode']:
             context_menu.append(('[COLOR=blue]Удалить данный файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&id={}&code={}")'.format(serial_id,se_code)))
             context_menu.append(('[COLOR=red]Удалить все файлы[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&param=clean")'.format(serial_id,se_code)))            
-            
+
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=authorization_part&param=update")'))
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
@@ -311,7 +312,7 @@ class Lostfilm:
                 info['playcount'] = 1
 
             li.setInfo(type='video', infoLabels=info)
-
+            
         li.addContextMenuItems(
             self.create_context(serial_id = serial_id, se_code = se_code, ismovie=ismovie)
             )
@@ -960,7 +961,7 @@ class Lostfilm:
         
         if not self.params['param']:
             url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
-            
+
             data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
             
             if not data_request.status_code == requests.codes.ok:
@@ -970,6 +971,15 @@ class Lostfilm:
 
             html = data_request.text
             
+            if '<div class="status">' in html and not atl_names:
+                serial_status = html[html.find('<div class="status">')+20:]
+                serial_status = serial_status[:serial_status.find('</span>')]
+                serial_status = serial_status.replace(u'Статус:','').strip()
+                serial_status = u'[COLOR=dimgray]{}[/COLOR]'.format(serial_status)
+                self.create_line(title=serial_status, folder=False, watched=True, params={})
+            else:
+                serial_status = ''
+
             image_id = self.params['code'][:len(self.params['code'])-6]
 
             data_array = html[html.find('<h2>')+4:html.rfind('holder"></td>')+13]
@@ -981,10 +991,23 @@ class Lostfilm:
                 return
 
             self.progress_bg.create('LostFilm', 'Инициализация')
-    
+
             i = 0
             
-            for data in data_array:
+            for data in data_array:                
+                if '<div class="details">' in data:
+                    season_status = data[data.find('<div class="details">')+21:]
+                    season_status = season_status[:season_status.find('<div class')]
+                    season_status = season_status.replace(u'Статус:','').strip()
+                    
+                    if u'Идет' in season_status:
+                        season_status = u'| [COLOR=gold]{}[/COLOR]'.format(season_status)
+                    else:
+                        season_status = u'| [COLOR=blue]{}[/COLOR]'.format(season_status)
+
+                else:
+                    season_status = ''
+                    
                 title = data[:data.find('</h2>')]
 
                 season = title.replace(u'сезон','').strip()
@@ -998,7 +1021,8 @@ class Lostfilm:
                 self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                 if 'PlayEpisode(' in data:
-                    label = u'[B]{}[/B]'.format(title)
+                    #label = u'[B]{}[/B]'.format(title)
+                    label = u'[B]{} {}[/B]'.format(title, season_status)
                     self.create_line(title=label, serial_id=self.params['id'], se_code=se_code ,params={
                         'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
                 else:
