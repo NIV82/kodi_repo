@@ -1048,9 +1048,7 @@ class Anidub:
             url = 'https://tr.anidub.com/engine/download.php?id={}'.format(self.params['param'])
             data_request = self.session.get(url=url, proxies=self.proxy_data)
 
-            file_name = data_request.headers['content-disposition']
-            file_name = file_name[file_name.find('filename=')+9:]
-            file_name = file_name.replace('"','').replace(',','')
+            file_name = 'torrent.torrent'
             
             torrent_file = os.path.join(self.torrents_dir, file_name)
             

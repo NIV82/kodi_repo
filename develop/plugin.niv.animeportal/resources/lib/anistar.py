@@ -434,8 +434,13 @@ class Anistar:
                     session.cookies.update(pickle.load(read_file))
                 auth = True
             except:
-                r = requests.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
-                
+                try:
+                    r = session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data, headers=headers)
+                except Exception as e:
+                    if '10054' in str(e):
+                        self.exec_mirror_part()
+                        r = session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data, headers=headers)
+
                 if 'dle_user_id' in str(r.cookies):
                     with open(self.sid_file, 'wb') as write_file:
                         pickle.dump(r.cookies, write_file)
@@ -445,9 +450,14 @@ class Anistar:
                 else:
                     auth = False
         else:
-            r = session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data, headers=headers)
+            try:
+                r = session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data, headers=headers)
+            except Exception as e:
+                if '10054' in str(e):
+                    self.exec_mirror_part()
+                    r = session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data, headers=headers)
 
-            if 'dle_user_id' in str(r.cookies):                
+            if 'dle_user_id' in str(r.cookies):
                 with open(self.sid_file, 'wb') as write_file:
                     pickle.dump(r.cookies, write_file)
                     
@@ -986,9 +996,7 @@ class Anistar:
             
             data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
-            file_name = data_request.headers['content-disposition']            
-            file_name = file_name[file_name.find('filename=')+9:]
-            file_name = file_name.replace('"','').replace(',','').replace(':','-')
+            file_name = 'torrent.torrent'
             
             torrent_file = os.path.join(self.torrents_dir, file_name)
             

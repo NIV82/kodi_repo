@@ -932,9 +932,11 @@ class Shiza:
                 self.create_line(title=label, metadata=metadata, params={'mode': 'torrent_part', 'param': torrent_url, 'id': self.params['id'],'cover':self.params['cover']})
         
         if self.params['param']:
+            from utility import valid_media
             data_request = session.get(url=self.params['param'], proxies=self.proxy_data, headers=headers)
 
-            file_name = 'shizaproject.torrent'
+            file_name = 'torrent.torrent'
+            
             torrent_file = os.path.join(self.torrents_dir, file_name)
             
             with open(torrent_file, 'wb') as write_file:
@@ -953,8 +955,13 @@ class Shiza:
 
             if 'files' in info:
                 for i, x in enumerate(info['files']):
+                    
+                    if not valid_media(x['path'][-1]):
+                        continue
+                    
                     size[i] = x['length']
                     series[i] = x['path'][-1]
+                    
                 for i in sorted(series, key=series.get):
                     self.create_line(title=series[i], params={'mode': 'selector_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], cover=self.params['cover'], folder=False, size=size[i])
             else:

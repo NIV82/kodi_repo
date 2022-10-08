@@ -225,6 +225,8 @@ class Anilibria:
         year = html[html.find('year":')+6:html.find('},"descrip')]
 
         description = html[html.find('description":')+13:]
+        description = description[:description.find('}')]
+
         if '"' in description[0]:
             description = description[1:]
         if '"' in description[len(description)-1]:
@@ -918,9 +920,7 @@ class Anilibria:
             
             data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
-            file_name = data_request.headers['content-disposition']            
-            file_name = file_name[file_name.find('filename=')+9:]
-            file_name = file_name.replace('"','').replace(',','').replace(':','-')
+            file_name = 'torrent.torrent'
             
             torrent_file = os.path.join(self.torrents_dir, file_name)
             
