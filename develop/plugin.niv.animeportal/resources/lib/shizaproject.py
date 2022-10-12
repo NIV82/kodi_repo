@@ -384,7 +384,7 @@ class Shiza:
             
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=shizaproject")'))
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal=shizaproject")'))
-        
+
         return context_menu
 #========================#========================#========================#
     def create_line(self, title=None, cover=None, rating=None, params=None, anime_id=None, size=None, folder=True, online=None, metadata=None):
@@ -568,9 +568,8 @@ class Shiza:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]ShizaProject[/COLOR][/B]\n\
-    - теперь показывает все доступные торренты\n\
-    - добавлена обработка Kodik ссылок в онлайне'
+        data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
+    - Исправлены метки просмотренного в торрента файлах'
         self.dialog.textviewer('Информация', data)
         return
 #========================#========================#========================#
@@ -935,8 +934,9 @@ class Shiza:
             from utility import valid_media
             data_request = session.get(url=self.params['param'], proxies=self.proxy_data, headers=headers)
 
-            file_name = 'torrent.torrent'
-            
+            file_name = self.params['param']
+            file_name = file_name[file_name.rfind('/')+1:file_name.rfind('.')]
+
             torrent_file = os.path.join(self.torrents_dir, file_name)
             
             with open(torrent_file, 'wb') as write_file:

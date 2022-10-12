@@ -34,7 +34,7 @@ headers = {
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
     
-from utility import tag_list, clean_list
+from utility import tag_list, clean_list, sha1
 
 class Anistar:
     def __init__(self, addon_data_dir, params, addon, icon):
@@ -567,10 +567,8 @@ class Anistar:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]AniStar[/COLOR][/B]\n\
-    - Суб плагин переведен на библиотеку requests\n\
-    - Общая оптимизация, правки\n\
-    - Отлючен игнор лист - т.е. вся реклама теперь видна'
+        data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
+    - Исправлены метки просмотренного в торрента файлах'
         self.dialog.textviewer('Информация', data)
         return
 #========================#========================#========================#
@@ -996,7 +994,9 @@ class Anistar:
             
             data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
-            file_name = 'torrent.torrent'
+            file_name = sha1(
+                '{}_{}'.format(self.params['portal'], self.params['param'])
+                )
             
             torrent_file = os.path.join(self.torrents_dir, file_name)
             

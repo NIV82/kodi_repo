@@ -146,5 +146,5 @@ if 'shizaproject' in params['portal']:
     shiza = Shiza(addon_data_dir, params, addon, icon)
     shiza.execute()
     del Shiza
-        
+
 gc.collect()

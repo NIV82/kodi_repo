@@ -27,6 +27,7 @@ else:
 from utility import clean_tags
 from utility import data_encode
 from utility import data_decode
+from utility import sha1
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
@@ -459,13 +460,8 @@ class Animedia:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]Animedia[/COLOR][/B]\n\
-    - Плагин переведен на библиотеку requests\n\
-    - Добавлен фильтр медиа для торрент файлов\n\
-    - Удален подборщик зеркала, т.к. онлайн сайт без блокировки\n\
-    - Добавлен пункт настроек Разблокировок для торрентов и общий\n\
-    - Разблокировать торренты отключается при включении общей разблокировки\n\
-    - Правки, оптимизация'
+        data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
+    - Исправлены метки просмотренного в торрента файлах'
         self.dialog.textviewer('Информация', data)
         return
 #========================#========================#========================#
@@ -915,7 +911,9 @@ class Animedia:
 
             data_request = self.session.get(url=url, proxies=self.proxy_data)
 
-            file_name = 'torrent.torrent'
+            file_name = sha1(
+                '{}_{}'.format(self.params['portal'],anime_code[0])
+                )
             
             torrent_file = os.path.join(self.torrents_dir, file_name)
             

@@ -27,6 +27,7 @@ else:
 from utility import clean_tags
 from utility import data_encode
 from utility import data_decode
+from utility import sha1
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
@@ -683,8 +684,8 @@ class Anidub:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]AniDUB[/COLOR][/B]\n\
-    - Исправлено отображение названий некоторых онлайн серий (первых обычно)'
+        data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
+    - Исправлены метки просмотренного в торрента файлах'
         self.dialog.textviewer('Информация', data)
         return
 #========================#========================#========================#
@@ -1048,8 +1049,10 @@ class Anidub:
             url = 'https://tr.anidub.com/engine/download.php?id={}'.format(self.params['param'])
             data_request = self.session.get(url=url, proxies=self.proxy_data)
 
-            file_name = 'torrent.torrent'
-            
+            file_name = sha1(
+                '{}_{}'.format(self.params['portal'], anime_code[0])
+                )
+
             torrent_file = os.path.join(self.torrents_dir, file_name)
             
             with open(torrent_file, 'wb') as write_file:

@@ -512,11 +512,8 @@ class Anilibria:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]AniLibria[/COLOR][/B]\n\
-    - Суб-плагин переведен на библиотеку requests\n\
-    - Добавлена разблокировка\n\
-    - Добавлена возможность просмотра через TorrServ (вне ТАМ)\n\
-    - Список движков ТАМ приведен в актуальное состояние'
+        data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
+    - Исправлены метки просмотренного в торрента файлах'
         self.dialog.textviewer('Информация', data)
         return
 #========================#========================#========================#
@@ -910,7 +907,7 @@ class Anilibria:
                 self.create_line(title=label, params={'mode': 'torrent_part', 'param': torrent_id, 'id': self.params['id'], 'node': cover})
                 
         if self.params['param']:
-            
+
             if '0' in self.addon.getSetting('anilibria_torrents'):
                 self.addon.setSetting('{}_unblock'.format(self.params['portal']), 'true')
                 self.proxy_data = self.exec_proxy_data()
@@ -919,9 +916,13 @@ class Anilibria:
             url = 'https://www.anilibria.tv/public/torrent/download.php?id={}'.format(self.params['param'])
             
             data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
-
-            file_name = 'torrent.torrent'
             
+            from utility import sha1
+            
+            file_name = sha1(
+                '{}_{}'.format(self.params['portal'], self.params['id'])
+                )
+
             torrent_file = os.path.join(self.torrents_dir, file_name)
             
             with open(torrent_file, 'wb') as write_file:

@@ -4,7 +4,20 @@ import sys, base64
 def data_print(data):
     import xbmc
     xbmc.log(str(data), xbmc.LOGFATAL)
+
+def sha1(data):
+    import hashlib
+
+    try:
+        data = data.encode('utf-8')
+    except:
+        pass
     
+    hash_data = hashlib.sha1(data)
+    hex_data = hash_data.hexdigest()
+    
+    return hex_data
+
 def data_encode(data):
     data = data.encode('utf-8')
     data = base64.b64encode(data)
