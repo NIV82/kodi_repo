@@ -638,10 +638,10 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.3[/COLOR][/B]\n\
-    - Правка парсера описания для некоторых фильмов\n\
-    - Добавлен отдельный раздел Фильмы\n\
-    - Обновлена БазаДанных в репо'
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.7[/COLOR][/B]\n\
+    - Исправлена ошибка в разделе Расписание\n\
+    - В Расписание добавлены заглушки для ошибок\n\
+    * заглушки высвечивают ошибки отдельно и раздел продолжает работать'
         self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
@@ -776,77 +776,91 @@ class Lostfilm:
 
         html = data_request.text
         
+        if not '<th colspan="6">' in html:
+            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+
         self.progress_bg.create('LostFilm', 'Инициализация')
-        
+
         data_array = html[html.find('<th colspan="6">')+16:html.rfind('<td class="placeholder">')]        
         data_array = data_array.split('<th colspan="6">')
 
         i = 0
+        
+        try:
+            for data in data_array:
+                title = data[:data.find('</th>')]
 
-        for data in data_array:
-            title = data[:data.find('</th>')]
+                i = i + 1
+                p = int((float(i) / len(data_array)) * 100)
 
-            i = i + 1
-            p = int((float(i) / len(data_array)) * 100)
+                self.create_line(title=u'[B]{}[/B]'.format(title.capitalize()), params={})
 
-            self.create_line(title=u'[B]{}[/B]'.format(title.capitalize()), params={})
-
-            data = data.split('<td class="alpha"')
-            data.pop(0)
-            
-            a = 0
-            
-            for d in data:
-                is_movie = True if '/movies/' in d else False
+                data = data.split('<td class="alpha"')
+                data.pop(0)
                 
-                if is_movie:
-                    serial_id = d[d.find('/movies/')+8:d.find('\',false')]
-                    serial_id = serial_id.strip()
-                else:
-                    serial_id = d[d.find('/series/')+8:d.find('\',false')]
-                    serial_id = serial_id.strip()
+                a = 0
                 
-                image_id = d[d.find('/Images/')+8:d.find('/Posters/')]
-                
-                serial_title = d[d.find('class="ru">')+11:]
-                serial_title = serial_title[:serial_title.find('</div>')]        
+                try:
+                    for d in data:
+                        is_movie = True if '/movies/' in d else False
+                        
+                        if is_movie:
+                            serial_id = d[d.find('/movies/')+8:d.find('\',false')]
+                            serial_id = serial_id.strip()
+                        else:
+                            serial_id = d[d.find('/series/')+8:d.find('\',false')]
+                            serial_id = serial_id.strip()
+                        
+                        image_id = d[d.find('/Images/')+8:d.find('/Posters/')]
+                        
+                        serial_title = d[d.find('class="ru">')+11:]
+                        serial_title = serial_title[:serial_title.find('</div>')]
 
-                episode_title = d[d.find('<td class="gamma'):]
-                episode_title = episode_title[episode_title.find(';">')+3:episode_title.find('<br />')]
+                        episode_title = d[d.find('<td class="gamma'):]
+                        episode_title = episode_title[episode_title.find(';">')+3:episode_title.find('<br />')]
 
-                if is_movie:
-                    code = ['1','1']
-                else:
-                    code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
-                    code = code.replace('season_','').replace('episode_','')
-                    code = code.replace('additional','999').split('/')
+                        if is_movie:
+                            code = ['1','1']
+                        else:
+                            # code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
+                            # code = code.replace('season_','').replace('episode_','')
+                            # code = code.replace('additional','999').split('/')
+                            code = d[d.rfind('{}'.format(serial_id))+len(serial_id):d.rfind('/\'')]
+                            code = code.replace('season_','').replace('episode_','').strip()
+                            code = code.replace('additional','999').replace('/', '', 1).split('/')
+                            
+                        se_code = '{}{:>03}{:>03}'.format(image_id,int(code[0]),int(code[1]))
 
-                se_code = '{}{:>03}{:>03}'.format(image_id,int(code[0]),int(code[1]))
+                        day_release = d[d.rfind('false);">')+9:d.rfind('<br />')].strip()
+                        
+                        if '<p>' in d:
+                            when_release = d[d.find('<p>')+3:d.find('</p>')]
+                        else:
+                            when_release = d[d.rfind('<span>')+6:d.rfind('</span>')]
+                            when_release = u'Дней осталось: {}'.format(when_release)
+                        
+                        a = a + 1
+                        
+                        self.progress_bg.update(p, u'[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
+                            i, len(data_array), a, len(data)))
 
-                day_release = d[d.rfind('false);">')+9:d.rfind('<br />')].strip()
-                
-                if '<p>' in d:
-                    when_release = d[d.find('<p>')+3:d.find('</p>')]
-                else:
-                    when_release = d[d.rfind('<span>')+6:d.rfind('</span>')]
-                    when_release = u'Дней осталось: {}'.format(when_release)
-                
-                a = a + 1
+                        if not self.database.serial_in_db(serial_id):
+                            self.create_info(serial_id)
 
-                self.progress_bg.update(p, u'[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
-                    i, len(data_array), a, len(data)))
+                        if is_movie:
+                            label = self.create_title(serial_title=serial_title, data_code=se_code,ismovie=is_movie)
+                        else:
+                            label = self.create_title(serial_title, episode_title, se_code, ismovie=is_movie)
+                        label = u'{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
 
-                if not self.database.serial_in_db(serial_id):
-                    self.create_info(serial_id)
-
-                if is_movie:
-                    label = self.create_title(serial_title=serial_title, data_code=se_code,ismovie=is_movie)
-                else:
-                    label = self.create_title(serial_title, episode_title, se_code, ismovie=is_movie)
-                label = u'{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
-
-                self.create_line(title=label, serial_id=serial_id, se_code=se_code, ismovie=is_movie, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
-
+                        self.create_line(title=label, serial_id=serial_id, se_code=se_code, ismovie=is_movie, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
+                except:
+                    self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
+        except:
+            self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
+             
         self.progress_bg.close()
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
