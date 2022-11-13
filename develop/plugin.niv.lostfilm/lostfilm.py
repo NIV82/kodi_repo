@@ -30,7 +30,9 @@ else:
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape
 
-from utility import clean_tags, fs_enc
+from utility import clean_tags
+from utility import fs_enc
+from utility import clean_list
 
 addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
 
@@ -54,6 +56,7 @@ except:
     xbmc.executebuiltin('RunPlugin("plugin://script.module.requests")')
 
 import requests
+session = requests.Session()
 
 headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
@@ -73,8 +76,6 @@ class Lostfilm:
     def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
-
-        self.session = requests.Session()
         
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
@@ -100,7 +101,6 @@ class Lostfilm:
         self.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
         self.proxy_data = None #self.exec_proxy_data()
         self.site_url = self.create_site_url()
-        #self.authorization = self.exec_authorization_part()
         self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'lostfilm.db')):
@@ -110,9 +110,24 @@ class Lostfilm:
         self.database = DataBase(os.path.join(self.database_dir, 'lostfilm.db'))
         del DataBase
 #========================#========================#========================#
+
+    def create_notification(self, data):
+        
+        data_array = {
+            'done': 'Выполнено',
+            'err': 'Ошибка',
+            'log': 'Введите Логин и Пароль',
+            'chk': 'Проверьте Логин и Пароль',
+            'add': 'Добавлено',
+            'del': 'Удалено'
+            }
+
+        self.dialog.notification(heading='LostFilm',message=data_array[data],icon=icon,time=3000,sound=False)
+        return
+#========================#========================#========================#
     def create_session(self):
         url = '{}my'.format(self.site_url)
-        r = self.session.get(url=url, headers=headers)
+        r = session.get(url=url, headers=headers)
 
         html = r.text
 
@@ -256,11 +271,11 @@ class Lostfilm:
                     file_path = os.path.join(self.torrents_dir, data)
                     try: os.remove(file_path)
                     except: pass
-                self.dialog.notification(heading='Архив',message='УСПЕШНО',icon=icon,time=5000,sound=False)
+                self.create_notification('done')
                 
                 xbmc.executebuiltin("Container.Refresh()")
             except:
-                self.dialog.notification(heading='Архив',message='ОШИБКА',icon=icon,time=5000,sound=False)
+                self.create_notification('err')
         
         if not self.params['param']:
             try:
@@ -270,12 +285,11 @@ class Lostfilm:
                     if self.params['code'] in data:
                         try: os.remove(file_path)
                         except: pass
-                self.dialog.notification(heading='Архив',message='УСПЕШНО',icon=icon,time=5000,sound=False)
+                self.create_notification('done')
                 
                 xbmc.executebuiltin("Container.Refresh()")
             except:
-                self.dialog.notification(heading='Архив',message='ОШИБКА',icon=icon,time=5000,sound=False)
-
+                self.create_notification('err')
 #========================#========================#========================#
     def create_line(self, title, serial_id='', se_code='', watched=False, params=None, folder=True, ismovie=False):
         li = xbmcgui.ListItem(title)
@@ -327,7 +341,7 @@ class Lostfilm:
     def create_info(self, serial_id, update=False):
         url = '{}series/{}/'.format(self.site_url, serial_id)
 
-        data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
         if not data_request.status_code == requests.codes.ok:
             self.database.add_serial(
@@ -343,7 +357,7 @@ class Lostfilm:
         else:
             url = '{}movies/{}/'.format(self.site_url, serial_id)
             
-            data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+            data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
             html = data_request.text
             
             if '<div class="title-block">' in html:
@@ -412,14 +426,14 @@ class Lostfilm:
                 serial_id=serial_id,
                 title_ru='serial_id: {}'.format(serial_id)
                 )
-            self.dialog.notification(heading='Описание',message='Ошибка',icon=icon,time=3000,sound=False)
+            self.create_notification('err')
             return
 
         if not ismovie:
             cast = {'actors': [], 'directors': [], 'producers': [], 'writers': []}
             
             url = '{}cast'.format(url)
-            data_request2 = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+            data_request2 = session.get(url=url, proxies=self.proxy_data, headers=headers)
             html2 = data_request2.text
 
             info_array = html2[html2.find('<div class="header-simple">'):html2.find('rightt-pane">')]        
@@ -457,7 +471,7 @@ class Lostfilm:
                     update=update
                 )
             except:
-                self.dialog.notification(heading='Кастинг',message='Ошибка',icon=icon,time=3000,sound=False)
+                self.create_notification('err')
                 return
             
         return
@@ -473,7 +487,7 @@ class Lostfilm:
     def exec_authorization_part(self):
         if not addon.getSetting('username') or not addon.getSetting('password'):
             self.params['mode'] = 'addon_setting'
-            self.dialog.notification(heading='Авторизация',message='Введите Логин и Пароль',icon=icon,time=3000,sound=False)
+            self.create_notification('log')
             return
 
         if 'update' in self.params['param']:
@@ -483,11 +497,11 @@ class Lostfilm:
         auth_url = '{}ajaxik.users.php'.format(self.site_url)
         
         try:
-            session = float(addon.getSetting('auth_session'))
+            temp_session = float(addon.getSetting('auth_session'))
         except:
-            session = 0
+            temp_session = 0
         
-        if time.time() - session > 86400:
+        if time.time() - temp_session > 86400:
             addon.setSetting('auth_session', str(time.time()))
             
             try:
@@ -512,7 +526,7 @@ class Lostfilm:
         if 'true' in addon.getSetting('auth'):
             try:
                 with open(self.sid_file, 'rb') as read_file:
-                    self.session.cookies.update(pickle.load(read_file))
+                    session.cookies.update(pickle.load(read_file))
                 auth = True
             except:
                 r = requests.post(url=auth_url, proxies=self.proxy_data, data=auth_post_data)
@@ -521,7 +535,7 @@ class Lostfilm:
                     with open(self.sid_file, 'wb') as write_file:
                         pickle.dump(r.cookies, write_file)
                         
-                    self.session.cookies.update(r.cookies)                
+                    session.cookies.update(r.cookies)                
                     auth = True
                 else:
                     auth = False
@@ -532,7 +546,7 @@ class Lostfilm:
                 with open(self.sid_file, 'wb') as write_file:
                     pickle.dump(r.cookies, write_file)
 
-                self.session.cookies.update(r.cookies)                
+                session.cookies.update(r.cookies)                
                 auth = True
             else:
                 auth = False                    
@@ -540,7 +554,7 @@ class Lostfilm:
 
         if not auth:
             self.params['mode'] = 'addon_setting'
-            self.dialog.notification(heading='Авторизация',message='Проверьте Логин и Пароль',icon=icon,time=3000,sound=False)
+            self.create_notification('chk')
             return
         else:
             addon.setSetting('auth', str(auth).lower())
@@ -584,10 +598,10 @@ class Lostfilm:
                         
                         self.progress_bg.update(percent, u'Загружено: {} MB'.format('{:.2f}'.format(bytes_read/1024/1024.0)))
                         
-            self.progress_bg.close()            
-            self.dialog.notification(heading='Загрузка файла',message='Успешно загружено',icon=icon,time=3000,sound=False)
+            self.progress_bg.close()
+            self.create_notification('done')
         except:
-            self.dialog.notification(heading='Загрузка файла',message='Ошибка при загрузке',icon=icon,time=3000,sound=False)
+            self.create_notification('err')
             pass
 #========================#========================#========================#
     def exec_mark_part(self, notice=True, se_code=None, mode=False):
@@ -603,45 +617,46 @@ class Lostfilm:
             "mode": mode
             }
 
-        data_request = self.session.post(url=url, data=post_data, headers=headers)
+        data_request = session.post(url=url, data=post_data, headers=headers)
 
         html = data_request.text
 
         if notice:
             if '"on' in str(html) or 'off' in str(html):
-                self.dialog.notification(heading='LostFilm',message='ВЫПОЛНЕНО',icon=icon,time=3000,sound=False)
+                self.create_notification('done')
             if 'error' in str(html):
-                self.dialog.notification(heading='LostFilm',message='ОШИБКА',icon=icon,time=3000,sound=False)
+                self.create_notification('err')
 #========================#========================#========================#
     def exec_favorites_part(self):
         post = 'session={}&act=serial&type=follow&id={}'.format(
             addon.getSetting('user_session'), self.database.get_image_id(self.params['id']))
         
         url = '{}ajaxik.php'.format(self.site_url)
-        data_request = self.session.post(url=url, data=post, proxies=self.proxy_data, headers=headers)
+        data_request = session.post(url=url, data=post, proxies=self.proxy_data, headers=headers)
         
         html = data_request.text
 
         if '"on' in str(html):
-            self.dialog.notification(heading='LostFilm',message='ДОБАВЛЕНО',icon=icon,time=3000,sound=False)
+            self.create_notification('add')
         if 'off' in str(html):
-            self.dialog.notification(heading='LostFilm',message='УДАЛЕНО',icon=icon,time=3000,sound=False)
+            self.create_notification('del')
         if 'error' in str(html):
-            self.dialog.notification(heading='LostFilm',message='ОШИБКА',icon=icon,time=3000,sound=False)
+            self.create_notification('err')
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
             addon.setSetting('search', '')
-            self.dialog.notification(heading='LostFilm',message='ВЫПОЛНЕНО',icon=icon,time=3000,sound=False)
+            self.create_notification('done')
+            
         except:
-            self.dialog.notification(heading='LostFilm',message='ОШИБКА',icon=icon,time=3000,sound=False)
+            self.create_notification('err')
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.7[/COLOR][/B]\n\
-    - Исправлена ошибка в разделе Расписание\n\
-    - В Расписание добавлены заглушки для ошибок\n\
-    * заглушки высвечивают ошибки отдельно и раздел продолжает работать'
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.8[/COLOR][/B]\n\
+    - Правки, оптимизация\n\
+    - Раздел Архив отключен\n\
+    - Добавлено новое Расписание (выбирается в настройках)'
         self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
@@ -653,7 +668,7 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'catalog_part', 'param': 'movies'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог'), params={'mode': 'catalog_part'})
-        self.create_line(title=self.create_colorize('Архив Торрентов'), params={'mode': 'archive_part'})
+        #self.create_line(title=self.create_colorize('Архив Торрентов'), params={'mode': 'archive_part'})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
@@ -696,7 +711,7 @@ class Lostfilm:
                 "val": self.params['search_string']
                 }
 
-            data_request = self.session.post(url=url, data=post_data, proxies=self.proxy_data, headers=headers)
+            data_request = session.post(url=url, data=post_data, proxies=self.proxy_data, headers=headers)
             
             if not data_request.status_code == requests.codes.ok:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -766,8 +781,15 @@ class Lostfilm:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_schedule_part(self):
+        if '0' in addon.getSetting('schedule_mode'):
+            self.exec_schedule_part_new()
+        else:
+            self.exec_schedule_part_old()
+        return
+#========================#========================#========================#
+    def exec_schedule_part_old(self):
         url = '{}schedule/my_0/type_0'.format(self.site_url)
-        data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
         if not data_request.status_code == requests.codes.ok:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -814,7 +836,7 @@ class Lostfilm:
                             serial_id = serial_id.strip()
                         
                         image_id = d[d.find('/Images/')+8:d.find('/Posters/')]
-                        
+
                         serial_title = d[d.find('class="ru">')+11:]
                         serial_title = serial_title[:serial_title.find('</div>')]
 
@@ -866,10 +888,142 @@ class Lostfilm:
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
+    def exec_schedule_part_new(self):
+        url = '{}schedule/{}'.format(self.site_url, self.params['param'])
+        
+        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
+        
+        if not data_request.status_code == requests.codes.ok:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+        
+        html = data_request.text
+        
+        if not '<tbody>' in html:
+            self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+        
+        # activ_month = html[html.find('active-month'):]
+        # activ_month = activ_month[activ_month.find('>')+1:activ_month.find('<')]
+        
+        # if 'previous-link active' in html:
+        #     prev_link = html[html.find('previous-link active'):]
+        #     prev_link = prev_link[prev_link.find('/schedule/')+10:prev_link.find('<div class=')]
+            
+        #     title = prev_link[prev_link.rfind('>')+1:].capitalize()
+        #     prev_link = prev_link[:prev_link.find('\'')]
+            
+        #     label = u'[COLOR=gold]{}[/COLOR] | Прошлый - [COLOR=gold]{}[/COLOR]'.format(activ_month.capitalize(), title)
+        #     self.create_line(title=label, params={'mode': 'schedule_part_new', 'page': prev_link})
+            
+        table_data = html[html.find('<tbody>')+7:html.find('</tbody>')]
+        table_data = clean_list(table_data)
+        table_data = table_data.split('</tr><tr><th></th>')
+
+        schedule_table = []
+        today = False
+
+        for data in table_data:
+            schedule = []
+            
+            header = data[data.find('<th class'):data.find('</th><th></th></tr>')]
+            header = header.split('</th>')
+
+            for h in header:
+                if 'inactive' in h:
+                    h = '***'
+                else:
+                    if 'today' in h:
+                        #h = h[:h.find('<br />')]
+                        #h = h[h.rfind('>')+1:]
+                        #h = u'{} | Сегодня'.format(h)
+                        h = u'Сегодня'
+                        today = True
+                    else:
+                        h = h[h.find('">')+2:]
+                        
+                h = h.replace(u'Вт', u'Вторник -').replace(u'Ср', u'Среда -')
+                h = h.replace(u'Чт', u'Четверг -').replace(u'Пт', u'Пятница -')
+                h = h.replace(u'Сб', u'Суббота -').replace(u'Вс', u'Воскресенье -')
+                h = h.replace(u'Пн', u'Понедельник -')
+                
+                schedule.append([h])
+
+            data = data[data.find('</tr>')+5:data.rfind('</td>')]
+            data = data.split('</tr>')
+        
+            for nodes in data:        
+                nodes = nodes[nodes.find('<div class="table'):nodes.rfind('</div>')]
+                node = nodes.split('</td>')
+
+                for s,n in enumerate(node):
+                    if sys.version_info.major < 3:
+                        try:
+                            n = n.encode('utf-8')
+                        except:
+                            pass
+
+                    if 'title">' in n:
+                        title = n[n.find('title">'):n.find('</span></a>')]
+                        title = title[title.find('>')+1:].split('</br>')
+                                              
+                        try:
+                            if '<span>' in title[1]:
+                                code = title[1].replace('<span>','').replace('x','|').replace('х','|')
+                                code = code.replace('-','|').split('|')
+                                if len(code) > 2:
+                                    code = '[COLOR=blue]S{:>02}[/COLOR][COLOR=lime]E{:>02}-{:>02}[/COLOR]'.format(
+                                        int(code[0]), int(code[1]), int(code[2]))
+                                else:
+                                    code = '[COLOR=blue]S{:>02}[/COLOR][COLOR=lime]E{:>02}[/COLOR]'.format(int(code[0]),int(code[1]))
+                            if '</a><div' in title[1]:
+                                code = u'[COLOR=blue]Фильм[/COLOR]'
+                        except:
+                            code = '[COLOR=red]Ошибка[/COLOR]'
+                        
+                        try:
+                            title = '{} | {}'.format(code, title[0])
+                        except:
+                            title = '[COLOR=red]Ошибка[/COLOR]'
+                        
+                        schedule[s].append(title)
+            schedule_table.extend(schedule)
+            
+        if '0' in addon.getSetting('schedule_mode_today'):
+            if today:
+                for i,x in enumerate(schedule_table):
+                    if u'Сегодня' in x[0]:
+                        schedule_table = schedule_table[i:]
+                    
+        for sch in schedule_table:
+            if '***' in sch[0] or len(sch) < 2:
+                continue
+            
+            self.create_line(title=u'[B]{}[/B]'.format(sch[0]), params={})
+            series = sch[1:]
+            
+            for ep in series:
+                self.create_line(title=ep, params={}, folder=False)
+
+        if 'next-link active' in html:
+            next_link = html[html.find('next-link active'):]
+            next_link = next_link[next_link.find('/schedule/')+10:next_link.find('<div')]
+            
+            title = next_link[next_link.rfind('>')+1:].capitalize()
+            next_link = next_link[:next_link.find('\'')]
+
+            label = u'Следующий - [COLOR=gold]{}[/COLOR]'.format(title)
+            self.create_line(title=label, params={'mode': 'schedule_part_new', 'param': next_link})
+
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        return
+#========================#========================#========================#
     def exec_common_part(self):
         url = '{}{}page_{}'.format(self.site_url, self.params['param'], self.params['page'])
 
-        data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
         
         if not data_request.status_code == requests.codes.ok:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -976,7 +1130,7 @@ class Lostfilm:
         if not self.params['param']:
             url = '{}series/{}/seasons'.format(self.site_url, self.params['id'])
 
-            data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+            data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
             
             if not data_request.status_code == requests.codes.ok:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -988,11 +1142,14 @@ class Lostfilm:
             if '<div class="status">' in html and not atl_names:
                 serial_status = html[html.find('<div class="status">')+20:]
                 serial_status = serial_status[:serial_status.find('</span>')]
+                serial_status = clean_list(serial_status)
                 serial_status = serial_status.replace(u'Статус:','').strip()
                 serial_status = u'[COLOR=dimgray]{}[/COLOR]'.format(serial_status)
                 self.create_line(title=serial_status, folder=False, watched=True, params={})
             else:
                 serial_status = ''
+            
+            data_print(serial_status)
 
             image_id = self.params['code'][:len(self.params['code'])-6]
 
@@ -1056,7 +1213,7 @@ class Lostfilm:
                 html = data_string
             else:
                 url = '{}series/{}/season_{}'.format(self.site_url, self.params['id'], int(season_id))
-                data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+                data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
                 if not data_request.status_code == requests.codes.ok:
                     self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -1072,7 +1229,7 @@ class Lostfilm:
                     "type": "getmarks",
                     "id": image_id
                     }
-                data_request2 = self.session.post(url=url, data=post, proxies=self.proxy_data, headers=headers)
+                data_request2 = session.post(url=url, data=post, proxies=self.proxy_data, headers=headers)
                 watched_data = data_request2.text
             except:
                 watched_data = []
@@ -1141,12 +1298,12 @@ class Lostfilm:
             url = '{}v_search.php?c={}&s={}&e={}'.format(
                 self.site_url, image_id, serial_season, serial_episode)
             
-            data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+            data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
             html = data_request.text
             
             new_url = html[html.find('url=http')+4:html.find('&newbie=')]
             
-            data_request = self.session.get(url=new_url, proxies=self.proxy_data, headers=headers)
+            data_request = session.get(url=new_url, proxies=self.proxy_data, headers=headers)
             html = data_request.text
 
             data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
@@ -1176,7 +1333,7 @@ class Lostfilm:
                 result_quality = choice[int(result)]
                 url = quality[result_quality]
 
-            data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+            data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
             file_name = data_request.headers['content-disposition']
             file_name = file_name[file_name.find('filename=')+9:]
@@ -1333,16 +1490,16 @@ class Lostfilm:
                 post_data = {
                     "act": "movies",
                     "type": "search",
-                    "o": "0",
+                    "o": self.params['page'],
                     "s": "3",
                     "t": "0"
                     }
-                
+
             url = '{}ajaxik.php'.format(self.site_url)
-            data_request = self.session.post(url=url, data=post_data, proxies=self.proxy_data, headers=headers)
+            data_request = session.post(url=url, data=post_data, proxies=self.proxy_data, headers=headers)
             
             if not data_request.status_code == requests.codes.ok:
-                self.create_line(title='[B][COLOR=white]Контент не найден[/COLOR][/B]', params={'mode': self.params['mode']})
+                self.create_line(title='Ошибка получения данных', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
@@ -1408,53 +1565,53 @@ class Lostfilm:
 
         return
 #========================#========================#========================#
-    def exec_archive_part(self):
-        if not self.params['param']:
-            data_array = os.listdir(self.torrents_dir)
+    # def exec_archive_part(self):
+    #     if not self.params['param']:
+    #         data_array = os.listdir(self.torrents_dir)
 
-            for data in data_array:
-                try:
-                    se_code = data[:data.find('_')]
-                    file_name = data[data.find('_')+1:].replace('.torrent', '')
-                    serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
-                    image_id = int(se_code[:len(se_code)-6])
-                except:
-                    continue
+    #         for data in data_array:
+    #             try:
+    #                 se_code = data[:data.find('_')]
+    #                 file_name = data[data.find('_')+1:].replace('.torrent', '')
+    #                 serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
+    #                 image_id = int(se_code[:len(se_code)-6])
+    #             except:
+    #                 continue
 
-                serial_id = self.database.get_serial_id(image_id)
+    #             serial_id = self.database.get_serial_id(image_id)
                 
-                self.create_line(title=file_name, serial_id=serial_id, se_code=se_code, params={'mode': 'archive_part', 'param': data, 'code': se_code, 'id': serial_id})
+    #             self.create_line(title=file_name, serial_id=serial_id, se_code=se_code, params={'mode': 'archive_part', 'param': data, 'code': se_code, 'id': serial_id})
 
-        if self.params['param']:
-            torrent_file = os.path.join(self.torrents_dir, self.params['param'])
+    #     if self.params['param']:
+    #         torrent_file = os.path.join(self.torrents_dir, self.params['param'])
 
-            import bencode
+    #         import bencode
                 
-            with open(torrent_file, 'rb') as read_file:
-                torrent_data = read_file.read()
+    #         with open(torrent_file, 'rb') as read_file:
+    #             torrent_data = read_file.read()
 
-            torrent = bencode.bdecode(torrent_data)
+    #         torrent = bencode.bdecode(torrent_data)
 
-            valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
+    #         valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
             
-            if 'files' in torrent['info']:
+    #         if 'files' in torrent['info']:
                 
-                series = {}
+    #             series = {}
                     
-                for i, x in enumerate(torrent['info']['files']):
-                    extension = x['path'][-1][x['path'][-1].rfind('.'):]
+    #             for i, x in enumerate(torrent['info']['files']):
+    #                 extension = x['path'][-1][x['path'][-1].rfind('.'):]
                         
-                    if extension in valid_media:
-                        series[i] = x['path'][-1]
+    #                 if extension in valid_media:
+    #                     series[i] = x['path'][-1]
 
-                for i in sorted(series, key=series.get):
-                    self.create_line(title=series[i], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
-                        'mode': 'torrent_part', 'id': self.params['param'], 'param': i})
-            else:
-                self.create_line(title=torrent['info']['name'], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
-                    'mode': 'torrent_part', 'id': self.params['param'], 'param': 0})
+    #             for i in sorted(series, key=series.get):
+    #                 self.create_line(title=series[i], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
+    #                     'mode': 'torrent_part', 'id': self.params['param'], 'param': i})
+    #         else:
+    #             self.create_line(title=torrent['info']['name'], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
+    #                 'mode': 'torrent_part', 'id': self.params['param'], 'param': 0})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_play_part(self):
         se_code = self.params['param']
@@ -1465,12 +1622,12 @@ class Lostfilm:
         url = '{}v_search.php?c={}&s={}&e={}'.format(
             self.site_url, image_id, serial_season, serial_episode)
 
-        data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
         html = data_request.text
         
         new_url = html[html.find('url=http')+4:html.find('&newbie=')]
 
-        data_request = self.session.get(url=new_url, proxies=self.proxy_data, headers=headers)
+        data_request = session.get(url=new_url, proxies=self.proxy_data, headers=headers)
         html = data_request.text
 
         data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
@@ -1494,13 +1651,14 @@ class Lostfilm:
             result_quality = choice[int(result)]
             url = quality[result_quality]
 
-        data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
         
-        file_name = data_request.headers['content-disposition']
-        file_name = file_name[file_name.find('filename=')+9:]
-        file_name = file_name.replace('"','').replace(',','')
-        file_name = '{}000_{}'.format(se_code[:len(se_code)-3], file_name)
-
+        # file_name = data_request.headers['content-disposition']
+        # file_name = file_name[file_name.find('filename=')+9:]
+        # file_name = file_name.replace('"','').replace(',','')
+        # file_name = '{}000_{}'.format(se_code[:len(se_code)-3], file_name)
+        file_name = '{}.torrent'.format(se_code)
+        
         torrent_file = os.path.join(self.torrents_dir, file_name)
         
         with open(torrent_file, 'wb') as write_file:
@@ -1519,7 +1677,7 @@ class Lostfilm:
                 "mode": "on"
                 }
 
-            data_request = self.session.post(url = url, data=data, proxies=self.proxy_data, headers=headers)
+            data_request = session.post(url = url, data=data, proxies=self.proxy_data, headers=headers)
 #========================#========================#========================#
     def exec_selector_part(self, torrent_url, series_index='', torrent_index=''):
         if series_index:
