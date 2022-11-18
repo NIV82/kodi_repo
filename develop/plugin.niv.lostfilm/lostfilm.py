@@ -99,7 +99,7 @@ class Lostfilm:
             self.params[a] = unquote(args[a][0])
 
         self.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
-        self.proxy_data = None #self.exec_proxy_data()
+        self.proxy_data = self.exec_proxy_data()
         self.site_url = self.create_site_url()
         self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
@@ -110,7 +110,6 @@ class Lostfilm:
         self.database = DataBase(os.path.join(self.database_dir, 'lostfilm.db'))
         del DataBase
 #========================#========================#========================#
-
     def create_notification(self, data):
         
         data_array = {
@@ -127,7 +126,7 @@ class Lostfilm:
 #========================#========================#========================#
     def create_session(self):
         url = '{}my'.format(self.site_url)
-        r = session.get(url=url, headers=headers)
+        r = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
         html = r.text
 
@@ -183,12 +182,12 @@ class Lostfilm:
         )
         image = image[int(addon.getSetting('series_image_mode'))]
 
-        if 'schedule_part' in self.params['mode']:
+        # if 'schedule_part' in self.params['mode']:
 
-            if serial_episode == 1 and serial_season == 1:
-                image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
-            else:
-                image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, 1)
+        #     if serial_episode == 1 and serial_season == 1:
+        #         image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
+        #     else:
+        #         image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, 1)
 
         if serial_episode == 999:
             image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season)
@@ -214,7 +213,7 @@ class Lostfilm:
             else:
                 serial_season = int(data_code[len(data_code)-6:len(data_code)-3])
                 serial_season = 'S{:>02}'.format(serial_season)
-                serial_season = serial_season.replace('S999', 'A00')
+                serial_season = serial_season.replace('999', '00')
 
                 serial_episode = int(data_code[len(data_code)-3:len(data_code)])
                 serial_episode = 'E{:>02}'.format(serial_episode)
@@ -235,61 +234,61 @@ class Lostfilm:
         serial_image = se_code[:len(se_code)-6]
 
         context_menu = []
-        if not 'archive_part' in self.params['mode']:
-            if 'search_part' in self.params['mode'] and self.params['param'] == '':
-                context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
 
-            if serial_id and self.params['mode'] in ('common_part','favorites_part','catalog_part','schedule_part','search_part','serials_part'):
-                if not ismovie:
-                    context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&id={}")'.format(serial_id)))
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
 
-            if serial_id:
-                context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(serial_id)))
+        if serial_id and self.params['mode'] in ('common_part','favorites_part','catalog_part','schedule_part','search_part','serials_part'):
+            if not ismovie:
+                context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&id={}")'.format(serial_id)))
 
-            if se_code and not '999' in serial_episode:
-                if not ismovie:
-                    context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
-                context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
-                context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
-                context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
+        if serial_id:
+            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}")'.format(serial_id)))
 
-        if 'archive_part' in self.params['mode']:
-            context_menu.append(('[COLOR=blue]Удалить данный файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&id={}&code={}")'.format(serial_id,se_code)))
-            context_menu.append(('[COLOR=red]Удалить все файлы[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&param=clean")'.format(serial_id,se_code)))            
+        if se_code and not '999' in serial_episode:
+            if not ismovie:
+                context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
+            context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
+            context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
+            context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
+
+        # if 'archive_part' in self.params['mode']:
+        #     context_menu.append(('[COLOR=blue]Удалить данный файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&id={}&code={}")'.format(serial_id,se_code)))
+        #     context_menu.append(('[COLOR=red]Удалить все файлы[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrclean_part&param=clean")'.format(serial_id,se_code)))            
 
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=authorization_part&param=update")'))
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
         return context_menu
 #========================#========================#========================#
-    def exec_torrclean_part(self):
-        data_array = os.listdir(self.torrents_dir)
+    # def exec_torrclean_part(self):
+    #     data_array = os.listdir(self.torrents_dir)
 
-        if 'clean' in self.params['param']:
-            try:
-                for data in data_array:
-                    file_path = os.path.join(self.torrents_dir, data)
-                    try: os.remove(file_path)
-                    except: pass
-                self.create_notification('done')
+    #     if 'clean' in self.params['param']:
+    #         try:
+    #             for data in data_array:
+    #                 file_path = os.path.join(self.torrents_dir, data)
+    #                 try: os.remove(file_path)
+    #                 except: pass
+    #             self.create_notification('done')
                 
-                xbmc.executebuiltin("Container.Refresh()")
-            except:
-                self.create_notification('err')
+    #             xbmc.executebuiltin("Container.Refresh()")
+    #         except:
+    #             self.create_notification('err')
         
-        if not self.params['param']:
-            try:
-                for data in data_array:
-                    file_path = os.path.join(self.torrents_dir, data)
+    #     if not self.params['param']:
+    #         try:
+    #             for data in data_array:
+    #                 file_path = os.path.join(self.torrents_dir, data)
 
-                    if self.params['code'] in data:
-                        try: os.remove(file_path)
-                        except: pass
-                self.create_notification('done')
+    #                 if self.params['code'] in data:
+    #                     try: os.remove(file_path)
+    #                     except: pass
+    #             self.create_notification('done')
                 
-                xbmc.executebuiltin("Container.Refresh()")
-            except:
-                self.create_notification('err')
+    #             xbmc.executebuiltin("Container.Refresh()")
+    #         except:
+    #             self.create_notification('err')
 #========================#========================#========================#
     def create_line(self, title, serial_id='', se_code='', watched=False, params=None, folder=True, ismovie=False):
         li = xbmcgui.ListItem(title)
@@ -484,6 +483,64 @@ class Lostfilm:
     def exec_addon_setting(self):
         addon.openSettings()
 #========================#========================#========================#
+    def exec_proxy_data(self):
+        # if 'renew' in self.params['param']:
+        #     addon.setSetting('proxy','')
+        #     addon.setSetting('proxy_time','')
+
+        if '0' in addon.getSetting('unblock'):
+            return None
+        
+        if '2' in addon.getSetting('unblock'):
+            proxy_data = {'https': 'http://185.85.121.12:1088'}
+            return proxy_data
+            
+        try: proxy_time = float(addon.getSetting('proxy_time'))
+        except: proxy_time = 0
+    
+        if time.time() - proxy_time > 604800:
+            addon.setSetting('proxy_time', str(time.time()))
+            proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+
+            if proxy_request.status_code == requests.codes.ok:
+                proxy_pac = proxy_request.text
+
+                if sys.version_info.major > 2:                    
+                    proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
+                    proxy = proxy[:proxy.find(';')].strip()
+                    proxy = 'https://{}'.format(proxy)
+                else:
+                    proxy = proxy_pac[proxy_pac.rfind('PROXY')+5:]
+                    proxy = proxy[:proxy.find(';')].strip()
+
+                addon.setSetting('proxy', proxy)
+                proxy_data = {'https': proxy}
+            else:
+                proxy_data = None
+        else:
+            if addon.getSetting('proxy'):
+                proxy_data = {'https': addon.getSetting('proxy')}
+            else:
+                proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+
+                if proxy_request.status_code == requests.codes.ok:
+                    proxy_pac = proxy_request.text
+                    
+                    if sys.version_info.major > 2:                    
+                        proxy = proxy_pac[proxy_pac.rfind('return "HTTPS')+13:]
+                        proxy = proxy[:proxy.find(';')].strip()
+                        proxy = 'https://{}'.format(proxy)
+                    else:
+                        proxy = proxy_pac[proxy_pac.rfind('PROXY')+5:]
+                        proxy = proxy[:proxy.find(';')].strip()
+
+                    addon.setSetting('proxy', proxy)
+                    proxy_data = {'https': proxy}
+                else:
+                    proxy_data = None
+
+        return proxy_data
+#========================#========================#========================#
     def exec_authorization_part(self):
         if not addon.getSetting('username') or not addon.getSetting('password'):
             self.params['mode'] = 'addon_setting'
@@ -617,7 +674,7 @@ class Lostfilm:
             "mode": mode
             }
 
-        data_request = session.post(url=url, data=post_data, headers=headers)
+        data_request = session.post(url=url, data=post_data, proxies=self.proxy_data, headers=headers)
 
         html = data_request.text
 
@@ -653,10 +710,13 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.8[/COLOR][/B]\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.9[/COLOR][/B]\n\
     - Правки, оптимизация\n\
-    - Раздел Архив отключен\n\
-    - Добавлено новое Расписание (выбирается в настройках)'
+    - Метка [COLOR=blue]A00[/COLOR] заменена на [COLOR=blue]S00[/COLOR]\n\
+    - В настройках разделены разделы, для удобства сброса настроек\n\
+    - Добавлена разблокировка через официальное прокси (Благодарность пользователю [B]Lucky[/B])\n\
+    - Старое расписание отключено полностью (код пока остался, но включить нельзя)\n\
+    - Архив удален, вместо него будет автоматическая чистка файлов'
         self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
@@ -780,115 +840,116 @@ class Lostfilm:
                 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
-    def exec_schedule_part(self):
-        if '0' in addon.getSetting('schedule_mode'):
-            self.exec_schedule_part_new()
-        else:
-            self.exec_schedule_part_old()
-        return
+    # def exec_schedule_part(self):
+    #     if '0' in addon.getSetting('schedule_mode'):
+    #         self.exec_schedule_part_new()
+    #     else:
+    #         self.exec_schedule_part_old()
+    #     return
 #========================#========================#========================#
-    def exec_schedule_part_old(self):
-        url = '{}schedule/my_0/type_0'.format(self.site_url)
-        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
+    # def exec_schedule_part_old(self):
+    #     url = '{}schedule/my_0/type_0'.format(self.site_url)
+    #     data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
 
-        if not data_request.status_code == requests.codes.ok:
-            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
+    #     if not data_request.status_code == requests.codes.ok:
+    #         self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #         return
 
-        html = data_request.text
+    #     html = data_request.text
         
-        if not '<th colspan="6">' in html:
-            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
+    #     if not '<th colspan="6">' in html:
+    #         self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #         return
 
-        self.progress_bg.create('LostFilm', 'Инициализация')
+    #     self.progress_bg.create('LostFilm', 'Инициализация')
 
-        data_array = html[html.find('<th colspan="6">')+16:html.rfind('<td class="placeholder">')]        
-        data_array = data_array.split('<th colspan="6">')
+    #     data_array = html[html.find('<th colspan="6">')+16:html.rfind('<td class="placeholder">')]        
+    #     data_array = data_array.split('<th colspan="6">')
 
-        i = 0
+    #     i = 0
         
-        try:
-            for data in data_array:
-                title = data[:data.find('</th>')]
+    #     try:
+    #         for data in data_array:
+    #             title = data[:data.find('</th>')]
 
-                i = i + 1
-                p = int((float(i) / len(data_array)) * 100)
+    #             i = i + 1
+    #             p = int((float(i) / len(data_array)) * 100)
 
-                self.create_line(title=u'[B]{}[/B]'.format(title.capitalize()), params={})
+    #             self.create_line(title=u'[B]{}[/B]'.format(title.capitalize()), params={})
 
-                data = data.split('<td class="alpha"')
-                data.pop(0)
+    #             data = data.split('<td class="alpha"')
+    #             data.pop(0)
                 
-                a = 0
+    #             a = 0
                 
-                try:
-                    for d in data:
-                        is_movie = True if '/movies/' in d else False
+    #             try:
+    #                 for d in data:
+    #                     is_movie = True if '/movies/' in d else False
                         
-                        if is_movie:
-                            serial_id = d[d.find('/movies/')+8:d.find('\',false')]
-                            serial_id = serial_id.strip()
-                        else:
-                            serial_id = d[d.find('/series/')+8:d.find('\',false')]
-                            serial_id = serial_id.strip()
+    #                     if is_movie:
+    #                         serial_id = d[d.find('/movies/')+8:d.find('\',false')]
+    #                         serial_id = serial_id.strip()
+    #                     else:
+    #                         serial_id = d[d.find('/series/')+8:d.find('\',false')]
+    #                         serial_id = serial_id.strip()
                         
-                        image_id = d[d.find('/Images/')+8:d.find('/Posters/')]
+    #                     image_id = d[d.find('/Images/')+8:d.find('/Posters/')]
 
-                        serial_title = d[d.find('class="ru">')+11:]
-                        serial_title = serial_title[:serial_title.find('</div>')]
+    #                     serial_title = d[d.find('class="ru">')+11:]
+    #                     serial_title = serial_title[:serial_title.find('</div>')]
 
-                        episode_title = d[d.find('<td class="gamma'):]
-                        episode_title = episode_title[episode_title.find(';">')+3:episode_title.find('<br />')]
+    #                     episode_title = d[d.find('<td class="gamma'):]
+    #                     episode_title = episode_title[episode_title.find(';">')+3:episode_title.find('<br />')]
 
-                        if is_movie:
-                            code = ['1','1']
-                        else:
-                            # code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
-                            # code = code.replace('season_','').replace('episode_','')
-                            # code = code.replace('additional','999').split('/')
-                            code = d[d.rfind('{}'.format(serial_id))+len(serial_id):d.rfind('/\'')]
-                            code = code.replace('season_','').replace('episode_','').strip()
-                            code = code.replace('additional','999').replace('/', '', 1).split('/')
+    #                     if is_movie:
+    #                         code = ['1','1']
+    #                     else:
+    #                         # code = d[d.rfind('{}/'.format(serial_id))+len(serial_id)+1:d.rfind('/\'')]
+    #                         # code = code.replace('season_','').replace('episode_','')
+    #                         # code = code.replace('additional','999').split('/')
+    #                         code = d[d.rfind('{}'.format(serial_id))+len(serial_id):d.rfind('/\'')]
+    #                         code = code.replace('season_','').replace('episode_','').strip()
+    #                         code = code.replace('additional','999').replace('/', '', 1).split('/')
                             
-                        se_code = '{}{:>03}{:>03}'.format(image_id,int(code[0]),int(code[1]))
+    #                     se_code = '{}{:>03}{:>03}'.format(image_id,int(code[0]),int(code[1]))
 
-                        day_release = d[d.rfind('false);">')+9:d.rfind('<br />')].strip()
+    #                     day_release = d[d.rfind('false);">')+9:d.rfind('<br />')].strip()
                         
-                        if '<p>' in d:
-                            when_release = d[d.find('<p>')+3:d.find('</p>')]
-                        else:
-                            when_release = d[d.rfind('<span>')+6:d.rfind('</span>')]
-                            when_release = u'Дней осталось: {}'.format(when_release)
+    #                     if '<p>' in d:
+    #                         when_release = d[d.find('<p>')+3:d.find('</p>')]
+    #                     else:
+    #                         when_release = d[d.rfind('<span>')+6:d.rfind('</span>')]
+    #                         when_release = u'Дней осталось: {}'.format(when_release)
                         
-                        a = a + 1
+    #                     a = a + 1
                         
-                        self.progress_bg.update(p, u'[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
-                            i, len(data_array), a, len(data)))
+    #                     self.progress_bg.update(p, u'[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(
+    #                         i, len(data_array), a, len(data)))
 
-                        if not self.database.serial_in_db(serial_id):
-                            self.create_info(serial_id)
+    #                     if not self.database.serial_in_db(serial_id):
+    #                         self.create_info(serial_id)
 
-                        if is_movie:
-                            label = self.create_title(serial_title=serial_title, data_code=se_code,ismovie=is_movie)
-                        else:
-                            label = self.create_title(serial_title, episode_title, se_code, ismovie=is_movie)
-                        label = u'{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
+    #                     if is_movie:
+    #                         label = self.create_title(serial_title=serial_title, data_code=se_code,ismovie=is_movie)
+    #                     else:
+    #                         label = self.create_title(serial_title, episode_title, se_code, ismovie=is_movie)
+    #                     label = u'{} | [COLOR=gold]{} - {}[/COLOR]'.format(label, day_release, when_release)
 
-                        self.create_line(title=label, serial_id=serial_id, se_code=se_code, ismovie=is_movie, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
-                except:
-                    self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
-        except:
-            self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
+    #                     self.create_line(title=label, serial_id=serial_id, se_code=se_code, ismovie=is_movie, params={'mode': 'select_part', 'id': serial_id, 'code': se_code})
+    #             except:
+    #                 self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
+    #     except:
+    #         self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
              
-        self.progress_bg.close()
+    #     self.progress_bg.close()
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-        return
+    #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #     return
 #========================#========================#========================#
-    def exec_schedule_part_new(self):
+    #def exec_schedule_part_new(self):
+    def exec_schedule_part(self):
         url = '{}schedule/{}'.format(self.site_url, self.params['param'])
         
         data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
@@ -972,7 +1033,7 @@ class Lostfilm:
                         try:
                             if '<span>' in title[1]:
                                 code = title[1].replace('<span>','').replace('x','|').replace('х','|')
-                                code = code.replace('-','|').split('|')
+                                code = code.replace('ДОП','00').replace('-','|').split('|')
                                 if len(code) > 2:
                                     code = '[COLOR=blue]S{:>02}[/COLOR][COLOR=lime]E{:>02}-{:>02}[/COLOR]'.format(
                                         int(code[0]), int(code[1]), int(code[2]))
@@ -984,6 +1045,11 @@ class Lostfilm:
                             code = '[COLOR=red]Ошибка[/COLOR]'
                         
                         try:
+                            if sys.version_info.major < 3:
+                                try:
+                                    code = code.encode('utf-8')
+                                except:
+                                    pass
                             title = '{} | {}'.format(code, title[0])
                         except:
                             title = '[COLOR=red]Ошибка[/COLOR]'
@@ -1015,7 +1081,8 @@ class Lostfilm:
             next_link = next_link[:next_link.find('\'')]
 
             label = u'Следующий - [COLOR=gold]{}[/COLOR]'.format(title)
-            self.create_line(title=label, params={'mode': 'schedule_part_new', 'param': next_link})
+            # self.create_line(title=label, params={'mode': 'schedule_part_new', 'param': next_link})
+            self.create_line(title=label, params={'mode': 'schedule_part', 'param': next_link})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
@@ -1565,54 +1632,6 @@ class Lostfilm:
 
         return
 #========================#========================#========================#
-    # def exec_archive_part(self):
-    #     if not self.params['param']:
-    #         data_array = os.listdir(self.torrents_dir)
-
-    #         for data in data_array:
-    #             try:
-    #                 se_code = data[:data.find('_')]
-    #                 file_name = data[data.find('_')+1:].replace('.torrent', '')
-    #                 serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
-    #                 image_id = int(se_code[:len(se_code)-6])
-    #             except:
-    #                 continue
-
-    #             serial_id = self.database.get_serial_id(image_id)
-                
-    #             self.create_line(title=file_name, serial_id=serial_id, se_code=se_code, params={'mode': 'archive_part', 'param': data, 'code': se_code, 'id': serial_id})
-
-    #     if self.params['param']:
-    #         torrent_file = os.path.join(self.torrents_dir, self.params['param'])
-
-    #         import bencode
-                
-    #         with open(torrent_file, 'rb') as read_file:
-    #             torrent_data = read_file.read()
-
-    #         torrent = bencode.bdecode(torrent_data)
-
-    #         valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')
-            
-    #         if 'files' in torrent['info']:
-                
-    #             series = {}
-                    
-    #             for i, x in enumerate(torrent['info']['files']):
-    #                 extension = x['path'][-1][x['path'][-1].rfind('.'):]
-                        
-    #                 if extension in valid_media:
-    #                     series[i] = x['path'][-1]
-
-    #             for i in sorted(series, key=series.get):
-    #                 self.create_line(title=series[i], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
-    #                     'mode': 'torrent_part', 'id': self.params['param'], 'param': i})
-    #         else:
-    #             self.create_line(title=torrent['info']['name'], serial_id=self.params['id'], se_code=self.params['code'], folder=False, params={
-    #                 'mode': 'torrent_part', 'id': self.params['param'], 'param': 0})
-
-    #     xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-#========================#========================#========================#
     def exec_play_part(self):
         se_code = self.params['param']
         serial_episode = int(se_code[len(se_code)-3:len(se_code)])
@@ -1626,8 +1645,10 @@ class Lostfilm:
         html = data_request.text
         
         new_url = html[html.find('url=http')+4:html.find('&newbie=')]
-
-        data_request = session.get(url=new_url, proxies=self.proxy_data, headers=headers)
+        data_request = session.get(url=new_url, proxies=None, headers=headers)
+        #data_request = session.get(url=new_url, proxies=self.proxy_data, headers=headers)
+        #data_request = requests.get(url=new_url, headers=headers)
+        
         html = data_request.text
 
         data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
@@ -1651,12 +1672,8 @@ class Lostfilm:
             result_quality = choice[int(result)]
             url = quality[result_quality]
 
-        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
-        
-        # file_name = data_request.headers['content-disposition']
-        # file_name = file_name[file_name.find('filename=')+9:]
-        # file_name = file_name.replace('"','').replace(',','')
-        # file_name = '{}000_{}'.format(se_code[:len(se_code)-3], file_name)
+        data_request = session.get(url=url, proxies=None, headers=headers)
+
         file_name = '{}.torrent'.format(se_code)
         
         torrent_file = os.path.join(self.torrents_dir, file_name)
