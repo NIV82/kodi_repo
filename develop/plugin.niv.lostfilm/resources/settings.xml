@@ -17,6 +17,8 @@
     <setting id="series_image_mode" type="enum" label="На сериях будет:" default="0" values="Картинка Сезона|Картинка Сериала|Картинка Серии" />
     <setting type="sep"/>
     <setting id="schedule_mode_today" type="enum" label="Расписание начинается:" default="0" values="Сегодня|Начало Месяца" />
+    <setting type="sep"/>
+    <setting id="serials_mode" type="enum" label="Все Сериалы - Описание:" default="0" values="Включено|Выключено" />
     <setting id="search" label="status" type="text" default="" visible="false"/>
     <setting id="genre" label="genre" type="text" default="" visible="false"/>
     <setting id="year" label="year" type="text" default="" visible="false"/>
