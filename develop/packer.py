@@ -26,7 +26,8 @@ def xml_rebuild():
 
     plugins = [
         os.path.join(develop_dir, 'plugin.niv.animeportal'),
-        os.path.join(develop_dir, 'plugin.niv.lostfilm')
+        os.path.join(develop_dir, 'plugin.niv.lostfilm'),
+        os.path.join(develop_dir, 'plugin.niv.redheadsound')
         ]
 
     repo_dir = [release_dir, matrix_dir]
@@ -84,7 +85,7 @@ root_dir = os.path.split(develop_dir)[0]
 release_dir = os.path.join(root_dir, 'release')
 matrix_dir = os.path.join(root_dir, 'matrix')
 
-develop_plugins = ['plugin.niv.animeportal','plugin.niv.lostfilm']
+develop_plugins = ['plugin.niv.animeportal','plugin.niv.lostfilm', 'plugin.niv.redheadsound']
 
 for develop_plugin in develop_plugins:
     plugin_path = os.path.join(develop_dir, develop_plugin)
@@ -99,7 +100,7 @@ for develop_plugin in develop_plugins:
 
     with open(xml_path, 'r') as open_file:
         data = open_file.read()
-    
+
     version = data[data.find('" version="')+11:data.find('" provider')]
     package_name = '{}-{}'.format(develop_plugin, version)
     rel_path = release_path(develop_plugin)

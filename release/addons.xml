@@ -48,4 +48,27 @@
   </extension>
 </addon>
 
+<addon id="plugin.niv.redheadsound" name="RedHeadSound" version="0.0.1" provider-name="NIV">
+  <extension point="xbmc.python.pluginsource" library="redheadsound.py">
+    <provides>video</provides>
+  </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
+  <requires>
+    <import addon="script.module.requests"/>
+  </requires>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">Red Head Sound</summary>
+    <summary lang="ru">Red Head Sound</summary>
+    <description lang="en">Red Head Sound - voice acting for those who do not agree to less</description>
+    <description lang="ru">Red Head Sound - озвучка для тех, кто не согласен на меньшее</description>
+    <disclaimer lang="en">The author of the plugin is not responsible for the content on the sites</disclaimer>
+    <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайтах</disclaimer>
+    <assets>
+        <icon>icon.png</icon>
+    </assets>
+  </extension>
+</addon>
+
 </addons>
