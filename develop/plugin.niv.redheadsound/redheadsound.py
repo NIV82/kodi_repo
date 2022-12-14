@@ -14,22 +14,21 @@ import xbmcvfs
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
-# def fs_dec(path):
-#     sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
-#     return path.decode(sys_enc).encode('utf-8')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-def fs_enc(path):
-    sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
-    return path.decode('utf-8').encode(sys_enc)
+from utility import fs_enc
+from utility import clean_tags
 
 if sys.version_info.major > 2:
     from urllib.parse import urlencode
     from urllib.parse import quote
     from urllib.parse import unquote
     from urllib.parse import parse_qs
+    from urllib.request import urlopen
     from html import unescape
 else:
     from urllib import urlencode
+    from urllib import urlopen
     from urllib import quote
     from urllib import unquote
     from urlparse import parse_qs
@@ -47,37 +46,6 @@ else:
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
-try:
-    xbmcaddon.Addon('script.module.requests')
-except:
-    xbmcgui.Dialog().notification(
-        heading='Установка Библиотеки',
-        message='script.module.requests',
-        icon=icon,time=3000,sound=False
-        )
-    xbmc.executebuiltin('RunPlugin("plugin://script.module.requests")')
-
-import requests
-session = requests.Session()
-
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:107.0) Gecko/20100101 Firefox/107.0',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-    'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-    'Accept-Charset': 'utf-8',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Referer': 'https://redheadsound.ru/'
-    }
-
-# headers = {
-#     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:107.0) Gecko/20100101 Firefox/107.0',
-#     'Accept': '*/*',
-#     'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-#     'Accept-Charset': 'utf-8',
-#     'Accept-Encoding': 'identity',
-#     'Referer': 'https://redheadsound.ru/'
-#     }
-
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
 class RedHeadSound:
@@ -87,10 +55,6 @@ class RedHeadSound:
         
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
-
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        if not os.path.exists(self.torrents_dir):
-            os.mkdir(self.torrents_dir)
         
         self.cookie_dir = os.path.join(addon_data_dir, 'cookies')
         if not os.path.exists(self.cookie_dir):
@@ -100,7 +64,7 @@ class RedHeadSound:
         if not os.path.exists(self.database_dir):
             os.mkdir(self.database_dir)
 
-        self.params = {'mode': 'main_part', 'param': '', 'page': '1'}
+        self.params = {'mode': 'main_part', 'param': '', 'url': '', 'page': '1'}
         
         args = parse_qs(sys.argv[2][1:])
         for a in args:
@@ -111,12 +75,16 @@ class RedHeadSound:
         self.site_url = addon.getSetting('site_url')
         #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
-        # if not os.path.isfile(os.path.join(self.database_dir, 'redheadsound.db')):
-        #     self.exec_update_database_part()
+        if not os.path.isfile(os.path.join(self.database_dir, 'redheadsound.db')):
+            self.exec_update_database_part()
 #========================#========================#========================#
-        # from database import DataBase
-        # self.database = DataBase(os.path.join(self.database_dir, 'redheadsound.db'))
-        # del DataBase
+        from network import WebTools
+        self.network = WebTools()
+        del WebTools
+#========================#========================#========================#
+        from database import DataBase
+        self.database = DataBase(os.path.join(self.database_dir, 'redheadsound.db'))
+        del DataBase
 #========================#========================#========================#
     def create_notification(self, data):
         
@@ -129,49 +97,42 @@ class RedHeadSound:
             'del': 'Удалено'
             }
 
-        self.dialog.notification(heading='Red Head Sound',message=data_array[data],icon=icon,time=3000,sound=False)
+        self.dialog.notification(heading='Red Head Sound', message=data_array[data],icon=icon,time=3000,sound=False)
         return
 #========================#========================#========================#
-    def create_line(self, title, poster=False, data=False, watched=False, params=None, folder=True, online=None,):
+    def create_context(self, extended):
+        context_menu = []
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=clean_part")'))
+
+        if 'url' in list(extended.keys()):
+            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_serial_part&url={}")'.format(extended['url'])))
+        
+        # context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=information_part&param=news")'))
+        # context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=authorization_part&param=update")'))
+        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_database_part")'))
+        return context_menu
+#========================#========================#========================#
+    def create_line(self, title, extended={}, params={}, folder=True, online=None):
         li = xbmcgui.ListItem(title)
 
-        if poster:
-            li.setArt({"poster": poster,"icon": poster, "thumb": poster})
+        if extended:
+            info = self.database.get_serial(extended['serial_id'])
+            info.update({
+                'rating': extended['rating'][addon.getSetting('rating')],
+                'status': extended['episodes']
+                })
 
-        if data:
-            #'season',
-  
-            if data['translate']:
-                data['plot'] = '{}\n\n[B]Перевод[/B]: {}'.format(data['plot'], data['translate'])
-            if data['dubbing']:
-                data['plot'] = '{}\n[B]Озвучивание[/B]: {}'.format(data['plot'], data['dubbing'])
-            if data['quality']:
-                data['plot'] = '{}\n[B]Качество[/B]: {}'.format(data['plot'], data['quality'])
-
-            info = {
-                'title': data['title'],
-                'year': data['year'],
-                'country': data['country'],
-                'duration': data['duration'],
-                'director': data['director'],
-                'rating' : data['rating'][addon.getSetting('rating')],
-                'cast' : data['cast'],
-                'genre': data['genre'],
-                'mpaa': data['mpaa'],
-                'status': data['episodes'],
-                'plot': data['plot']
-                }
-
-            li.setArt({'poster': data['poster'],'icon': data['poster'], 'thumb': data['poster']})
-
+            li.setArt({'poster': extended['poster'],'icon': extended['poster'], 'thumb': extended['poster']})
             li.setInfo(type='video', infoLabels=info)
  
         #     if watched:
         #         info['playcount'] = 1
-            
-        # li.addContextMenuItems(
-        #     self.create_context(serial_id = serial_id, se_code = se_code, ismovie=ismovie)
-        #     )
+
+
+        li.addContextMenuItems(
+            self.create_context(extended=extended)
+            )
 
         if folder==False:
                 li.setProperty('isPlayable', 'true')
@@ -183,224 +144,36 @@ class RedHeadSound:
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
-    def create_info_common(self, data):
+    def create_info(self, serial_url=False, update=False):
+        html = self.network.get_html(serial_url)
+
+        data = html[html.find('class="page__header">')+21:html.find('<h2 class="page')]
+        
         info = {
+            'serial_id': 0,
             'title': '',
-            'url': '',
-            'poster': '',
-            'year': 0,
-            'season': '',
-            'episodes': '',
-            'duration': 0,
-            'country': '',
-            'genre': '',
-            'translate': '',
-            'dubbing': '',
-            'director': [],
-            'cast': '',
-            'quality': '',
-            'rating': {'imdb': 0.0, 'kinopoisk': 0.0},
-            'mpaa': '',
-            'plot': '',
-            'node': ''
-        }
-
-        
-        title = data[data.find('title"><a href="')+16:]
-        title = title[:title.find('</a>')].split('">')
-        info['title'] = title[1]
-        info['url'] = title[0]
-        del title
-        
-        poster = data[data.find('<img src="/')+11:]
-        poster = poster[:poster.find('"')]
-        info['poster'] = 'https://redheadsound.ru/{}'.format(poster)
-        del poster
-
-        if 'Год выпуска' in data:
-            year = data[data.find('Год выпуска'):]
-            year = year[year.find('">')+2:year.find('</a>')]
-            try:
-                year = int(year.strip())
-            except:
-                pass
-            info['year'] = year
-            del year
-
-        if 'Сезон:' in data:
-            season = data[data.find('Сезон:'):]
-            season = season[season.find('</span>')+7:season.find('</li>')]
-            info['season'] = season.strip()
-            del season
-
-        if 'Серий на сайте:' in data:
-            episodes = data[data.find('Серий на сайте:'):]
-            episodes = episodes[episodes.find('</span>')+7:episodes.find('</li>')]
-            info['episodes'] = episodes.strip()
-            del episodes
-
-        if 'Продолжительность:' in data:
-            duration = data[data.find('Продолжительность:'):]
-            duration = duration[duration.find('</span>')+7:duration.find('</li>')]
-            
-            if ':' in duration:
-                duration = duration.split(':')
-
-                if len(duration) > 2:
-                    try:
-                        duration = int(duration[0]) * 60 * 60 + int(duration[1]) * 60 + int(duration[2])
-                    except:
-                        duration = 0
-                else:
-                    try:
-                        duration = int(duration[0]) * 60
-                    except:
-                        duration = 0
-            else:
-                duration = 0
-
-            info['duration'] = duration
-            del duration
-        
-        if 'Страна:' in data:
-            country = data[data.find('Страна:'):]
-            country = country[country.find('">')+2:country.find('</a>')]
-            info['country'] = country.strip()
-            del country
-
-        if 'Жанр:' in data:
-            genre = data[data.find('Жанр:'):]
-            genre = genre[genre.find('<a href="'):genre.find('</li>')]
-            genre = genre.strip()
-            
-            if '>' in genre[len(genre)-1]:
-                genre = genre[:genre.rfind('</a>')]
-            
-            genre_list = []
-            
-            if '</a>' in genre:
-                genre = genre.split('</a>')
-                
-                for i in genre:
-                    i = i[i.find('">')+2:].strip()
-                    genre_list.append(i)
-
-            info['genre'] = genre_list
-            del genre_list, genre
-        
-        if 'Перевод:' in data:
-            translate = data[data.find('Перевод:'):]
-            translate = translate[translate.find('</span>')+7:translate.find('</li>')]
-            info['translate'] = translate.strip()
-            del translate
-
-        if 'Роли дублировали:' in data:
-            dubbing = data[data.find('Роли дублировали:'):]
-            dubbing = dubbing[dubbing.find('</span>')+7:dubbing.find('</li>')]
-            info['dubbing'] = dubbing.strip()
-            del dubbing
-
-        if 'Режиссер:' in data:
-            director = data[data.find('Режиссер:'):]
-            director = director[director.find('</span>')+7:director.find('</li>')]
-            info['director'] = director.strip().split(', ')
-            del director
-            
-        if 'Актеры:' in data:
-            actor = data[data.find('Актеры:'):]
-            actor = actor[actor.find('<a href="'):actor.find('</li>')]
-            actor = actor.strip()
-            
-            if '>' in actor[len(actor)-1]:
-                actor = actor[:actor.rfind('</a>')]
-
-            actor_list = []
-            
-            if '</a>,' in actor:
-                actor = actor.split('</a>,')
-                
-                for i in actor:
-                    i = i[i.find('">')+2:].strip()
-                    actor_list.append(i)
-
-            info['cast'] = actor_list
-            del actor_list, actor
-
-        if 'Качество:' in data:
-            quality = data[data.find('Качество:'):]
-            quality = quality[quality.find('<span>')+6:]
-            quality = quality[:quality.find('</span>')] 
-            info['quality'] = quality.strip()
-            del quality
-
-        if 'IMDb">' in data:
-            imdb = data[data.find('IMDb">')+6:]
-            imdb = imdb[imdb.find('">')+2:imdb.find('</a>')]
-            try:
-                info['rating'].update({'imdb': float(imdb.strip())})
-            except:
-                pass
-            del imdb
-            
-        if 'КиноПоиск">' in data:
-            kp = data[data.find('КиноПоиск">')+11:]
-            kp = kp[kp.find('">')+2:kp.find('</a>')]
-            try:
-                info['rating'].update({'kinopoisk': float(kp.strip())})
-            except:
-                pass
-            del kp
-
-        if '/serialy/' in info['url']:
-            if info['season']:
-                info['node'] = ' | [COLOR=blue]S{:>02}[/COLOR]'.format(info['season'])
-                                        
-            if info['episodes']:
-                info['node'] = '{} | [COLOR=gold]{}[/COLOR]'.format(info['node'], info['episodes'])
-
-        if '/filmy/' in info['url']:
-            info['node'] = ' | [COLOR=blue]Фильм[/COLOR]'
-
-        if '/multfilmy/' in info['url']:
-            info['node'] = ' | [COLOR=blue]Мультфильм[/COLOR]'
-                
-        return info
-#========================#========================#========================#
-    def create_info_select(self, data):
-        info = {
-            'title': '',
-            'url': '',
-            'poster': '',
             'year': 0,
             'country': '',
-            'translate': '',
-            'season': '',
-            'episodes': '',
             'duration': 0,
-            'dubbing': '',
-            'director': [],
-            'rating': {'imdb': 0.0, 'kinopoisk': 0.0},
-            'cast': '',
+            'director': '',
+            'actors': '',
             'genre': '',
             'mpaa': '',
-            'quality': '',
             'plot': ''
         }
 
+        serial_id = serial_url[serial_url.rfind('/')+1:serial_url.find('-')]
+        info['serial_id'] = int(serial_id)
+        del serial_id
+        
         title = data[data.find('<h1>')+4:data.find('</h1>')]
         if '(' in title:
             title = title[:title.find('(')]
-            info['title'] = title.strip()
+            info['title'] = u'{}'.format(title.strip())
             del title
 
-        if 'pmovie__poster img-fit-cover' in data:
-            poster = data[data.find('<img src="/')+11:]
-            poster = poster[:poster.find('"')]
-            info['poster'] = 'https://redheadsound.ru/{}'.format(poster)
-            del poster
-
-        if '<div>Год выпуска' in data:
-            year = data[data.find('<div>Год выпуска'):]
+        if u'<div>Год выпуска' in data:
+            year = data[data.find(u'<div>Год выпуска'):]
             year = year[year.find('">')+2:year.find('</a>')]
             try:
                 year = int(year.strip())
@@ -409,32 +182,14 @@ class RedHeadSound:
             info['year'] = year
             del year
 
-        if '<div>страна' in data:
-            country = data[data.find('<div>страна'):]
+        if u'<div>страна' in data:
+            country = data[data.find(u'<div>страна'):]
             country = country[country.find('">')+2:country.find('</a>')]
-            info['country'] = country.strip()
+            info['country'] = u'{}'.format(country.strip())
             del country
 
-        if '<div>перевод' in data:
-            translate = data[data.find('<div>перевод'):]
-            translate = translate[translate.find('<span>')+6:translate.find('</span>')]
-            info['translate'] = translate.strip()
-            del translate
-
-        if '<div>Сезон' in data:
-            season = data[data.find('<div>Сезон'):]
-            season = season[season.find('<span>')+6:season.find('</span>')]
-            info['season'] = season.strip()
-            del season
-
-        if '<div>Эпизоды на сайте' in data:
-            episodes = data[data.find('<div>Эпизоды на сайте'):]
-            episodes = episodes[episodes.find('<span>')+6:episodes.find('</span>')]
-            info['episodes'] = episodes.strip()
-            del episodes
-
-        if '<div>Продолжительность' in data:
-            duration = data[data.find('<div>Продолжительность'):]
+        if u'<div>Продолжительность' in data:
+            duration = data[data.find(u'<div>Продолжительность'):]
             duration = duration[duration.find('<span>')+6:duration.find('</span>')]
             
             if ':' in duration:
@@ -456,41 +211,17 @@ class RedHeadSound:
             info['duration'] = duration
             del duration
 
-        if '<div>Роли дублировали' in data:
-            dubbing = data[data.find('<div>Роли дублировали'):]
-            dubbing = dubbing[dubbing.find('<span>')+6:dubbing.find('</span>')]
-            info['dubbing'] = dubbing.strip()
-            del dubbing
-
-        if '<div>Режиссер' in data:
-            director = data[data.find('<div>Режиссер'):]
+        if u'<div>Режиссер' in data:
+            director = data[data.find(u'<div>Режиссер'):]
             director = director[director.find('<span>')+6:director.find('</span>')]
-            info['director'] = director.strip().split(', ')
+            info['director'] = u'{}'.format(director.strip())
             del director
 
-        if 'IMDb">' in data:
-            imdb = data[data.find('IMDb">')+6:]
-            imdb = imdb[imdb.find('">')+2:imdb.find('</a>')]
-            try:
-                info['rating'].update({'imdb': float(imdb.strip())})
-            except:
-                pass
-            del imdb
-            
-        if 'КиноПоиск">' in data:
-            kp = data[data.find('КиноПоиск">')+11:]
-            kp = kp[kp.find('">')+2:kp.find('</a>')]
-            try:
-                info['rating'].update({'kinopoisk': float(kp.strip())})
-            except:
-                pass
-            del kp
-
-        if '<div>Актеры' in data:
-            actor = data[data.find('<div>Актеры'):]
+        if u'<div>Актеры' in data:
+            actor = data[data.find(u'<div>Актеры'):]
             actor = actor[actor.find('<a href="'):actor.find('</li>')]
-            actor = actor.strip()
-            
+            actor = u'{}'.format(actor.strip())
+
             if '>' in actor[len(actor)-1]:
                 actor = actor[:actor.rfind('</a>')]
 
@@ -503,13 +234,13 @@ class RedHeadSound:
                     i = i[i.find('">')+2:].strip()
                     actor_list.append(i)
 
-            info['cast'] = actor_list
+            info['actors'] = u','.join(actor_list)
             del actor_list, actor
 
-        if '<div>Жанр' in data:
-            genre = data[data.find('<div>Жанр'):]
+        if u'<div>Жанр' in data:
+            genre = data[data.find(u'<div>Жанр'):]
             genre = genre[genre.find('<a href="'):genre.find('</li>')]
-            genre = genre.strip()
+            genre = u'{}'.format(genre.strip())
             
             if '>' in genre[len(genre)-1]:
                 genre = genre[:genre.rfind('</a>')]
@@ -523,36 +254,224 @@ class RedHeadSound:
                     i = i[i.find('">')+2:].strip()
                     genre_list.append(i)
 
-            info['genre'] = genre_list
+            info['genre'] = u','.join(genre_list)
             del genre_list, genre
 
-        if 'Возрастной рейтинг' in data:
-            mpaa = data[data.find('Возрастной рейтинг'):]
+        if u'Возрастной рейтинг' in data:
+            mpaa = data[data.find(u'Возрастной рейтинг'):]
             mpaa = mpaa[mpaa.find('<img src="/')+11:]
             mpaa = mpaa[:mpaa.find('"')]
             mpaa = mpaa[mpaa.rfind('/')+1:mpaa.rfind('.')]
-            info['mpaa'] = '{}+'.format(mpaa)
+            info['mpaa'] = u'{}'.format(mpaa)
             del mpaa
-
-        if 'Качество' in data:
-            quality = data[data.find('Качество:'):]
-            quality = quality[quality.find('<span>')+6:]
-            quality = quality[:quality.find('</span>')]
-            info['quality'] = quality.strip()
-            del quality
 
         if 'text full-text clearfix">' in data:
             plot = data[data.find('text full-text clearfix">')+25:]
-            plot = plot[plot.find('<span>')+6:plot.find('</span>')]
-            info['plot'] = plot.strip()
+            if '<div class="link-mess">' in plot:
+                plot = plot[:plot.find('<div class="link-mess">')]
+            info['plot'] = u'{}'.format(clean_tags(plot))
             del plot
 
+        if update:
+            self.database.update_serial(info)
+        else:
+            self.database.add_serial(info)
+        
+        return info
+#========================#========================#========================#
+    def create_extended_select(self, html):
+        info = {
+            'serial_id': 0,
+            #'url': '',
+            'title': '',
+            'poster': '',
+            'episodes': '',
+            'rating': {'imdb': 0.0, 'kinopoisk': 0.0},
+        }
+
+        serial_id = self.params['url'][self.params['url'].rfind('/')+1:]
+        serial_id = serial_id[:serial_id.find('-')]
+        info['serial_id'] = int(serial_id)
+        del serial_id
+        
+        data = html[html.find('class="page__header">')+21:html.find('<h2 class="page')]
+        del html
+        
+        title = data[data.find('<h1>')+4:data.find('</h1>')]
+        if '(' in title:
+            title = title[:title.find('(')]
+            info['title'] = u'{}'.format(title.strip())
+            del title
+
+        if 'pmovie__poster img-fit-cover' in data:
+            poster = data[data.find('<img src="/')+11:]
+            poster = poster[:poster.find('"')]
+            info['poster'] = u'https://redheadsound.ru/{}'.format(poster)
+            del poster
+
+        if u'<div>Эпизоды на сайте' in data:
+            episodes = data[data.find(u'<div>Эпизоды на сайте'):]
+            episodes = episodes[episodes.find('<span>')+6:episodes.find('</span>')]
+            info['episodes'] = u'{}'.format(episodes.strip())
+            del episodes
+
+        if 'IMDb">' in data:
+            imdb = data[data.find('IMDb">')+6:]
+            imdb = imdb[imdb.find('">')+2:imdb.find('</a>')]
+            try:
+                info['rating'].update({'imdb': float(imdb.strip())})
+            except:
+                pass
+            del imdb
+            
+        if u'КиноПоиск">' in data:
+            kp = data[data.find(u'КиноПоиск">')+11:]
+            kp = kp[kp.find('">')+2:kp.find('</a>')]
+            try:
+                info['rating'].update({'kinopoisk': float(kp.strip())})
+            except:
+                pass
+            del kp
+            
+        del data
+        return info
+#========================#========================#========================#
+    def create_extended_common(self, data):
+        info = {
+            'serial_id': 0,
+            'title': '',
+            'url': '',
+            'poster': '',
+            'season': '',
+            'episodes': '',
+            'rating': {'imdb': 0.0, 'kinopoisk': 0.0},
+            'node': ''
+        }
+
+        title = data[data.find('title"><a href="')+16:]
+        title = title[:title.find('</a>')].split('">')
+        serial_id = title[0][title[0].rfind('/')+1:]
+        serial_id = serial_id[:serial_id.find('-')]
+        
+        info['title'] = u'{}'.format(title[1])
+        info['url'] = u'{}'.format(title[0])
+        info['serial_id'] = int(serial_id)
+        del title, serial_id
+        
+        poster = data[data.find('<img src="/')+11:]
+        poster = poster[:poster.find('"')]
+        info['poster'] = u'https://redheadsound.ru/{}'.format(poster)
+        del poster
+
+        if u'Сезон:' in data:
+            season = data[data.find(u'Сезон:'):]
+            season = season[season.find('</span>')+7:season.find('</li>')]
+            info['season'] = u'{}'.format(season.strip())
+            del season
+
+        if u'Серий на сайте:' in data:
+            episodes = data[data.find(u'Серий на сайте:'):]
+            episodes = episodes[episodes.find('</span>')+7:episodes.find('</li>')]
+            info['episodes'] = u'{}'.format(episodes.strip())
+            del episodes
+
+        if 'IMDb">' in data:
+            imdb = data[data.find('IMDb">')+6:]
+            imdb = imdb[imdb.find('">')+2:imdb.find('</a>')]
+            try:
+                info['rating'].update({'imdb': float(imdb.strip())})
+            except:
+                pass
+            del imdb
+            
+        if u'КиноПоиск">' in data:
+            kp = data[data.find(u'КиноПоиск">')+11:]
+            kp = kp[kp.find('">')+2:kp.find('</a>')]
+            try:
+                info['rating'].update({'kinopoisk': float(kp.strip())})
+            except:
+                pass
+            del kp
+
+        if '/serialy/' in info['url']:
+            if info['season']:
+                info['node'] = u' | [COLOR=blue]S{:>02}[/COLOR]'.format(info['season'])
+                                        
+            if info['episodes']:
+                info['node'] = u'{} | [COLOR=gold]{}[/COLOR]'.format(info['node'], info['episodes'])
+
+        if '/filmy/' in info['url']:
+            info['node'] = u' | [COLOR=blue]Фильм[/COLOR]'
+
+        if '/multfilmy/' in info['url']:
+            info['node'] = u' | [COLOR=blue]Мультфильм[/COLOR]'
+                
         return info
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
-        try: self.database.end()
-        except: pass
+        try:
+            self.database.end()
+        except:
+            pass
+#========================#========================#========================#
+    def exec_update_serial_part(self):
+        self.create_info(serial_url=self.params['url'], update=True)
+#========================#========================#========================#
+    def exec_clean_part(self):
+        try:
+            addon.setSetting('search', '')
+            self.create_notification('done')
+        except:
+            self.create_notification('err')
+            pass
+#========================#========================#========================#
+    def exec_update_database_part(self):
+        try:
+            self.database.end()
+        except:
+            pass
+
+        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/redheadsound.db'
+        target_path = os.path.join(self.database_dir, 'redheadsound.db')
+        
+        try:
+            os.remove(target_path)
+        except:
+            pass
+        
+        try:
+            data = urlopen(target_url)
+            chunk_size = 8192
+            bytes_read = 0
+
+            try:
+                file_size = int(data.info().getheaders("Content-Length")[0])
+            except:
+                file_size = int(data.getheader('Content-Length'))
+
+            self.progress_bg.create(u'Загрузка файла')
+            
+            try:
+                with open(target_path, 'wb') as write_file:
+                    while True:
+                        chunk = data.read(chunk_size)
+                        bytes_read = bytes_read + len(chunk)
+                        write_file.write(chunk)
+                        if len(chunk) < chunk_size:
+                            break
+                        self.progress_bg.update(int(bytes_read * 100 / file_size), u'Загружено: {} из {} MB'.format(
+                            '{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+            except:
+                self.create_notification('err')
+                pass
+            
+            self.progress_bg.close()
+            
+            self.create_notification('done')
+        except:
+            self.create_notification('err')
+            pass
 #========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title='Поиск', params={'mode': 'search_part'})
@@ -565,7 +484,8 @@ class RedHeadSound:
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
-            self.create_line(title='Поиск по названию', params={'mode': 'search_part', 'param': 'search_word'})
+           #data_print(self.params)
+            self.create_line(title=u'Поиск по названию', params={'mode': 'search_part', 'param': 'search_word'})
             
             data_array = addon.getSetting('search').split('|')
             data_array.reverse()
@@ -574,20 +494,28 @@ class RedHeadSound:
                 for data in data_array:
                     if data == '':
                         continue
-                    self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'search_part', 'param':'search_string', 'search_string': data})
+
+                    try:
+                        label = u'[COLOR=gray]{}[/COLOR]'.format(data.decode('utf-8'))
+                    except:
+                        label = u'[COLOR=gray]{}[/COLOR]'.format(data)
+
+                    self.create_line(title=label, params={'mode': 'search_part', 'param':'search_string', 'search_string': data})
             except:
                 addon.setSetting('search', '')
 
         if 'search_word' in self.params['param']:
             skbd = xbmc.Keyboard()
-            skbd.setHeading('Поиск:')
+            skbd.setHeading(u'Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = skbd.getText()
                 data_array = addon.getSetting('search').split('|')
+                
                 while len(data_array) >= 7:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
+
                 addon.setSetting('search', data_array)
 
                 self.params['param'] = 'search_string'
@@ -597,31 +525,29 @@ class RedHeadSound:
         if 'search_string' in self.params['param']:            
             if self.params['search_string'] == '':
                 return False
-                        
-            post_data = {
-                'do': 'search',
-                'subaction': 'search',
-                'story': self.params['search_string']
-                }
-
-            data_request = session.post(url=self.site_url, data=post_data, proxies=self.proxy_data, headers=headers)
             
-            if not data_request.status_code == requests.codes.ok:
-                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return
-
-            if sys.version_info.major > 2:
-                html = data_request.text
-            else:
-                html = data_request.content
+            post_data = {
+            'do': 'search',
+            'subaction': 'search',
+            'search_start': self.params['page'],
+            'full_search': '0',
+            'result_from': (int(self.params['page'])-1) * 10 + 1,
+            'story': self.params['search_string']
+            }
+            
+            html = self.network.get_html(url=self.site_url, post=urlencode(post_data))
                 
+            if not html:
+                self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
+                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                return
+            
             if not '<article class="card d-flex">' in html:
-                self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
+                self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
-            self.progress_bg.create('RedHeadSound', 'Инициализация')
+            self.progress_bg.create(u'RedHeadSound', u'Инициализация')
 
             try:
                 data_array = html[html.find('<article class="card d-flex">')+29:html.rfind('</article>')]
@@ -630,47 +556,60 @@ class RedHeadSound:
                 for i, data in enumerate(data_array):
                     try:
                         data = data[:data.find('</article>')]
-                        
+
                         if '<div id="adfox' in data:
                             continue
-                        
-                        info_data = self.create_info_common(data)
-                        
-                        label = '[B]{}[/B]{}'.format(info_data['title'], info_data['node'])
 
-                        self.create_line(title=label, data=info_data, params={'mode': 'select_part', 'id': info_data['url']})
+                        extended_info = self.create_extended_common(data)
+
+                        self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
+                        
+                        if not self.database.serial_in_db(extended_info['serial_id']):
+                            self.create_info(serial_url=extended_info['url'])
+
+                        label = u'[B]{}[/B]{}'.format(extended_info['title'], extended_info['node'])
+
+                        self.create_line(title=label, extended=extended_info, params={'mode': 'select_part', 'url': extended_info['url']})
                     except:
-                        self.create_line(title='[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]', params={})
+                        self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]')
             except:
-                self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
+                self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]')
                 
             self.progress_bg.close()
-###################################################################################################
-# доделать next page
-###################################################################################################                
+
+            if 'pagination__pages d-flex jc-center' in html:
+                page = html[html.find('pages d-flex jc-center">')+24:]
+                page = page[:page.find('</div>')]
+                page = page[page.rfind('href="#">')+9:page.rfind('</a>')]
+                
+                try:
+                    page = int(page)
+                except:
+                    page = 0
+                
+                if page > int(self.params['page']):
+                    label = u'[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
+                        int(self.params['page']), int(self.params['page'])+1)                
+                    self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'search_string': self.params['search_string'], 'page': (int(self.params['page']) + 1)})
+            
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_common_part(self):
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
 
-        data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
+        html = self.network.get_html(url=url)
         
-        if not data_request.status_code == requests.codes.ok:
-            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
-        
-        if sys.version_info.major > 2:
-            html = data_request.text
-        else:
-            html = data_request.content
-        
-        if not '<article class="card d-flex">' in html:
-            self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
+        if not html:
+            self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
-        self.progress_bg.create('RedHeadSound', 'Инициализация')
+        if not '<article class="card d-flex">' in html:
+            self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+
+        self.progress_bg.create(u'RedHeadSound', u'Инициализация')
 
         try:
             data_array = html[html.find('<article class="card d-flex">')+29:html.rfind('</article>')]
@@ -682,16 +621,22 @@ class RedHeadSound:
 
                     if '<div id="adfox' in data:
                         continue
-                    
-                    info_data = self.create_info_common(data)
-                    
-                    label = '[B]{}[/B]{}'.format(info_data['title'], info_data['node'])
 
-                    self.create_line(title=label, data=info_data, params={'mode': 'select_part', 'id': info_data['url']})
+                    extended_info = self.create_extended_common(data)
+
+                    self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
+                    
+                    if not self.database.serial_in_db(extended_info['serial_id']):
+                        self.create_info(serial_url=extended_info['url'])
+
+                    label = u'[B]{}[/B]{}'.format(extended_info['title'], extended_info['node'])
+
+                    self.create_line(title=label, extended=extended_info, params={'mode': 'select_part', 'url': extended_info['url']})
+
                 except:
-                    self.create_line(title='[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]', params={})
+                    self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]')
         except:
-            self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
+            self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]')
             
         self.progress_bg.close()
         
@@ -700,7 +645,7 @@ class RedHeadSound:
             paginator = paginator[:paginator.find('</div>')]
             
             if '<a href="' in paginator:
-                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
+                label = u'[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
                     int(self.params['page']), int(self.params['page'])+1)
                 self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
             
@@ -708,36 +653,28 @@ class RedHeadSound:
 #========================#========================#========================#
     def exec_select_part(self):
         if not self.params['param']:
-            url = self.params['id']
+            url = self.params['url']
 
-            data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
-
-            if not data_request.status_code == requests.codes.ok:
-                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            html = self.network.get_html(url=url)
+            
+            if not html:
+                self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
-        
-            if sys.version_info.major > 2:
-                html = data_request.text
-            else:
-                html = data_request.content
 
             if not '<iframe data-src="' in html:
-                self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
+                self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
             
-            info_data = html[html.find('class="page__header">')+21:html.find('<h2 class="page')]
-            info_data = self.create_info_select(info_data)
+            extended_info = self.create_extended_select(html=html)
 
             video_url = html[html.find('<iframe data-src="')+18:]
             video_url = video_url[:video_url.find('"')]
 
-            data_request2 = session.get(url=video_url, proxies=self.proxy_data, headers=headers)
+            html2 = self.network.get_html(url=video_url)
 
-            player_data = data_request2.text
-
-            data_array = player_data[player_data.find('new Playerjs(')+13:player_data.rfind(');')]
+            data_array = html2[html2.find('new Playerjs(')+13:html2.rfind(');')]
 
             import json
 
@@ -783,7 +720,7 @@ class RedHeadSound:
             if 'Выбрать' in current_quality or current_quality not in quality_list:
                 choice = list(quality_list.keys())
                 
-                result = self.dialog.select('Доступное качество: ', choice)
+                result = self.dialog.select(u'Доступное качество: ', choice)
                 result_quality = choice[int(result)]
             else:
                 result_quality = current_quality
@@ -792,8 +729,8 @@ class RedHeadSound:
                 series_label = i[0]
                 series_url = 'https://redheadsound.video{}'.format(i[1])
 
-                self.create_line(title=series_label, params={}, data=info_data, online=series_url, folder=False)
-                    
+                self.create_line(title=series_label, extended=extended_info, params={}, online=series_url, folder=False)
+                                    
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
 if __name__ == "__main__":
