@@ -112,12 +112,23 @@ if 'animeportal' in params['portal']:
             
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-if 'anidub' in params['portal']:
-    from anidub import Anidub
-    anidub = Anidub(addon_data_dir, params, addon, icon)
-    anidub.execute()
-    del Anidub
+# if 'anidub' in params['portal']:
+#     from anidub import Anidub
+#     anidub = Anidub(addon_data_dir, params, addon, icon)
+#     anidub.execute()
+#     del Anidub
 
+if 'anidub' in params['portal']:
+    if '0' in addon.getSetting('anidub_mode'):
+        from anidub_o import Anidub
+        anidub = Anidub(addon_data_dir, params, addon, icon)
+        anidub.execute()
+        del Anidub
+    else:
+        from anidub_t import Anidub
+        anidub = Anidub(addon_data_dir, params, addon, icon)
+        anidub.execute()
+        del Anidub
     
 if 'anilibria' in params['portal']:
     from anilibria import Anilibria

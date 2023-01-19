@@ -12,8 +12,13 @@
 
 """bencode.py - bencode encoder + decoder."""
 
-from bencode.BTL import BTFailure
-from bencode.exceptions import BencodeDecodeError
+# from bencode.BTL import BTFailure
+# from bencode.exceptions import BencodeDecodeError
+class BencodeDecodeError(Exception):
+    pass
+
+class BTFailure(Exception):
+    pass
 
 from collections import deque
 import sys

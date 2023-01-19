@@ -183,7 +183,11 @@ class Anilibria:
         li.addContextMenuItems(self.create_context(anime_id))
 
         if folder==False:
-                li.setProperty('isPlayable', 'true')
+            li.setProperty('isPlayable', 'true')
+
+            if '1' in self.addon.getSetting('anilibria_inputstream'):
+                li.setProperty('inputstream', 'inputstream.adaptive')
+                li.setProperty('inputstream.adaptive.manifest_type', 'hls')
 
         params['portal'] = self.params['portal']
         url = '{}?{}'.format(sys.argv[0], urlencode(params))

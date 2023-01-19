@@ -40,7 +40,7 @@ class DataBase:
             self.cu.execute('UPDATE anime_db SET title_ru=?, title_en=?, title_jp=?, kind=?, status=?, episodes=?, aired_on=?, released_on=?, rating=?, duration=?, genres=?, writer=?, director=?, description=?, dubbing=?, translation=?, timing=?, sound=?, mastering=?, editing=?, other=?, country=?, studios=?, image=? WHERE anime_id=?',
                             (title_ru, title_en, title_jp, kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios, image, anime_id))
         self.c.commit()
-    
+
     def anime_in_db(self, anime_id):
         self.cu.execute('SELECT COUNT(1) FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
@@ -73,3 +73,13 @@ class DataBase:
         self.cu.execute('SELECT kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios FROM anime_db WHERE anime_id=?', (anime_id,))            #'SELECT genres, director, writer, description, dubbing, translation, timing, country, studios, aired_on FROM anime_db WHERE anime_id=?', (anime_id,))
         self.c.commit()
         return self.cu.fetchone()
+#=============
+    def insert_content(self, info={}):
+        self.cu.execute('INSERT INTO anime_db (anime_id, anime_tid, title_ru, title_en, title_jp, kind, status, episodes, aired_on, released_on, rating, duration, genres, writer, director, description, dubbing, translation, timing, sound, mastering, editing, other, country, studios, image) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                        (info['anime_id'], info['anime_tid'], info['title_ru'], info['title_en'], info['title_jp'], info['kind'], info['status'], info['episodes'], info['aired_on'], info['released_on'], info['rating'], info['duration'], info['genres'], info['writer'], info['director'], info['description'], info['dubbing'], info['translation'], info['timing'], info['sound'], info['mastering'], info['editing'], info['other'], info['country'], info['studios'], info['image']))
+        self.c.commit()
+
+    def update_content(self, info={}):
+        self.cu.execute('UPDATE anime_db SET anime_tid=?, title_ru=?, title_en=?, title_jp=?, kind=?, status=?, episodes=?, aired_on=?, released_on=?, rating=?, duration=?, genres=?, writer=?, director=?, description=?, dubbing=?, translation=?, timing=?, sound=?, mastering=?, editing=?, other=?, country=?, studios=?, image=? WHERE anime_id=?',
+                        (info['anime_tid'], info['title_ru'], info['title_en'], info['title_jp'], info['kind'], info['status'], info['episodes'], info['aired_on'], info['released_on'], info['rating'], info['duration'], info['genres'], info['writer'], info['director'], info['description'], info['dubbing'], info['translation'], info['timing'], info['sound'], info['mastering'], info['editing'], info['other'], info['country'], info['studios'], info['image'], info['anime_id']))
+        self.c.commit()
