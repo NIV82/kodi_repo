@@ -7,62 +7,93 @@ import time
 import xbmc
 import xbmcgui
 import xbmcplugin
+import xbmcaddon
+import xbmcvfs
 
 if sys.version_info.major > 2:
     from urllib.request import urlopen
     from urllib.parse import urlencode
     from urllib.parse import quote
-    #from urllib.parse import unquote
-    
+    from urllib.parse import parse_qs
+    from urllib.parse import unquote
     from html import unescape
 else:
     from urllib import urlopen
     from urllib import urlencode
     from urllib import quote
-    #from urllib import unquote
+    from urllib import unquote
+    from urlparse import parse_qs
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape  
-
-from utility import clean_tags
-
-headers = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
-    'Accept': '*/*',
-    'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-    'Accept-Charset': 'utf-8',
-    'Accept-Encoding': 'identity'
-    }
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
 class Anidub:
-    def __init__(self, addon_data_dir, params, addon, icon):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+
+    def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
-        self.params = params
-        self.addon = addon
-        self.icon = icon
+        self.addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-        self.images_dir = os.path.join(addon_data_dir, 'images')
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        self.database_dir = os.path.join(addon_data_dir, 'database')
-        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
+        if sys.version_info.major > 2:
+            self.addon_data_dir = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
+            self.icon = xbmcvfs.translatePath(self.addon.getAddonInfo('icon'))
+            self.fanart = xbmcvfs.translatePath(self.addon.getAddonInfo('fanart'))
+        else:
+            from utility import fs_enc
+            self.addon_data_dir = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('profile')))
+            self.icon = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('icon')))
+            self.fanart = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('fanart')))
 
-        if '1' in self.addon.getSetting('anidub_unblock') or '2' in self.addon.getSetting('anidub_unblock'):
-            self.addon.setSetting('anidub_torrents','1')
+        if not os.path.exists(self.addon_data_dir):
+            os.makedirs(self.addon_data_dir)
+
+        self.images_dir = os.path.join(self.addon_data_dir, 'images')
+        if not os.path.exists(self.images_dir):
+            os.mkdir(self.images_dir)
+
+        self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
+        if not os.path.exists(self.torrents_dir):
+            os.mkdir(self.torrents_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not os.path.exists(self.database_dir):
+            os.mkdir(self.database_dir)
+
+        self.cookie_dir = os.path.join(self.addon_data_dir, 'cookie')
+        if not os.path.exists(self.cookie_dir):
+            os.mkdir(self.cookie_dir)
+
+        self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'anidub_o'}
         
+        args = parse_qs(sys.argv[2][1:])
+        for a in args:
+            self.params[a] = unquote(args[a][0])
+
         self.proxy_data = self.exec_proxy_data()
         self.site_url = self.create_site_url()
-        #self.sid_file = os.path.join(self.cookie_dir, 'anidub.sid')
-        #self.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))
-        #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         from network import WebTools
-        self.network = WebTools(auth_usage=False, auth_status=False, proxy_data=self.proxy_data)
+        self.network = WebTools(
+            auth_usage=bool(self.addon.getSetting('anidub_auth_online') == '1'),
+            auth_status=bool(self.addon.getSetting('anidub_o_auth') == 'true'),
+            proxy_data = self.proxy_data,
+            portal='anidub_o')
+        self.network.auth_post_data = urlencode(
+            {'login_name': self.addon.getSetting('anidub_o_username'),
+            'login_password': self.addon.getSetting('anidub_o_password'),
+            'login': 'submit'}
+            )
+
+        self.network.auth_url = self.site_url
+        self.network.sid_file = os.path.join(self.cookie_dir, 'anidub_o.sid')
         del WebTools
+#========================#========================#========================#
+        self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'ap_anidub_o.db')):
             self.exec_update_file_part()
@@ -72,7 +103,7 @@ class Anidub:
         del DataBase
 #========================#========================#========================#
     def create_site_url(self):
-        current_mirror = 'anidub_o_mirror_{}'.format(self.addon.getSetting('anidub_mirror_mode'))
+        current_mirror = 'anidub_o_mirror_{}'.format(self.addon.getSetting('anidub_o_mirror_mode'))
 
         if not self.addon.getSetting(current_mirror):
             site_url = self.addon.getSetting('anidub_o_mirror_0')
@@ -81,31 +112,31 @@ class Anidub:
 
         return site_url
 #========================#========================#========================#
-    def create_context(self, anime_id, tid=None):
+    def create_context(self, anime_id, hash=None, title=None):
         context_menu = []
-        #context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anidub")'))
-
-        if tid:
-            context_menu.append(('[COLOR=lime]Открыть TORRENT[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=torrent_part&param={}&portal=anidub")'.format(tid)))
+        if title:
+            if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+                if '/' in title:
+                    title = title[:title.find('/')].strip()
+                context_menu.append((u'[COLOR=lime]Искать на Торрент Трекере[/COLOR]', u'Container.Update("plugin://plugin.niv.animeportal/?mode=search_part&param=search_string&search_string={}&portal=anidub_t")'.format(title)))
 
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(('Очистить историю поиска', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub")'))
+            context_menu.append((u'Очистить историю поиска', u'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anidub_o")'))
 
         if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-            context_menu.append(('Обновить аниме', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub")'.format(anime_id)))
+            context_menu.append((u'Обновить аниме', u'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=anidub_o")'.format(anime_id)))
 
-        # if self.authorization:
-        #     if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-        #         context_menu.append(('[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anidub")'.format(anime_id)))
-        #         context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anidub")'.format(anime_id)))
+        if self.authorization and hash:
+            if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
+                context_menu.append((u'[COLOR=cyan]Избранное - Добавить[/COLOR]', u'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&param=plus&id={}&hash={}&portal=anidub_o")'.format(anime_id,hash)))
+                context_menu.append((u'[COLOR=cyan]Избранное - Удалить[/COLOR]', u'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&param=minus&id={}&hash={}&portal=anidub_o")'.format(anime_id,hash)))
         
-        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal=anidub")'))
-        #context_menu.append(('[COLOR=darkorange]Загрузить Обложки[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&param=cover_set&portal=anidub")'))
-        #context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=authorization_part&param=update&portal=anidub")'))
-        context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=proxy_data&param=renew&portal=anidub")'))
+        context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', u'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal=anidub_o")'))
+        context_menu.append((u'[COLOR=darkorange]Обновить Авторизацию[/COLOR]', u'Container.Update("plugin://plugin.niv.animeportal/?mode=authorization_part&param=update&portal=anidub_o")'))
+        context_menu.append((u'[COLOR=darkorange]Обновить Прокси[/COLOR]', u'Container.Update("plugin://plugin.niv.animeportal/?mode=proxy_data&param=renew&portal=anidub_o")'))
         return context_menu
 #========================#========================#========================#
-    def create_line(self, title=None, cover=None, params={}, info={}, anime_id=None, folder=True, online=None, tid=None):
+    def create_line(self, title=None, cover=None, params={}, info={}, anime_id=None, folder=True, online=None, hash=None):
         li = xbmcgui.ListItem(title)
 
         if cover:
@@ -119,7 +150,7 @@ class Anidub:
             info['plot'] = u'{}\n{}'.format(info['plot'], extended_info)
 
         li.setInfo(type='video', infoLabels=info)
-        li.addContextMenuItems(self.create_context(anime_id, tid))
+        li.addContextMenuItems(self.create_context(anime_id, hash, title))
 
         if folder==False:
             li.setProperty('isPlayable', 'true')
@@ -133,6 +164,7 @@ class Anidub:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def create_info(self, anime_id, update=False):
+        from utility import clean_tags
         url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
         html = self.network.get_html(url=url)
 
@@ -248,21 +280,61 @@ class Anidub:
     def exec_addon_setting(self):
         self.addon.openSettings()
 #========================#========================#========================#
-    def exec_proxy_data(self):
-        if 'renew' in self.params['param']:
-            self.addon.setSetting('{}_proxy'.format(self.params['portal']),'')
-            self.addon.setSetting('{}_proxy_time'.format(self.params['portal']),'')
+    def exec_authorization_part(self):
+        if '0' in self.addon.getSetting('anidub_auth_online'):
+            return False
 
-        if '0' in self.addon.getSetting('anidub_unblock') or '3' in self.addon.getSetting('anidub_unblock'):
+        if not self.addon.getSetting('anidub_o_username') or not self.addon.getSetting('anidub_o_password'):
+            self.params['mode'] = 'addon_setting'
+            self.dialog.notification(
+                heading='Авторизация', message='Введите Логин и Пароль', icon=self.icon, time=3000, sound=False)
+            return
+
+        if 'update' in self.params['param']:
+            self.addon.setSetting('anidub_o_auth', 'false')
+            self.addon.setSetting('anidub_o_session', '')
+            
+        try:
+            temp_session = float(self.addon.getSetting('anidub_o_session'))
+        except:
+            temp_session = 0
+        
+        if time.time() - temp_session > 86400:
+            self.addon.setSetting('anidub_o_session', str(time.time()))
+            try:
+                os.remove(os.path.join(self.cookie_dir, 'anidub_o.sid'))
+            except:
+                pass            
+            self.addon.setSetting('anidub_o_auth', 'false')
+        
+        authorization = self.network.auth_check()
+
+
+        if not authorization:
+            self.params['mode'] = 'addon_setting'
+            self.dialog.notification(
+                heading='Авторизация', message='Проверьте Логин и Пароль', icon=self.icon, time=3000, sound=False)
+            return
+        else:
+            self.addon.setSetting('anidub_o_auth', str(authorization).lower())
+
+        return authorization
+#========================#========================#========================#
+    def exec_proxy_data(self):
+        if '0' in self.addon.getSetting('anidub_o_unblock'):
             return None
 
+        if 'renew' in self.params['param']:
+            self.addon.setSetting('anidub_o_proxy', '')
+            self.addon.setSetting('anidub_o_proxy_time', '')
+
         try:
-            proxy_time = float(self.addon.getSetting('{}_proxy_time'.format(self.params['portal'])))
+            proxy_time = float(self.addon.getSetting('anidub_o_proxy_time'))
         except:
             proxy_time = 0
 
         if time.time() - proxy_time > 604800:
-            self.addon.setSetting('anidub_proxy_time', str(time.time()))
+            self.addon.setSetting('anidub_o_proxy_time', str(time.time()))
             proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
 
             try:
@@ -271,11 +343,11 @@ class Anidub:
                 pass
 
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-            self.addon.setSetting('anidub_proxy', proxy)
+            self.addon.setSetting('anidub_o_proxy', proxy)
             proxy_data = {'https': proxy}
         else:
-            if self.addon.getSetting('anidub_proxy'):
-                proxy_data = {'https': self.addon.getSetting('anidub_proxy')}
+            if self.addon.getSetting('anidub_o_proxy'):
+                proxy_data = {'https': self.addon.getSetting('anidub_o_proxy')}
             else:
                 proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
                 
@@ -285,7 +357,7 @@ class Anidub:
                     pass
 
                 proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                self.addon.setSetting('anidub_proxy', proxy)
+                self.addon.setSetting('anidub_o_proxy', proxy)
                 proxy_data = {'https': proxy}
 
         return proxy_data
@@ -338,6 +410,19 @@ class Anidub:
 
         self.progress_bg.close()
 #========================#========================#========================#
+    def exec_favorites_part(self):
+        url = '{}engine/ajax/controller.php?mod=favorites&fav_id={}&action={}&skin=kinolife-blue&alert=1&user_hash={}'.format(
+            self.site_url, self.params['id'], self.params['param'], self.params['hash'])
+
+        result = self.network.get_html(url=url)
+
+        if u'успешно добавлена' in result:
+            self.dialog.notification(heading='Избранное',message='Добавлено',icon=self.icon,time=3000,sound=False)
+        elif u'успешно убрана' in result:
+            self.dialog.notification(heading='Избранное',message='Удалено',icon=self.icon,time=3000,sound=False)
+        else:
+            self.dialog.notification(heading='Избранное',message='Ошибка',icon=self.icon,time=3000,sound=False)
+#========================#========================#========================#
     def exec_clean_part(self):
         try:
             self.addon.setSetting('anidub_o_search', '')
@@ -346,17 +431,10 @@ class Anidub:
             self.dialog.notification(heading='Поиск',message='Ошибка',icon=self.icon,time=3000,sound=False)
             pass
 #========================#========================#========================#
-    def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]Anidub Online[/COLOR][/B]\n\
-    - Мелкие правки\n\
-    - Внесено исправление в просмотр онлайн видео при включенной разблокировке'
-        self.dialog.textviewer('Информация', data)
-        return
-#========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title=u'[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
-        # if self.authorization:
-        #     self.create_line(title=u'[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'favorites_part'})
+        if self.authorization:
+            self.create_line(title=u'[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
         self.create_line(title=u'[B][COLOR=lime]Аниме[/COLOR][/B]', params={'mode': 'common_part'})
         self.create_line(title=u'[B][COLOR=lime]Аниме ТВ[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/'})
         self.create_line(title=u'[B][COLOR=lime]Аниме Фильмы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
@@ -432,6 +510,12 @@ class Anidub:
             navigation = navigation[:navigation.rfind('</a>')]
             navigation = navigation[navigation.rfind('>')+1:]
 
+            user_hash = None
+            if self.authorization:
+                user_hash = html[html.find('dle_login_hash'):]
+                user_hash = user_hash[user_hash.find('\'')+1:]
+                user_hash = user_hash[:user_hash.find('\'')]
+
             self.progress.create('AniDub', 'Инициализация')
 
             try:
@@ -472,7 +556,7 @@ class Anidub:
                                 self.create_info(anime_id)
 
                             label = u'{}{}'.format(anime_title, anime_series)
-                            self.create_line(title=label, anime_id=anime_id, cover=anime_cover, params={'mode': 'select_part', 'id': anime_id})
+                            self.create_line(title=label, anime_id=anime_id, cover=anime_cover, hash=user_hash, params={'mode': 'select_part', 'id': anime_id})
                         except:
                             self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
             except:
@@ -539,6 +623,12 @@ class Anidub:
         navigation = navigation[:navigation.rfind('</a>')]
         navigation = navigation[navigation.rfind('>')+1:]
 
+        user_hash = None
+        if self.authorization:
+            user_hash = html[html.find('dle_login_hash'):]
+            user_hash = user_hash[user_hash.find('\'')+1:]
+            user_hash = user_hash[:user_hash.find('\'')]
+
         self.progress.create('AniDub', 'Инициализация')
 
         try:
@@ -558,7 +648,7 @@ class Anidub:
                         anime_cover = unescape(anime_cover)
                         if not 'http:' in anime_cover:
                             if not 'https:' in anime_cover:
-                                anime_cover = u'http://online.anidub.life/{}'.format(anime_cover[1:])
+                                anime_cover = u'{}{}'.format(self.site_url, anime_cover[1:])
 
                         anime_id = anime_url[anime_url.rfind('/')+1:anime_url.find('-')]
 
@@ -586,7 +676,7 @@ class Anidub:
                             self.create_info(anime_id)
 
                         label = u'{}{}'.format(anime_title, anime_series)
-                        self.create_line(title=label, anime_id=anime_id, cover=anime_cover, params={'mode': 'select_part', 'id': anime_id})
+                        self.create_line(title=label, anime_id=anime_id, cover=anime_cover, hash=user_hash, params={'mode': 'select_part', 'id': anime_id})
                     except:
                         self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
         except:
@@ -667,16 +757,8 @@ class Anidub:
 
             series.update({video_title: video_url})
 
-        torrent_url = None
-        if u'Торрент:' in html:
-            torrent_url = html[html.find(u'Торрент:'):]
-            torrent_url = torrent_url[torrent_url.find('<a href=')+8:]
-            torrent_url = torrent_url[:torrent_url.find('target=')].replace('"','')
-            torrent_url = u'{}'.format(torrent_url.strip())
-
         for video_title, video_url in sorted(series.items(), key=lambda item: item[1]):
-            self.create_line(title=video_title, tid=torrent_url, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id']})
-        
+            self.create_line(title=video_title, params={'mode': 'online_part', 'param': video_url, 'id': self.params['id']})
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
     def exec_online_part(self):
@@ -716,133 +798,3 @@ class Anidub:
             self.create_line(title=label, params={}, online=play_url, folder=False)
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-#========================#========================#========================#
-    def exec_torrent_part(self):
-        if self.params['param']:
-            if '0' in self.addon.getSetting('anidub_torrents'):
-                self.addon.setSetting('anidub_unblock', '1')
-                self.proxy_data = self.exec_proxy_data()
-                self.addon.setSetting('anidub_unblock', '0')
-                
-                del self.network
-                
-                from network import WebTools
-                self.network = WebTools(auth_usage=False, auth_status=False, proxy_data=self.proxy_data)
-                del WebTools
-
-            html = self.network.get_html(url=self.params['param'])
-
-            if not html:
-                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return
-
-            if not '<div class="torrent_c">' in html:
-                self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return
-
-            data_array = html[html.find('<div class="torrent_c">')+23:html.rfind(u'Управление')]
-            data_array = data_array.split(u'Управление')
-
-            line_array = {}
-
-            for data in data_array:
-                data = data[data.find('<div id='):]
-                            
-                torrent_id = data[data.find('torrent_')+8:]
-                torrent_id = torrent_id[:torrent_id.find('_')]
-
-                if '<div id=\'torrent_' in data:
-                    quality = data[:data.find('<div id=\'torrent_')]
-                    if quality:
-                        quality = data[data.find('="')+2:]
-                        quality = quality[:quality.find('"')]
-                    else:
-                        quality = 'uknown'
-
-                    if u'Серии в торренте:' in data:
-                        series = data[data.find(u'Серии в торренте:')+17:]
-                        series = series[series.find('>')+1:]
-                        series = series[:series.find('<')]
-                        series = u'{} - [ {} ]'.format(quality, series)
-                    else:
-                        series = quality
-
-                    seed = data[data.find('li_distribute_m">')+17:]
-                    seed = seed[:seed.find('<')]
-
-                    peer = data[data.find('li_swing_m">')+12:]
-                    peer = peer[:peer.find('<')]
-
-                    size = data[data.find(u'Размер: <span class="red">')+26:]
-                    size = size[:size.find('<')]
-
-                    line_label = u'[COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , [COLOR=lime]{}[/COLOR] | [COLOR=red]{}[/COLOR]'.format(size, series.upper(), seed, peer)
-
-                    line_array.update({torrent_id: line_label})
-
-            if len(line_array) < 2:
-                tid = list(line_array.keys())
-                self.params = {'mode': 'torrent_part', 'node': tid[0], 'param':'', 'portal': 'anidub'}
-                self.exec_torrent_part()
-            else:
-                for tid, label  in line_array.items():
-                    self.create_line(title=label, params={'mode': 'torrent_part', 'node': tid} )
-        else:
-            if '0' in self.addon.getSetting('anidub_torrents'):
-                self.addon.setSetting('anidub_unblock', '1')
-                self.proxy_data = self.exec_proxy_data()
-                self.addon.setSetting('anidub_unblock', '0')
-      
-            url = 'https://tr.anidub.com/engine/download.php?id={}'.format(self.params['node'])
-
-            file_name = u'anidub_t_{}.torrent'.format(self.params['node'])
-            full_name = os.path.join(self.torrents_dir, file_name)
-        
-            torrent_file = self.network.get_file(url=url, destination_name=full_name)
-
-            import bencode
-
-            with open(torrent_file, 'rb') as read_file:
-                torrent_data = read_file.read()
-
-            torrent = bencode.bdecode(torrent_data)
-
-            info = torrent['info']
-            series = {}
-            size = {}
-                
-            if 'files' in info:
-                for i, x in enumerate(info['files']):
-                    size[i] = x['length']
-                    series[i] = x['path'][-1]
-                for i in sorted(series, key=series.get):
-                    self.create_line(title=series[i], params={'mode': 'selector_part', 'index': i, 'id': file_name}, folder=False, info={'size':size[i]})
-            else:
-                self.create_line(title=info['name'], params={'mode': 'selector_part', 'index': 0, 'id': file_name}, folder=False, info={'size':size[i]})
-
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-#========================#========================#========================#
-    def exec_selector_part(self):
-        torrent_url = os.path.join(self.torrents_dir, self.params['id'])
-        index = int(self.params['index'])
-        portal_engine = '{}_engine'.format(self.params['portal'])
-        
-        if '0' in self.addon.getSetting(portal_engine):
-            try:
-                tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver', 'torrserver_tam', 'lt2http')
-                engine = tam_engine[int(self.addon.getSetting('{}_tam'.format(self.params['portal'])))]
-                purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(torrent_url), index, engine)
-                item = xbmcgui.ListItem(path=purl)
-                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-            except:
-                self.dialog.notification(heading='Проигрыватель',message='Ошибка',icon=self.icon,time=3000,sound=False)
-
-        if '1' in self.addon.getSetting(portal_engine):
-            try:
-                purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(torrent_url), index)
-                item = xbmcgui.ListItem(path=purl)
-                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-            except:
-                self.dialog.notification(heading='Проигрыватель',message='Ошибка',icon=self.icon,time=3000,sound=False)

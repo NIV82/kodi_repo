@@ -7,22 +7,27 @@ import time
 import xbmc
 import xbmcgui
 import xbmcplugin
-
-import requests
+import xbmcaddon
+import xbmcvfs
 
 if sys.version_info.major > 2:
+    from urllib.request import urlopen
     from urllib.parse import urlencode
     from urllib.parse import quote
+    from urllib.parse import parse_qs
     from urllib.parse import unquote
-    #from urllib.request import urlopen
     from html import unescape
 else:
+    from urllib import urlopen
     from urllib import urlencode
-    #from urllib import urlopen
     from urllib import quote
     from urllib import unquote
+    from urlparse import parse_qs
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape
+
+import requests
+session = requests.Session()
 
 from utility import clean_tags
 from utility import data_encode
@@ -41,20 +46,49 @@ def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
 class Animedia:
-    def __init__(self, addon_data_dir, params, addon, icon):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+
+    def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
+        self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
-        self.session = requests.Session()
-        
-        self.params = params
-        self.addon = addon
-        self.icon = icon
+        self.addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-        self.images_dir = os.path.join(addon_data_dir, 'images')
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        self.database_dir = os.path.join(addon_data_dir, 'database')
-        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
+        if sys.version_info.major > 2:
+            self.addon_data_dir = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
+            self.icon = xbmcvfs.translatePath(self.addon.getAddonInfo('icon'))
+            self.fanart = xbmcvfs.translatePath(self.addon.getAddonInfo('fanart'))
+        else:
+            from utility import fs_enc
+            self.addon_data_dir = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('profile')))
+            self.icon = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('icon')))
+            self.fanart = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('fanart')))
+
+        if not os.path.exists(self.addon_data_dir):
+            os.makedirs(self.addon_data_dir)
+
+        self.images_dir = os.path.join(self.addon_data_dir, 'images')
+        if not os.path.exists(self.images_dir):
+            os.mkdir(self.images_dir)
+
+        self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
+        if not os.path.exists(self.torrents_dir):
+            os.mkdir(self.torrents_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not os.path.exists(self.database_dir):
+            os.mkdir(self.database_dir)
+
+        self.cookie_dir = os.path.join(self.addon_data_dir, 'cookie')
+        if not os.path.exists(self.cookie_dir):
+            os.mkdir(self.cookie_dir)
+
+        self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'animedia'}
+
+        args = parse_qs(sys.argv[2][1:])
+        for a in args:
+            self.params[a] = unquote(args[a][0])
 
         if 'true' in self.addon.getSetting('animedia_unblock'):
             self.addon.setSetting('animedia_torrents','1')
@@ -117,7 +151,7 @@ class Animedia:
             else:
                 file_name = os.path.join(self.images_dir, local_img)
                 try:                    
-                    data_request = self.session.get(url=url, proxies=self.proxy_data)
+                    data_request = session.get(url=url, proxies=self.proxy_data)
                     with open(file_name, 'wb') as write_file:
                         write_file.write(data_request.content)
                     return file_name
@@ -220,7 +254,7 @@ class Animedia:
     def create_info(self, anime_id, update=False):
         url = '{}anime/{}'.format(self.site_url, quote(anime_id))
 
-        data_request = self.session.get(url=url, proxies=self.proxy_data)
+        data_request = session.get(url=url, proxies=self.proxy_data)
         
         if not data_request.status_code == requests.codes.ok:
             self.database.add_anime(
@@ -371,19 +405,19 @@ class Animedia:
         if 'true' in self.addon.getSetting('{}_auth'.format(self.params['portal'])):
             try:
                 with open(self.sid_file, 'rb') as read_file:
-                    self.session.cookies.update(pickle.load(read_file))
-                auth = True if 'anime_sessionid' in str(self.session.cookies) else False
+                    session.cookies.update(pickle.load(read_file))
+                auth = True if 'anime_sessionid' in str(session.cookies) else False
             except:
-                self.session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
-                auth = True if 'anime_sessionid' in str(self.session.cookies) else False
+                session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
+                auth = True if 'anime_sessionid' in str(session.cookies) else False
                 with open(self.sid_file, 'wb') as write_file:
-                    pickle.dump(self.session.cookies, write_file)
+                    pickle.dump(session.cookies, write_file)
         else:
             try:
-                self.session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
-                auth = True if 'anime_sessionid' in str(self.session.cookies) else False
+                session.post(url=self.site_url, proxies=self.proxy_data, data=auth_post_data)
+                auth = True if 'anime_sessionid' in str(session.cookies) else False
                 with open(self.sid_file, 'wb') as write_file:
-                    pickle.dump(self.session.cookies, write_file)
+                    pickle.dump(session.cookies, write_file)
             except:
                 auth = False
 
@@ -510,7 +544,7 @@ class Animedia:
                 self.site_url, quote(self.params['search_string'])
             )
             
-            data_request = self.session.get(url=url, proxies=self.proxy_data, headers=headers)
+            data_request = session.get(url=url, proxies=self.proxy_data, headers=headers)
             
             if not data_request.status_code == requests.codes.ok:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -581,7 +615,7 @@ class Animedia:
                 self.site_url, page
             )
 
-        data_request = self.session.get(url=url, proxies=self.proxy_data)
+        data_request = session.get(url=url, proxies=self.proxy_data)
 
         if not data_request.status_code == requests.codes.ok:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -697,7 +731,7 @@ class Animedia:
             url = '{}ajax/search_result_search_page_2/P{}?limit=25{}{}{}{}{}{}{}'.format(
                 self.site_url, page, genre, voice, studio, year, form, status, sort)
             
-            data_request = self.session.get(url=url, proxies=self.proxy_data)
+            data_request = session.get(url=url, proxies=self.proxy_data)
 
             if not data_request.status_code == requests.codes.ok:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -767,7 +801,7 @@ class Animedia:
     def exec_online_part(self):
         url = '{}anime/{}'.format(self.site_url, self.params['id'])
 
-        data_request = self.session.get(url=url, proxies=self.proxy_data)
+        data_request = session.get(url=url, proxies=self.proxy_data)
             
         if not data_request.status_code == requests.codes.ok:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -796,7 +830,7 @@ class Animedia:
                 
             url = '{}/embeds/playlist-j.txt/{}/{}'.format(self.site_url, data_entry, int(tab_num)+1)
 
-            data_request = self.session.get(url=url, proxies=self.proxy_data)
+            data_request = session.get(url=url, proxies=self.proxy_data)
             html = data_request.text
             
             data_array = html.split('},')
@@ -832,7 +866,7 @@ class Animedia:
         if not self.params['param']:
             anime_code = data_decode(self.params['id'])
             
-            data_request = self.session.get(url=anime_code[1], proxies=self.proxy_data)
+            data_request = session.get(url=anime_code[1], proxies=self.proxy_data)
             
             if not data_request.status_code == requests.codes.ok:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
@@ -909,7 +943,7 @@ class Animedia:
             anime_code = data_decode(self.params['id'])
             url = self.params['param']
 
-            data_request = self.session.get(url=url, proxies=self.proxy_data)
+            data_request = session.get(url=url, proxies=self.proxy_data)
 
             file_name = sha1(
                 '{}_{}'.format(self.params['portal'],anime_code[0])

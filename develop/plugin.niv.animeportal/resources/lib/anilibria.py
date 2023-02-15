@@ -3,29 +3,31 @@
 import os
 import sys
 import time
-#import base64
 
 import xbmc
 import xbmcgui
 import xbmcplugin
-#import xbmcaddon
+import xbmcaddon
+import xbmcvfs
+
+if sys.version_info.major > 2:
+    from urllib.request import urlopen
+    from urllib.parse import urlencode
+    from urllib.parse import quote
+    from urllib.parse import parse_qs
+    from urllib.parse import unquote
+    from html import unescape
+else:
+    from urllib import urlopen
+    from urllib import urlencode
+    from urllib import quote
+    from urllib import unquote
+    from urlparse import parse_qs
+    import HTMLParser
+    unescape = HTMLParser.HTMLParser().unescape  
 
 import requests
 session = requests.Session()
-
-try:
-    from urllib import urlencode
-    #from urllib import urlopen
-    from urllib import quote
-    from urllib import unquote
-    import HTMLParser
-    unescape = HTMLParser.HTMLParser().unescape
-except:
-    from urllib.parse import urlencode
-    from urllib.parse import quote
-    from urllib.parse import unquote
-    #from urllib.request import urlopen
-    from html import unescape
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
@@ -39,22 +41,53 @@ def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
 class Anilibria:
-    def __init__(self, addon_data_dir, params, addon, icon):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    #def __init__(self, addon_data_dir, params, addon, icon):
+    def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
+        self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
-        self.params = params
-        self.addon = addon
-        self.icon = icon
+        self.addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-        self.images_dir = os.path.join(addon_data_dir, 'images')
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        self.database_dir = os.path.join(addon_data_dir, 'database')
-        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
+        if sys.version_info.major > 2:
+            self.addon_data_dir = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
+            self.icon = xbmcvfs.translatePath(self.addon.getAddonInfo('icon'))
+            self.fanart = xbmcvfs.translatePath(self.addon.getAddonInfo('fanart'))
+        else:
+            from utility import fs_enc
+            self.addon_data_dir = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('profile')))
+            self.icon = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('icon')))
+            self.fanart = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('fanart')))
+
+        if not os.path.exists(self.addon_data_dir):
+            os.makedirs(self.addon_data_dir)
+
+        self.images_dir = os.path.join(self.addon_data_dir, 'images')
+        if not os.path.exists(self.images_dir):
+            os.mkdir(self.images_dir)
+
+        self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
+        if not os.path.exists(self.torrents_dir):
+            os.mkdir(self.torrents_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not os.path.exists(self.database_dir):
+            os.mkdir(self.database_dir)
+
+        self.cookie_dir = os.path.join(self.addon_data_dir, 'cookie')
+        if not os.path.exists(self.cookie_dir):
+            os.mkdir(self.cookie_dir)
         
         if 'true' in self.addon.getSetting('anilibria_unblock'):
             self.addon.setSetting('anilibria_torrents','1')
-            
+        
+        self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'limit': '12', 'portal': 'anilibria'}
+        
+        args = parse_qs(sys.argv[2][1:])
+        for a in args:
+            self.params[a] = unquote(args[a][0])
+
         self.proxy_data = self.exec_proxy_data()
         self.site_url = self.create_site_url()
         self.sid_file = os.path.join(self.cookie_dir, '{}.sid'.format(self.params['portal']))

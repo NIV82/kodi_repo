@@ -7,21 +7,27 @@ import time
 import xbmc
 import xbmcgui
 import xbmcplugin
+import xbmcaddon
+import xbmcvfs
 
-import requests
-session = requests.Session()
-
-try:
+if sys.version_info.major > 2:
+    from urllib.request import urlopen
+    from urllib.parse import urlencode
+    from urllib.parse import quote
+    from urllib.parse import parse_qs
+    from urllib.parse import unquote
+    from html import unescape
+else:
+    from urllib import urlopen
     from urllib import urlencode
     from urllib import quote
     from urllib import unquote
+    from urlparse import parse_qs
     import HTMLParser
-    unescape = HTMLParser.HTMLParser().unescape
-except:
-    from urllib.parse import urlencode
-    from urllib.parse import quote
-    from urllib.parse import unquote
-    from html import unescape
+    unescape = HTMLParser.HTMLParser().unescape  
+
+import requests
+session = requests.Session()
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
@@ -37,18 +43,49 @@ def data_print(data):
 from utility import tag_list, clean_list, sha1
 
 class Anistar:
-    def __init__(self, addon_data_dir, params, addon, icon):
+    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+
+    def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
+        self.progress = xbmcgui.DialogProgress()
         self.dialog = xbmcgui.Dialog()
 
-        self.params = params
-        self.addon = addon
-        self.icon = icon
+        self.addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-        self.images_dir = os.path.join(addon_data_dir, 'images')
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        self.database_dir = os.path.join(addon_data_dir, 'database')
-        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
+        if sys.version_info.major > 2:
+            self.addon_data_dir = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
+            self.icon = xbmcvfs.translatePath(self.addon.getAddonInfo('icon'))
+            self.fanart = xbmcvfs.translatePath(self.addon.getAddonInfo('fanart'))
+        else:
+            from utility import fs_enc
+            self.addon_data_dir = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('profile')))
+            self.icon = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('icon')))
+            self.fanart = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('fanart')))
+
+        if not os.path.exists(self.addon_data_dir):
+            os.makedirs(self.addon_data_dir)
+
+        self.images_dir = os.path.join(self.addon_data_dir, 'images')
+        if not os.path.exists(self.images_dir):
+            os.mkdir(self.images_dir)
+
+        self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
+        if not os.path.exists(self.torrents_dir):
+            os.mkdir(self.torrents_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not os.path.exists(self.database_dir):
+            os.mkdir(self.database_dir)
+
+        self.cookie_dir = os.path.join(self.addon_data_dir, 'cookie')
+        if not os.path.exists(self.cookie_dir):
+            os.mkdir(self.cookie_dir)
+
+        self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'node': '', 'portal': 'anistar'}
+
+        args = parse_qs(sys.argv[2][1:])
+        for a in args:
+            self.params[a] = unquote(args[a][0])
 
         if '0' in self.addon.getSetting('anistar_adult'):
             self.addon.setSetting('anistar_adult_pass', '')
@@ -156,7 +193,6 @@ class Anistar:
 #========================#========================#========================#
     def create_context(self, anime_id):
         context_menu = []
-        
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
             context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anistar")'))
 
@@ -167,7 +203,6 @@ class Anistar:
             context_menu.append(('[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=plus&id={}&portal=anistar")'.format(anime_id)))
             context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anistar")'.format(anime_id)))
 
-        context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=anistar")'))
         context_menu.append(('[COLOR=darkorange]Обновить Зеркала[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anistar")'))
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal=anistar")'))
         context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=authorization_part&param=renew&portal=anistar")'))
@@ -566,12 +601,6 @@ class Anistar:
             self.dialog.notification(heading='Поиск',message='Ошибка',icon=self.icon,time=3000,sound=False)
             pass
 #========================#========================#========================#
-    def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
-    - Исправлены метки просмотренного в торрента файлах'
-        self.dialog.textviewer('Информация', data)
-        return
-#========================#========================#========================#
     def exec_main_part(self):
         if self.authorization:
             self.create_line(title=u'[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param': 'favorites/'})
@@ -629,7 +658,7 @@ class Anistar:
                 self.params['param'] = 'search_string'
             else:
                 return False
-        
+
         if 'search_string' in self.params['param']:
             from info import anistar_ignor_list
             
@@ -640,7 +669,7 @@ class Anistar:
                 search_string = self.params['search_string'].encode('cp1251')
             except:
                 search_string = self.params['search_string']
-            
+
             url = self.site_url
             
             post_data = {
