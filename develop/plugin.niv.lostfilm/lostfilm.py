@@ -317,7 +317,7 @@ class Lostfilm:
                     info['director'] = cast['directors']
                 if cast['writers']:
                     info['writer'] = cast['writers']
-            
+
             if watched:
                 info['playcount'] = 1
 
@@ -331,6 +331,9 @@ class Lostfilm:
                 li.setProperty('isPlayable', 'true')
 
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
+
+        # data_print(self.params)
+        # xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_EPISODE)
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
@@ -1118,13 +1121,13 @@ class Lostfilm:
 
             html = data_request.text
             
-            if '<div class="status">' in html and not atl_names:
+            if '<div class="status">' in html: #and not atl_names:
                 serial_status = html[html.find('<div class="status">')+20:]
                 serial_status = serial_status[:serial_status.find('</span>')]
                 serial_status = clean_list(serial_status)
                 serial_status = serial_status.replace(u'Статус:','').strip()
                 serial_status = u'[COLOR=dimgray]{}[/COLOR]'.format(serial_status)
-                self.create_line(title=serial_status, folder=False, watched=True, params={})
+                #self.create_line(title=serial_status, folder=False, watched=True, params={})
             else:
                 serial_status = ''
 
@@ -1139,8 +1142,10 @@ class Lostfilm:
                 return
 
             self.progress_bg.create('LostFilm', 'Инициализация')
-
+            
             try:
+                season_array = []
+
                 for i, data in enumerate(data_array):
                     try:
                         if '<div class="details">' in data:
@@ -1155,7 +1160,7 @@ class Lostfilm:
 
                         else:
                             season_status = ''
-                            
+
                         title = data[:data.find('</h2>')]
 
                         season = title.replace(u'сезон','').strip()
@@ -1169,21 +1174,42 @@ class Lostfilm:
 
                         if 'PlayEpisode(' in data:
                             label = u'[B]{} {}[/B]'.format(title, season_status)
-                            self.create_line(title=label, serial_id=self.params['id'], se_code=se_code ,params={
-                                'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
+
+                            season_array.append(
+                                u'{}|||{}'.format(label,se_code)
+                            )
+                            # self.create_line(title=label, serial_id=self.params['id'], se_code=se_code ,params={
+                            #     'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
                         else:
                             if not atl_names:
                                 label = u'[COLOR=dimgray][B]{}[/B][/COLOR]'.format(title)
-                                self.create_line(title=label, params={
-                                    'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
+
+                                season_array.append(
+                                    u'{}|||{}'.format(label, se_code)
+                            )
+                                
+                                # self.create_line(title=label, params={
+                                #     'mode': 'select_part', 'param': '{}'.format(se_code), 'id': self.params['id']})
                     except:
                         self.create_line(title='[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]', params={})
+
+                season_array.reverse()
+
+                for se in season_array:
+                    se = se.split('|||')
+                    
+                    self.create_line(title=se[0], serial_id=self.params['id'], se_code=se[1] ,params={
+                        'mode': 'select_part', 'param': se[1], 'id': self.params['id']})
+                
+                if serial_status and not atl_names:
+                    self.create_line(title=serial_status, folder=False, watched=True, params={})
+
             except:
                 self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
                 
             self.progress_bg.close()
 
-        if self.params['param']:                
+        if self.params['param']:
             code = self.params['param']
             image_id = code[:len(code)-6]
             season_id = code[len(code)-6:len(code)-3]
@@ -1208,6 +1234,7 @@ class Lostfilm:
                     "type": "getmarks",
                     "id": image_id
                     }
+                
                 data_request2 = session.post(url=url, data=post, proxies=self.proxy_data, headers=headers)
                 watched_data = data_request2.text
             except:
@@ -1221,6 +1248,8 @@ class Lostfilm:
             data_array = data_array.split('<td class="alpha">')
             
             try:
+                episode_array = []
+
                 for i, data in enumerate(data_array):
                     try:
                         se_code = data[data.find('episode="')+9:]
@@ -1233,7 +1262,7 @@ class Lostfilm:
                             episode_title = episode_title[episode_title.find('<div>')+5:episode_title.find('<br />')].strip()
                         if not episode_title:
                             continue
-                        
+
                         is_watched = True if se_code in watched_data else False
 
                         p = int((float(i+1) / len(data_array)) * 100)
@@ -1249,16 +1278,36 @@ class Lostfilm:
                                     )
                             else:
                                 label = self.create_title(episode_title=episode_title, watched=is_watched, data_code=se_code)
+                                
+                            episode_array.append(
+                                u'{}|||{}|||{}'.format(label, se_code, is_watched)
+                                )
 
-                            self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
-                                            'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
+                            # self.create_line(title=label, serial_id=self.params['id'], se_code=se_code, watched=is_watched, folder=False, params={
+                            #                 'mode': 'play_part', 'id': self.params['id'], 'param': se_code})
                         else:
                             if not atl_names:
                                 label = '[COLOR=dimgray]S{:>02}E{:02} | {}[/COLOR]'.format(
                                     int(season_id), len(data_array), episode_title)
-                                self.create_line(title=label, folder=False, params={})
+                                
+                                episode_array.append(
+                                    u'{}'.format(label)
+                                    )
+                                #self.create_line(title=label, folder=False, params={})
                     except:
-                        self.create_line(title='[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]', params={})                        
+                        self.create_line(title='[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]', params={})
+
+                episode_array.reverse()
+
+                for ep in episode_array:
+                    ep = ep.split('|||')
+
+                    if len(ep) < 3:
+                        self.create_line(title=ep[0], folder=False, params={})
+                    else:
+                        self.create_line(title=ep[0], serial_id=self.params['id'], se_code=ep[1], watched=bool(ep[2]=='True'), folder=False, params={
+                            'mode': 'play_part', 'id': self.params['id'], 'param': ep[1]})
+
             except:
                 self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
 
