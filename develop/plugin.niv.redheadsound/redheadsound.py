@@ -360,7 +360,8 @@ class RedHeadSound:
         
         poster = data[data.find('<img src="/')+11:]
         poster = poster[:poster.find('"')]
-        info['poster'] = u'https://redheadsound.ru/{}'.format(poster)
+        info['poster'] = u'{}{}'.format(self.site_url, poster)
+        
         del poster
 
         if u'Сезон:' in data:
@@ -484,7 +485,6 @@ class RedHeadSound:
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
-           #data_print(self.params)
             self.create_line(title=u'Поиск по названию', params={'mode': 'search_part', 'param': 'search_word'})
             
             data_array = addon.getSetting('search').split('|')
@@ -596,6 +596,7 @@ class RedHeadSound:
 #========================#========================#========================#
     def exec_common_part(self):
         url = '{}{}page/{}/'.format(self.site_url, self.params['param'], self.params['page'])
+        data_print(url)
 
         html = self.network.get_html(url=url)
         

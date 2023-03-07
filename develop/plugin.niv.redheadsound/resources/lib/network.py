@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import xbmc
 
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+    
 try:
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
+    
     from urllib2 import ProxyHandler, HTTPCookieProcessor, build_opener, Request
     from cookielib import MozillaCookieJar
 except:
@@ -54,10 +61,11 @@ class WebTools:
                 pass
 
             return data
-        #except Exception as e:
-            #return e
-        except:
+        except Exception as e:
+            data_print(e)
             return False
+        # except:
+        #     return False
         
     def get_bytes(self, url, post=None):
         try:
