@@ -392,7 +392,7 @@ class Anistar:
     
         if time.time() - proxy_time > 604800:
             self.addon.setSetting('{}_proxy_time'.format(self.params['portal']), str(time.time()))
-            proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+            proxy_request = requests.get(url='https://antizapret.prostovpn.org:8443/proxy.pac', headers=headers)
 
             if proxy_request.status_code == requests.codes.ok:
                 proxy_pac = proxy_request.text
@@ -413,7 +413,7 @@ class Anistar:
             if self.addon.getSetting('{}_proxy'.format(self.params['portal'])):
                 proxy_data = {'https': self.addon.getSetting('{}_proxy'.format(self.params['portal']))}
             else:
-                proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+                proxy_request = requests.get(url='https://antizapret.prostovpn.org:8443/proxy.pac', headers=headers)
 
                 if proxy_request.status_code == requests.codes.ok:
                     proxy_pac = proxy_request.text

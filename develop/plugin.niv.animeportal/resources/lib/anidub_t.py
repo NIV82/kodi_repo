@@ -314,7 +314,7 @@ class Anidub:
 
         if time.time() - proxy_time > 604800:
             self.addon.setSetting('anidub_t_proxy_time', str(time.time()))
-            proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+            proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
 
             try:
                 proxy_pac = str(proxy_pac, encoding='utf-8')
@@ -328,7 +328,7 @@ class Anidub:
             if self.addon.getSetting('anidub_t_proxy'):
                 proxy_data = {'https': self.addon.getSetting('anidub_t_proxy')}
             else:
-                proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+                proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
                 
                 try:
                     proxy_pac = str(proxy_pac, encoding='utf-8')

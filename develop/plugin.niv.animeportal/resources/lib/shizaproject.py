@@ -7,21 +7,27 @@ import time
 import xbmc
 import xbmcgui
 import xbmcplugin
+import xbmcaddon
+import xbmcvfs
 
-import requests
-session = requests.Session()
-
-try:
+if sys.version_info.major > 2:
+    from urllib.request import urlopen
+    from urllib.parse import urlencode
+    from urllib.parse import quote
+    from urllib.parse import parse_qs
+    from urllib.parse import unquote
+    from html import unescape
+else:
+    from urllib import urlopen
     from urllib import urlencode
     from urllib import quote
     from urllib import unquote
+    from urlparse import parse_qs
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape
-except:
-    from urllib.parse import urlencode
-    from urllib.parse import quote
-    from urllib.parse import unquote
-    from html import unescape
+
+import requests
+session = requests.Session()
  
 headers = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
@@ -36,18 +42,47 @@ def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
     
 class Shiza:
-    def __init__(self, addon_data_dir, params, addon, icon):
+    #def __init__(self, addon_data_dir, params, addon, icon):
+    def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
 
-        self.params = params
-        self.addon = addon
-        self.icon = icon
+        self.addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-        self.images_dir = os.path.join(addon_data_dir, 'images')
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        self.database_dir = os.path.join(addon_data_dir, 'database')
-        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
+        if sys.version_info.major > 2:
+            self.addon_data_dir = xbmcvfs.translatePath(self.addon.getAddonInfo('profile'))
+            self.icon = xbmcvfs.translatePath(self.addon.getAddonInfo('icon'))
+            self.fanart = xbmcvfs.translatePath(self.addon.getAddonInfo('fanart'))
+        else:
+            from utility import fs_enc
+            self.addon_data_dir = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('profile')))
+            self.icon = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('icon')))
+            self.fanart = fs_enc(xbmc.translatePath(self.addon.getAddonInfo('fanart')))
+
+        if not os.path.exists(self.addon_data_dir):
+            os.makedirs(self.addon_data_dir)
+
+        self.images_dir = os.path.join(self.addon_data_dir, 'images')
+        if not os.path.exists(self.images_dir):
+            os.mkdir(self.images_dir)
+
+        self.torrents_dir = os.path.join(self.addon_data_dir, 'torrents')
+        if not os.path.exists(self.torrents_dir):
+            os.mkdir(self.torrents_dir)
+
+        self.database_dir = os.path.join(self.addon_data_dir, 'database')
+        if not os.path.exists(self.database_dir):
+            os.mkdir(self.database_dir)
+
+        self.cookie_dir = os.path.join(self.addon_data_dir, 'cookie')
+        if not os.path.exists(self.cookie_dir):
+            os.mkdir(self.cookie_dir)
+
+        self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'shizaproject'}
+        
+        args = parse_qs(sys.argv[2][1:])
+        for a in args:
+            self.params[a] = unquote(args[a][0])
 
         self.proxy_data = self.exec_proxy_data()
 
@@ -475,7 +510,7 @@ class Shiza:
     
         if time.time() - proxy_time > 604800:
             self.addon.setSetting('{}_proxy_time'.format(self.params['portal']), str(time.time()))
-            proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+            proxy_request = requests.get(url='https://antizapret.prostovpn.org:8443/proxy.pac', headers=headers)
 
             if proxy_request.status_code == requests.codes.ok:
                 proxy_pac = proxy_request.text
@@ -496,7 +531,7 @@ class Shiza:
             if self.addon.getSetting('{}_proxy'.format(self.params['portal'])):
                 proxy_data = {'https': self.addon.getSetting('{}_proxy'.format(self.params['portal']))}
             else:
-                proxy_request = requests.get(url='http://antizapret.prostovpn.org/proxy.pac', headers=headers)
+                proxy_request = requests.get(url='https://antizapret.prostovpn.org:8443/proxy.pac', headers=headers)
 
                 if proxy_request.status_code == requests.codes.ok:
                     proxy_pac = proxy_request.text
@@ -885,7 +920,8 @@ class Shiza:
                         quality_url = quality_url = '{}==='.format(quality_url[::-1])
 
                         quality_url = base64.standard_b64decode(quality_url)
-                        quality_url = 'https:{}'.format(quality_url.decode('utf-8'))
+                        
+                        quality_url = u'https:{}'.format(quality_url.decode('utf-8'))
 
                         quality_data.update({quality_title:quality_url})
     

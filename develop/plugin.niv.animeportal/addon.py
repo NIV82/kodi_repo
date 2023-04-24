@@ -110,10 +110,12 @@ if 'animedia' in sys.argv[2]:
     animedia.execute()
     del Animedia
 
-# if 'shizaproject' in params['portal']:
-#     from shizaproject import Shiza
-#     shiza = Shiza(addon_data_dir, params, addon, icon)
-#     shiza.execute()
-#     del Shiza
+#if 'shizaproject' in params['portal']:
+if 'shizaproject' in sys.argv[2]:
+    from shizaproject import Shiza
+    #shiza = Shiza(addon_data_dir, params, addon, icon)
+    shiza = Shiza()
+    shiza.execute()
+    del Shiza
 
 gc.collect()
