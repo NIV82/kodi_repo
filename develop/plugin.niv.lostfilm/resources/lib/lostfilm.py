@@ -74,6 +74,7 @@ class Lostfilm:
 
         self.proxy_data = self.exec_proxy_data()
         self.site_url = self.create_site_url()
+        self.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
 
         from network import WebTools
         self.network = WebTools(
@@ -90,7 +91,7 @@ class Lostfilm:
             "rem": "1"})
 
         self.network.auth_url = '{}ajaxik.users.php'.format(self.site_url)
-        self.network.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
+        self.network.sid_file = self.sid_file
         del WebTools
 
         self.authorization = self.exec_authorization_part()
@@ -198,7 +199,7 @@ class Lostfilm:
                 context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&serial_id={}")'.format(serial_id)))
 
         if serial_id:
-            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=create_info&serial_id={}&ismovie={}")'.format(serial_id, ismovie)))
+            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}&ismovie={}")'.format(serial_id, ismovie)))
 
         if se_code and not '999' in serial_episode:
             if not ismovie:
@@ -208,7 +209,7 @@ class Lostfilm:
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
-        context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=authorization_part&param=update")'))
+        context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization_part")'))
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
         context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=proxy_data&param=renew")'))
         return context_menu
@@ -285,15 +286,7 @@ class Lostfilm:
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
-    def exec_create_info(self, serial_id=None, update=False, ismovie=False):
-        if not serial_id:
-            if 'serial_id' in self.params:
-                serial_id = self.params['serial_id']
-                update = True
-                ismovie = bool(self.params['ismovie'] == 'True')
-            else:
-                return
-
+    def create_info(self, serial_id, update=False, ismovie=False):
         info = dict.fromkeys(['title_ru', 'title_en', 'aired_on', 'genres', 'directors', 'producers',
                             'writers', 'studios', 'country', 'description', 'image_id', 'actors'], '')
 
@@ -483,11 +476,20 @@ class Lostfilm:
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
-        try: self.database.end()
-        except: pass
+        try:
+            self.database.end()
+        except:
+            pass
 #========================#========================#========================#
     def exec_addon_setting(self):
         addon.openSettings()
+#========================#========================#========================#
+    def exec_update_serial_part(self):
+        self.create_info(
+            serial_id=self.params['id'],
+            ismovie=self.params['ismovie'],            
+            update=True
+            )
 #========================#========================#========================#
     def exec_proxy_data(self):
         if 'renew' in self.params['param']:
@@ -513,7 +515,7 @@ class Lostfilm:
 
         if time.time() - proxy_time > 604800:
             addon.setSetting('proxy_time', str(time.time()))
-            proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+            proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
 
             try:
                 proxy_pac = str(proxy_pac, encoding='utf-8')
@@ -527,7 +529,7 @@ class Lostfilm:
             if addon.getSetting('proxy'):
                 proxy_data = {'https': addon.getSetting('proxy')}
             else:
-                proxy_pac = urlopen("http://antizapret.prostovpn.org/proxy.pac").read()
+                proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
                 
                 try:
                     proxy_pac = str(proxy_pac, encoding='utf-8')
@@ -540,16 +542,37 @@ class Lostfilm:
 
         return proxy_data
 #========================#========================#========================#
+    def exec_update_authorization_part(self):
+        addon.setSetting('auth', 'false')
+        addon.setSetting('auth_session','')
+
+        from network import WebTools
+        self.network = WebTools(
+            auth_usage=True,
+            auth_status=False,
+            proxy_data = self.proxy_data)
+            
+        self.network.auth_post_data = urlencode({
+            "act": "users",
+            "type": "login",
+            "mail": addon.getSetting('username'),
+            "pass": addon.getSetting('password'),
+            "need_captcha": "1",
+            "rem": "1"})
+
+        self.network.auth_url = '{}ajaxik.users.php'.format(self.site_url)
+        self.network.sid_file = self.sid_file
+        del WebTools
+
+        self.exec_authorization_part()
+        return
+#========================#========================#========================#
     def exec_authorization_part(self):
         if not addon.getSetting('username') or not addon.getSetting('password'):
             self.params['mode'] = 'addon_setting'
             self.dialog.notification(heading='LostFilm', message='Введите Логин и Пароль', icon=icon, time=3000, sound=False)
             return
 
-        if 'update' in self.params['param']:
-            addon.setSetting('auth', 'false')
-            addon.setSetting('auth_session','')
-        
         try:
             temp_session = float(addon.getSetting('auth_session'))
         except:
@@ -565,7 +588,7 @@ class Lostfilm:
             
             addon.setSetting('auth', 'false')
             addon.setSetting('user_session', '')
-        
+
         authorization = self.network.authorization()
 
         if not authorization:
@@ -679,11 +702,13 @@ class Lostfilm:
             pass
 #========================#========================#========================#
     def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 0.9.92[/COLOR][/B]\n\
+        lostfilm_data = u'[B][COLOR=darkorange]Version 1.0.1[/COLOR][/B]\n\
+    - Исправлена ошибка авторизации на зеркалах\n\
+    - Исправлена ошибка повторого запроса авторизации\n\
+    - Исправлен адрес получения разблокировки AZ\n\
     - Правки, оптимизация\n\
-    - Добавлены заглушки ислючающие зависание Диалога в правом углу\n\
-    - В настройки добавлен режим отображения раздела Все Сериалы\n\
-        * с описанием и без , без описания список формируется почти моментално'
+    \n\
+    Отдельная благодарность пользователю [COLOR=darkorange]Para[od[/COLOR] за сообщение про ошибку'
         self.dialog.textviewer('Информация', lostfilm_data)
         return
 #========================#========================#========================#
@@ -793,7 +818,7 @@ class Lostfilm:
                         self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                         if not self.database.content_in_db(serial_id):
-                            self.exec_create_info(serial_id)
+                            self.create_info(serial_id)
 
                         label = self.create_title(serial_title=serial_title)
                         
@@ -1048,7 +1073,7 @@ class Lostfilm:
                     self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                         
                     if not self.database.content_in_db(serial_id):
-                        self.exec_create_info(serial_id=serial_id, ismovie=is_movie)
+                        self.create_info(serial_id=serial_id, ismovie=is_movie)
 
                     label = self.create_title(serial_title=serial_title)
                         
@@ -1140,7 +1165,7 @@ class Lostfilm:
 
                     if not self.database.content_in_db(serial_id):
                         try:
-                            self.exec_create_info(serial_id=serial_id, ismovie=is_movie)
+                            self.create_info(serial_id=serial_id, ismovie=is_movie)
                         except:
                             pass
 
@@ -1254,7 +1279,7 @@ class Lostfilm:
                         self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                             
                         if not self.database.content_in_db(serial_id):
-                            self.exec_create_info(serial_id=serial_id, ismovie=is_movie)
+                            self.create_info(serial_id=serial_id, ismovie=is_movie)
 
                         label = self.create_title(serial_title=serial_title)
 
@@ -1777,7 +1802,7 @@ class Lostfilm:
                         self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                             
                         if not self.database.content_in_db(serial_id):
-                            self.exec_create_info(serial_id=serial_id, ismovie=is_movie)
+                            self.create_info(serial_id=serial_id, ismovie=is_movie)
 
                         label = self.create_title(serial_title=serial_title)
                             

@@ -13,10 +13,6 @@ except:
     from urllib.request import Request
     from http.cookiejar import MozillaCookieJar
 
-def data_print(data):
-    import xbmc
-    xbmc.log(str(data), xbmc.LOGFATAL)
-
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
         self.headers = {
@@ -112,7 +108,6 @@ class WebTools:
                     response = str(response, encoding='utf-8')
                 except:
                     pass
-
                 if 'success' in response:
                     auth = True
                     self.mcj.save(self.sid_file)
@@ -133,6 +128,5 @@ class WebTools:
                 self.mcj.save(self.sid_file)
             else:
                 auth = False
-
         self.auth_status = auth
         return auth
