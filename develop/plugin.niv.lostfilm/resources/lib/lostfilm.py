@@ -45,9 +45,8 @@ else:
 
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
-class Lostfilm:    
+class Lostfilm:
     def __init__(self):
-        self.progress = xbmcgui.DialogProgress()
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
         
@@ -72,7 +71,7 @@ class Lostfilm:
         for a in args:
             self.params[a] = unquote(args[a][0])
 
-        self.proxy_data = self.exec_proxy_data()
+        self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
         self.sid_file = os.path.join(self.cookie_dir, 'lostfilm.sid')
 
@@ -94,10 +93,10 @@ class Lostfilm:
         self.network.sid_file = self.sid_file
         del WebTools
 
-        self.authorization = self.exec_authorization_part()
+        self.authorization = self.create_authorization()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'lostfilms.db')):
-            self.exec_update_database_part()
+            self.create_database()
 #========================#========================#========================#
         from database import DataBase
         self.database = DataBase(os.path.join(self.database_dir, 'lostfilms.db'))
@@ -112,6 +111,155 @@ class Lostfilm:
             return site_url
         else:
             return current_url
+#========================#========================#========================#
+    def create_proxy_data(self):
+        if '0' in addon.getSetting('unblock'):
+            return None
+        
+        if '2' in addon.getSetting('unblock'):
+            proxy_data = {'https': 'http://185.85.121.12:1088'}
+            return proxy_data
+        
+        try:
+            proxy_time = float(addon.getSetting('proxy_time'))
+        except:
+            proxy_time = 0
+
+        try:
+            from urllib import urlopen
+        except:
+            from urllib.request import urlopen
+
+        if time.time() - proxy_time > 604800:
+            addon.setSetting('proxy_time', str(time.time()))
+            proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
+
+            try:
+                proxy_pac = str(proxy_pac, encoding='utf-8')
+            except:
+                pass
+
+            proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+            addon.setSetting('proxy', proxy)
+            proxy_data = {'https': proxy}
+        else:
+            if addon.getSetting('proxy'):
+                proxy_data = {'https': addon.getSetting('proxy')}
+            else:
+                proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
+                
+                try:
+                    proxy_pac = str(proxy_pac, encoding='utf-8')
+                except:
+                    pass
+
+                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+                addon.setSetting('proxy', proxy)
+                proxy_data = {'https': proxy}
+
+        return proxy_data
+#========================#========================#========================#
+    def create_authorization(self):
+        if not addon.getSetting('username') or not addon.getSetting('password'):
+            self.params['mode'] = 'addon_setting'
+            self.dialog.notification(heading='LostFilm', message='Введите Логин и Пароль', icon=icon, time=3000, sound=False)
+            return
+
+        try:
+            temp_session = float(addon.getSetting('auth_session'))
+        except:
+            temp_session = 0
+        
+        if time.time() - temp_session > 86400:
+            addon.setSetting('auth_session', str(time.time()))
+            
+            try:
+                os.remove(self.sid_file)
+            except:
+                pass
+            
+            addon.setSetting('auth', 'false')
+            addon.setSetting('user_session', '')
+
+        authorization = self.network.authorization()
+
+        if not authorization:
+            self.params['mode'] = 'addon_setting'
+            self.dialog.notification(heading='Авторизация', message='Проверьте Логин и Пароль', icon=icon, time=3000, sound=False)
+            return
+        else:
+            addon.setSetting('auth', str(authorization).lower())
+
+        if authorization:
+            if not addon.getSetting('user_session'):
+                url = '{}my'.format(self.site_url)
+                html = self.network.get_html(url=url)
+                
+                user_session = html[html.find('session = \'')+11:html.find('UserData.newbie')]
+                user_session = user_session[:user_session.rfind('\'')]
+                user_session = user_session.strip()
+
+                addon.setSetting('user_session', user_session)
+
+        return authorization
+#========================#========================#========================#
+    def create_database(self):
+        try:
+            self.database.end()
+        except:
+            pass
+
+        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/lostfilms.db'
+        target_path = os.path.join(self.database_dir, 'lostfilms.db')
+
+        try:
+            os.remove(target_path)
+        except:
+            pass
+
+        try:
+            from urllib import urlopen
+        except:
+            from urllib.request import urlopen
+
+        self.progress_bg.create(u'Загрузка Базы Данных')
+
+        try:                
+            data = urlopen(target_url)
+            chunk_size = 8192
+            bytes_read = 0
+
+            try:
+                file_size = int(data.info().getheaders("Content-Length")[0])
+            except:
+                file_size = int(data.getheader('Content-Length'))
+
+            with open(target_path, 'wb') as write_file:
+                while True:
+                    chunk = data.read(chunk_size)
+                    bytes_read = bytes_read + len(chunk)
+                    write_file.write(chunk)
+                    if len(chunk) < chunk_size:
+                        break
+                    percent = bytes_read * 100 / file_size
+                    
+                    try:
+                        self.progress_bg.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+                    except:
+                        pass
+            try:
+                self.dialog.notification(heading='Загрузка файла',message='Успешно загружено',icon=icon,time=3000,sound=False)
+            except:
+                pass
+        except:
+            try:
+                self.dialog.notification(heading='Загрузка файла',message='Ошибка при загрузке',icon=icon,time=3000,sound=False)
+            except:
+                pass
+
+        self.progress_bg.close()
+        
+        return
 #========================#========================#========================#
     def create_colorize(self, data):
         setting_id = {
@@ -199,7 +347,7 @@ class Lostfilm:
                 context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&serial_id={}")'.format(serial_id)))
 
         if serial_id:
-            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial_part&id={}&ismovie={}")'.format(serial_id, ismovie)))
+            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(serial_id, ismovie)))
 
         if se_code and not '999' in serial_episode:
             if not ismovie:
@@ -209,9 +357,9 @@ class Lostfilm:
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
         context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
-        context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization_part")'))
-        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database_part")'))
-        context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=proxy_data&param=renew")'))
+        context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'))
+        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")'))
+        context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'))
         return context_menu
 #========================#========================#========================#
     # def exec_torrclean_part(self):
@@ -484,65 +632,26 @@ class Lostfilm:
     def exec_addon_setting(self):
         addon.openSettings()
 #========================#========================#========================#
-    def exec_update_serial_part(self):
+    def exec_update_database(self):
+        self.create_database()
+        return
+#========================#========================#========================#
+    def exec_update_serial(self):
         self.create_info(
             serial_id=self.params['id'],
             ismovie=self.params['ismovie'],            
             update=True
             )
+        return
 #========================#========================#========================#
-    def exec_proxy_data(self):
-        if 'renew' in self.params['param']:
-            addon.setSetting('proxy','')
-            addon.setSetting('proxy_time','')
+    def exec_update_proxy_data(self):
+        addon.setSetting('proxy','')
+        addon.setSetting('proxy_time','')
 
-        if '0' in addon.getSetting('unblock'):
-            return None
-        
-        if '2' in addon.getSetting('unblock'):
-            proxy_data = {'https': 'http://185.85.121.12:1088'}
-            return proxy_data
-        
-        try:
-            proxy_time = float(addon.getSetting('proxy_time'))
-        except:
-            proxy_time = 0
-
-        try:
-            from urllib import urlopen
-        except:
-            from urllib.request import urlopen
-
-        if time.time() - proxy_time > 604800:
-            addon.setSetting('proxy_time', str(time.time()))
-            proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
-
-            try:
-                proxy_pac = str(proxy_pac, encoding='utf-8')
-            except:
-                pass
-
-            proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-            addon.setSetting('proxy', proxy)
-            proxy_data = {'https': proxy}
-        else:
-            if addon.getSetting('proxy'):
-                proxy_data = {'https': addon.getSetting('proxy')}
-            else:
-                proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
-                
-                try:
-                    proxy_pac = str(proxy_pac, encoding='utf-8')
-                except:
-                    pass
-
-                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                addon.setSetting('proxy', proxy)
-                proxy_data = {'https': proxy}
-
-        return proxy_data
+        self.create_proxy_data()
+        return
 #========================#========================#========================#
-    def exec_update_authorization_part(self):
+    def exec_update_authorization(self):
         addon.setSetting('auth', 'false')
         addon.setSetting('auth_session','')
 
@@ -564,111 +673,8 @@ class Lostfilm:
         self.network.sid_file = self.sid_file
         del WebTools
 
-        self.exec_authorization_part()
+        self.create_authorization()
         return
-#========================#========================#========================#
-    def exec_authorization_part(self):
-        if not addon.getSetting('username') or not addon.getSetting('password'):
-            self.params['mode'] = 'addon_setting'
-            self.dialog.notification(heading='LostFilm', message='Введите Логин и Пароль', icon=icon, time=3000, sound=False)
-            return
-
-        try:
-            temp_session = float(addon.getSetting('auth_session'))
-        except:
-            temp_session = 0
-        
-        if time.time() - temp_session > 86400:
-            addon.setSetting('auth_session', str(time.time()))
-            
-            try:
-                os.remove(self.sid_file)
-            except:
-                pass
-            
-            addon.setSetting('auth', 'false')
-            addon.setSetting('user_session', '')
-
-        authorization = self.network.authorization()
-
-        if not authorization:
-            self.params['mode'] = 'addon_setting'
-            self.dialog.notification(heading='Авторизация', message='Проверьте Логин и Пароль', icon=icon, time=3000, sound=False)
-            return
-        else:
-            addon.setSetting('auth', str(authorization).lower())
-
-        if authorization:
-            if not addon.getSetting('user_session'):
-                url = '{}my'.format(self.site_url)
-                html = self.network.get_html(url=url)
-                
-                user_session = html[html.find('session = \'')+11:html.find('UserData.newbie')]
-                user_session = user_session[:user_session.rfind('\'')]
-                user_session = user_session.strip()
-
-                addon.setSetting('user_session', user_session)
-
-        return authorization
-#========================#========================#========================#
-    def exec_update_database_part(self):
-        try:
-            self.database.end()
-        except:
-            pass
-
-        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/lostfilms.db'
-        target_path = os.path.join(self.database_dir, 'lostfilms.db')
-
-        try:
-            os.remove(target_path)
-        except:
-            pass
-
-        try:
-            from urllib import urlopen
-        except:
-            from urllib.request import urlopen
-
-        self.progress.create(u'Загрузка Базы Данных')
-
-        try:                
-            data = urlopen(target_url)
-            chunk_size = 8192
-            bytes_read = 0
-
-            try:
-                file_size = int(data.info().getheaders("Content-Length")[0])
-            except:
-                file_size = int(data.getheader('Content-Length'))
-
-            with open(target_path, 'wb') as write_file:
-                while True:
-                    chunk = data.read(chunk_size)
-                    bytes_read = bytes_read + len(chunk)
-                    write_file.write(chunk)
-                    if len(chunk) < chunk_size:
-                        break
-                    percent = bytes_read * 100 / file_size
-                    
-                    if self.progress.iscanceled():
-                        break
-
-                    try:
-                        self.progress.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                    except:
-                        pass
-            try:
-                self.dialog.notification(heading='Загрузка файла',message='Успешно загружено',icon=icon,time=3000,sound=False)
-            except:
-                pass
-        except:
-            try:
-                self.dialog.notification(heading='Загрузка файла',message='Ошибка при загрузке',icon=icon,time=3000,sound=False)
-            except:
-                pass
-
-        self.progress.close()
 #========================#========================#========================#
     def exec_mark_part(self, notice=True, se_code=None, mode=False):
         se_code = se_code if se_code else self.params['id']
@@ -779,7 +785,7 @@ class Lostfilm:
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
-            self.progress.create('LostFilm', 'Инициализация')
+            self.progress_bg.create('LostFilm', 'Инициализация')
             
             html = html[html.find('[')+1:html.find(']')]
 
@@ -812,10 +818,7 @@ class Lostfilm:
 
                         p = int((float(i+1) / len(data_array)) * 100)
 
-                        if self.progress.iscanceled():
-                            break
-
-                        self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                        self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                         if not self.database.content_in_db(serial_id):
                             self.create_info(serial_id)
@@ -833,7 +836,7 @@ class Lostfilm:
             except:
                 self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
 
-            self.progress.close()
+            self.progress_bg.close()
             
             if '<div class="next-link active">' in html:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
@@ -939,7 +942,7 @@ class Lostfilm:
                     if 'Сегодня' in x[0]:
                         schedule_table = schedule_table[i:]
 
-        self.progress.create('LostFilm', 'Инициализация')
+        self.progress_bg.create('LostFilm', 'Инициализация')
         
         try:
             for u, sch in enumerate(schedule_table):
@@ -954,17 +957,14 @@ class Lostfilm:
                 try:
                     for a, ep in enumerate(series):
                         
-                        if self.progress.iscanceled():
-                            break
-
-                        self.progress.update(p, '[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(u, len(schedule_table), a, len(data)))
+                        self.progress_bg.update(p, '[COLOR=lime]День:[/COLOR] {} из {} | [COLOR=blue]Элементы:[/COLOR] {} из {} '.format(u, len(schedule_table), a, len(data)))
                         self.create_line(title=ep, params={}, folder=False)
                 except:
                     self.create_line(title='[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]', params={})
         except:
             self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
             
-        self.progress.close()
+        self.progress_bg.close()
         
         if 'next-link active' in html:
             next_link = html[html.find('next-link active'):]
@@ -1034,7 +1034,7 @@ class Lostfilm:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
-        self.progress.create('LostFilm', 'Инициализация')
+        self.progress_bg.create('LostFilm', 'Инициализация')
             
         try:
             html = html[html.find('[')+1:html.find(']')]
@@ -1067,10 +1067,7 @@ class Lostfilm:
 
                     p = int((float(i+1) / len(data_array)) * 100)
                     
-                    if self.progress.iscanceled():
-                        break
-
-                    self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                    self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                         
                     if not self.database.content_in_db(serial_id):
                         self.create_info(serial_id=serial_id, ismovie=is_movie)
@@ -1088,7 +1085,7 @@ class Lostfilm:
         except:
             self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
                 
-        self.progress.close()
+        self.progress_bg.close()
 
         try:
             if len(data_array) >= 10:
@@ -1116,7 +1113,7 @@ class Lostfilm:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
-        self.progress.create('LostFilm', 'Инициализация')
+        self.progress_bg.create('LostFilm', 'Инициализация')
 
         try:
             data_array = html[html.find('breaker dashed">')+16:html.rfind('<div class="hor-breaker dashed">')]
@@ -1158,10 +1155,7 @@ class Lostfilm:
 
                     p = int((float(i+1) / len(data_array)) * 100)
                     
-                    if self.progress.iscanceled():
-                        break
-
-                    self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                    self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                     if not self.database.content_in_db(serial_id):
                         try:
@@ -1178,7 +1172,7 @@ class Lostfilm:
         except:
             self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
             
-        self.progress.close()
+        self.progress_bg.close()
         
         if '<div class="next-link active">' in html:
             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
@@ -1240,7 +1234,7 @@ class Lostfilm:
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
-            self.progress.create('LostFilm', 'Инициализация')
+            self.progress_bg.create('LostFilm', 'Инициализация')
                 
             try:
                 html = html[html.find('[')+1:html.find(']')]
@@ -1273,10 +1267,7 @@ class Lostfilm:
 
                         p = int((float(i+1) / len(data_array)) * 100)
 
-                        if self.progress.iscanceled():
-                            break
-
-                        self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                        self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                             
                         if not self.database.content_in_db(serial_id):
                             self.create_info(serial_id=serial_id, ismovie=is_movie)
@@ -1290,7 +1281,7 @@ class Lostfilm:
             except:
                 self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
                     
-            self.progress.close()
+            self.progress_bg.close()
 
             try:
                 if len(data_array) >= 10:
@@ -1304,7 +1295,7 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_serials_part(self):
-        self.progress.create('LostFilm', 'Инициализация')
+        self.progress_bg.create('LostFilm', 'Инициализация')
 
         try:
             data_array = self.database.obtain_serials_id()
@@ -1318,11 +1309,8 @@ class Lostfilm:
                     serial_id = data[1]
 
                     p = int((float(i+1) / len(data_array)) * 100)
-                    
-                    if self.progress.iscanceled():
-                        break
 
-                    self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                    self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                     if '0' in addon.getSetting('serials_mode'):
                         if '1' in data[3]:
@@ -1349,7 +1337,7 @@ class Lostfilm:
         except:
             self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
             
-        self.progress.close()
+        self.progress_bg.close()
         
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
@@ -1385,7 +1373,7 @@ class Lostfilm:
                 self.exec_select_part(data_string=html)
                 return
 
-            self.progress.create('LostFilm', 'Инициализация')
+            self.progress_bg.create('LostFilm', 'Инициализация')
             
             try:
                 season_array = []
@@ -1414,10 +1402,7 @@ class Lostfilm:
 
                         p = int((float(i+1) / len(data_array)) * 100)
 
-                        if self.progress.iscanceled():
-                            break
-
-                        self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                        self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                         if 'PlayEpisode(' in data:
                             label = u'[B]{} {}[/B]'.format(title, season_status)
@@ -1445,7 +1430,7 @@ class Lostfilm:
             except:
                 self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
                 
-            self.progress.close()
+            self.progress_bg.close()
 
         if self.params['param']:
             code = self.params['param']
@@ -1485,7 +1470,7 @@ class Lostfilm:
             else:
                 serial_status = ''
 
-            self.progress.create('LostFilm', 'Инициализация')
+            self.progress_bg.create('LostFilm', 'Инициализация')
             
             serial_title = html[html.find('ativeHeadline">')+15:html.find('</h2>')]
             
@@ -1512,10 +1497,7 @@ class Lostfilm:
                         
                         p = int((float(i+1) / len(data_array)) * 100)
 
-                        if self.progress.iscanceled():
-                            break
-
-                        self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                        self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
                         if 'data-code=' in data:
                             if atl_names:
@@ -1555,7 +1537,7 @@ class Lostfilm:
             except:
                 self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
 
-            self.progress.close()
+            self.progress_bg.close()
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 #========================#========================#========================#
@@ -1763,7 +1745,7 @@ class Lostfilm:
                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
                 return
 
-            self.progress.create('LostFilm', 'Инициализация')
+            self.progress_bg.create('LostFilm', 'Инициализация')
                 
             try:
                 html = html[html.find('[')+1:html.find(']')]
@@ -1796,10 +1778,7 @@ class Lostfilm:
 
                         p = int((float(i+1) / len(data_array)) * 100)
 
-                        if self.progress.iscanceled():
-                            break
-
-                        self.progress.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
+                        self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
                             
                         if not self.database.content_in_db(serial_id):
                             self.create_info(serial_id=serial_id, ismovie=is_movie)
@@ -1817,7 +1796,7 @@ class Lostfilm:
             except:
                 self.create_line(title='[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]', params={})
                     
-            self.progress.close()
+            self.progress_bg.close()
 
             try:
                 if len(data_array) >= 10:
