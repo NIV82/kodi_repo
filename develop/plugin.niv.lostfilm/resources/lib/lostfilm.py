@@ -1556,7 +1556,11 @@ class Lostfilm:
 
             new_url = html[html.find('url=http')+4:html.find('&newbie=')]
 
-            html = self.network.get_html(url=new_url)
+            from network import WebTools
+            self.net = WebTools()
+            del WebTools
+
+            html = self.net.get_html(url=new_url)
 
             data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
             data_array = data_array.split('<div class="inner-box--label">')
@@ -1588,14 +1592,7 @@ class Lostfilm:
             file_name = '{}.torrent'.format(se_code)
             torrent_file = os.path.join(self.torrents_dir, file_name)
 
-            try:
-                from urllib.request import Request, urlopen
-            except ImportError:
-                from urllib2 import Request, urlopen
-
-            req = Request(url)
-            req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0')
-            content = urlopen(req).read()
+            content = self.net.get_bytes(url=url)
             
             with open(torrent_file, 'wb') as write_file:
                 write_file.write(content)
@@ -1822,7 +1819,11 @@ class Lostfilm:
         
         new_url = html[html.find('url=http')+4:html.find('&newbie=')]
 
-        html = self.network.get_html(url=new_url)
+        from network import WebTools
+        self.net = WebTools()
+        del WebTools
+
+        html = self.net.get_html(url=new_url)
 
         data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
         data_array = data_array.split('<div class="inner-box--label">')
@@ -1845,7 +1846,7 @@ class Lostfilm:
             result_quality = choice[int(result)]
             url = quality[result_quality]
 
-        html = self.network.get_bytes(url=url)
+        html = self.net.get_bytes(url=url)
 
         file_name = '{}.torrent'.format(se_code)
         
