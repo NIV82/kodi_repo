@@ -1,6 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
 
+<addon id="plugin.niv.animeportal" name="Anime Portal" version="1.0.11" provider-name="NIV">
+  <extension point="xbmc.python.pluginsource" library="addon.py">
+    <provides>video</provides>
+  </extension>
+  <requires>
+    <import addon="xbmc.python" version="2.26.0" />
+  </requires>
+  <requires>
+    <import addon="script.module.requests"/>
+  </requires>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">Anime Portal</summary>
+    <summary lang="ru">Anime Portal</summary>
+    <description lang="en">AnimePortal provides access to - AniDub, Anilibria, Animedia, AniStar, ShizaProject</description>
+    <description lang="ru">AnimePortal предоставляет доступ к - AniDub, Anilibria, Animedia, AniStar, ShizaProject</description>
+    <disclaimer lang="en">The author of the plugin is not responsible for the content on the sites</disclaimer>
+    <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайтах</disclaimer>
+    <assets>
+        <icon>icon.png</icon>
+        <fanart>fanart.jpg</fanart>
+    </assets>
+  </extension>
+</addon>
+
 <addon id="plugin.niv.lostfilm" name="LostFilm" version="1.0.4" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
@@ -25,10 +49,9 @@
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
   </extension>
-  <!-- <requires>
+  <requires>
     <import addon="xbmc.python" version="2.26.0" />
-    <import addon="xbmc.python" version="3.0.0" />
-  </requires> -->
+  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">Red Head Sound</summary>
     <summary lang="ru">Red Head Sound</summary>
