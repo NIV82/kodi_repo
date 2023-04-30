@@ -8,7 +8,6 @@ import xbmc
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
-import xbmcvfs
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
@@ -16,18 +15,15 @@ def data_print(data):
 from utility import fs_enc
 from utility import clean_tags
 
-if sys.version_info.major > 2:
-    from urllib.parse import urlencode
-    from urllib.parse import unquote
-    from urllib.parse import parse_qs
-    from urllib.request import urlopen
-else:
-    from urllib import urlencode
-    from urllib import urlopen
-    from urllib import unquote
-    from urlparse import parse_qs
+from urllib import urlencode
+from urllib import urlopen
+from urllib import unquote
+from urlparse import parse_qs
 
 addon = xbmcaddon.Addon(id='plugin.niv.redheadsound')
+addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
+icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
+fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
 try:
     xbmcaddon.Addon('inputstream.adaptive')
@@ -40,15 +36,6 @@ except:
         sound=False
         )
     xbmc.executebuiltin('RunPlugin("plugin://inputstream.adaptive")')
-
-if sys.version_info.major > 2:
-    addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
-    icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
-    fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
-else:
-    addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
-    icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
-    fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
@@ -74,11 +61,8 @@ class RedHeadSound:
         for a in args:
             self.params[a] = unquote(args[a][0])
 
-        #self.sid_file = os.path.join(self.cookie_dir, 'redheadsound.sid')
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-
-        #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'redheadsound.db')):
             self.exec_update_database_part()
@@ -110,10 +94,7 @@ class RedHeadSound:
         except:
             proxy_time = 0
 
-        try:
-            from urllib import urlopen
-        except:
-            from urllib.request import urlopen
+        from urllib import urlopen
 
         if time.time() - proxy_time > 604800:
             addon.setSetting('proxy_time', str(time.time()))
@@ -147,7 +128,7 @@ class RedHeadSound:
     def create_context(self, ext={}):
         context_menu = []
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=clean_part")'))
+            context_menu.append(('[COLOR=blue]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=clean_part")'))
 
         if 'url' in list(ext.keys()):
             context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content_part&url={}")'.format(ext['url'])))
@@ -165,8 +146,7 @@ class RedHeadSound:
             li.setArt({'poster': ext['poster'], 'icon': ext['poster'], 'thumb': ext['poster']})
             li.setInfo(type='video', infoLabels=info)
         
-            li.addContextMenuItems(self.create_context(ext))
-
+        li.addContextMenuItems(self.create_context(ext))
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
         if folder==False:
@@ -353,10 +333,7 @@ class RedHeadSound:
             chunk_size = 8192
             bytes_read = 0
 
-            try:
-                file_size = int(data.info().getheaders("Content-Length")[0])
-            except:
-                file_size = int(data.getheader('Content-Length'))
+            file_size = int(data.info().getheaders("Content-Length")[0])
 
             self.progress_bg.create(u'Загрузка файла')
             
