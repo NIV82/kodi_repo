@@ -24,7 +24,7 @@ class DataBase:
                         (info['serial_id'], info['title'], info['year'], info['country'], info['duration'], info['director'], info['actors'], info['genre'], info['mpaa'], info['plot']))
         self.c.commit()
         
-    def update_serial(self, info={}):
+    def update_content(self, info={}):
         self.cu.execute('UPDATE rhs_db SET title=?, year=?, country=?, duration=?, director=?, actors=?, genre=?, mpaa=?, plot=? WHERE serial_id=?',
                         (info['title'], info['year'], info['country'], info['duration'], info['director'], info['actors'], info['genre'], info['mpaa'], info['plot'], info['serial_id']))
         self.c.commit()

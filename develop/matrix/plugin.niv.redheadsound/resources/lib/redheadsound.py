@@ -13,21 +13,14 @@ import xbmcvfs
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
-from utility import fs_enc
-from utility import clean_tags
-
-if sys.version_info.major > 2:
-    from urllib.parse import urlencode
-    from urllib.parse import unquote
-    from urllib.parse import parse_qs
-    from urllib.request import urlopen
-else:
-    from urllib import urlencode
-    from urllib import urlopen
-    from urllib import unquote
-    from urlparse import parse_qs
+from urllib.parse import urlencode
+from urllib.parse import unquote
+from urllib.parse import parse_qs
 
 addon = xbmcaddon.Addon(id='plugin.niv.redheadsound')
+addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
+icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
+fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
 
 try:
     xbmcaddon.Addon('inputstream.adaptive')
@@ -40,15 +33,6 @@ except:
         sound=False
         )
     xbmc.executebuiltin('RunPlugin("plugin://inputstream.adaptive")')
-
-if sys.version_info.major > 2:
-    addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
-    icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
-    fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
-else:
-    addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
-    icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
-    fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
@@ -74,11 +58,8 @@ class RedHeadSound:
         for a in args:
             self.params[a] = unquote(args[a][0])
 
-        #self.sid_file = os.path.join(self.cookie_dir, 'redheadsound.sid')
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
-
-        #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'redheadsound.db')):
             self.exec_update_database_part()
@@ -105,15 +86,12 @@ class RedHeadSound:
         if '0' in addon.getSetting('unblock'):
             return None
 
+        from urllib.request import urlopen
+
         try:
             proxy_time = float(addon.getSetting('proxy_time'))
         except:
             proxy_time = 0
-
-        try:
-            from urllib import urlopen
-        except:
-            from urllib.request import urlopen
 
         if time.time() - proxy_time > 604800:
             addon.setSetting('proxy_time', str(time.time()))
@@ -165,7 +143,7 @@ class RedHeadSound:
             li.setArt({'poster': ext['poster'], 'icon': ext['poster'], 'thumb': ext['poster']})
             li.setInfo(type='video', infoLabels=info)
         
-            li.addContextMenuItems(self.create_context(ext))
+        li.addContextMenuItems(self.create_context(ext))
 
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
@@ -175,6 +153,8 @@ class RedHeadSound:
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def create_info(self, serial_url=False, update=False):
+        from utility import clean_tags
+
         html = self.network.get_html(serial_url)
 
         data = html[html.find('class="page__header">')+21:html.find('<h2 class="page')]
@@ -339,6 +319,7 @@ class RedHeadSound:
             self.database.end()
         except:
             pass
+        from urllib.request import urlopen
 
         target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/redheadsound.db'
         target_path = os.path.join(self.database_dir, 'redheadsound.db')
@@ -353,10 +334,7 @@ class RedHeadSound:
             chunk_size = 8192
             bytes_read = 0
 
-            try:
-                file_size = int(data.info().getheaders("Content-Length")[0])
-            except:
-                file_size = int(data.getheader('Content-Length'))
+            file_size = int(data.getheader('Content-Length'))
 
             self.progress_bg.create(u'Загрузка файла')
             
