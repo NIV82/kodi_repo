@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.niv.animeportal" name="Anime Portal" version="1.0.12" provider-name="NIV">
+<addon id="plugin.niv.animeportal" name="Anime Portal" version="1.0.11" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
   </extension>
   <requires>
     <import addon="xbmc.python" version="2.26.0" />
-    <import addon="xbmc.addon" version="17.9.910"/>
   </requires>
   <requires>
     <import addon="script.module.requests"/>
