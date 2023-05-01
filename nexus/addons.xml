@@ -7,7 +7,6 @@
   </extension>
   <requires>
     <import addon="xbmc.python" version="3.0.1" />
-    <import addon="xbmc.addon" version="20.90.101"/>
   </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">LostFilm</summary>
@@ -28,7 +27,6 @@
   </extension>
   <requires>
     <import addon="xbmc.python" version="3.0.1" />
-    <import addon="xbmc.addon" version="20.90.101"/>
   </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">Red Head Sound</summary>
