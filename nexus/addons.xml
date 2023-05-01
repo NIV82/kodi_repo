@@ -7,6 +7,7 @@
   </extension>
   <requires>
     <import addon="xbmc.python" version="3.0.1" />
+    <import addon="xbmc.addon" version="20.90.101"/>
   </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">LostFilm</summary>
@@ -21,12 +22,13 @@
   </extension>
 </addon>
 
-<addon id="plugin.niv.redheadsound" name="RedHeadSound" version="0.0.6" provider-name="NIV">
+<addon id="plugin.niv.redheadsound" name="RedHeadSound" version="0.0.7" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
   </extension>
   <requires>
     <import addon="xbmc.python" version="3.0.1" />
+    <import addon="xbmc.addon" version="20.90.101"/>
   </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">Red Head Sound</summary>
