@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <category label="Авторизация">
+    <setting id="username" label="Логин:" type="text" default=""/>
+    <setting id="password" label="Пароль:" type="text" default="" option="hidden"/>
+    <setting id="auth" label="auth" type="bool" default="false" visible="false"/>
+    <setting id="auth_session" label="session" type="text" default="" visible="false"/>
+    <setting id="user_session" label="session" type="text" default="" visible="false"/>
+  </category>
+
+  <category label="Настройки">
+    <setting id="quality" label="Выбор Качества:" type="select" values="1080|MP4|SD|HD" default="1080" />
+    <setting type="sep"/>
+    <setting id="use_atl_names" label="Названия для 'Add To Lib'" type="bool" visible="true" default="false" />
+    <setting type="sep"/>
+    <setting id="series_image_mode" type="enum" label="На сериях будет:" default="0" values="Картинка Сезона|Картинка Сериала|Картинка Серии" />
+    <setting type="sep"/>
+    <setting id="schedule_mode_today" type="enum" label="Расписание начинается:" default="0" values="Сегодня|Начало Месяца" />
+    <setting type="sep"/>
+    <setting id="serials_mode" type="enum" label="Все Сериалы - Описание:" default="0" values="Включено|Выключено" />
+    <setting id="search" label="status" type="text" default="" visible="false"/>
+    <setting id="genre" label="genre" type="text" default="" visible="false"/>
+    <setting id="year" label="year" type="text" default="" visible="false"/>
+    <setting id="channel" label="channel" type="text" default="" visible="false"/>
+    <setting id="types" label="types" type="text" default="" visible="false"/>
+    <setting id="sort" label="sort" type="text" default="По алфавиту" visible="false"/>
+    <setting id="status" label="status" type="text" default="все" visible="false"/>
+    <setting id="form" label="form" type="text" default="Сериалы" visible="false"/>
+    <setting id="alphabet_ru" label="alphabet_ru" type="text" default="" visible="false"/>
+    <setting id="country" label="country" type="text" default="" visible="false"/>
+  </category>
+
+  <category label="Разблокировка">
+    <setting id="unblock" label="Разблокировка" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Антизапрет[/B][/COLOR]|[COLOR=lime][B]LostFilm[/B][/COLOR]" />
+    <setting type="sep"/>
+    <setting id="mirror_mode" label="Зеркало:" type="enum" default="1" values="Базовый сайт|Зеркало-1|Зеркало-2" />
+    <setting id="mirror_0" label="Адрес:" type="text" default="https://www.lostfilm.tv/" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="mirror_1" label="Адрес:" type="text" default="https://www.lostfilm.today/" subsetting="true" visible="eq(-2,1)"/>
+    <setting id="mirror_2" label="Адрес:" type="text" default="https://www.lostfilmtv5.site/" subsetting="true" visible="eq(-3,2)"/>
+    <setting id="proxy" label="status" type="text" default="" visible="false"/>
+    <setting id="proxy_time" label="status" type="text" default="" visible="false"/>
+  </category>
+
+  <category label="Торрент движок">
+    <setting id="engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" />
+    <setting id="tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
+  </category>
+
+  <category label="Оформление">
+    <setting id="search_color" type="enum" label="Поиск" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="schedule_color" type="enum" label="Расписание" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="favorites_color" type="enum" label="Избранное" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="new_color" type="enum" label="Новинки" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="serials_color" type="enum" label="Все сериалы" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="movies_color" type="enum" label="Фильмы" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="catalog_color" type="enum" label="Каталог" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting id="archive_color" type="enum" label="Архив торрентов" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+    <setting type="sep"/>
+    <setting id="search_name_color" type="enum" label="Поиск по названию" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
+  </category>
+  
+</settings>
