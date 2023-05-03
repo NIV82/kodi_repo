@@ -6,7 +6,7 @@
     <provides>video</provides>
   </extension>
   <requires>
-    <import addon="xbmc.python" version="2.26.0" />
+	<import addon="xbmc.addon" version="17.9.910"/>
   </requires>
   <requires>
     <import addon="script.module.requests"/>
@@ -30,7 +30,7 @@
     <provides>video</provides>
   </extension>
   <requires>
-    <import addon="xbmc.python" version="3.0.0" />
+	<import addon="xbmc.addon" version="19.1.0"/>
   </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">LostFilm</summary>
@@ -50,7 +50,7 @@
     <provides>video</provides>
   </extension>
   <requires>
-    <import addon="xbmc.python" version="3.0.1" />
+	<import addon="xbmc.addon" version="20.90.101"/>
   </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">Red Head Sound</summary>
