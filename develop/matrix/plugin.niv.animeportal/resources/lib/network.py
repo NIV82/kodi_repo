@@ -6,7 +6,9 @@
 # except ImportError:
 #     from urllib2 import Request, urlopen  # Python 2
 
-
+def data_print(data):
+    import xbmc
+    xbmc.log(str(data), xbmc.LOGFATAL)
 
 try:
     from urllib2 import ProxyHandler
@@ -20,19 +22,6 @@ except:
     from urllib.request import build_opener
     from urllib.request import Request
     from http.cookiejar import MozillaCookieJar
-
-# if sys.version_info.major > 2:
-#     from urllib.request import ProxyHandler
-#     from urllib.request import HTTPCookieProcessor
-#     from urllib.request import build_opener
-#     from urllib.request import Request
-#     from http.cookiejar import MozillaCookieJar
-# else:
-#     from urllib2 import ProxyHandler
-#     from urllib2 import HTTPCookieProcessor
-#     from urllib2 import build_opener
-#     from urllib2 import Request
-#     from cookielib import MozillaCookieJar
 
 def data_print(data):
     import xbmc
@@ -144,6 +133,7 @@ class WebTools:
             else:
                 auth = False
             self.mcj.save(self.sid_file)
+
         self.auth_status = auth
         
         return auth

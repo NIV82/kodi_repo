@@ -19,10 +19,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
+if not addon.getSetting('settings'):
+    try:
+        addon.setSetting('settings','true')
+    except:
+        pass
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
-
 
 # =======================================================================================
 # try:
@@ -110,10 +114,8 @@ if 'animedia' in sys.argv[2]:
     animedia.execute()
     del Animedia
 
-#if 'shizaproject' in params['portal']:
 if 'shizaproject' in sys.argv[2]:
     from shizaproject import Shiza
-    #shiza = Shiza(addon_data_dir, params, addon, icon)
     shiza = Shiza()
     shiza.execute()
     del Shiza
