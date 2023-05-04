@@ -40,8 +40,8 @@ class DataBase:
         s = self.cu.fetchone()
         content = {
             'title': s[0],
-            'year': int(s[1]),
-            'country': s[2],
+            'year': s[1],
+            'country': s[2].split(','),
             'duration': int(s[3]),
             'director': s[4].split(','),
             'cast': s[5].split(','),
