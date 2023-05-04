@@ -39,13 +39,10 @@
   </extension>
 </addon>
 
-<addon id="plugin.niv.redheadsound" name="RedHeadSound" version="0.0.6" provider-name="NIV">
+<addon id="plugin.niv.redheadsound" name="RedHeadSound" version="0.0.9" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
   </extension>
-  <requires>
-    <import addon="xbmc.python" version="2.26.0" />
-  </requires>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">Red Head Sound</summary>
     <summary lang="ru">Red Head Sound</summary>
