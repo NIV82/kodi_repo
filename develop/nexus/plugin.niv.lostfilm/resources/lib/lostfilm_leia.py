@@ -270,6 +270,9 @@ class Lostfilm:
         serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
         serial_image = int(se_code[:len(se_code)-6])
 
+        if serial_season == 999:
+            serial_season = 1
+
         image = (
             'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season),
             'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image),
@@ -314,6 +317,27 @@ class Lostfilm:
 
         return label
 #========================#========================#========================#
+    def create_cast(self, cast_info):
+        actors = []
+
+        actors_array = cast_info.split('*')
+            
+        for node in actors_array:
+            node = node.split('|')
+
+            if not node[0]:
+                node[0] = 'uknown'
+            if not node[1]:
+                node[1] = 'uknown'
+            if node[2]:
+                node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
+                    node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
+
+            actors.append(
+                {'name': node[0], 'role': node[1], 'thumbnail':node[2]})
+        
+        return actors
+#========================#========================#========================#
     def create_context(self, serial_id='', se_code='', ismovie=False):
         serial_episode = se_code[len(se_code)-3:len(se_code)]
         serial_image = se_code[:len(se_code)-6]
@@ -337,7 +361,6 @@ class Lostfilm:
             context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
-        context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'))
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")'))
         context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'))
@@ -394,7 +417,11 @@ class Lostfilm:
             info = self.database.obtain_content(serial_id=serial_id)
             info.update({'status': status})
 
-            cast = self.database.obtain_cast(serial_id=serial_id)
+            info_cast = self.database.obtain_cast(serial_id=serial_id)
+            cast = []
+            if info_cast:
+                cast = self.create_cast(info_cast)
+
             li.setCast(cast)
 
             if watched:
@@ -687,17 +714,6 @@ class Lostfilm:
         except:
             self.dialog.notification(heading='LostFilm',message='Ошибка',icon=icon,time=3000,sound=False)
             pass
-#========================#========================#========================#
-    def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 1.0.4[/COLOR][/B]\n\
-    - Версия только для Kodi-18-\n\
-    - Развитие данной линейки плагина остановлено (дальше только для Коди-20)\n\
-    \n\
-    Буду поддерживать работоспособность данного плагина, по возможности\n\
-    Про ошибки - писать в тему на форуме'
-
-        self.dialog.textviewer('Информация', lostfilm_data)
-        return
 #========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title=self.create_colorize('Поиск'), params={'mode': 'search_part'})

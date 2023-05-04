@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 def clean_list(data):
     clean_list = ['\n', '\t', '\r', '\v', '\f', '  ']
     for value in clean_list:
@@ -13,6 +14,16 @@ def clean_tags(data, tag_start='<', tag_end='>'):
         start = data.find(tag_start)
         end = data.find(tag_end)
     return data
+
+def fs_dec(path):
+    import sys
+    sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
+    return path.decode(sys_enc).encode('utf-8')
+
+def fs_enc(path):
+    import sys
+    sys_enc = sys.getfilesystemencoding() if sys.getfilesystemencoding() else 'utf-8'
+    return path.decode('utf-8').encode(sys_enc)
 
 def get_index(torrent_file, index):    
     valid_media = ('.avi', '.mov', '.mp4', '.mpg', '.mpeg', '.m4v', '.mkv', '.ts', '.vob', '.wmv', '.m2ts')

@@ -36,7 +36,7 @@ class DataBase:
             content['producers'], 
             content['writers'], 
             content['studios'], 
-            content['country'], 
+            content['country'],
             content['description'], 
             content['image_id'], 
             content['actors'], 
@@ -62,15 +62,13 @@ class DataBase:
             if serial_info[3]:
                 director = u'{}*{}'.format(director, serial_info[3])
 
-            director = director.split('*')
-
         content = {
             'premiered': serial_info[0],
             'genre': serial_info[1].split('*'),
-            'director': director,
+            'director': director.split('*'),
             'writer': serial_info[4].split('*'),
             'studio': serial_info[5].split('*'),
-            'country': serial_info[6],
+            'country': serial_info[6].split(','),
             'plot': serial_info[7]
             }
 
@@ -80,24 +78,7 @@ class DataBase:
     def obtain_cast(self, serial_id):
         self.cu.execute('SELECT actors FROM serials_db WHERE serial_id=?', (serial_id,))
         self.c.commit()
-        
-        cast = {'actors': []}
-        cast_info = self.cu.fetchone()[0]
-
-        if cast_info:
-            actors_array = cast_info.split('*')
-            
-            for node in actors_array:
-                node = node.split('|')
-
-                if node[2]:
-                    node[2] = u'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
-                        node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
-                
-                node = {'name':node[0], 'role':node[1],'thumbnail':node[2]}
-                cast['actors'].append(node)
-
-        return cast['actors']
+        return self.cu.fetchone()[0]
 
     def obtain_image_id(self, serial_id):
         self.cu.execute('SELECT image_id FROM serials_db WHERE serial_id=?', (serial_id,))

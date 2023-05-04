@@ -9,25 +9,26 @@ import xbmc
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
-import xbmcvfs
 
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
-from urllib.parse import urlencode
-from urllib.parse import quote
-from urllib.parse import unquote
-from urllib.parse import parse_qs
-from html import unescape
+from urllib import urlencode
+from urllib import quote
+from urllib import unquote
+from urlparse import parse_qs
+import HTMLParser
+unescape = HTMLParser.HTMLParser().unescape
 
 from utility import clean_tags
+from utility import fs_enc
 from utility import clean_list
 
 addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
 
-addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
-icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
-fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
+addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
+icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
+fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
 xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
@@ -111,10 +112,7 @@ class Lostfilm:
         except:
             proxy_time = 0
 
-        try:
-            from urllib import urlopen
-        except:
-            from urllib.request import urlopen
+        from urllib import urlopen
 
         if time.time() - proxy_time > 604800:
             addon.setSetting('proxy_time', str(time.time()))
@@ -203,7 +201,7 @@ class Lostfilm:
         except:
             pass
 
-        from urllib.request import urlopen
+        from urllib import urlopen
 
         self.progress_bg.create(u'Загрузка Базы Данных')
 
@@ -272,6 +270,9 @@ class Lostfilm:
         serial_season = int(se_code[len(se_code)-6:len(se_code)-3])
         serial_image = int(se_code[:len(se_code)-6])
 
+        if serial_season == 999:
+            serial_season = 1
+
         image = (
             'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season),
             'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image),
@@ -316,6 +317,27 @@ class Lostfilm:
 
         return label
 #========================#========================#========================#
+    def create_cast(self, cast_info):
+        actors = []
+
+        actors_array = cast_info.split('*')
+            
+        for node in actors_array:
+            node = node.split('|')
+
+            if not node[0]:
+                node[0] = 'uknown'
+            if not node[1]:
+                node[1] = 'uknown'
+            if node[2]:
+                node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
+                    node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
+
+            actors.append(
+                {'name': node[0], 'role': node[1], 'thumbnail':node[2]})
+        
+        return actors
+#========================#========================#========================#
     def create_context(self, serial_id='', se_code='', ismovie=False):
         serial_episode = se_code[len(se_code)-3:len(se_code)]
         serial_image = se_code[:len(se_code)-6]
@@ -339,7 +361,6 @@ class Lostfilm:
             context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
             context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
 
-        context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part&param=news")'))
         context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'))
         context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")'))
         context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'))
@@ -377,7 +398,7 @@ class Lostfilm:
                  #self.dialog.notification(heading='LostFilm',message='Ошибка',icon=icon,time=3000,sound=False)
 #========================#========================#========================#
     def create_line(self, title, serial_id='', se_code='', status='', watched=False, params=None, folder=True, ismovie=False):
-        li = xbmcgui.ListItem(label=title, offscreen=True)
+        li = xbmcgui.ListItem(title)
 
         if serial_id and se_code:
             cover = self.create_image(se_code, ismovie=ismovie)
@@ -394,40 +415,19 @@ class Lostfilm:
                 })
 
             info = self.database.obtain_content(serial_id=serial_id)
+            info.update({'status': status})
 
             info_cast = self.database.obtain_cast(serial_id=serial_id)
-
-            videoinfo = li.getVideoInfoTag()
-            videoinfo.setTitle(title)
-            videoinfo.setPremiered(info['premiered'])
-            videoinfo.setGenres(info['genre'])
-            videoinfo.setDirectors(info['director'])
-            videoinfo.setWriters(info['writer'])
-            videoinfo.setStudios(info['studio'])
-            videoinfo.setTvShowStatus(status)
-            videoinfo.setCountries(info['country'])
-            videoinfo.setPlot(info['plot'])
-
             cast = []
-            
-            for node in info_cast:
-                node = node.split('|')
+            if info_cast:
+                cast = self.create_cast(info_cast)
 
-                if not node[0]:
-                    node[0] = 'uknown'
-                if not node[1]:
-                    node[1] = 'uknown'
-                if node[2]:
-                    node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
-                        node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
-
-                cast.append(xbmc.Actor(
-                    name=node[0], role=node[1], order=1, thumbnail=node[2]))
-
-            videoinfo.setCast(cast)
+            li.setCast(cast)
 
             if watched:
                 info['playcount'] = 1
+
+            li.setInfo(type='video', infoLabels=info)
             
         li.addContextMenuItems(
             self.create_context(serial_id = serial_id, se_code = se_code, ismovie=ismovie)
@@ -438,7 +438,7 @@ class Lostfilm:
 
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
-        # # xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_EPISODE)
+        # xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_EPISODE)
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
@@ -715,17 +715,6 @@ class Lostfilm:
             self.dialog.notification(heading='LostFilm',message='Ошибка',icon=icon,time=3000,sound=False)
             pass
 #========================#========================#========================#
-    def exec_information_part(self):
-        lostfilm_data = u'[B][COLOR=darkorange]Version 1.0.1[/COLOR][/B]\n\
-    - Исправлена ошибка авторизации на зеркалах\n\
-    - Исправлена ошибка повторого запроса авторизации\n\
-    - Исправлен адрес получения разблокировки AZ\n\
-    - Правки, оптимизация\n\
-    \n\
-    Отдельная благодарность пользователю [COLOR=darkorange]Para[od[/COLOR] за сообщение про ошибку'
-        self.dialog.textviewer('Информация', lostfilm_data)
-        return
-#========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title=self.create_colorize('Поиск'), params={'mode': 'search_part'})
         self.create_line(title=self.create_colorize('Расписание'), params={'mode': 'schedule_part'})
@@ -870,12 +859,11 @@ class Lostfilm:
             return
             
         table_data = html[html.find('<tbody>')+7:html.find('</tbody>')]
-        
-        if sys.version_info.major < 3:
-            try:
-                table_data = table_data.encode('utf-8')
-            except:
-                pass
+
+        try:
+            table_data = table_data.encode('utf-8')
+        except:
+            pass
         
         table_data = clean_list(table_data)
         table_data = table_data.split('</tr><tr><th></th>')
@@ -979,12 +967,11 @@ class Lostfilm:
             next_link = next_link[next_link.find('/schedule/')+10:next_link.find('<div')]
             
             title = next_link[next_link.rfind('>')+1:].capitalize()
-            
-            if sys.version_info.major < 3:
-                try:
-                    title = title.encode('utf-8')
-                except:
-                    pass
+
+            try:
+                title = title.encode('utf-8')
+            except:
+                pass
 
             next_link = next_link[:next_link.find('\'')]
 

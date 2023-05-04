@@ -62,12 +62,10 @@ class DataBase:
             if serial_info[3]:
                 director = u'{}*{}'.format(director, serial_info[3])
 
-            director = director.split('*')
-
         content = {
             'premiered': serial_info[0],
             'genre': serial_info[1].split('*'),
-            'director': director,
+            'director': director.split('*'),
             'writer': serial_info[4].split('*'),
             'studio': serial_info[5].split('*'),
             'country': serial_info[6].split(','),
@@ -76,15 +74,11 @@ class DataBase:
 
         del serial_info
         return content
-    
+
     def obtain_cast(self, serial_id):
         self.cu.execute('SELECT actors FROM serials_db WHERE serial_id=?', (serial_id,))
         self.c.commit()
-
-        cast_info = self.cu.fetchone()[0]
-        cast_info = cast_info.split('*')
-
-        return cast_info
+        return self.cu.fetchone()[0]
 
     def obtain_image_id(self, serial_id):
         self.cu.execute('SELECT image_id FROM serials_db WHERE serial_id=?', (serial_id,))
