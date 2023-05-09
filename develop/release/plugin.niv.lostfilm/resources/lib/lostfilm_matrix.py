@@ -446,6 +446,8 @@ class Lostfilm:
                             'writers', 'studios', 'country', 'description', 'image_id', 'actors'], '')
 
         url = '{}series/{}/'.format(self.site_url, serial_id)
+        
+        ismovie = bool(ismovie == 'True')
         if ismovie:
             info['title_en'] = '1'
             url = '{}movies/{}/'.format(self.site_url, serial_id)

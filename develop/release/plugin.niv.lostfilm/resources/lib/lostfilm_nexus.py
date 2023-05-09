@@ -456,6 +456,8 @@ class Lostfilm:
                             'writers', 'studios', 'country', 'description', 'image_id', 'actors'], '')
 
         url = '{}series/{}/'.format(self.site_url, serial_id)
+        
+        ismovie = bool(ismovie == 'True')
         if ismovie:
             info['title_en'] = '1'
             url = '{}movies/{}/'.format(self.site_url, serial_id)
@@ -1138,7 +1140,7 @@ class Lostfilm:
                     serial_title = data[data.find('name-ru">')+9:]
                     serial_title = serial_title[:serial_title.find('</div>')]
                     serial_title = u'[B]{}[/B]'.format(serial_title)
-                    
+
                     if '/series/' in data:
                         serial_id = data[data.find('series/')+7:]
                         serial_id = serial_id[:serial_id.find('/')]
