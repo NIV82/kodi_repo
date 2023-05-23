@@ -448,7 +448,6 @@ class Lostfilm:
 
         url = '{}series/{}/'.format(self.site_url, serial_id)
 
-        ismovie = bool(ismovie == 'True')
         if ismovie:
             info['title_en'] = '1'
             url = '{}movies/{}/'.format(self.site_url, serial_id)
@@ -647,9 +646,11 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_update_serial(self):
+        ismovie = bool(self.params['ismovie'] == 'True')
+
         self.create_info(
             serial_id=self.params['id'],
-            ismovie=self.params['ismovie'],            
+            ismovie=ismovie,            
             update=True
             )
         return
