@@ -6,7 +6,6 @@
     <setting type="sep"/>
     <setting id="anidub_mode" type="enum" label="Режим Работы:" default="0" values="[COLOR=gold]Online[/COLOR]|[COLOR=lime]Torrent[/COLOR]" enable="eq(-2,true)"/>
     <setting type="sep"/>
-
     <setting id="anidub_o_unblock" label="Разблокировка: [COLOR=gold]Online[/COLOR]" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" visible="eq(-2,0)" enable="eq(-4,true)"/>
     <setting id="anidub_t_unblock" label="Разблокировка: [COLOR=lime]Torrent[/COLOR]" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" visible="eq(-3,1)" enable="eq(-5,true)"/>
     <setting type="sep"/>
@@ -42,21 +41,22 @@
   <category label="ANILIBRIA">
     <setting label="[B]Anilibria[/B]" id="use_anilibria" type="bool" default="true"/>
     <setting type="sep"/>
-    <setting id="anilibria_unblock" label="Разблокировка" type="bool" default="false" enable="eq(-2,true)" />
+    <setting id="anilibria_unblock" label="Разблокировка" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" enable="eq(-2,true)" visible="false"/>
     <setting type="sep"/>
     <setting id="anilibria_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Включено[/B][/COLOR]" enable="eq(-4,true)"/>
     <setting id="anilibria_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
     <setting id="anilibria_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
-    <setting id="anilibria_mode" type="enum" label="Показывать ссылки:" default="2" values="Только Torrent|Только Online|Online-Torrent" enable="eq(-8,true)"/>
-    <setting id="anilibria_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="Выключено|[COLOR=lime][B]Включено[/B][/COLOR]" enable="eq(-9,true)"/>
-    <setting id="anilibria_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-10,true)"/>
-    <setting id="anilibria_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=lime][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-11,true)"/>
+    <setting id="anilibria_mode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" enable="eq(-8,true)"/>
+    <setting id="anilibria_quality" type="select" label="Качество по умолчанию:" default="HD" values="FHD|HD|SD" enable="eq(-9,true)"/>
+    <setting id="anilibria_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=lime][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-10,true)"/>
+    <setting id="anilibria_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=lime][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-11,true)" visible="false"/>
     <setting type="sep"/>
-    <setting id="anilibria_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт" enable="eq(-13,true)"/>
-    <setting id="anilibria_mirror_0" label="Адрес:" type="text" default="https://api.anilibria.tv/v2/" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="anilibria_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт" visible="false" enable="eq(-13,true)" />
+    <setting id="anilibria_mirror_0" label="Адрес:" type="text" default="https://api.anilibria.tv/v3/" subsetting="true" visible="false" enable="false"/>
+    <setting id="anilibria_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="false" enable="false"/>
     <setting type="sep"/>
-    <setting id="anilibria_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" enable="eq(-16,true)"/>
+    <setting id="anilibria_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" enable="eq(-17,true)"/>
     <setting id="anilibria_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
     <setting id="anilibria_session" label="session" type="text" default="" visible="false"/>
     <setting id="anilibria_session_id" label="session" type="text" default="" visible="false"/>
@@ -69,6 +69,8 @@
     <setting id="anilibria_status" label="status" type="text" default="Все релизы" visible="false"/>
     <setting id="anilibria_proxy" label="status" type="text" default="" visible="false"/>
     <setting id="anilibria_proxy_time" label="status" type="text" default="" visible="false"/>
+    <setting id="anilibria_mirror_time" label="status" type="text" default="" visible="false"/>
+
   </category>
 
   <category label="ANIMEDIA">

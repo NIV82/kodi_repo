@@ -29,6 +29,20 @@ else:
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape
 
+# try:
+#     xbmcaddon.Addon('inputstream.adaptive')
+# except:
+#     xbmcgui.Dialog().notification(
+#         heading='Установка Библиотеки - [COLOR=darkorange]inputstream.adaptive[/COLOR]',
+#         message='inputstream.adaptive',
+#         icon=None,
+#         time=3000,
+#         sound=False
+#         )
+#     xbmc.executebuiltin('RunPlugin("plugin://inputstream.adaptive")')
+
+xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
 if sys.version_info.major > 2:

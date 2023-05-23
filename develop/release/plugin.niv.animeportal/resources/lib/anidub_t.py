@@ -94,12 +94,12 @@ class Anidub:
 #========================#========================#========================#
         self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
-        if not os.path.isfile(os.path.join(self.database_dir, 'ap_anidub_t.db')):
-            self.exec_update_file_part()
+        # if not os.path.isfile(os.path.join(self.database_dir, 'ap_anidub_t.db')):
+        #     self.exec_update_file_part()
 #========================#========================#========================#
-        from database import DataBase
-        self.database = DataBase(os.path.join(self.database_dir, 'ap_anidub_t.db'))
-        del DataBase
+        # from database import DataBase
+        # self.database = DataBase(os.path.join(self.database_dir, 'ap_anidub_t.db'))
+        # del DataBase
 #========================#========================#========================#
     def create_context(self, anime_id, title=None):
         context_menu = []
@@ -343,51 +343,52 @@ class Anidub:
 #========================#========================#========================#
     def exec_update_anime_part(self):        
         self.create_info(anime_id=self.params['id'], update=True)
+        return
 #========================#========================#========================#
-    def exec_update_file_part(self):
-        try:
-            self.database.end()
-        except:
-            pass
+    # def exec_update_file_part(self):
+    #     try:
+    #         self.database.end()
+    #     except:
+    #         pass
             
-        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/ap_anidub_t.db'
-        target_path = os.path.join(self.database_dir, 'ap_anidub_t.db')
+    #     target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/ap_anidub_t.db'
+    #     target_path = os.path.join(self.database_dir, 'ap_anidub_t.db')
 
-        try:
-            os.remove(target_path)
-        except:
-            pass
+    #     try:
+    #         os.remove(target_path)
+    #     except:
+    #         pass
 
-        self.progress_bg.create(u'Загрузка Базы Данных')
+    #     self.progress_bg.create(u'Загрузка Базы Данных')
 
-        try:                
-            data = urlopen(target_url)
-            chunk_size = 8192
-            bytes_read = 0
+    #     try:                
+    #         data = urlopen(target_url)
+    #         chunk_size = 8192
+    #         bytes_read = 0
 
-            try:
-                file_size = int(data.info().getheaders("Content-Length")[0])
-            except:
-                file_size = int(data.getheader('Content-Length'))
+    #         try:
+    #             file_size = int(data.info().getheaders("Content-Length")[0])
+    #         except:
+    #             file_size = int(data.getheader('Content-Length'))
 
-            with open(target_path, 'wb') as write_file:
-                while True:
-                    chunk = data.read(chunk_size)
-                    bytes_read = bytes_read + len(chunk)
-                    write_file.write(chunk)
-                    if len(chunk) < chunk_size:
-                        break
-                    percent = bytes_read * 100 / file_size
-                    try:
-                        self.progress_bg.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-                    except:
-                        pass
-            self.dialog.notification(heading='Загрузка файла',message='Успешно загружено',icon=self.icon,time=3000,sound=False)
-        except:
-            self.dialog.notification(heading='Загрузка файла',message='Ошибка при загрузке',icon=self.icon,time=3000,sound=False)
-            pass
+    #         with open(target_path, 'wb') as write_file:
+    #             while True:
+    #                 chunk = data.read(chunk_size)
+    #                 bytes_read = bytes_read + len(chunk)
+    #                 write_file.write(chunk)
+    #                 if len(chunk) < chunk_size:
+    #                     break
+    #                 percent = bytes_read * 100 / file_size
+    #                 try:
+    #                     self.progress_bg.update(int(percent), u'Загружено: {} из {} Mb'.format('{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+    #                 except:
+    #                     pass
+    #         self.dialog.notification(heading='Загрузка файла',message='Успешно загружено',icon=self.icon,time=3000,sound=False)
+    #     except:
+    #         self.dialog.notification(heading='Загрузка файла',message='Ошибка при загрузке',icon=self.icon,time=3000,sound=False)
+    #         pass
 
-        self.progress_bg.close()
+    #     self.progress_bg.close()
 #========================#========================#========================#
     def exec_favorites_part(self):
         url = 'https://tr.anidub.com/engine/ajax/favorites.php?fav_id={}&action={}&size=small&skin=Anidub'.format(self.params['id'], self.params['param'])
