@@ -98,9 +98,8 @@ class Anilibria:
             self.params[a] = unquote(args[a][0])
 
         self.proxy_data = None#self.create_proxy_data()
-        self.mirror = self.create_mirror()
+        #self.mirror = self.create_mirror()
         self.site_url = self.create_site_url()
-
         #self.sid_file = os.path.join(self.cookie_dir, 'anilibria.sid')
         #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
@@ -166,8 +165,15 @@ class Anilibria:
         site_url = addon.getSetting('anilibria_mirror0')
         current_mirror = 'anilibria_mirror{}'.format(addon.getSetting('anilibria_mirrormode'))        
         
+        if current_mirror == 'anilibria_mirror0':
+            return site_url
+
         if not addon.getSetting(current_mirror):
-            pass
+                try:
+                    self.create_mirror()
+                    site_url =  addon.getSetting(current_mirror)
+                except:
+                    return site_url
         else:
             site_url =  addon.getSetting(current_mirror)
 
@@ -803,7 +809,7 @@ class Anilibria:
                     torrent_series = u'Серии: {}'.format(node['series'])
 
             #torrent_size = node['size']
-            torrent_url = u'{}{}'.format(self.mirror, node['url'])
+            torrent_url = u'{}{}'.format(self.site_url, node['url'])
 
             label = u'{}{}{}'.format(torrent_series, torrent_quality, torrent_peer)
 
