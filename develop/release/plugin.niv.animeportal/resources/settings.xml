@@ -4,24 +4,24 @@
   <category label="ANIDUB">
     <setting label="[B]ANIDUB[/B]" id="use_anidub" type="bool" default="true"/>
     <setting type="sep"/>
-    <setting id="anidub_mode" type="enum" label="Режим Работы:" default="0" values="[COLOR=gold]Online[/COLOR]|[COLOR=lime]Torrent[/COLOR]" enable="eq(-2,true)"/>
+    <setting id="anidub_mode" type="enum" label="Режим Работы:" default="0" values="[COLOR=gold]Online[/COLOR]|[COLOR=blue]Torrent[/COLOR]" enable="eq(-2,true)"/>
     <setting type="sep"/>
-    <setting id="anidub_o_unblock" label="Разблокировка: [COLOR=gold]Online[/COLOR]" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" visible="eq(-2,0)" enable="eq(-4,true)"/>
-    <setting id="anidub_t_unblock" label="Разблокировка: [COLOR=lime]Torrent[/COLOR]" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" visible="eq(-3,1)" enable="eq(-5,true)"/>
+    <setting id="anidub_o_unblock" label="Разблокировка: [COLOR=gold]Online[/COLOR]" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" visible="eq(-2,0)" enable="eq(-4,true)"/>
+    <setting id="anidub_t_unblock" label="Разблокировка: [COLOR=blue]Torrent[/COLOR]" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" visible="eq(-3,1)" enable="eq(-5,true)"/>
     <setting type="sep"/>
-    <setting id="anidub_inputstream" label="Inputstream Adaptive" type="enum" default="" values="[COLOR=lime][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" visible="false" enable="eq(-7,true)"/>
+    <setting id="anidub_inputstream" label="Inputstream Adaptive" type="enum" default="" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" visible="false" enable="eq(-7,true)"/>
     <setting type="sep"/>
-    <setting id="anidub_auth_online" label="Авторизация [COLOR=gold]Online[/COLOR]:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" visible="eq(-7,0)" enable="eq(-9,true)"/>
+    <setting id="anidub_auth_online" label="Авторизация [COLOR=gold]Online[/COLOR]:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" visible="eq(-7,0)" enable="eq(-9,true)"/>
       <setting id="anidub_o_username" label="Логин : [COLOR=gold]Online[/COLOR]" type="text" default="" subsetting="true" visible="eq(-8,0)"/>
       <setting id="anidub_o_password" label="Пароль : [COLOR=gold]Online[/COLOR]" type="text" default="" option="hidden" subsetting="true" visible="eq(-9,0)"/>
-    <setting id="anidub_auth_torrent" label="Авторизация [COLOR=lime]Torrent[/COLOR]:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" visible="eq(-10,1)" enable="eq(-12,true)"/>
-      <setting id="anidub_t_username" label="Логин [COLOR=lime]Torrent[/COLOR]:" type="text" default="" subsetting="true" visible="eq(-11,1)"/>
-      <setting id="anidub_t_password" label="Пароль [COLOR=lime]Torrent[/COLOR]:" type="text" default="" option="hidden" subsetting="true" visible="eq(-12,1)"/>
+    <setting id="anidub_auth_torrent" label="Авторизация [COLOR=blue]Torrent[/COLOR]:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" visible="eq(-10,1)" enable="eq(-12,true)"/>
+      <setting id="anidub_t_username" label="Логин [COLOR=blue]Torrent[/COLOR]:" type="text" default="" subsetting="true" visible="eq(-11,1)"/>
+      <setting id="anidub_t_password" label="Пароль [COLOR=blue]Torrent[/COLOR]:" type="text" default="" option="hidden" subsetting="true" visible="eq(-12,1)"/>
     <setting type="sep"/>
     <setting id="anidub_o_mirror_mode" label="Адрес: [COLOR=gold][Online][/COLOR]" type="enum" default="0" values="Базовый сайт|Зеркало" visible="eq(-14,0)" enable="eq(-16,true)"/>
       <setting id="anidub_o_mirror_0" label="Базовый сайт [COLOR=gold][Online][/COLOR]:" type="text" default="https://anidub.live/" subsetting="true" visible="eq(-15,0)" enable="false"/>
       <setting id="anidub_o_mirror_1" label="Зеркало [COLOR=gold][Online][/COLOR]:" type="text" default="https://anidub.live/" subsetting="true" visible="eq(-16,0)" enable="eq(-18,true)"/>
-    <setting id="anidub_t_mirror_mode" label="Адрес: [COLOR=lime]Torrent[/COLOR]" type="enum" default="0" values="Базовый сайт" visible="false" enable="eq(-19,true)"/>
+    <setting id="anidub_t_mirror_mode" label="Адрес: [COLOR=blue]Torrent[/COLOR]" type="enum" default="0" values="Базовый сайт" visible="false" enable="eq(-19,true)"/>
       <setting id="anidub_t_mirror_0" label="Базовый сайт:" type="text" default="https://tr.anidub.com/" subsetting="true" visible="false" enable="false"/>
     <setting type="sep"/>
     <setting id="anidub_t_engine" type="enum" label="Торрент плеер:" default="0" values="Elementum|TAM" visible="eq(-20,1)" enable="eq(-22,true)"/>
@@ -41,23 +41,20 @@
   <category label="ANILIBRIA">
     <setting label="[B]Anilibria[/B]" id="use_anilibria" type="bool" default="true"/>
     <setting type="sep"/>
-    <setting id="anilibria_unblock" label="Разблокировка" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime]Включено[/COLOR]" enable="eq(-2,true)" visible="false"/>
+    <setting id="anilibria_unblock" label="Разблокировка" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" enable="eq(-2,true)" visible="false"/>
     <setting type="sep"/>
-    <setting id="anilibria_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Включено[/B][/COLOR]" enable="eq(-4,true)"/>
+    <setting id="anilibria_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="false"/>
     <setting id="anilibria_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
     <setting id="anilibria_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
     <setting id="anilibria_mode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" enable="eq(-8,true)"/>
     <setting id="anilibria_quality" type="select" label="Качество по умолчанию:" default="HD" values="FHD|HD|SD" enable="eq(-9,true)"/>
-    <setting id="anilibria_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=lime][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-10,true)"/>
-    <setting id="anilibria_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=lime][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-11,true)" visible="false"/>
+    <setting id="anilibria_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-10,true)"/>
+    <setting id="anilibria_siteurl" label="siteurl" type="text" default="https://api.anilibria.tv/v3/" enable="eq(-11,true)" visible="false"/>
     <setting type="sep"/>
-    <setting id="anilibria_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт" visible="false" enable="eq(-13,true)" />
-    <setting id="anilibria_mirror_0" label="Адрес:" type="text" default="https://api.anilibria.tv/v3/" subsetting="true" visible="false" enable="false"/>
-    <setting id="anilibria_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="false" enable="false"/>
-    <setting type="sep"/>
-    <setting id="anilibria_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" enable="eq(-17,true)"/>
-    <setting id="anilibria_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
+    <setting id="anilibria_mirrormode" label="Зеркало:" type="enum" default="1" values="Базовый сайт|Зеркало" enable="eq(-13,true)" />
+    <setting id="anilibria_mirror0" label="Адрес:" type="text" default="https://www.anilibria.tv" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="anilibria_mirror1" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
     <setting id="anilibria_session" label="session" type="text" default="" visible="false"/>
     <setting id="anilibria_session_id" label="session" type="text" default="" visible="false"/>
     <setting id="anilibria_search" label="status" type="text" default="" visible="false"/>
@@ -70,7 +67,6 @@
     <setting id="anilibria_proxy" label="status" type="text" default="" visible="false"/>
     <setting id="anilibria_proxy_time" label="status" type="text" default="" visible="false"/>
     <setting id="anilibria_mirror_time" label="status" type="text" default="" visible="false"/>
-
   </category>
 
   <category label="ANIMEDIA">
@@ -78,13 +74,13 @@
     <setting type="sep"/>
     <setting id="animedia_unblock" label="Разблокировка" type="bool" default="false" enable="eq(-2,true)" />
     <setting type="sep"/>
-    <setting id="animedia_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Включено[/B][/COLOR]" enable="eq(-4,true)"/>
+    <setting id="animedia_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="eq(-4,true)"/>
     <setting id="animedia_username" label="[COLOR=gold][Online][/COLOR] Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
     <setting id="animedia_password" label="[COLOR=gold][Online][/COLOR] Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
     <setting id="animedia_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-8,true)"/>
     <setting id="animedia_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-9,true)"/>
-    <setting id="animedia_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=lime][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-10,true)"/>
+    <setting id="animedia_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-10,true)"/>
     <setting type="sep"/>
     <setting id="animedia_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт|Зеркало" enable="eq(-12,true)"/>
     <setting id="animedia_mirror_0" label="Адрес:" type="text" default="https://online.animedia.tv/" subsetting="true" visible="eq(-1,0)" enable="false"/>
@@ -111,7 +107,7 @@
     <setting type="sep"/>
     <setting id="anistar_unblock" label="Разблокировка" type="bool" default="false" enable="eq(-2,true)" />
     <setting type="sep"/>
-    <setting id="anistar_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Включено[/B][/COLOR]" enable="eq(-4,true)"/>
+    <setting id="anistar_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="eq(-4,true)"/>
     <setting id="anistar_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
     <setting id="anistar_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
@@ -125,7 +121,7 @@
     <setting id="anistar_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" enable="eq(-15,true)"/>
     <setting id="anistar_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
     <setting type="sep"/>
-    <setting id="anistar_adult" label="Контент 18+ :" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Включено[/B][/COLOR]" enable="eq(-18,true)"/>
+    <setting id="anistar_adult" label="Контент 18+ :" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="eq(-18,true)"/>
     <setting id="anistar_adult_pass" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-1,1)" />
     <setting id="anistar_session" label="session" type="text" default="" visible="false"/>
     <setting id="anistar_search" label="status" type="text" default="" visible="false"/>
@@ -139,7 +135,7 @@
     <setting type="sep"/>
     <setting id="shizaproject_unblock" label="Разблокировка" type="bool" default="false" enable="eq(-2,true)" />
     <setting type="sep"/>
-    <setting id="shizaproject_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Включено[/B][/COLOR]" enable="eq(-4,true)" />
+    <setting id="shizaproject_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="eq(-4,true)" />
     <setting id="shizaproject_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
     <setting id="shizaproject_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>

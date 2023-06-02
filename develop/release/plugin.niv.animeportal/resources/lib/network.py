@@ -9,18 +9,39 @@ try:
     from urllib2 import HTTPCookieProcessor
     from urllib2 import build_opener
     from urllib2 import Request
+    from urllib2 import urlopen
     from cookielib import MozillaCookieJar
 except:
     from urllib.request import ProxyHandler
     from urllib.request import HTTPCookieProcessor
     from urllib.request import build_opener
     from urllib.request import Request
+    from urllib.request import urlopen
     from http.cookiejar import MozillaCookieJar
 
 def data_print(data):
     import xbmc
     xbmc.log(str(data), xbmc.LOGFATAL)
 
+def get_web(url, bytes=False):
+    try:
+        request = Request(url)
+        request.add_header(
+            'User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0')
+        content = urlopen(request)
+        html = content.read()
+        content.close()
+
+        if not bytes:
+            try:
+                html = html.decode(encoding='utf-8', errors='replace')
+            except:
+                pass
+
+        return html
+    except:
+        return False
+    
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None):
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0'}

@@ -28,6 +28,12 @@ else:
     #import HTMLParser
     #unescape = HTMLParser.HTMLParser().unescape  
 
+version = xbmc.getInfoLabel('System.BuildVersion')[:2]
+try:
+    version = int(version)
+except:
+    version = 0
+
 try:
     xbmcaddon.Addon('inputstream.adaptive')
 except:
@@ -81,10 +87,7 @@ class Anilibria:
         self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
         if not os.path.exists(self.cookie_dir):
             os.mkdir(self.cookie_dir)
-        
-        # if 'true' in addon.getSetting('anilibria_unblock'):
-        #     addon.setSetting('anilibria_torrents','1')
-        
+                
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'anilibria'}
         
         args = parse_qs(sys.argv[2][1:])
@@ -92,8 +95,9 @@ class Anilibria:
             self.params[a] = unquote(args[a][0])
 
         self.proxy_data = None
-        self.site_url = self.create_site_url()
-        self.mirror = self.create_mirror()
+        self.site_url = addon.getSetting('anilibria_siteurl')
+
+        self.mirror = self.create_mirrror_url()
 
         #self.proxy_data = self.create_proxy_data()
         #self.sid_file = os.path.join(self.cookie_dir, 'anilibria.sid')
@@ -114,50 +118,106 @@ class Anilibria:
         #self.network.sid_file = self.sid_file
         del WebTools
 #========================#========================#========================#
-        # if not os.path.isfile(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal']))):
-        #     self.exec_update_file_part()
-#========================#========================#========================#
-        # from database import DataBase
-        # self.database = DataBase(os.path.join(self.database_dir, 'ap_{}.db'.format(self.params['portal'])))
-        # del DataBase
-#========================#========================#========================#
-    def create_site_url(self):
-        site_url = addon.getSetting('{}_mirror_0'.format(self.params['portal']))
+    def create_mirrror_url(self):
+        site_url = addon.getSetting('anilibria_mirror0')
+        current_mirror = 'anilibria_mirror{}'.format(addon.getSetting('anilibria_mirrormode'))        
+
+        if current_mirror == 'anilibria_mirror0':
+            return site_url
+
+        if not addon.getSetting(current_mirror):
+            try:
+                self.create_mirror()
+                site_url =  addon.getSetting(current_mirror)
+                return site_url
+            except:
+                self.dialog.notification(
+                    heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
+                addon.setSetting('anilibria_mirrormode', '0')
+
+                return site_url
+        else:
+            try:
+                mirror_time = float(addon.getSetting('anilibria_mirror_time'))
+            except:
+                mirror_time = 0
+
+            if time.time() - mirror_time > 259200:
+                try:
+                    self.create_mirror()
+                    site_url =  addon.getSetting(current_mirror)
+                    return site_url
+                except:
+                    self.dialog.notification(
+                        heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
+                    addon.setSetting('anilibria_mirrormode', '0')
+                    return site_url
+
+            site_url =  addon.getSetting(current_mirror)
+
         return site_url
 #========================#========================#========================#
     def create_mirror(self):
         try:
-            mirror_time = float(addon.getSetting('anilibria_mirror_time'))
+            mirror_time = float(addon.getSetting('anilibria_mirrortime'))
         except:
             mirror_time = 0
 
+        from network import get_web
+
         if time.time() - mirror_time > 259200:
-            addon.setSetting('anilibria_mirror_time', str(time.time()))
+            addon.setSetting('anilibria_mirrortime', str(time.time()))
 
-            from network import WebTools
-            net = WebTools()
-            del WebTools
-
-            html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
+            html = get_web(url='https://darklibria.it/redirect/mirror/1')
 
             mirror_url = html[html.find('canonical" href="')+17:]
             mirror_url = mirror_url[:mirror_url.find('"')]
-            addon.setSetting('anilibria_mirror_1', mirror_url)
+            addon.setSetting('anilibria_mirror1', mirror_url)
         else:
-            if addon.getSetting('anilibria_mirror_1'):
-                mirror_url = addon.getSetting('anilibria_mirror_1')
+            if addon.getSetting('anilibria_mirror1'):
+                mirror_url = addon.getSetting('anilibria_mirror1')
             else:
-                from network import WebTools
-                net = WebTools()
-                del WebTools
-
-                html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
+                html = get_web(url='https://darklibria.it/redirect/mirror/1')
 
                 mirror_url = html[html.find('canonical" href="')+17:]
                 mirror_url = mirror_url[:mirror_url.find('"')]
-                addon.setSetting('anilibria_mirror_1', mirror_url)
+                addon.setSetting('anilibria_mirror1', mirror_url)
 
         return mirror_url
+    
+    # def create_mirror(self):
+    #     try:
+    #         mirror_time = float(addon.getSetting('anilibria_mirror_time'))
+    #     except:
+    #         mirror_time = 0
+
+    #     if time.time() - mirror_time > 259200:
+    #         addon.setSetting('anilibria_mirror_time', str(time.time()))
+
+    #         from network import WebTools
+    #         net = WebTools()
+    #         del WebTools
+
+    #         html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
+
+    #         mirror_url = html[html.find('canonical" href="')+17:]
+    #         mirror_url = mirror_url[:mirror_url.find('"')]
+    #         addon.setSetting('anilibria_mirror1', mirror_url)
+    #     else:
+    #         if addon.getSetting('anilibria_mirror1'):
+    #             mirror_url = addon.getSetting('anilibria_mirror1')
+    #         else:
+    #             from network import WebTools
+    #             net = WebTools()
+    #             del WebTools
+
+    #             html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
+
+    #             mirror_url = html[html.find('canonical" href="')+17:]
+    #             mirror_url = mirror_url[:mirror_url.find('"')]
+    #             addon.setSetting('anilibria_mirror1', mirror_url)
+
+    #     return mirror_url
 #========================#========================#========================#
     def create_context(self, anime_id=None):
         context_menu = []
@@ -167,9 +227,9 @@ class Anilibria:
 
         if anime_id:
             if '0' in addon.getSetting('anilibria_mode'):
-                context_menu.append(('Открыть Торрент', 'Container.Update("plugin://plugin.niv.animeportal/?mode=switch_mode&id={}&param=0&portal=anilibria")'.format(anime_id)))
+                context_menu.append(('Открыть Торрент', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&id={}&param=0&portal=anilibria")'.format(anime_id)))
             if '1' in addon.getSetting('anilibria_mode'):
-                context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.animeportal/?mode=switch_mode&id={}&param=1&portal=anilibria")'.format(anime_id)))
+                context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&id={}&param=1&portal=anilibria")'.format(anime_id)))
         # if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
         #     context_menu.append(('[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
 
@@ -202,7 +262,16 @@ class Anilibria:
                 pass
 
             li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
-            li.setInfo(type='video', infoLabels=info)
+
+            if version == 20:
+                videoinfo = li.getVideoInfoTag()
+                videoinfo.setTitle(info['title'])
+                videoinfo.setSortTitle(info['sorttitle'])
+                videoinfo.setYear(int(info['year']))
+                videoinfo.setGenres(info['genre'])
+                videoinfo.setPlot(info['plot'])
+            else:
+                li.setInfo(type='video', infoLabels=info)
 
         li.addContextMenuItems(self.create_context(anime_id))
 
@@ -210,7 +279,11 @@ class Anilibria:
             li.setProperty('isPlayable', 'true')
 
         params['portal'] = self.params['portal']
-        url = '{}?{}'.format(sys.argv[0], urlencode(params))
+        
+        if 'tam' in params:
+            url='plugin://plugin.video.tam/?mode=open&url={}'.format(quote(params['tam'])) 
+        else:
+            url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
@@ -286,14 +359,6 @@ class Anilibria:
 #========================#========================#========================#
     def exec_addon_setting(self):
         addon.openSettings()
-#========================#========================#========================#
-    def exec_switch_mode(self):
-        if '0' in self.params['param']:
-            self.params['mode'] = 'torrent_part'
-            self.exec_torrent_part()
-        if '1' in self.params['param']:
-            self.params['mode'] = 'online_part'
-            self.exec_online_part()
 #========================#========================#========================#
     # def create_proxy_data(self):
     #     if '0' in addon.getSetting('anilibria_unblock'):
@@ -494,7 +559,7 @@ class Anilibria:
         if not self.params['param']:
             self.create_line(title=u'[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search_word'})
 
-            data_array = addon.getSetting('{}_search'.format(self.params['portal'])).split('|')
+            data_array = addon.getSetting('anilibria_search').split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -508,11 +573,11 @@ class Anilibria:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = skbd.getText()
-                data_array = addon.getSetting('{}_search'.format(self.params['portal'])).split('|')                    
+                data_array = addon.getSetting('anilibria_search').split('|')                    
                 while len(data_array) >= 6:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
-                addon.setSetting('{}_search'.format(self.params['portal']), data_array)
+                addon.setSetting('anilibria_search', data_array)
                 self.params['param'] = 'search_string'
             else:
                 return False
@@ -809,11 +874,19 @@ class Anilibria:
 #========================#========================#========================#
     def exec_select_part(self):
         if '0' in addon.getSetting('anilibria_mode'):
-            self.params['mode'] = 'online_part'
-            self.exec_online_part()
+            if '0' in self.params['param']:
+                self.params['mode'] = 'torrent_part'
+                self.exec_torrent_part()
+            else:
+                self.params['mode'] = 'online_part'
+                self.exec_online_part()
         if '1' in addon.getSetting('anilibria_mode'):
-            self.params['mode'] = 'torrent_part'
-            self.exec_torrent_part()
+            if '1' in self.params['param']:
+                self.params['mode'] = 'online_part'
+                self.exec_online_part()
+            else:
+                self.params['mode'] = 'torrent_part'
+                self.exec_torrent_part()
 #========================#========================#========================#
     def exec_online_part(self):
         api_filter = '&filter=id,names.ru,posters.original,genres,team,season.year,description,player.host,player.list'
@@ -824,68 +897,31 @@ class Anilibria:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
-        
+
         import json
 
-        try:
-            data = json.loads(html)
-        except:
+        array = json.loads(html)
+
+        if len(array['player']['list']) < 1:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
-        info = {}
+        info = self.create_info(array)
+        anime_id = info.pop('id')
+        info.pop('title')
 
-        try:
-            anime_id = data['id']
-            info['sorttitle'] = data['names']['ru']
-            host = data['player']['host']
-            player_list = data['player']['list']
-        except:
-            self.create_line(title='Ошибка обработки - сообщите автору')
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
-
-        try:
-            info['cover'] = u'{}{}'.format(
-                self.mirror, data['posters']['original']['url'])
-            info['genre'] = data['genres']
-            info['year'] = data['season']['year']
-        except:
-            pass
-
-        try:
-            team_ru = {'voice': 'Озвучивание', 'translator': 'Перевод',
-                    'editing': 'Редактирование', 'decor': 'Оформление',
-                    'timing': 'Синхронизация'}
-                            
-            ext_info = '\n'
-            for i in data['team']:
-                keys_ru = team_ru[i]
-                values = data['team'][i]
-                                
-                if values:
-                    values = ', '.join(values)
-                    ext_info = u'{}{}: {}\n'.format(ext_info, keys_ru, values)
-                                    
-                    info['plot'] = u'{}\n{}'.format(data['description'], ext_info)
-        except:
-            pass
-        
         current_quality = (addon.getSetting('anilibria_quality')).lower()
 
-        self.progress_bg.create('AniLibria', 'Инициализация')
-
         try:
-            for x,i in enumerate(player_list):
+            for x,i in enumerate(array['player']['list']):
                 try:
-                    data = player_list[i]
+                    data = array['player']['list'][i]
 
-                    episode_num = data['episode']                    
-                    episode_name = ''
                     if data['name']:
-                        episode_name = u' - {}'.format(data['name'])
-                    label = u'{}{}'.format(episode_num, episode_name)
+                        label = u'{} - {}'.format(data['episode'], data['name'])
+                    else:
+                        label = u'Эпизод - {}'.format(data['episode'])
 
                     if data['hls'][current_quality]:
                         episode_hls = data['hls'][current_quality]
@@ -901,9 +937,7 @@ class Anilibria:
                     else:
                         continue
 
-                    complete_url = u'https://{}{}'.format(host, episode_hls)
-
-                    self.progress_bg.update(int((float(x+1) / len(player_list)) * 100), u'Обработано - {} из {}'.format(x, len(player_list)))
+                    complete_url = u'https://{}{}'.format(array['player']['host'], episode_hls)
 
                     self.create_line(title=label, anime_id=anime_id, params={'mode': 'play_part', 'param': complete_url, 'id': anime_id}, folder=False, **info)
                 except:
@@ -911,13 +945,11 @@ class Anilibria:
         except:
             self.create_line(title='Ошибка обработки блока - сообщите автору')
 
-        self.progress_bg.close()
-
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
 #========================#========================#========================#
     def exec_torrent_part(self):
-        api_filter = '&filter=id,names.ru,posters.original,genres,team,season.year,description,player.host,torrents.list'
+        api_filter = '&filter=id,names.ru,posters.original,genres,team,season.year,description,torrents.list'
         url = '{}title?id={}{}'.format(self.site_url, self.params['id'], api_filter)
         html = self.network.get_bytes(url=url)
 
@@ -926,55 +958,24 @@ class Anilibria:
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
+    #         #host = data['player']['host']
+    #         torrent_list = data['torrents']['list']
+
         import json
 
-        try:
-            data = json.loads(html)
-        except:
+        array = json.loads(html)
+
+        if len(array['torrents']['list']) < 1:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
-
-        info = {}
-
-        try:
-            anime_id = data['id']
-            info['sorttitle'] = data['names']['ru']
-            #host = data['player']['host']
-            torrent_list = data['torrents']['list']
-        except:
-            self.create_line(title='Ошибка обработки - сообщите автору')
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
+        
+        info = self.create_info(array)
+        anime_id = info.pop('id')
+        info.pop('title')
 
         try:
-            info['cover'] = u'{}{}'.format(
-                self.mirror, data['posters']['original']['url'])
-            info['genre'] = data['genres']
-            info['year'] = data['season']['year']
-        except:
-            pass
-
-        try:
-            team_ru = {'voice': 'Озвучивание', 'translator': 'Перевод',
-                    'editing': 'Редактирование', 'decor': 'Оформление',
-                    'timing': 'Синхронизация'}
-                            
-            ext_info = '\n'
-            for i in data['team']:
-                keys_ru = team_ru[i]
-                values = data['team'][i]
-                                
-                if values:
-                    values = ', '.join(values)
-                    ext_info = u'{}{}: {}\n'.format(ext_info, keys_ru, values)
-                                    
-                    info['plot'] = u'{}\n{}'.format(data['description'], ext_info)
-        except:
-            pass
-
-        try:
-            for x,i in enumerate(torrent_list):
+            for i in array['torrents']['list']:
                 try:
                     torrent_id = i['torrent_id']
                     info['size'] = i['total_size']
@@ -988,10 +989,6 @@ class Anilibria:
                     if i['quality']['string']:
                         quality = u' | [COLOR=blue]{}[/COLOR]'.format(i['quality']['string'])
 
-                    # torrent_size = ''
-                    # if i['size_string']:
-                    #     torrent_size = u' | [COLOR=gold]{}[/COLOR]'.format(i['size_string'])
-
                     torrent_peer = ''
                     if i['seeders'] and i['leechers']:
                         torrent_peer = u' | [COLOR=lime]{}[/COLOR] / [COLOR=red]{}[/COLOR]'.format(
@@ -999,53 +996,13 @@ class Anilibria:
 
                     label = u'{}{}{}'.format(episodes, quality, torrent_peer)
 
-                    self.create_line(title=label, anime_id=anime_id, params={
-                                     'mode': 'torrentlist_part', 'torrent_id': torrent_id, 'id': self.params['id'], 'param': torrent_url}, **info)
+                    #self.create_line(title=label, anime_id=anime_id, params={'mode': 'torrentlist_part', 'torrent_id': torrent_id, 'id': self.params['id'], 'param': torrent_url}, **info)
+                    self.create_line(title=label, anime_id=anime_id, params={'tam': torrent_url}, **info)
                 except:
                     self.create_line(title='Ошибка обработки строки - сообщите автору')
         except:
             self.create_line(title='Ошибка обработки блока - сообщите автору')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-        return
-#========================#========================#========================#
-    def exec_torrentlist_part(self):
-        url = self.params['param']
-        html = self.network.get_bytes(url=url)
-
-        if not html:
-            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-            return
-        
-        file_name = u'anilibria_{}'.format(self.params['torrent_id'])
-        torrent_file = os.path.join(self.torrents_dir, file_name)
-
-        with open(torrent_file, 'wb') as write_file:
-            write_file.write(html)
-
-        import bencode
-            
-        with open(torrent_file, 'rb') as read_file:
-            torrent_data = read_file.read()
-
-        torrent = bencode.bdecode(torrent_data)
-
-        data = torrent['info']
-        info = {}
-        series = {}
-        size = {}
-        if 'files' in data:
-            for i, x in enumerate(data['files']):
-                size[i] = x['length']
-                series[i] = x['path'][-1]
-            for i in sorted(series, key=series.get):
-                info['size'] = size[i]
-                self.create_line(title=series[i], params={'mode': 'selector_part', 'index': i, 'id': file_name}, anime_id=self.params['id'], folder=False, **info)
-        else:
-            info['size'] = data['length']
-            self.create_line(title=data['name'], params={'mode': 'selector_part', 'index': 0, 'id': file_name}, anime_id=self.params['id'], folder=False, **info)
-        
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
         return
 #========================#========================#========================#
@@ -1060,26 +1017,3 @@ class Anilibria:
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
         xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=li)
-#========================#========================#========================#
-    def exec_selector_part(self):
-        torrent_url = os.path.join(self.torrents_dir, self.params['id'])
-        index = int(self.params['index'])
-        portal_engine = '{}_engine'.format(self.params['portal'])
-        
-        if '0' in addon.getSetting(portal_engine):
-            try:
-                tam_engine = ('','ace', 't2http', 'yatp', 'torrenter', 'elementum', 'xbmctorrent', 'ace_proxy', 'quasar', 'torrserver', 'torrserver_tam', 'lt2http')
-                engine = tam_engine[int(addon.getSetting('anilibria_tam'))]
-                purl ="plugin://plugin.video.tam/?mode=play&url={}&ind={}&engine={}".format(quote(torrent_url), index, engine)
-                item = xbmcgui.ListItem(path=purl)
-                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-            except:
-                self.dialog.notification(heading='Проигрыватель',message='Ошибка',icon=icon,time=5000,sound=False)
-
-        if '1' in addon.getSetting(portal_engine):
-            try:
-                purl ="plugin://plugin.video.elementum/play?uri={}&oindex={}".format(quote(torrent_url), index)
-                item = xbmcgui.ListItem(path=purl)
-                xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, item)
-            except:
-                self.dialog.notification(heading='Проигрыватель',message='Ошибка',icon=icon,time=5000,sound=False)
