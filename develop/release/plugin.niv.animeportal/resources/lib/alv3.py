@@ -71,22 +71,6 @@ class Anilibria:
 
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
-
-        self.images_dir = os.path.join(addon_data_dir, 'images')
-        if not os.path.exists(self.images_dir):
-            os.mkdir(self.images_dir)
-
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        if not os.path.exists(self.torrents_dir):
-            os.mkdir(self.torrents_dir)
-
-        self.database_dir = os.path.join(addon_data_dir, 'database')
-        if not os.path.exists(self.database_dir):
-            os.mkdir(self.database_dir)
-
-        self.cookie_dir = os.path.join(addon_data_dir, 'cookie')
-        if not os.path.exists(self.cookie_dir):
-            os.mkdir(self.cookie_dir)
                 
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'anilibria'}
         
@@ -95,23 +79,21 @@ class Anilibria:
             self.params[a] = unquote(args[a][0])
 
         self.proxy_data = None
-        self.site_url = addon.getSetting('anilibria_siteurl')
-
+        self.site_url = 'https://api.anilibria.tv/v3/'
         self.mirror = self.create_mirrror_url()
-
         #self.proxy_data = self.create_proxy_data()
-        #self.sid_file = os.path.join(self.cookie_dir, 'anilibria.sid')
+        #self.sid_file = os.path.join(addon_data_dir, 'anilibria.sid')
         #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
-            auth_usage=bool(addon.getSetting('anilibria_auth_mode') == '1'),
-            auth_status=bool(addon.getSetting('anilibria_auth') == 'true'),
+            auth_usage=bool(addon.getSetting('alv_authmode') == '1'),
+            auth_status=bool(addon.getSetting('alv3_auth') == 'true'),
             proxy_data = self.proxy_data,
             portal='anilibria')
         # self.network.auth_post_data = urlencode(
-        #     {'login_name': addon.getSetting('anidub_o_username'),
-        #     'login_password': addon.getSetting('anidub_o_password'),
+        #     {'login_name': addon.getSetting(alv_username'),
+        #     'login_password': addon.getSetting('alv_password'),
         #     'login': 'submit'}
         #     )
         #self.network.auth_url = self.site_url
@@ -119,10 +101,18 @@ class Anilibria:
         del WebTools
 #========================#========================#========================#
     def create_mirrror_url(self):
-        site_url = addon.getSetting('anilibria_mirror0')
-        current_mirror = 'anilibria_mirror{}'.format(addon.getSetting('anilibria_mirrormode'))        
+        site_url = addon.getSetting('alv_mirror0')
 
-        if current_mirror == 'anilibria_mirror0':
+        cm = addon.getSetting('alv_mirrormode')
+        if cm:
+            current_mirror = 'alv_mirror{}'.format(addon.getSetting('alv_mirrormode'))
+        else:
+            current_mirror = ''
+
+        if not current_mirror:
+            return site_url
+        
+        if current_mirror == 'alv_mirror0':
             return site_url
 
         if not addon.getSetting(current_mirror):
@@ -133,12 +123,12 @@ class Anilibria:
             except:
                 self.dialog.notification(
                     heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
-                addon.setSetting('anilibria_mirrormode', '0')
+                addon.setSetting('alv_mirrormode', '0')
 
                 return site_url
         else:
             try:
-                mirror_time = float(addon.getSetting('anilibria_mirror_time'))
+                mirror_time = float(addon.getSetting('alv_mirrortime'))
             except:
                 mirror_time = 0
 
@@ -150,7 +140,7 @@ class Anilibria:
                 except:
                     self.dialog.notification(
                         heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
-                    addon.setSetting('anilibria_mirrormode', '0')
+                    addon.setSetting('alv_mirrormode', '0')
                     return site_url
 
             site_url =  addon.getSetting(current_mirror)
@@ -159,65 +149,31 @@ class Anilibria:
 #========================#========================#========================#
     def create_mirror(self):
         try:
-            mirror_time = float(addon.getSetting('anilibria_mirrortime'))
+            mirror_time = float(addon.getSetting('alv_mirrortime'))
         except:
             mirror_time = 0
 
         from network import get_web
 
         if time.time() - mirror_time > 259200:
-            addon.setSetting('anilibria_mirrortime', str(time.time()))
+            addon.setSetting('alv_mirrortime', str(time.time()))
 
             html = get_web(url='https://darklibria.it/redirect/mirror/1')
 
             mirror_url = html[html.find('canonical" href="')+17:]
             mirror_url = mirror_url[:mirror_url.find('"')]
-            addon.setSetting('anilibria_mirror1', mirror_url)
+            addon.setSetting('alv_mirror1', mirror_url)
         else:
-            if addon.getSetting('anilibria_mirror1'):
-                mirror_url = addon.getSetting('anilibria_mirror1')
+            if addon.getSetting('alv_mirror1'):
+                mirror_url = addon.getSetting('alv_mirror1')
             else:
                 html = get_web(url='https://darklibria.it/redirect/mirror/1')
 
                 mirror_url = html[html.find('canonical" href="')+17:]
                 mirror_url = mirror_url[:mirror_url.find('"')]
-                addon.setSetting('anilibria_mirror1', mirror_url)
+                addon.setSetting('alv_mirror1', mirror_url)
 
         return mirror_url
-    
-    # def create_mirror(self):
-    #     try:
-    #         mirror_time = float(addon.getSetting('anilibria_mirror_time'))
-    #     except:
-    #         mirror_time = 0
-
-    #     if time.time() - mirror_time > 259200:
-    #         addon.setSetting('anilibria_mirror_time', str(time.time()))
-
-    #         from network import WebTools
-    #         net = WebTools()
-    #         del WebTools
-
-    #         html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
-
-    #         mirror_url = html[html.find('canonical" href="')+17:]
-    #         mirror_url = mirror_url[:mirror_url.find('"')]
-    #         addon.setSetting('anilibria_mirror1', mirror_url)
-    #     else:
-    #         if addon.getSetting('anilibria_mirror1'):
-    #             mirror_url = addon.getSetting('anilibria_mirror1')
-    #         else:
-    #             from network import WebTools
-    #             net = WebTools()
-    #             del WebTools
-
-    #             html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
-
-    #             mirror_url = html[html.find('canonical" href="')+17:]
-    #             mirror_url = mirror_url[:mirror_url.find('"')]
-    #             addon.setSetting('anilibria_mirror1', mirror_url)
-
-    #     return mirror_url
 #========================#========================#========================#
     def create_context(self, anime_id=None):
         context_menu = []
@@ -226,10 +182,11 @@ class Anilibria:
             context_menu.append(('Очистить историю поиска', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=anilibria")'))
 
         if anime_id:
-            if '0' in addon.getSetting('anilibria_mode'):
+            if '0' in addon.getSetting('alv3_playmode'):
                 context_menu.append(('Открыть Торрент', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&id={}&param=0&portal=anilibria")'.format(anime_id)))
-            if '1' in addon.getSetting('anilibria_mode'):
+            if '1' in addon.getSetting('alv3_playmode'):
                 context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&id={}&param=1&portal=anilibria")'.format(anime_id)))
+
         # if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
         #     context_menu.append(('[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
 
@@ -242,9 +199,6 @@ class Anilibria:
         #         context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=DELETE&portal={}")'.format(anime_id, self.params['portal'])))
         
         #context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal={}")'.format(self.params['portal'])))
-        #context_menu.append((u'[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=authorization_part&param=renew_auth&portal=anilibria")'))
-        #context_menu.append((u'[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal={}")'.format(self.params['portal'])))
-        
         return context_menu
 #========================#========================#========================#
     def create_line(self, title, anime_id=None, params={}, folder=True, **info):
@@ -361,16 +315,16 @@ class Anilibria:
         addon.openSettings()
 #========================#========================#========================#
     # def create_proxy_data(self):
-    #     if '0' in addon.getSetting('anilibria_unblock'):
+    #     if '0' in addon.getSetting('alv3_unblock'):
     #         return None
 
     #     try:
-    #         proxy_time = float(addon.getSetting('anilibria_proxy_time'))
+    #         proxy_time = float(addon.getSetting('alv3_proxytime'))
     #     except:
     #         proxy_time = 0
 
     #     if time.time() - proxy_time > 604800:
-    #         addon.setSetting('anilibria_proxy_time', str(time.time()))
+    #         addon.setSetting('alv3_proxytime', str(time.time()))
     #         proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
 
     #         try:
@@ -379,11 +333,11 @@ class Anilibria:
     #             pass
 
     #         proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #         addon.setSetting('anilibria_proxy', proxy)
+    #         addon.setSetting('alv3_proxy', proxy)
     #         proxy_data = {'https': proxy}
     #     else:
-    #         if addon.getSetting('anilibria_proxy'):
-    #             proxy_data = {'https': addon.getSetting('anilibria_proxy')}
+    #         if addon.getSetting('alv3_proxy'):
+    #             proxy_data = {'https': addon.getSetting('alv3_proxy')}
     #         else:
     #             proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
                 
@@ -393,7 +347,7 @@ class Anilibria:
     #                 pass
 
     #             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #             addon.setSetting('anilibria_proxy', proxy)
+    #             addon.setSetting('alv3_proxy', proxy)
     #             proxy_data = {'https': proxy}
 
     #     return proxy_data
@@ -421,7 +375,7 @@ class Anilibria:
     #         except: pass            
     #         addon.setSetting('{}_auth'.format(self.params['portal']), 'false')
         
-    #     if 'true' in addon.getSetting('anilibria_auth'):
+    #     if 'true' in addon.getSetting('alv3_auth'):
     #         return True
     #     else:
     #         auth_url = 'https://www.anilibria.tv/public/login.php'
@@ -434,10 +388,10 @@ class Anilibria:
     #         try:
     #             r = requests.post(url=auth_url, proxies=self.proxy_data, data=auth_post_data)
     #         except:
-    #             addon.setSetting('anilibria_unblock','true')
+    #             addon.setSetting('alv3_unblock','true')
     #             self.proxy_data = self.exec_proxy_data()
     #             r = requests.post(url=auth_url, proxies=self.proxy_data, data=auth_post_data)
-    #             addon.setSetting('anilibria_unblock','false')
+    #             addon.setSetting('alv3_unblock','false')
             
     #         response = r.text
             
@@ -446,7 +400,7 @@ class Anilibria:
     #             sessionid = response[response.find('sessionId":"')+12:]
     #             sessionid = sessionid[:sessionid.find('"')]
                 
-    #             addon.setSetting('anilibria_session_id', sessionid)
+    #             addon.setSetting('alv3_sessionid', sessionid)
     #         else:
     #             auth = False
     
@@ -461,7 +415,7 @@ class Anilibria:
 #========================#========================#========================#
     # def exec_favorites_part(self):
     #     if not self.params['param']:
-    #         session_id = addon.getSetting('anilibria_session_id')
+    #         session_id = addon.getSetting('alv3_sessionid')
     #         filters = '&filter=id,posters.medium,type,player.series.string'
     #         url = '{}/v2/getFavorites?session={}{}'.format(self.site_url, session_id, filters)
 
@@ -516,12 +470,12 @@ class Anilibria:
     #     else:
     #         if 'PUT' in self.params['param']:
     #             url = '{}addFavorite?session={}&title_id={}'.format(
-    #                 self.site_url, addon.getSetting('anilibria_session_id'), self.params['id'])
+    #                 self.site_url, addon.getSetting('alv3_sessionid'), self.params['id'])
     #             data_request = session.put(url=url, proxies=self.proxy_data, headers=headers)
 
     #         if 'DELETE' in self.params['param']:
     #             url = '{}delFavorite?session={}&title_id={}'.format(
-    #                 self.site_url, addon.getSetting('anilibria_session_id'), self.params['id'])
+    #                 self.site_url, addon.getSetting('alv3_sessionid'), self.params['id'])
     #             data_request = session.delete(url=url, proxies=self.proxy_data, headers=headers)
 
     #         html = data_request.text
@@ -533,17 +487,17 @@ class Anilibria:
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
-            addon.setSetting('{}_search'.format(self.params['portal']), '')
-            self.dialog.notification(heading='Поиск',message='Выполнено',icon=icon,time=3000,sound=False)
+            addon.setSetting('alv3_search', '')
+            self.dialog.notification(heading='Поиск',message='Выполнено',icon=icon,time=1000,sound=False)
         except:
-            self.dialog.notification(heading='Поиск',message='Ошибка',icon=icon,time=3000,sound=False)
+            self.dialog.notification(heading='Поиск',message='Ошибка',icon=icon,time=1000,sound=False)
             pass
 #========================#========================#========================#
-    def exec_information_part(self):
-        data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
-    - Исправлены метки просмотренного в торрента файлах'
-        self.dialog.textviewer('Информация', data)
-        return
+    # def exec_information_part(self):
+    #     data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
+    # - Исправлены метки просмотренного в торрента файлах'
+    #     self.dialog.textviewer('Информация', data)
+    #     return
 #========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
@@ -559,7 +513,7 @@ class Anilibria:
         if not self.params['param']:
             self.create_line(title=u'[B]Поиск по названию[/B]', params={'mode': 'search_part', 'param': 'search_word'})
 
-            data_array = addon.getSetting('anilibria_search').split('|')
+            data_array = addon.getSetting('alv3_search').split('|')
             data_array.reverse()
 
             for data in data_array:
@@ -573,11 +527,11 @@ class Anilibria:
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = skbd.getText()
-                data_array = addon.getSetting('anilibria_search').split('|')                    
+                data_array = addon.getSetting('alv3_search').split('|')                    
                 while len(data_array) >= 6:
                     data_array.pop(0)
                 data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
-                addon.setSetting('anilibria_search', data_array)
+                addon.setSetting('alv3_search', data_array)
                 self.params['param'] = 'search_string'
             else:
                 return False
@@ -765,60 +719,60 @@ class Anilibria:
 
         if self.params['param'] == '':
             self.create_line(title='Жанр: [COLOR=gold]{}[/COLOR]'.format(
-                addon.getSetting('anilibria_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
+                addon.getSetting('alv3_genre')), params={'mode': 'catalog_part', 'param': 'genre'})
             self.create_line(title='Год: [COLOR=gold]{}[/COLOR]'.format(
-                addon.getSetting('anilibria_year')), params={'mode': 'catalog_part', 'param': 'year'})
+                addon.getSetting('alv3_year')), params={'mode': 'catalog_part', 'param': 'year'})
             
             self.create_line(title='Сезон: [COLOR=gold]{}[/COLOR]'.format(
-                addon.getSetting('anilibria_season')), params={'mode': 'catalog_part', 'param': 'season'})
+                addon.getSetting('alv3_season')), params={'mode': 'catalog_part', 'param': 'season'})
 
             self.create_line(title='Сортировка по: [COLOR=gold]{}[/COLOR]'.format(
-                addon.getSetting('anilibria_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
+                addon.getSetting('alv3_sort')), params={'mode': 'catalog_part', 'param': 'sort'})
             self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
-                addon.getSetting('anilibria_status')), params={'mode': 'catalog_part', 'param': 'status'})
+                addon.getSetting('alv3_status')), params={'mode': 'catalog_part', 'param': 'status'})
             self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'catalog_part', 'param':'catalog'})            
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
 
         if 'genre' in self.params['param']:
             result = self.dialog.select('Жанр:', anilibria_genre)
-            addon.setSetting(id='anilibria_genre', value=anilibria_genre[result])
+            addon.setSetting(id='alv3_genre', value=anilibria_genre[result])
 
         if 'year' in self.params['param']:
             result = self.dialog.select('Год:', anilibria_year)
-            addon.setSetting(id='anilibria_year', value=anilibria_year[result])
+            addon.setSetting(id='alv3_year', value=anilibria_year[result])
 
         if 'season' in self.params['param']:
             result = self.dialog.select('Сезон:', tuple(anilibria_season.keys()))
-            addon.setSetting(id='anilibria_season', value=tuple(anilibria_season.keys())[result])
+            addon.setSetting(id='alv3_season', value=tuple(anilibria_season.keys())[result])
 
         if 'sort' in self.params['param']:
             result = self.dialog.select('Сортировать по:', tuple(anilibria_sort.keys()))
-            addon.setSetting(id='anilibria_sort', value=tuple(anilibria_sort.keys())[result])
+            addon.setSetting(id='alv3_sort', value=tuple(anilibria_sort.keys())[result])
 
         if 'status' in self.params['param']:
             result = self.dialog.select('Статус релиза:', tuple(anilibria_status.keys()))
-            addon.setSetting(id='anilibria_status', value=tuple(anilibria_status.keys())[result])
+            addon.setSetting(id='alv3_status', value=tuple(anilibria_status.keys())[result])
 
         if 'catalog' in self.params['param']:
             year = ''
-            if addon.getSetting('anilibria_year'):
-                year = '%20and%20{{season.year}}=={}'.format(addon.getSetting('anilibria_year'))
+            if addon.getSetting('alv3_year'):
+                year = '%20and%20{{season.year}}=={}'.format(addon.getSetting('alv3_year'))
             
             season = ''
-            if addon.getSetting('anilibria_season'):
+            if addon.getSetting('alv3_season'):
                 season = '%20and%20{{season.code}}=={}'.format(
-                    anilibria_season[addon.getSetting('anilibria_season')])
+                    anilibria_season[addon.getSetting('alv3_season')])
 
             genre = ''
-            if addon.getSetting('anilibria_genre'):
-                genre = '%20and%20"{}"%20in%20{{genres}}'.format(quote(addon.getSetting('anilibria_genre')))
+            if addon.getSetting('alv3_genre'):
+                genre = '%20and%20"{}"%20in%20{{genres}}'.format(quote(addon.getSetting('alv3_genre')))
 
             status = ''
-            if anilibria_status[addon.getSetting('anilibria_status')]:
+            if anilibria_status[addon.getSetting('alv3_status')]:
                 status = '%20and%20{{status.code}}=={}'.format(anilibria_status[addon.getSetting(
-                    'anilibria_status')])
+                    'alv3_status')])
 
-            sort = '&order_by={}&sort_direction=1'.format(anilibria_sort[addon.getSetting('anilibria_sort')])
+            sort = '&order_by={}&sort_direction=1'.format(anilibria_sort[addon.getSetting('alv3_sort')])
 
             api_filter = '&filter=id,names.ru,posters.original,type.string,type.episodes,genres,team,season.year,description,player.episodes.last'
             api_page = '&page={}&items_per_page=50'.format(self.params['page'])
@@ -873,14 +827,14 @@ class Anilibria:
         return
 #========================#========================#========================#
     def exec_select_part(self):
-        if '0' in addon.getSetting('anilibria_mode'):
+        if '0' in addon.getSetting('alv3_playmode'):
             if '0' in self.params['param']:
                 self.params['mode'] = 'torrent_part'
                 self.exec_torrent_part()
             else:
                 self.params['mode'] = 'online_part'
                 self.exec_online_part()
-        if '1' in addon.getSetting('anilibria_mode'):
+        if '1' in addon.getSetting('alv3_playmode'):
             if '1' in self.params['param']:
                 self.params['mode'] = 'online_part'
                 self.exec_online_part()
@@ -911,7 +865,7 @@ class Anilibria:
         anime_id = info.pop('id')
         info.pop('title')
 
-        current_quality = (addon.getSetting('anilibria_quality')).lower()
+        current_quality = (addon.getSetting('alv3_quality')).lower()
 
         try:
             for x,i in enumerate(array['player']['list']):
@@ -1009,7 +963,7 @@ class Anilibria:
     def exec_play_part(self):
         li = xbmcgui.ListItem(path=self.params['param'])
 
-        if '0' in addon.getSetting('anilibria_inputstream'):
+        if '0' in addon.getSetting('alv3_inputstream'):
             li.setProperty('inputstream', "inputstream.adaptive")
             li.setProperty('inputstream.adaptive.manifest_type', 'hls')
             li.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
@@ -1017,3 +971,8 @@ class Anilibria:
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
         xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=li)
+#========================#========================#========================#
+def start():
+    anilibria = Anilibria()
+    anilibria.execute()
+    del anilibria

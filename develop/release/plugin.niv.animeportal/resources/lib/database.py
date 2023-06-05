@@ -86,7 +86,6 @@ class DataBase:
     
     def obtain_content(self, anime_id):
         self.cu.execute('SELECT aired_on, genres, country, director, writer, studios, description FROM anime_db WHERE anime_id=?', (anime_id,))
-        #dubbing , translation , timing
         self.c.commit()
         s = self.cu.fetchone()
 

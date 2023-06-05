@@ -28,26 +28,15 @@ if not addon.getSetting('settings'):
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
-# =======================================================================================
-# try:
-#     xbmcaddon.Addon('script.module.requests')
-# except:
-#     xbmcgui.Dialog().notification(
-#         heading='Установка Библиотеки',
-#         message='script.module.requests',
-#         icon=None,time=3000,sound=False
-#         )
-#     xbmc.executebuiltin('RunPlugin("plugin://script.module.requests")')
-# =======================================================================================
 if not sys.argv[2]:
     portal_list = ('anidub', 'anilibria', 'animedia', 'anistar', 'shizaproject')
     active_portal = []
 
     for portal in portal_list:
         if 'true' in addon.getSetting('use_{}'.format(portal)):
-            if 'anidub' in portal:
-                anidub_mode = ['anidub_o', 'anidub_t']
-                portal = anidub_mode[int(addon.getSetting('anidub_mode'))]
+            # if 'anidub' in portal:
+            #     anidub_mode = ['anidub_o', 'anidub_t']
+            #     portal = anidub_mode[int(addon.getSetting('anidub_mode'))]
             active_portal.append(portal)
 
     if len(active_portal) < 1:
@@ -62,8 +51,9 @@ if not sys.argv[2]:
 
     if len(active_portal) > 1:
         for portal in active_portal:
-            label = portal.replace('_t', ' torrent').replace('_o', ' online')
-            li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(label.upper()))
+            #label = portal.replace('_t', ' torrent').replace('_o', ' online')
+            # li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(label.upper()))
+            li = xbmcgui.ListItem('[B]{}[/B]'.format(portal.upper()))
             info = {'title': portal.upper(), 'tvshowtitle': portal.upper()}
             li.setInfo(type='video', infoLabels=info)
             url = '{}?{}'.format(sys.argv[0], urlencode(
@@ -80,23 +70,42 @@ if not sys.argv[2]:
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-if 'anidub_o' in sys.argv[2]:
-    from anidub_o import Anidub
-    anidub = Anidub()
-    anidub.execute()
-    del Anidub
 
-if 'anidub_t' in sys.argv[2]:
-    from anidub_t import Anidub
-    anidub = Anidub()
-    anidub.execute()
-    del Anidub
+if 'anidub' in sys.argv[2]:
+    if '0' in addon.getSetting('anidub_mode'):
+        if 'anidub_t' in sys.argv[2]:
+            import adt
+            adt.start()
+        else:
+            import ado
+            ado.start()
+    if '1' in addon.getSetting('anidub_mode'):
+        if 'anidub_o' in sys.argv[2]:
+            import ado
+            ado.start()
+        else:
+            import adt
+            adt.start()
+
+# if 'anidub_o' in sys.argv[2]:
+#     from anidub_o import Anidub
+#     anidub = Anidub()
+#     anidub.execute()
+#     del Anidub
+
+# if 'anidub_t' in sys.argv[2]:
+#     from anidub_t import Anidub
+#     anidub = Anidub()
+#     anidub.execute()
+#     del Anidub
 
 if 'anilibria' in sys.argv[2]:
-    from anilibria import Anilibria
-    anilibria = Anilibria()
-    anilibria.execute()
-    del Anilibria
+    if '0' in addon.getSetting('alv_mode'):
+        import alv1
+        alv1.start()
+    if '1' in addon.getSetting('alv_mode'):
+        import alv3
+        alv3.start()
 
 if 'anistar' in sys.argv[2]:
     from anistar import Anistar
