@@ -57,9 +57,9 @@ class Anidub:
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
 
-        self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        if not os.path.exists(self.torrents_dir):
-            os.mkdir(self.torrents_dir)
+        # self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
+        # if not os.path.exists(self.torrents_dir):
+        #     os.mkdir(self.torrents_dir)
 
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'anidub'}
 
@@ -790,11 +790,12 @@ class Anidub:
 
                         if torrent_id:
                             url = 'https://tr.anidub.com/engine/download.php?id={}'.format(torrent_id)
-                            file_name = u'ad_{}.torrent'.format(torrent_id)
-                            full_name = os.path.join(self.torrents_dir, file_name)
-                            torrent_file = self.network.get_file(url=url, destination_name=full_name)
+                            #file_name = u'ad_{}.torrent'.format(torrent_id)
+                            #full_name = os.path.join(self.torrents_dir, file_name)
+                            #torrent_file = self.network.get_file(url=url, destination_name=full_name)
 
-                        self.create_line(title=label, params={'tam': torrent_file})
+                        # self.create_line(title=label, params={'tam': torrent_file})
+                        self.create_line(title=label, params={'tam': url})
                 except:
                     self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
         except:
