@@ -57,10 +57,6 @@ class Anidub:
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
 
-        # self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
-        # if not os.path.exists(self.torrents_dir):
-        #     os.mkdir(self.torrents_dir)
-
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'anidub'}
 
         args = parse_qs(sys.argv[2][1:])
@@ -155,7 +151,9 @@ class Anidub:
         params['portal'] = self.params['portal']
 
         if 'tam' in params:
-            url='plugin://plugin.video.tam/?mode=open&url={}'.format(quote(params['tam'])) 
+            from urllib.parse import quote_plus
+            info = quote_plus(repr(info))
+            url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(info, quote(params['tam']))
         else:
             url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
@@ -749,6 +747,13 @@ class Anidub:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
+        
+        info = {}
+        title = html[html.find('og:title" content="')+19:]
+        title = title[:title.find('"')]
+        if '[' in title:
+            title = title[:title.find('[')]
+        info['title'] = title.strip()
 
         try:
             data_array = html[html.find('<div class="torrent_c">')+23:html.rfind(u'Управление')]
@@ -787,15 +792,10 @@ class Anidub:
                         size = size[:size.find('<')]
 
                         label = u'[COLOR=yellow]{}[/COLOR] , [COLOR=blue]{}[/COLOR] , [COLOR=lime]{}[/COLOR] | [COLOR=red]{}[/COLOR]'.format(size, series.upper(), seed, peer)
+                        
+                        url = 'https://tr.anidub.com/engine/download.php?id={}'.format(torrent_id)
 
-                        if torrent_id:
-                            url = 'https://tr.anidub.com/engine/download.php?id={}'.format(torrent_id)
-                            #file_name = u'ad_{}.torrent'.format(torrent_id)
-                            #full_name = os.path.join(self.torrents_dir, file_name)
-                            #torrent_file = self.network.get_file(url=url, destination_name=full_name)
-
-                        # self.create_line(title=label, params={'tam': torrent_file})
-                        self.create_line(title=label, params={'tam': url})
+                        self.create_line(title=label, params={'tam': url}, info=info)
                 except:
                     self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
         except:
