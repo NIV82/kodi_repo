@@ -141,37 +141,27 @@
   <category label="SHIZAPROJECT">
     <setting label="[B]ShizaProject[/B]" id="use_shizaproject" type="bool" default="true" />
     <setting type="sep"/>
-    <setting id="shizaproject_unblock" label="Разблокировка" type="bool" default="false" enable="eq(-2,true)" />
+    <setting id="sp_authmode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="false" />
+    <setting id="sp_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="sp_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
-    <setting id="shizaproject_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="eq(-4,true)" />
-    <setting id="shizaproject_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
-    <setting id="shizaproject_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
-    <setting type="sep"/>
-    <setting id="shizaproject_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-8,true)"/>
-    <setting id="shizaproject_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-9,true)"/>
-    <setting id="shizaproject_quality" label="Выбор Качества (Kodik):" type="select" values="360|480|720" default="720" enable="eq(-10,true)"/>
-    <setting type="sep"/>
-    <setting id="shizaproject_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт|Зеркало" enable="eq(-12,true)"/>
-    <setting id="shizaproject_mirror_0" label="Адрес:" type="text" default="https://shiza-project.com/graphql" subsetting="true" visible="eq(-1,0)" enable="false"/>
-    <setting id="shizaproject_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
-    <setting type="sep"/>
-    <setting id="shizaproject_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" enable="eq(-16,true)"/>
-    <setting id="shizaproject_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
-    <setting id="shizaproject_session" label="session" type="text" default="" visible="false"/>
-    <setting id="shizaproject_search" label="status" type="text" default="" visible="false"/>
-    <setting id="shizaproject_auth" label="auth" type="bool" default="false" visible="false"/>    
-    <setting id="shizaproject_year_start" label="year" type="text" default="1970" visible="false"/>
-    <setting id="shizaproject_year_end" label="year" type="text" default="2021" visible="false"/>
-    <setting id="shizaproject_season" label="season" type="text" default="" visible="false"/>
-    <setting id="shizaproject_categories" label="categories" type="text" default="Аниме" visible="false"/>
-    <setting id="shizaproject_status" label="status" type="text" default="" visible="false"/>
-    <setting id="shizaproject_voice_stat" label="voice_stat" type="text" default="" visible="false"/>
-    <setting id="shizaproject_form" label="form" type="text" default="" visible="false"/>
-    <setting id="shizaproject_genre" label="genre" type="text" default="" visible="false"/>
-    <setting id="shizaproject_sort" label="sort" type="text" default="Дате публикации" visible="false"/>
-    <setting id="shizaproject_direction" label="direction" type="text" default="По убыванию" visible="false"/>
-    <setting id="shizaproject_proxy" label="status" type="text" default="" visible="false"/>
-    <setting id="shizaproject_proxy_time" label="status" type="text" default="" visible="false"/>
+    <setting id="sp_playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" enable="eq(-6,true)"/>
+    <setting id="sp_playerselect" type="select" label="Ссылки для плеера:" default="KODIK" values="KODIK|SIBNET" enable="eq(-7,true)"/>
+    <setting id="sp_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-9,true)"/>
+
+    <!-- <setting id="sp_session" label="session" type="text" default="" visible="false"/>
+    <setting id="sp_search" label="status" type="text" default="" visible="false"/>
+    <setting id="sp_auth" label="auth" type="bool" default="false" visible="false"/>    
+    <setting id="sp_year_start" label="year" type="text" default="1970" visible="false"/>
+    <setting id="sp_year_end" label="year" type="text" default="2021" visible="false"/>
+    <setting id="sp_season" label="season" type="text" default="" visible="false"/>
+    <setting id="sp_categories" label="categories" type="text" default="Аниме" visible="false"/>
+    <setting id="sp_status" label="status" type="text" default="" visible="false"/>
+    <setting id="sp_voice_stat" label="voice_stat" type="text" default="" visible="false"/>
+    <setting id="sp_form" label="form" type="text" default="" visible="false"/>
+    <setting id="sp_genre" label="genre" type="text" default="" visible="false"/>
+    <setting id="sp_sort" label="sort" type="text" default="Дате публикации" visible="false"/>
+    <setting id="sp_direction" label="direction" type="text" default="По убыванию" visible="false"/> -->
   </category>
   
 </settings>

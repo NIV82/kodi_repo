@@ -23,9 +23,15 @@ def data_print(data):
     import xbmc
     xbmc.log(str(data), xbmc.LOGFATAL)
 
-def get_web(url, bytes=False):
+def get_web(url, post=None, bytes=True):
+    if post:
+        try:
+            post = post.encode(encoding='utf-8')
+        except:
+            pass
+
     try:
-        request = Request(url)
+        request = Request(url=url, data=post)
         request.add_header(
             'User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0')
         content = urlopen(request)
@@ -45,6 +51,8 @@ def get_web(url, bytes=False):
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None):
         self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0'}
+        if 'shizaproject' in portal:
+            self.headers['Content-Type'] = 'application/json'
         # self.headers = {
         #     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
         #     'Accept': '*/*',

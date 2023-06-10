@@ -34,9 +34,6 @@ if not sys.argv[2]:
 
     for portal in portal_list:
         if 'true' in addon.getSetting('use_{}'.format(portal)):
-            # if 'anidub' in portal:
-            #     anidub_mode = ['anidub_o', 'anidub_t']
-            #     portal = anidub_mode[int(addon.getSetting('anidub_mode'))]
             active_portal.append(portal)
 
     if len(active_portal) < 1:
@@ -51,8 +48,6 @@ if not sys.argv[2]:
 
     if len(active_portal) > 1:
         for portal in active_portal:
-            #label = portal.replace('_t', ' torrent').replace('_o', ' online')
-            # li = xbmcgui.ListItem('[B][COLOR=white]{}[/COLOR][/B]'.format(label.upper()))
             li = xbmcgui.ListItem('[B]{}[/B]'.format(portal.upper()))
             info = {'title': portal.upper(), 'tvshowtitle': portal.upper()}
             li.setInfo(type='video', infoLabels=info)
@@ -87,18 +82,6 @@ if 'anidub' in sys.argv[2]:
             import adt
             adt.start()
 
-# if 'anidub_o' in sys.argv[2]:
-#     from anidub_o import Anidub
-#     anidub = Anidub()
-#     anidub.execute()
-#     del Anidub
-
-# if 'anidub_t' in sys.argv[2]:
-#     from anidub_t import Anidub
-#     anidub = Anidub()
-#     anidub.execute()
-#     del Anidub
-
 if 'anilibria' in sys.argv[2]:
     if '0' in addon.getSetting('alv_mode'):
         import alv1
@@ -124,9 +107,7 @@ if 'animedia' in sys.argv[2]:
     del Animedia
 
 if 'shizaproject' in sys.argv[2]:
-    from shizaproject import Shiza
-    shiza = Shiza()
-    shiza.execute()
-    del Shiza
+    import sp
+    sp.start()
 
 gc.collect()
