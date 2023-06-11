@@ -158,7 +158,7 @@ class Anilibria:
         if time.time() - mirror_time > 259200:
             addon.setSetting('alv_mirrortime', str(time.time()))
 
-            html = get_web(url='https://darklibria.it/redirect/mirror/1')
+            html = get_web(url='https://darklibria.it/redirect/mirror/1', bytes=False)
 
             mirror_url = html[html.find('canonical" href="')+17:]
             mirror_url = mirror_url[:mirror_url.find('"')]
@@ -167,7 +167,7 @@ class Anilibria:
             if addon.getSetting('alv_mirror1'):
                 mirror_url = addon.getSetting('alv_mirror1')
             else:
-                html = get_web(url='https://darklibria.it/redirect/mirror/1')
+                html = get_web(url='https://darklibria.it/redirect/mirror/1', bytes=False)
 
                 mirror_url = html[html.find('canonical" href="')+17:]
                 mirror_url = mirror_url[:mirror_url.find('"')]

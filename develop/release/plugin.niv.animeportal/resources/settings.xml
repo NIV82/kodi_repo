@@ -38,7 +38,7 @@
   <category label="ANILIBRIA">
     <setting label="[B]Anilibria[/B]" type="bool" id="use_anilibria" default="true"/>
     <setting type="sep"/>
-    <setting id="alv_mode" type="enum" label="Режим работы:" default="0" values="[COLOR=blue][B]API-V1[/B][/COLOR]|[COLOR=green][B]API-V3[/B][/COLOR]" enable="eq(-2,true)"/>
+    <setting id="alv_mode" type="enum" label="Режим работы:" default="1" values="[COLOR=blue][B]API-V1[/B][/COLOR]|[COLOR=green][B]API-V3[/B][/COLOR]" enable="eq(-2,true)"/>
     <setting type="sep"/>
     <setting id="alv1_unblock" type="enum" label="Разблокировка" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" enable="false" visible="eq(-2,0)"/>
     <setting id="alv1_proxy" type="text" label="proxy" default="" visible="false"/>
@@ -141,27 +141,30 @@
   <category label="SHIZAPROJECT">
     <setting label="[B]ShizaProject[/B]" id="use_shizaproject" type="bool" default="true" />
     <setting type="sep"/>
-    <setting id="sp_authmode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="false" />
-    <setting id="sp_username" label="Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
-    <setting id="sp_password" label="Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
+    <setting id="sp_authmode" type="enum" label="Авторизация:" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="false" />
+    <setting id="sp_username" type="text" label="Логин:" default="" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="sp_password" type="text" label="Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
     <setting type="sep"/>
     <setting id="sp_playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" enable="eq(-6,true)"/>
     <setting id="sp_playerselect" type="select" label="Ссылки для плеера:" default="KODIK" values="KODIK|SIBNET" enable="eq(-7,true)"/>
-    <setting id="sp_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-9,true)"/>
+    <setting id="sp_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-8,true)"/>
+    <setting id="sp_search" type="text" label="search" default="" visible="false"/>
 
-    <!-- <setting id="sp_session" label="session" type="text" default="" visible="false"/>
-    <setting id="sp_search" label="status" type="text" default="" visible="false"/>
-    <setting id="sp_auth" label="auth" type="bool" default="false" visible="false"/>    
-    <setting id="sp_year_start" label="year" type="text" default="1970" visible="false"/>
-    <setting id="sp_year_end" label="year" type="text" default="2021" visible="false"/>
-    <setting id="sp_season" label="season" type="text" default="" visible="false"/>
-    <setting id="sp_categories" label="categories" type="text" default="Аниме" visible="false"/>
-    <setting id="sp_status" label="status" type="text" default="" visible="false"/>
-    <setting id="sp_voice_stat" label="voice_stat" type="text" default="" visible="false"/>
-    <setting id="sp_form" label="form" type="text" default="" visible="false"/>
-    <setting id="sp_genre" label="genre" type="text" default="" visible="false"/>
-    <setting id="sp_sort" label="sort" type="text" default="Дате публикации" visible="false"/>
-    <setting id="sp_direction" label="direction" type="text" default="По убыванию" visible="false"/> -->
+    <setting id="sp_yearstart" type="text" label="year" default="1970" visible="false"/>
+    <setting id="sp_yearend" type="text" label="year" default="2023" visible="false"/>
+    <setting id="sp_season" type="text" label="season" default="" visible="false"/>
+    <setting id="sp_categories" type="text" label="categories" default="Аниме" visible="false"/>
+    <setting id="sp_status" type="text" label="status" default="" visible="false"/>
+    <!-- <setting id="sp_voicestat" type="text" label="voice_stat" default="" visible="false"/> -->
+    <setting id="sp_form" type="text" label="form" default="" visible="false"/>
+    <setting id="sp_genre" type="text" label="genre" default="" visible="false"/>
+    <setting id="sp_sort" type="text" label="sort" default="Дате публикации" visible="false"/>
+    <setting id="sp_direction" type="text" label="direction" default="По убыванию" visible="false"/>
+
+    <!-- <setting id="sp_session" label="session" type="text" default="" visible="false"/>    
+    <setting id="sp_auth" label="auth" type="bool" default="false" visible="false"/>     -->
+
+
   </category>
   
 </settings>
