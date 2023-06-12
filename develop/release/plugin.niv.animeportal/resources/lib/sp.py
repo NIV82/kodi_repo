@@ -208,9 +208,6 @@ class Shiza:
         return episode_url
 #========================#========================#========================#
     def create_kodik(self, url): #Общий функционал заимствован у автора Eviloid - SHIZA Project, переписан под нужды
-        from network import get_web
-        import json
-
         def decode_kodik(url):
             keys   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
             result = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm0123456789'
@@ -219,10 +216,13 @@ class Shiza:
 
             return standard_b64decode(''.join(result[keys.index(k)] for k in url) + '===').decode('utf-8')
 
-        result = {'360':'', '480':'', '720':''}
-
         try:
+            from network import get_web
+            import json
+
             html = get_web(url=url, bytes=False)
+
+            result = {'360':'', '480':'', '720':''}
 
             url = html[html.find("data-code='//")+13:]
             url = url[:url.find("'")].split('/')
@@ -236,14 +236,91 @@ class Shiza:
             data = json.loads(html)
 
             links = data['links']
-            
+
             for r in list(result.keys()):
                 result[r] = u'https:{}'.format(decode_kodik(links[r][0]['src']))
+            
+            if result['720']:
+                episode_hls = result['720']
+            elif result['480']:
+                episode_hls = result['480']
+            elif result['360']:
+                episode_hls = result['360']
+        except:
+            episode_hls = ''
+
+        return episode_hls
+    
+    # def create_kodik(self, url): #Общий функционал заимствован у автора Eviloid - SHIZA Project, переписан под нужды
+    #     from network import get_web
+    #     import json
+
+    #     def decode_kodik(url):
+    #         keys   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    #         result = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm0123456789'
+
+    #         from base64 import standard_b64decode
+
+    #         return standard_b64decode(''.join(result[keys.index(k)] for k in url) + '===').decode('utf-8')
+
+    #     result = {'360':'', '480':'', '720':''}
+
+    #     try:
+    #         html = get_web(url=url, bytes=False)
+
+    #         url = html[html.find("data-code='//")+13:]
+    #         url = url[:url.find("'")].split('/')
+
+    #         new_url = 'https://{}/gvi'.format(url[0])
+    #         payload = {'type': url[1], 'id': url[2], 'hash': url[3]}
+    #         payload = urlencode(payload)
+
+    #         html = get_web(url=new_url, post=payload)
+
+    #         data = json.loads(html)
+
+    #         links = data['links']
+            
+    #         for r in list(result.keys()):
+    #             result[r] = u'https:{}'.format(decode_kodik(links[r][0]['src']))
+
+    #     except:
+    #         pass
+
+    #     return result
+#========================#========================#========================#
+    def create_vk(self, url):
+        from network import get_web
+        html = get_web(url)
+
+        try:
+            episodes = {'240': '', '360': '', '480': '', '720':''}
+            # if 'flat_button button_big' in html:
+            #     data_print('EMPTY PARSER')
+
+            html = html.decode('cp1251').encode('utf8')
+            html = html.decode('utf-8')
+            
+            for e in episodes:
+                node = 'url{}":"'.format(e)
+                if node in html:
+                    ep = html[html.find(node)+9:]
+                    ep = ep[:ep.find('"')].replace('\/', '/')
+                    episodes[e] = ep
+            
+            if episodes['720']:
+                episode_url = episodes['720']
+            elif episodes['480']:
+                episode_url = episodes['480']
+            elif episodes['360']:
+                episode_url = episodes['360']
+            elif episodes['240']:
+                episode_url = episodes['240']
 
         except:
-            pass
+            episode_url = ''
 
-        return result
+        return episode_url
 #========================#========================#========================#
     def create_info(self, data):
         from utility import clean_tags
@@ -614,7 +691,7 @@ class Shiza:
                 else:
                     label = u'{} - Серия {}'.format(ep['number'], ep['number'])
                 
-                episodes = {'KODIK': '', 'SIBNET': ''}
+                episodes = {'KODIK': '', 'SIBNET': '', 'VK': ''}
 
                 if ep['videos']:
                     for e in ep['videos']:
@@ -628,13 +705,18 @@ class Shiza:
                 if episodes[current_select]:
                     episode_url = episodes[current_select]
                 elif episodes['KODIK']:
-                    episode_url = episodes['KODIK']
+                    episode_url = u'{}'.format(episodes['KODIK'])
                     label = u'{} | KODIK'.format(label)
                 elif episodes['SIBNET']:
-                    episode_url = episodes['SIBNET']
+                    episode_url = u'{}'.format(episodes['SIBNET'])
                     label = u'{} | SIBNET'.format(label)
+                elif episodes['VK']:
+                    episode_url = u'{}'.format(episodes['VK'])
+                    label = u'{} | VK'.format(label)
                 else:
-                    continue
+                    self.create_line(title='Контент отсутствует', folder=False)
+                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                    return
 
                 self.create_line(title=label, params={'mode': 'play_part', 'param': episode_url}, folder=False, **info)
 
@@ -674,31 +756,31 @@ class Shiza:
         url = self.params['param']
 
         if 'sibnet.ru' in url:
-            data = self.create_sibnet(url)
+            data = self.create_sibnet(url=url)
+            if data:
+                li = xbmcgui.ListItem(path=data)
+            else:
+                self.dialog.notification(heading='Получение Адреса', message='Ошибка получения ссылки', icon=icon, time=1000, sound=False)
+                return
         elif 'vk.com' in url:
-            data_print('*** NODE - VK URL')
-            #data = ''#_parse_vk(url)
+            data = self.create_vk(url=url)
+            if data:
+                li = xbmcgui.ListItem(path=data)
+            else:
+                self.dialog.notification(heading='Получение Адреса', message='Ошибка получения ссылки', icon=icon, time=1000, sound=False)
+                return
         elif 'myvi.ru' in url:
             data_print('*** NODE - MUVI URL')
             #data = ''#_parse_myvi(url)
         elif 'aniqit' or 'kodik' or 'anivod' in url:
-            data = self.create_kodik(url)
-
-        if 'KODIK' in addon.getSetting('sp_playerselect'):
-            if data['720']:
-                episode_hls = data['720']
-            elif data['480']:
-                episode_hls = data['480']
-            elif data['360']:
-                episode_hls = data['360']
+            data = self.create_kodik(url=url)
+            if data:
+                li = xbmcgui.ListItem(path=data)
             else:
                 self.dialog.notification(heading='Получение Адреса', message='Ошибка получения ссылки', icon=icon, time=1000, sound=False)
                 return
 
-            li = xbmcgui.ListItem(path=episode_hls)
-        else:
-            li = xbmcgui.ListItem(path=data)
-
+        
         # if '0' in addon.getSetting('sp_inputstream'):
         #     li.setProperty('inputstream', "inputstream.adaptive")
         #     li.setProperty('inputstream.adaptive.manifest_type', 'hls')
