@@ -96,8 +96,7 @@ class Shiza:
 #========================#========================#========================#
     def create_post(self):
         import json
-
-        if 'select_part' in self.params['mode']:
+        if 'online_part' in self.params['mode'] or 'torrent_part' in self.params['mode']:
             post = {
                 "operationName": "fetchRelease",
                 "query": "query fetchRelease($slug: String!) {\n  release(slug: $slug) {\n    id\n    slug\n    malId\n    name\n    originalName\n    alternativeNames\n    description\n    descriptionSource\n    descriptionExternal\n    descriptionAuthors {\n      id\n      slug\n      username\n      avatar {\n        ...UserAvatarCommon\n        __typename\n      }\n      __typename\n    }\n    cause\n    announcement\n    season\n    seasonYear\n    seasonNumber\n    episodesCount\n    episodesAired\n    episodeDuration\n    type\n    status\n    activity\n    viewCount\n    score\n    rating\n    origins\n    countries\n    airedOn\n    releasedOn\n    nextEpisodeAt\n    cover {\n      ...ReleaseCoverCommon\n      __typename\n    }\n    posters {\n      ...ReleasePosterCommon\n      __typename\n    }\n    screenshots {\n      ...ReleaseScreenshotCommon\n      __typename\n    }\n    studios {\n      id\n      slug\n      name\n      __typename\n    }\n    categories {\n      id\n      slug\n      name\n      __typename\n    }\n    genres {\n      id\n      slug\n      name\n      __typename\n    }\n    tags {\n      id\n      slug\n      name\n      __typename\n    }\n    staff {\n      ...ReleaseStaffCommon\n      __typename\n    }\n    relations {\n      ...ReleaseRelationCommon\n      __typename\n    }\n    torrents {\n      id\n      synopsis\n      downloaded\n      seeders\n      leechers\n      size\n      metadata\n      videoFormat\n      videoQualities\n      magnetUri\n      updatedAt\n      file {\n        id\n        filesize\n        url\n        __typename\n      }\n      __typename\n    }\n    contributors {\n      ...ReleaseContributorCommon\n      __typename\n    }\n    arches {\n      name\n      range\n      __typename\n    }\n    videos {\n      ...ReleaseVideoCommon\n      __typename\n    }\n    episodes {\n      ...ReleaseEpisodeCommon\n      __typename\n    }\n    links {\n      type\n      url\n      __typename\n    }\n    viewerWatchlist {\n      id\n      status\n      score\n      episodes\n      rewatches\n      __typename\n    }\n    viewerFavorite {\n      id\n      __typename\n    }\n    reactionGroups {\n      count\n      content\n      viewerHasReacted\n      __typename\n    }\n    userWatchlistStatusDistributions {\n      count\n      status\n      __typename\n    }\n    userWatchlistScoreDistributions {\n      count\n      score\n      __typename\n    }\n    viewerInBlockedCountry\n    viewerRestrictedByRole\n    __typename\n  }\n}\n\n\
@@ -250,44 +249,6 @@ class Shiza:
             episode_hls = ''
 
         return episode_hls
-    
-    # def create_kodik(self, url): #Общий функционал заимствован у автора Eviloid - SHIZA Project, переписан под нужды
-    #     from network import get_web
-    #     import json
-
-    #     def decode_kodik(url):
-    #         keys   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    #         result = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm0123456789'
-
-    #         from base64 import standard_b64decode
-
-    #         return standard_b64decode(''.join(result[keys.index(k)] for k in url) + '===').decode('utf-8')
-
-    #     result = {'360':'', '480':'', '720':''}
-
-    #     try:
-    #         html = get_web(url=url, bytes=False)
-
-    #         url = html[html.find("data-code='//")+13:]
-    #         url = url[:url.find("'")].split('/')
-
-    #         new_url = 'https://{}/gvi'.format(url[0])
-    #         payload = {'type': url[1], 'id': url[2], 'hash': url[3]}
-    #         payload = urlencode(payload)
-
-    #         html = get_web(url=new_url, post=payload)
-
-    #         data = json.loads(html)
-
-    #         links = data['links']
-            
-    #         for r in list(result.keys()):
-    #             result[r] = u'https:{}'.format(decode_kodik(links[r][0]['src']))
-
-    #     except:
-    #         pass
-
-    #     return result
 #========================#========================#========================#
     def create_vk(self, url):
         from network import get_web
@@ -443,20 +404,21 @@ class Shiza:
 
         return info
 #========================#========================#========================#
-    # def create_context(self, anime_id):
-    #     context_menu = []
-    #     if 'search_part' in self.params['mode'] and self.params['param'] == '':
-    #         context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=shizaproject")'))
+    def create_context(self, slug=None):
+        context_menu = []
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('Очистить историю', 'Container.Update("plugin://plugin.niv.animeportal/?mode=clean_part&portal=shizaproject")'))
 
-    #     if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-    #         context_menu.append((u'[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal=shizaproject")'.format(anime_id)))
-            
-    #     context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=shizaproject")'))
-    #     context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal=shizaproject")'))
+        if slug:
+            if '0' in addon.getSetting('sp_playmode'):
+                context_menu.append(('Открыть Торрент', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&slug={}&param=0&portal=shizaproject")'.format(slug)))
+            if '1' in addon.getSetting('sp_playmode'):
+                context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&slug={}&param=1&portal=shizaproject")'.format(slug)))
 
-    #     return context_menu
+        # context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=shizaproject")'))
+        return context_menu
 #========================#========================#========================#
-    def create_line(self, title, anime_id=None, params={}, folder=True, **info):
+    def create_line(self, title, slug=None, params={}, folder=True, **info):
         li = xbmcgui.ListItem(title)
 
         if info:
@@ -488,7 +450,8 @@ class Shiza:
             else:
                 li.setInfo(type='video', infoLabels=info)
             #li.setInfo(type='video', infoLabels=info)
-        #li.addContextMenuItems(self.create_context(anime_id))
+        
+        li.addContextMenuItems(self.create_context(slug))
 
         if folder==False:
             li.setProperty('isPlayable', 'true')
@@ -595,7 +558,7 @@ class Shiza:
                         label = info.pop('title')
                         slug = info.pop('slug')
 
-                        self.create_line(title=label, params={'mode': 'select_part', 'slug': slug}, **info)
+                        self.create_line(title=label, slug=slug, params={'mode': 'select_part', 'slug': slug}, **info)
                     except:
                         self.create_line(title='Ошибка строки - сообщите автору')
             except:
@@ -643,7 +606,7 @@ class Shiza:
                     label = info.pop('title')
                     slug = info.pop('slug')
 
-                    self.create_line(title=label, params={'mode': 'select_part', 'slug': slug}, **info)
+                    self.create_line(title=label, slug=slug, params={'mode': 'select_part', 'slug': slug}, **info)
                 except:
                     self.create_line(title='Ошибка строки - сообщите автору')
         except:
@@ -659,6 +622,23 @@ class Shiza:
         return
 #========================#========================#========================#
     def exec_select_part(self):
+        if '0' in addon.getSetting('sp_playmode'):
+            if '0' in self.params['param']:
+                self.params['mode'] = 'torrent_part'
+                self.exec_torrent_part()
+            else:
+                self.params['mode'] = 'online_part'
+                self.exec_online_part()
+        if '1' in addon.getSetting('sp_playmode'):
+            if '1' in self.params['param']:
+                self.params['mode'] = 'online_part'
+                self.exec_online_part()
+            else:
+                self.params['mode'] = 'torrent_part'
+                self.exec_torrent_part()
+        return
+#========================#========================#========================#
+    def exec_online_part(self):
         post_data = self.create_post()
         html = self.network.get_bytes(url = self.site_url, post=post_data)
 
@@ -677,77 +657,103 @@ class Shiza:
 
         info = self.create_info(data)
         info.pop('title')
-        info.pop('slug')
+        slug = info.pop('slug')
 
-        if '0' in addon.getSetting('sp_playmode'):
-            if len(episodes) < 1:
-                self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return
-            
-            for ep in episodes:
-                if ep['name']:
-                    label = u'{} - {}'.format(ep['number'], ep['name'])
-                else:
-                    label = u'{} - Серия {}'.format(ep['number'], ep['number'])
+        if len(episodes) < 1:
+            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+        
+        for ep in episodes:
+            if ep['name']:
+                label = u'{} - {}'.format(ep['number'], ep['name'])
+            else:
+                label = u'{} - Серия {}'.format(ep['number'], ep['number'])
                 
-                episodes = {'KODIK': '', 'SIBNET': '', 'VK': ''}
+            episodes = {'KODIK': '', 'SIBNET': '', 'VK': '', 'MYVI':''}
 
-                if ep['videos']:
-                    for e in ep['videos']:
-                        source = e['embedSource']
-                        source_url = e['embedUrl']
+            if ep['videos']:
+                for e in ep['videos']:
+                    source = e['embedSource']
+                    source_url = e['embedUrl']
 
+                    if source not in episodes:
+                        episodes['MYVI'] = source_url
+                    else:
                         episodes[source] = source_url
 
-                current_select = addon.getSetting('sp_playerselect')
+            current_select = addon.getSetting('sp_playerselect')
 
-                if episodes[current_select]:
-                    episode_url = episodes[current_select]
-                elif episodes['KODIK']:
-                    episode_url = u'{}'.format(episodes['KODIK'])
-                    label = u'{} | KODIK'.format(label)
-                elif episodes['SIBNET']:
-                    episode_url = u'{}'.format(episodes['SIBNET'])
-                    label = u'{} | SIBNET'.format(label)
-                elif episodes['VK']:
-                    episode_url = u'{}'.format(episodes['VK'])
-                    label = u'{} | VK'.format(label)
-                else:
-                    self.create_line(title='Контент отсутствует', folder=False)
-                    xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                    return
+            if episodes[current_select]:
+                episode_url = episodes[current_select]
+            elif episodes['KODIK']:
+                episode_url = u'{}'.format(episodes['KODIK'])
+                label = u'{} | KODIK'.format(label)
+            elif episodes['SIBNET']:
+                episode_url = u'{}'.format(episodes['SIBNET'])
+                label = u'{} | SIBNET'.format(label)
+            elif episodes['VK']:
+                episode_url = u'{}'.format(episodes['VK'])
+                label = u'{} | VK'.format(label)
+            elif episodes['MYVI']:
+                episode_url = u'{}'.format(episodes['MYVI'])
+                label = u'{} | [COLOR=RED]MYVI[/COLOR]'.format(label)
+            else:
+                continue
 
-                self.create_line(title=label, params={'mode': 'play_part', 'param': episode_url}, folder=False, **info)
+            self.create_line(title=label, slug=slug, params={'mode': 'play_part', 'param': episode_url}, folder=False, **info)
 
-        if '1' in addon.getSetting('sp_playmode'):
-            if len(torrents) < 1:
-                self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
-                return
+        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        return
+#========================#========================#========================#
+    def exec_torrent_part(self):        
+        post_data = self.create_post()
+        html = self.network.get_bytes(url = self.site_url, post=post_data)
 
-            try:
-                for t in torrents:
-                    try:
-                        seeders = t['seeders']
-                        leechers = t['leechers']
-                        videoformat = t['videoFormat']
+        if not html:
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+        
+        import json
+        anime_data = json.loads(html)
 
-                        torrent_size = t['size']
-                        torrent_quality = t['videoQualities'][0]
+        data = anime_data['data']['release']
 
-                        torrent_url = t['file']['url']
-                        if '?filename=' in torrent_url:
-                            torrent_url = torrent_url[:torrent_url.find('?filename=')]
-                        #magnet_url = t['magnetUri']
+        torrents = data.pop('torrents')
+        episodes = data.pop('episodes')
 
-                        label = u'{} - {} | S{} - L{}'.format(torrent_quality, videoformat, seeders, leechers)
+        info = self.create_info(data)
+        info.pop('title')
+        slug = info.pop('slug')
+
+        if len(torrents) < 1:
+            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            return
+
+        try:
+            for t in torrents:
+                try:
+                    seeders = t['seeders']
+                    leechers = t['leechers']
+                    videoformat = t['videoFormat']
+
+                    torrent_size = t['size']
+                    torrent_quality = t['videoQualities'][0]
+
+                    torrent_url = t['file']['url']
+                    if '?filename=' in torrent_url:
+                        torrent_url = torrent_url[:torrent_url.find('?filename=')]
+                    #magnet_url = t['magnetUri']
+
+                    label = u'{} - {} | S{} - L{}'.format(torrent_quality, videoformat, seeders, leechers)
                         
-                        self.create_line(title=label, params={'tam': torrent_url}, **info)
-                    except:
-                        self.create_line(title='Ошибка строки - сообщите автору')
-            except:
-                self.create_line(title='Ошибка блока - сообщите автору')
+                    self.create_line(title=label, slug=slug, params={'tam': torrent_url}, **info)
+                except:
+                    self.create_line(title='Ошибка строки - сообщите автору')
+        except:
+            self.create_line(title='Ошибка блока - сообщите автору')
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
@@ -770,9 +776,12 @@ class Shiza:
                 self.dialog.notification(heading='Получение Адреса', message='Ошибка получения ссылки', icon=icon, time=1000, sound=False)
                 return
         elif 'myvi.ru' in url:
+            self.dialog.notification(heading='myvi',message='Отсутствует парсер - сообщите автору',icon=icon,time=2000,sound=False)
+            return
             data_print('*** NODE - MUVI URL')
+            data_print(url)
             #data = ''#_parse_myvi(url)
-        elif 'aniqit' or 'kodik' or 'anivod' in url:
+        elif 'aniqit' in url or 'kodik' in url or 'anivod' in url:
             data = self.create_kodik(url=url)
             if data:
                 li = xbmcgui.ListItem(path=data)
@@ -880,7 +889,7 @@ class Shiza:
                         label = info.pop('title')
                         slug = info.pop('slug')
 
-                        self.create_line(title=label, params={'mode': 'select_part', 'slug': slug}, **info)
+                        self.create_line(title=label, slug=slug, params={'mode': 'select_part', 'slug': slug}, **info)
                     except:
                         self.create_line(title='Ошибка строки - сообщите автору')
             except:
