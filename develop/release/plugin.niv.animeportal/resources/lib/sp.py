@@ -14,6 +14,7 @@ if sys.version_info.major > 2:
     from urllib.request import urlopen
     from urllib.parse import urlencode
     from urllib.parse import quote
+    from urllib.parse import quote_plus
     from urllib.parse import parse_qs
     from urllib.parse import unquote
     from html import unescape
@@ -21,6 +22,7 @@ else:
     from urllib import urlopen
     from urllib import urlencode
     from urllib import quote
+    from urllib import quote_plus
     from urllib import unquote
     from urlparse import parse_qs
     import HTMLParser
@@ -386,18 +388,19 @@ class Shiza:
                             contributors['OTHER'].append(username)
 
                 con_name = {
-                    'MALE_VOICE_ACTING': 'Озвучивание мужских ролей: ',
-                    'FEMALE_VOICE_ACTING': 'Озвучивание женских ролей: ',
-                    'EDITING': 'Редактура: ',
-                    'MASTERING': 'Работа со звуком: ',
-                    'TIMING': 'Работа над таймингом: ',
-                    'TRANSLATION': 'Перевод: ',
-                    'OTHER': 'Другое: '
+                    'MALE_VOICE_ACTING': u'Озвучивание мужских ролей: ',
+                    'FEMALE_VOICE_ACTING': u'Озвучивание женских ролей: ',
+                    'EDITING': u'Редактура: ',
+                    'MASTERING': u'Работа со звуком: ',
+                    'TIMING': u'Работа над таймингом: ',
+                    'TRANSLATION': u'Перевод: ',
+                    'OTHER': u'Другое: '
                     }
                 
                 if info['plot']:
                     for cont in contributors:
                         if contributors[cont]:
+
                             normal_name = con_name[cont]
                             node = u'\n{}{}'.format(normal_name, ', '.join(contributors[cont]))
                             info['plot'] = u'{}{}'.format(info['plot'], node)
@@ -459,13 +462,12 @@ class Shiza:
         params['portal'] = self.params['portal']
         
         if 'tam' in params:
-            from urllib.parse import quote_plus
-            info = quote_plus(repr(info))
+            #info = quote_plus(repr(info))
+            info = {'title': 'test'}
             url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(info, quote(params['tam']))
             #url='plugin://plugin.video.tam/?mode=open&url={}'.format(quote(params['tam']))
         else:
             url = '{}?{}'.format(sys.argv[0], urlencode(params))
-
         xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def execute(self):
@@ -728,27 +730,56 @@ class Shiza:
         slug = info.pop('slug')
 
         if len(torrents) < 1:
-            self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
+            self.create_line(title='Контент отсутствует', folder=False)
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
             return
 
         try:
             for t in torrents:
                 try:
-                    seeders = t['seeders']
-                    leechers = t['leechers']
-                    videoformat = t['videoFormat']
+                    try:
+                        synopsis = t['synopsis']
+                        synopsis = u'{}'.format(synopsis)
+                    except:
+                        synopsis = ''
 
-                    torrent_size = t['size']
-                    torrent_quality = t['videoQualities'][0]
+                    try:
+                        videoformat = t['videoFormat']
+                        videoformat = u' | {}'.format(videoformat)
+                    except:
+                        videoformat = ''
 
-                    torrent_url = t['file']['url']
-                    if '?filename=' in torrent_url:
-                        torrent_url = torrent_url[:torrent_url.find('?filename=')]
-                    #magnet_url = t['magnetUri']
+                    try:
+                        metadata = u'{}'.format(t['metadata'])                        
+                        metadata = metadata.replace('\n',' | ').replace('\r','')
+                    except:
+                        metadata = ''
 
-                    label = u'{} - {} | S{} - L{}'.format(torrent_quality, videoformat, seeders, leechers)
+                    try:
+                        torrent_url = t['file']['url']
+                        if '?filename=' in torrent_url:
+                            torrent_url = torrent_url[:torrent_url.find('?filename=')]
+                    except:
+                        torrent_url = ''
+
+                    # try:
+                    #     magnet_url = t['magnetUri']
+                    # except:
+                    #     magnet_url = ''
+
+                    label = u'{}{} | {}'.format(synopsis, videoformat, metadata)
+
+                    if not torrent_url:
+                        label = u'[COLOR=gray]{}[/COLOR]'.format(label)
                         
+                    #     if not magnet_url:
+                    #         self.create_line(title='Контент отсутствует', folder=False)
+                    #         continue
+                    #     else:
+                    #         result_url = magnet_url
+                    # else:
+                    #     result_url = torrent_url
+
                     self.create_line(title=label, slug=slug, params={'tam': torrent_url}, **info)
                 except:
                     self.create_line(title='Ошибка строки - сообщите автору')
@@ -777,10 +808,11 @@ class Shiza:
                 return
         elif 'myvi.ru' in url:
             self.dialog.notification(heading='myvi',message='Отсутствует парсер - сообщите автору',icon=icon,time=2000,sound=False)
-            return
+            
             data_print('*** NODE - MUVI URL')
             data_print(url)
             #data = ''#_parse_myvi(url)
+            return
         elif 'aniqit' in url or 'kodik' in url or 'anivod' in url:
             data = self.create_kodik(url=url)
             if data:
