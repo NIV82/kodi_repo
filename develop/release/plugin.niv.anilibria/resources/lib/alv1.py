@@ -75,7 +75,7 @@ class Anilibria:
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
 
-        self.params = {'mode': 'main_part', 'param': '', 'page': '1'}
+        self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'anilibria'}
         
         args = parse_qs(sys.argv[2][1:])
         for a in args:
@@ -83,19 +83,19 @@ class Anilibria:
 
         self.proxy_data = None#self.create_proxy_data()
         #self.mirror = self.create_mirror()
-        self.site_url = self.create_site_url()
+        self.site_url = self.create_mirrror_url()#self.create_site_url()
         #self.sid_file = os.path.join(addon_data_dir, 'alv1.sid')
         #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
-            # auth_usage=bool(addon.getSetting('alv1_authmode') == '1'),
+            # auth_usage=bool(addon.getSetting('alv_authmode') == '1'),
             # auth_status=bool(addon.getSetting('auth') == 'true'),
             proxy_data = self.proxy_data
             )
         # self.network.auth_post_data = urlencode(
-        #     {'login_name': addon.getSetting('alv1_username'),
-        #     'login_password': addon.getSetting('alv1_password'),
+        #     {'login_name': addon.getSetting('alv_username'),
+        #     'login_password': addon.getSetting('alv_password'),
         #     'login': 'submit'}
         #     )
         #self.network.auth_url = self.site_url
@@ -145,53 +145,31 @@ class Anilibria:
 
         return proxy_data
 #========================#========================#========================#
-    # def create_mirrror_url(self):
-    #     site_url = addon.getSetting('anilibria_mirror0')
-    #     current_mirror = 'anilibria_mirror{}'.format(addon.getSetting('anilibria_mirrormode'))        
+    def create_mirrror_url(self):
+        site_url = addon.getSetting('alv_mirror0')
+        current_mirror = 'alv_mirror{}'.format(addon.getSetting('alv_mirrormode'))        
 
-    #     if current_mirror == 'anilibria_mirror0':
-    #         return site_url
-
-    #     if not addon.getSetting(current_mirror):
-    #         try:
-    #             self.create_mirror()
-    #             site_url =  addon.getSetting(current_mirror)
-    #             return site_url
-    #         except:
-    #             self.dialog.notification(
-    #                 heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
-    #             addon.setSetting('anilibria_mirrormode', '0')
-
-    #             return site_url
-    #     else:
-    #         try:
-    #             mirror_time = float(addon.getSetting('anilibria_mirror_time'))
-    #         except:
-    #             mirror_time = 0
-
-    #         if time.time() - mirror_time > 259200:
-    #             try:
-    #                 self.create_mirror()
-    #                 site_url =  addon.getSetting(current_mirror)
-    #                 return site_url
-    #             except:
-    #                 self.dialog.notification(
-    #                     heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
-    #                 addon.setSetting('anilibria_mirrormode', '0')
-    #                 return site_url
-
-    #         site_url =  addon.getSetting(current_mirror)
-
-    #     return site_url
-    
-    def create_site_url(self):
-        site_url = addon.getSetting('alv1_mirror0')
-        current_mirror = 'alv1_mirror{}'.format(addon.getSetting('alv1_mirrormode'))        
-        
-        if current_mirror == 'alv1_mirror0':
+        if current_mirror == 'alv_mirror0':
             return site_url
 
         if not addon.getSetting(current_mirror):
+            try:
+                self.create_mirror()
+                site_url =  addon.getSetting(current_mirror)
+                return site_url
+            except:
+                self.dialog.notification(
+                    heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
+                addon.setSetting('alv_mirrormode', '0')
+
+                return site_url
+        else:
+            try:
+                mirror_time = float(addon.getSetting('alv_mirrortime'))
+            except:
+                mirror_time = 0
+
+            if time.time() - mirror_time > 259200:
                 try:
                     self.create_mirror()
                     site_url =  addon.getSetting(current_mirror)
@@ -199,75 +177,40 @@ class Anilibria:
                 except:
                     self.dialog.notification(
                         heading='Получение Адреса', message='Ошибка получения зеркала', icon=icon, time=1000, sound=False)
-                    addon.setSetting('alv1_mirrormode', '0')
-
+                    addon.setSetting('alv_mirrormode', '0')
                     return site_url
-        else:
+
             site_url =  addon.getSetting(current_mirror)
 
         return site_url
 #========================#========================#========================#
     def create_mirror(self):
         try:
-            mirror_time = float(addon.getSetting('alv1_mirrortime'))
+            mirror_time = float(addon.getSetting('alv_mirrortime'))
         except:
             mirror_time = 0
 
         from network import get_web
 
         if time.time() - mirror_time > 259200:
-            addon.setSetting('alv1_mirrortime', str(time.time()))
+            addon.setSetting('alv_mirrortime', str(time.time()))
 
-            html = get_web(url='https://darklibria.it/redirect/mirror/1')
+            html = get_web(url='https://darklibria.it/redirect/mirror/1', bytes=False)
 
             mirror_url = html[html.find('canonical" href="')+17:]
             mirror_url = mirror_url[:mirror_url.find('"')]
-            addon.setSetting('alv1_mirror1', mirror_url)
+            addon.setSetting('alv_mirror1', mirror_url)
         else:
-            if addon.getSetting('alv1_mirror1'):
-                mirror_url = addon.getSetting('alv1_mirror1')
+            if addon.getSetting('alv_mirror1'):
+                mirror_url = addon.getSetting('alv_mirror1')
             else:
-                html = get_web(url='https://darklibria.it/redirect/mirror/1')
+                html = get_web(url='https://darklibria.it/redirect/mirror/1', bytes=False)
 
                 mirror_url = html[html.find('canonical" href="')+17:]
                 mirror_url = mirror_url[:mirror_url.find('"')]
-                addon.setSetting('alv1_mirror1', mirror_url)
+                addon.setSetting('alv_mirror1', mirror_url)
 
         return mirror_url
-    
-    # def create_mirror(self):
-    #     try:
-    #         mirror_time = float(addon.getSetting('alv1_mirrortime'))
-    #     except:
-    #         mirror_time = 0
-
-    #     if time.time() - mirror_time > 259200:
-    #         addon.setSetting('alv1_mirrortime', str(time.time()))
-
-    #         from network import WebTools
-    #         net = WebTools()
-    #         del WebTools
-
-    #         html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
-
-    #         mirror_url = html[html.find('canonical" href="')+17:]
-    #         mirror_url = mirror_url[:mirror_url.find('"')]
-    #         addon.setSetting('alv1_mirror1', mirror_url)
-    #     else:
-    #         if addon.getSetting('alv1_mirror1'):
-    #             mirror_url = addon.getSetting('alv1_mirror1')
-    #         else:
-    #             from network import WebTools
-    #             net = WebTools()
-    #             del WebTools
-
-    #             html = net.get_html(url='https://darklibria.it/redirect/mirror/1')
-
-    #             mirror_url = html[html.find('canonical" href="')+17:]
-    #             mirror_url = mirror_url[:mirror_url.find('"')]
-    #             addon.setSetting('alv1_mirror1', mirror_url)
-
-    #     return mirror_url
 #========================#========================#========================#
     def create_info(self, data):
         info = dict.fromkeys(
@@ -311,13 +254,13 @@ class Anilibria:
     def create_context(self, anime_id=None):
         context_menu = []        
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(
-                ('Очистить историю поиска', 'Container.Update("plugin://plugin.niv.anilibria/?mode=clean_part")'))
+            context_menu.append(('Очистить историю поиска', 'Container.Update("plugin://plugin.niv.anilibria/?mode=clean_part&portal=anilibria")'))
+
         if anime_id:
             if '0' in addon.getSetting('alv1_playmode'):
-                context_menu.append(('Открыть Торрент', 'Container.Update("plugin://plugin.niv.anilibria/?mode=select_part&id={}&param=0")'.format(anime_id)))
+                context_menu.append(('Открыть Торрент', 'Container.Update("plugin://plugin.niv.anilibria/?mode=select_part&id={}&param=0&portal=anilibria")'.format(anime_id)))
             if '1' in addon.getSetting('alv1_playmode'):
-                context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.anilibria/?mode=select_part&id={}&param=1")'.format(anime_id)))
+                context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.anilibria/?mode=select_part&id={}&param=1&portal=anilibria")'.format(anime_id)))
         return context_menu
 #========================#========================#========================#
     def create_line(self, title, anime_id=None, params={}, folder=True, **info):
@@ -349,6 +292,8 @@ class Anilibria:
 
         if folder==False:
             li.setProperty('isPlayable', 'true')
+
+        params['portal'] = self.params['portal']
 
         if 'tam' in params:
             url='plugin://plugin.video.tam/?mode=open&url={}'.format(quote(params['tam'])) 
@@ -556,16 +501,17 @@ class Anilibria:
         except:
             self.create_line(title='Ошибка блока - сообщите автору')
 
-        try:
-            current_page = anime_data['data']['pagination']['page']
-            all_pages = anime_data['data']['pagination']['allPages']
+        if len(array) == 12:
+            try:
+                current_page = anime_data['data']['pagination']['page']
+                all_pages = anime_data['data']['pagination']['allPages']
 
-            if current_page < all_pages:
-                label = u'Страница [COLOR=gold]{}[/COLOR] из {} | Следующая - [COLOR=gold]{}[/COLOR]'.format(
-                    current_page, all_pages, int(self.params['page']) + 1)
-                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
-        except:
-            pass
+                if current_page < all_pages:
+                    label = u'Страница [COLOR=gold]{}[/COLOR] из {} | Следующая - [COLOR=gold]{}[/COLOR]'.format(
+                        current_page, all_pages, int(self.params['page']) + 1)
+                    self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+            except:
+                pass
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
@@ -577,9 +523,10 @@ class Anilibria:
             "xpage":"catalog",
             "sort":"2",
             "page":self.params['page'],
-            #"perPage":"50",
+            "perPage":"12",
             "filter":"id,names,series,poster,genres,voices,year,description",
             }
+
         post_data = urlencode(post_data)
         html = self.network.get_bytes(url=url, post=post_data)
         
@@ -617,10 +564,20 @@ class Anilibria:
         except:
             self.create_line(title='Ошибка блока - сообщите автору')
 
-        if len(array) == 12:
-            label = u'Страница [COLOR=gold]{}[/COLOR] | Следующая - [COLOR=gold]{}[/COLOR]'.format(
-                self.params['page'], int(self.params['page']) + 1)                
-            self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+        try:
+            current_page = anime_data['data']['pagination']['page']
+            all_pages = anime_data['data']['pagination']['allPages']
+
+            if current_page < all_pages:
+                label = u'Страница [COLOR=gold]{}[/COLOR] из {} | Следующая - [COLOR=gold]{}[/COLOR]'.format(
+                    current_page, all_pages, int(self.params['page']) + 1)
+                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+        except:
+            pass
+        # if len(array) == 12:
+        #     label = u'Страница [COLOR=gold]{}[/COLOR] | Следующая - [COLOR=gold]{}[/COLOR]'.format(
+        #         self.params['page'], int(self.params['page']) + 1)                
+        #     self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
@@ -734,9 +691,21 @@ class Anilibria:
                 self.create_line(title='Ошибка блока - сообщите автору')
 
             if len(array) == 12:
-                label = u'Страница [COLOR=gold]{}[/COLOR] | Следующая - [COLOR=gold]{}[/COLOR]'.format(
-                    self.params['page'], int(self.params['page']) + 1)                
-                self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+                try:
+                    current_page = anime_data['data']['pagination']['page']
+                    all_pages = anime_data['data']['pagination']['allPages']
+
+                    if current_page < all_pages:
+                        label = u'Страница [COLOR=gold]{}[/COLOR] из {} | Следующая - [COLOR=gold]{}[/COLOR]'.format(
+                            current_page, all_pages, int(self.params['page']) + 1)
+                        self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
+                except:
+                    pass
+
+            # if len(array) == 12:
+            #     label = u'Страница [COLOR=gold]{}[/COLOR] | Следующая - [COLOR=gold]{}[/COLOR]'.format(
+            #         self.params['page'], int(self.params['page']) + 1)                
+            #     self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
         return
