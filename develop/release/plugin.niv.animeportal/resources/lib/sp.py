@@ -285,6 +285,61 @@ class Shiza:
 
         return episode_url
 #========================#========================#========================#
+    def create_myvi(self, url):
+        if 'embed/html/' in url:
+            from network import get_web
+            from urllib.request import Request
+
+            vid = url[url.find('embed/html/')+11:]
+
+            url = 'https://fs.myvi.ru/player/api/Video/Get/{}?sig'.format(vid)
+            html = get_web(url=url)
+
+            import json
+            data = json.loads(html)
+
+            u = data['sprutoData']['playlist'][0]['video'][0]['url']
+            cookie_url = data['testCookieUrl']
+
+            try:
+                request = Request(url=cookie_url)
+                request.add_header(
+                    'User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0')
+                content = urlopen(request)
+                cookie = content.info().get_all('Set-Cookie')
+                cookie = cookie[0]
+                cookie = cookie[:cookie.find(';')]
+                content.close()
+            except:
+                pass
+            
+            u = data['sprutoData']['playlist'][0]['video'][0]['url']
+            result = '{}|Cookie={}'.format(u, cookie)
+
+            return result
+        else:
+            return False
+#========================#========================#========================#
+    # def create_myvi(self, url):    
+    #     if 'embed/html/' in url:
+    #         from network import get_web
+
+    #         vid = url[url.find('embed/html/')+11:]
+
+    #         url = 'https://fs.myvi.ru/player/api/Video/Get/{}?sig'.format(vid)
+
+    #         html = get_web(url=url, bytes=False)
+
+    #         import json
+
+    #         data = json.loads(html)
+            
+    #         u = data['sprutoData']['playlist'][0]['video'][0]['url']
+    #         result = '{}|Cookie=UniversalUserID=cda9eb54bfb042b3863d2157258dd51e'.format(u)
+    #         return result
+    #     else:
+    #         return False
+#========================#========================#========================#
     def create_info(self, data):
         from utility import clean_tags
         info = {
@@ -679,10 +734,12 @@ class Shiza:
                     source = e['embedSource']
                     source_url = e['embedUrl']
 
-                    if source not in episodes:
-                        episodes['MYVI'] = source_url
-                    else:
-                        episodes[source] = source_url
+                    episodes[source] = source_url
+
+                    # if source not in episodes:
+                    #     episodes['MYVI'] = source_url
+                    # else:
+                    #     episodes[source] = source_url
 
             current_select = addon.getSetting('sp_playerselect')
 
@@ -699,7 +756,8 @@ class Shiza:
                 label = u'{} | VK'.format(label)
             elif episodes['MYVI']:
                 episode_url = u'{}'.format(episodes['MYVI'])
-                label = u'{} | [COLOR=RED]MYVI[/COLOR]'.format(label)
+                # label = u'{} | [COLOR=red]MYVI[/COLOR]'.format(label)
+                label = u'{} | MYVI'.format(label)
             else:
                 continue
 
@@ -807,11 +865,13 @@ class Shiza:
                 self.dialog.notification(heading='Получение Адреса', message='Ошибка получения ссылки', icon=icon, time=1000, sound=False)
                 return
         elif 'myvi.ru' in url:
-            self.dialog.notification(heading='myvi',message='Отсутствует парсер - сообщите автору',icon=icon,time=2000,sound=False)
-            
-            data_print('*** NODE - MUVI URL')
-            data_print(url)
-            #data = ''#_parse_myvi(url)
+            data = False
+
+            if data:
+                li = xbmcgui.ListItem(path=data)
+            else:
+                self.dialog.notification(heading='Получение Адреса', message='Ошибка получения ссылки', icon=icon, time=1000, sound=False)
+                return
             return
         elif 'aniqit' in url or 'kodik' in url or 'anivod' in url:
             data = self.create_kodik(url=url)
@@ -939,4 +999,4 @@ class Shiza:
 def start():
     shiza = Shiza()
     shiza.execute()
-    del shiza
+    #del shiza

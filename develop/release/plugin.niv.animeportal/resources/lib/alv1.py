@@ -844,4 +844,4 @@ class Anilibria:
 def start():
     anilibria = Anilibria()
     anilibria.execute()
-    del anilibria
+    #del anilibria

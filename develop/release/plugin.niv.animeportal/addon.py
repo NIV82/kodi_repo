@@ -97,14 +97,16 @@ if 'anistar' in sys.argv[2]:
     del Anistar
 
 if 'animedia' in sys.argv[2]:
+    import am
+    am.start()
     # if 'actual_url' in params['node']:
     #     addon.setSetting('animedia_auth', 'false')
     #     addon.setSetting('animedia_mirror_1', '')
 
-    from animedia import Animedia
-    animedia = Animedia()
-    animedia.execute()
-    del Animedia
+    # from animedia import Animedia
+    # animedia = Animedia()
+    # animedia.execute()
+    # del Animedia
 
 if 'shizaproject' in sys.argv[2]:
     import sp

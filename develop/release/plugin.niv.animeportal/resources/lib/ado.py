@@ -855,4 +855,4 @@ class Anidub:
 def start():
     anidub = Anidub()
     anidub.execute()
-    del anidub
+    #del anidub

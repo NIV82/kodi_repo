@@ -79,35 +79,7 @@
 
   <category label="ANIMEDIA">
     <setting label="[B]Animedia[/B]" id="use_animedia" type="bool" default="true" />
-    <setting type="sep"/>
-    <setting id="animedia_unblock" label="Разблокировка" type="bool" default="false" enable="eq(-2,true)" />
-    <setting type="sep"/>
-    <setting id="animedia_auth_mode" label="Авторизация:" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="eq(-4,true)"/>
-    <setting id="animedia_username" label="[COLOR=green][Online][/COLOR] Логин:" type="text" default="" subsetting="true" visible="eq(-1,1)"/>
-    <setting id="animedia_password" label="[COLOR=green][Online][/COLOR] Пароль:" type="text" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
-    <setting type="sep"/>
-    <setting id="animedia_covers" type="enum" label="Обложки:" default="0" values="Не Сохранять|Сохранять" enable="eq(-8,true)"/>
-    <setting id="animedia_titles" type="enum" label="Формат названий:" default="0" values="Ru|En|Ru-En" enable="eq(-9,true)"/>
-    <setting id="animedia_torrents" type="enum" label="Разблокировка только торрентов:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" enable="eq(-10,true)"/>
-    <setting type="sep"/>
-    <setting id="animedia_mirror_mode" label="Зеркало:" type="enum" default="0" values="Базовый сайт|Зеркало" enable="eq(-12,true)"/>
-    <setting id="animedia_mirror_0" label="Адрес:" type="text" default="https://online.animedia.tv/" subsetting="true" visible="eq(-1,0)" enable="false"/>
-    <setting id="animedia_mirror_1" label="Адрес:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
-    <setting type="sep"/>
-    <setting id="animedia_engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" enable="eq(-16,true)"/>
-    <setting id="animedia_tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
-    <setting id="animedia_session" label="session" type="text" default="" visible="false"/>
-    <setting id="animedia_search" label="status" type="text" default="" visible="false"/>
-    <setting id="animedia_auth" label="auth" type="bool" default="false" visible="false"/>
-    <setting id="animedia_genre" label="genre" type="text" default="" visible="false"/>
-    <setting id="animedia_year" label="year" type="text" default="" visible="false"/>
-    <setting id="animedia_form" label="form" type="text" default="" visible="false"/>
-    <setting id="animedia_status" label="status" type="text" default="" visible="false"/>
-    <setting id="animedia_sort" label="sort" type="text" default="Дате добавления" visible="false"/>
-    <setting id="animedia_studio" label="studio" type="text" default="" visible="false"/>
-    <setting id="animedia_voice" label="studio" type="text" default="" visible="false"/>
-    <setting id="animedia_proxy" label="status" type="text" default="" visible="false"/>
-    <setting id="animedia_proxy_time" label="status" type="text" default="" visible="false"/>
+    <setting id="am_search" label="status" type="text" default="" visible="false"/>
   </category>
 
   <category label="ANISTAR">
