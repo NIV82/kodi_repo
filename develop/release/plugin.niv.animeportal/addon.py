@@ -91,22 +91,12 @@ if 'anilibria' in sys.argv[2]:
         alv3.start()
 
 if 'anistar' in sys.argv[2]:
-    from anistar import Anistar
-    anistar = Anistar()
-    anistar.execute()
-    del Anistar
+    import asv
+    asv.start()
 
 if 'animedia' in sys.argv[2]:
     import am
     am.start()
-    # if 'actual_url' in params['node']:
-    #     addon.setSetting('animedia_auth', 'false')
-    #     addon.setSetting('animedia_mirror_1', '')
-
-    # from animedia import Animedia
-    # animedia = Animedia()
-    # animedia.execute()
-    # del Animedia
 
 if 'shizaproject' in sys.argv[2]:
     import sp

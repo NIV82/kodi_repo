@@ -530,8 +530,10 @@ class Anilibria:
                 data_array = addon.getSetting('alv3_search').split('|')                    
                 while len(data_array) >= 6:
                     data_array.pop(0)
-                data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
-                addon.setSetting('alv3_search', data_array)
+                #data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
+                data_array.append(self.params['search_string'])
+                #addon.setSetting('alv3_search', data_array)
+                addon.setSetting('alv3_search', '|'.join(data_array))
                 self.params['param'] = 'search_string'
             else:
                 return False
