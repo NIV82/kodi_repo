@@ -10,8 +10,16 @@ import xbmcplugin
 import xbmcaddon
 import xbmcvfs
 
-if sys.version_info.major > 2:
-    from urllib.request import urlopen
+version = xbmc.getInfoLabel('System.BuildVersion')[:2]
+try:
+    version = int(version)
+except:
+    version = 0
+
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+
+if version >= 19:
     from urllib.parse import urlencode
     from urllib.parse import quote
     from urllib.parse import quote_plus
@@ -19,7 +27,6 @@ if sys.version_info.major > 2:
     from urllib.parse import unquote
     from html import unescape
 else:
-    from urllib import urlopen
     from urllib import urlencode
     from urllib import quote
     from urllib import quote_plus
@@ -28,13 +35,11 @@ else:
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape  
 
-import json
+handle = int(sys.argv[1])
+xbmcplugin.setContent(handle, 'tvshows')
+addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-version = xbmc.getInfoLabel('System.BuildVersion')[:2]
-try:
-    version = int(version)
-except:
-    version = 0
+import json
 
 try:
     xbmcaddon.Addon('inputstream.adaptive')
@@ -48,9 +53,7 @@ except:
         )
     xbmc.executebuiltin('RunPlugin("plugin://inputstream.adaptive")')
 
-addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-
-if sys.version_info.major > 2:
+if version >= 19:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
@@ -59,9 +62,6 @@ else:
     addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
-    
-def data_print(data):
-    xbmc.log(str(data), xbmc.LOGFATAL)
 
 as_ignorlist = [
     '7013','6930','6917','6974','6974','4106','1704','1229','1207','1939','1954','2282','4263','4284','4288','4352','4362','4422','4931','5129','5130',
@@ -69,8 +69,6 @@ as_ignorlist = [
     '4366','4367','4368','4369','4374','4377','4480','4493', '4556','6036','3218','3943','3974','4000','4091','8892','8747','8913','8917']
 
 class Anistar:
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-
     def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
@@ -78,7 +76,6 @@ class Anistar:
         if not os.path.exists(addon_data_dir):
             os.makedirs(addon_data_dir)
 
-        # self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'node': '', 'portal': 'anistar'}
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'portal': 'anistar'}
 
         args = parse_qs(sys.argv[2][1:])
@@ -182,7 +179,6 @@ class Anistar:
         else:
             return False
 #========================#========================#========================#
-    # def create_context(self, anime_id):
     def create_context(self, params):
         context_menu = []
         if 'search_part' in self.params['mode'] and self.params['param'] == '':
@@ -199,7 +195,6 @@ class Anistar:
         #     context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&node=minus&id={}&portal=anistar")'.format(anime_id)))
 
         # context_menu.append(('[COLOR=darkorange]Обновить Зеркала[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=mirror_part&portal=anistar")'))
-        # context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_file_part&portal=anistar")'))
         # context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=authorization_part&param=renew&portal=anistar")'))
         # context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=proxy_data&param=renew&portal=anistar")'))
         return context_menu
@@ -242,23 +237,23 @@ class Anistar:
             li.setProperty('isPlayable', 'true')
 
         if 'tam' in params:
+            label = u'{} | {}'.format(info['title'], title)
+
             if version <= 18:
                 try:
-                    label = title.encode('utf-8')
+                    label = label.encode('utf-8')
                 except:
-                    label = title
-            else:
-                label = title
+                    pass
 
             info_data = repr({'title':label})
             url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(quote_plus(info_data), quote(params['tam']))
         else:
             url = '{}?{}'.format(sys.argv[0], urlencode(params))
-            #data_print(url)
 
-        #xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TITLE)
+        #xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE)
 
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+        xbmcplugin.addDirectoryItem(handle, url=url, listitem=li, isFolder=folder)
+        return
 #========================#========================#========================#
     def create_info(self, data):
         from utility import clean_tags
@@ -371,8 +366,6 @@ class Anistar:
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()        
-        try: self.database.end()
-        except: pass
 #========================#========================#========================#
     def exec_addon_setting(self):
         addon.openSettings()
@@ -491,7 +484,7 @@ class Anistar:
             self.create_line(title='[B]Хентай[/B]', params={'mode': 'common_part', 'param': 'hentai/'})
         self.create_line(title='[B]Дорамы[/B]', params={'mode': 'common_part', 'param': 'dorams'})
         self.create_line(title='[B]Мультфильмы[/B]', params={'mode': 'common_part', 'param': 'cartoons'})
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
@@ -544,7 +537,7 @@ class Anistar:
 
             if not html:
                 self.create_line(title='Ошибка получения данных', folder=False)
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             html = html.decode('windows-1251').encode('utf-8')
@@ -557,7 +550,7 @@ class Anistar:
 
             if len(data_array) < 1:
                 self.create_line(title='Контент отсутствует', folder=False)
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             try:
@@ -595,7 +588,7 @@ class Anistar:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
                 self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'search_string': self.params['search_string'],'page': (int(self.params['page']) + 1)})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_schedule_part(self):
@@ -604,7 +597,7 @@ class Anistar:
         
         if not html:
             self.create_line(title='Ошибка получения данных', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
             
         html = html.decode('windows-1251').encode('utf-8')
@@ -663,7 +656,7 @@ class Anistar:
 
                 self.create_line(title=label, folder=False)
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_common_part(self):
@@ -673,7 +666,7 @@ class Anistar:
 
         if not html:
             self.create_line(title='Ошибка получения данных', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         html = html.decode('windows-1251').encode('utf-8')
@@ -685,7 +678,7 @@ class Anistar:
 
         if len(data_array) < 1:
             self.create_line(title='Контент отсутствует', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         try:
@@ -723,7 +716,7 @@ class Anistar:
             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
             self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_select_part(self):
@@ -752,7 +745,7 @@ class Anistar:
 
         if not html:
             self.create_line(title='Ошибка получения данных', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         html = html.decode('windows-1251').encode('utf-8')
@@ -767,18 +760,18 @@ class Anistar:
             video_url = video_url[:video_url.find('"')]
             if 'youtube.com' in video_url:
                 self.create_line(title='youtube ссылка - обработчик пока отсутствует', folder=False)
-                xbmcplugin.endOfDirectory(int(sys.argv[1]))
+                xbmcplugin.endOfDirectory(handle)
                 return
         else:
             self.create_line(title='Онлайн ссылки не обраружены', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]))
+            xbmcplugin.endOfDirectory(handle)
             return
 
         html = self.network.get_html(url=video_url)
 
         if not html:
             self.create_line(title='Ошибка получения данных', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         data_array = html[html.find('playlst=[')+9:]
@@ -788,7 +781,7 @@ class Anistar:
 
         if len(data_array) < 1:
             self.create_line(title='Контент отсутствует', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         current_quality = (addon.getSetting('as_quality'))
@@ -828,7 +821,7 @@ class Anistar:
                         label = u'{} | 360'.format(label)
                     else:
                         self.create_line(title='Ссылка для проигрывателя не обнаружена', folder=False)
-                        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+                        xbmcplugin.endOfDirectory(handle)
                         continue
 
                     self.create_line(title=label, anime_id=self.params['id'], params={'mode': 'play_part', 'param': episode_hls, 'id': self.params['id']}, folder=False, **info)
@@ -837,7 +830,7 @@ class Anistar:
         except:
             self.create_line(title='Ошибка обработки блока - сообщите автору')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+        xbmcplugin.endOfDirectory(handle)
         return
 #========================#========================#========================#
     def exec_torrent_part(self):
@@ -849,7 +842,7 @@ class Anistar:
 
         if not html:
             self.create_line(title='Ошибка получения данных', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         html = html.decode('windows-1251').encode('utf-8')
@@ -857,7 +850,7 @@ class Anistar:
 
         if not '<div class="title">' in html:
             self.create_line(title='Контент отсутствует', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         data_array = html[html.find('<div class="title">')+19:]
@@ -866,7 +859,7 @@ class Anistar:
 
         if len(data_array) < 1:
             self.create_line(title='Контент отсутствует', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         try:
@@ -901,7 +894,7 @@ class Anistar:
         except:
             self.create_line(title='Ошибка обработки блока - сообщите автору')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+        xbmcplugin.endOfDirectory(handle)
         return
 #========================#========================#========================#
     def exec_play_part(self):
@@ -914,7 +907,7 @@ class Anistar:
             li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
-        xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=li)
+        xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=li)
 #========================#========================#========================#
 def start():
     anistar = Anistar()

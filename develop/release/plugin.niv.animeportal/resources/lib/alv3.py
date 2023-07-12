@@ -10,29 +10,27 @@ import xbmcplugin
 import xbmcaddon
 import xbmcvfs
 
-if sys.version_info.major > 2:
-    #from urllib.request import urlopen
-    #from urllib.request import Request
-    from urllib.parse import urlencode
-    from urllib.parse import quote
-    from urllib.parse import parse_qs
-    from urllib.parse import unquote
-    #from html import unescape
-else:
-    #from urllib import urlopen
-    ##from urllib2 import Request
-    from urllib import urlencode
-    from urllib import quote
-    from urllib import unquote
-    from urlparse import parse_qs
-    #import HTMLParser
-    #unescape = HTMLParser.HTMLParser().unescape  
-
 version = xbmc.getInfoLabel('System.BuildVersion')[:2]
 try:
     version = int(version)
 except:
     version = 0
+
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+
+if version >= 19:
+    from urllib.parse import urlencode
+    from urllib.parse import quote
+    from urllib.parse import quote_plus
+    from urllib.parse import parse_qs
+    from urllib.parse import unquote
+else:
+    from urllib import urlencode
+    from urllib import quote
+    from urllib import quote_plus
+    from urllib import unquote
+    from urlparse import parse_qs
 
 try:
     xbmcaddon.Addon('inputstream.adaptive')
@@ -46,14 +44,11 @@ except:
         )
     xbmc.executebuiltin('RunPlugin("plugin://inputstream.adaptive")')
 
-xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-
-def data_print(data):
-    xbmc.log(str(data), xbmc.LOGFATAL)
-
+handle = int(sys.argv[1])
+xbmcplugin.setContent(handle, 'tvshows')
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-if sys.version_info.major > 2:
+if version >= 19:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
@@ -64,7 +59,7 @@ else:
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
 class Anilibria:
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
+    xbmcplugin.setContent(handle, 'tvshows')
     def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
@@ -187,9 +182,6 @@ class Anilibria:
             if '1' in addon.getSetting('alv3_playmode'):
                 context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&id={}&param=1&portal=anilibria")'.format(anime_id)))
 
-        # if 'common_part' in self.params['mode'] or 'favorites_part' in self.params['mode'] or 'search_part' in self.params['mode'] and not self.params['param'] == '':
-        #     context_menu.append(('[COLOR=white]Обновить аниме[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=update_anime_part&id={}&portal={}")'.format(anime_id, self.params['portal'])))
-
         # if self.authorization:
         #     if self.params['mode'] in ('common_part','schedule_part','favorites_part'):
         #         context_menu.append(('[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=PUT&portal={}")'.format(anime_id, self.params['portal'])))
@@ -197,8 +189,7 @@ class Anilibria:
         #     if 'catalog_part' in self.params['mode'] and 'catalog' in self.params['param'] or 'search_part' in self.params['mode'] and 'search_string' in self.params['param']:
         #         context_menu.append(('[COLOR=cyan]Избранное - Добавить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=PUT&portal={}")'.format(anime_id, self.params['portal'])))
         #         context_menu.append(('[COLOR=cyan]Избранное - Удалить[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=favorites_part&id={}&param=DELETE&portal={}")'.format(anime_id, self.params['portal'])))
-        
-        #context_menu.append((u'[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal={}")'.format(self.params['portal'])))
+
         return context_menu
 #========================#========================#========================#
     def create_line(self, title, anime_id=None, params={}, folder=True, **info):
@@ -233,13 +224,23 @@ class Anilibria:
             li.setProperty('isPlayable', 'true')
 
         params['portal'] = self.params['portal']
-        
+
         if 'tam' in params:
-            url='plugin://plugin.video.tam/?mode=open&url={}'.format(quote(params['tam'])) 
+            label = u'{} | {}'.format(info['title'], title)
+
+            if version <= 18:
+                try:
+                    label = label.encode('utf-8')
+                except:
+                    pass
+
+            info_data = repr({'title':label})
+            url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(quote_plus(info_data), quote(params['tam']))
         else:
             url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+        xbmcplugin.addDirectoryItem(handle, url=url, listitem=li, isFolder=folder)
+        return
 #========================#========================#========================#
     def create_info(self, node):
         info = dict.fromkeys(
@@ -308,8 +309,6 @@ class Anilibria:
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
-        try: self.database.end()
-        except: pass
 #========================#========================#========================#
     def exec_addon_setting(self):
         addon.openSettings()
@@ -423,13 +422,13 @@ class Anilibria:
 
     #         if not html:
     #             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-    #             xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #             xbmcplugin.endOfDirectory(handle, succeeded=True)
     #             return
             
     #         if not '},{' in html:
     #             if not '}]' in html:
     #                 self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-    #                 xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+    #                 xbmcplugin.endOfDirectory(handle, succeeded=True)
     #                 return
                 
     #         self.progress_bg.create('{}'.format(self.params['portal'].upper()), 'Инициализация')
@@ -466,7 +465,7 @@ class Anilibria:
     #             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
     #             self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
                 
-    #         xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)        
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)        
     #     else:
     #         if 'PUT' in self.params['param']:
     #             url = '{}addFavorite?session={}&title_id={}'.format(
@@ -493,12 +492,6 @@ class Anilibria:
             self.dialog.notification(heading='Поиск',message='Ошибка',icon=icon,time=1000,sound=False)
             pass
 #========================#========================#========================#
-    # def exec_information_part(self):
-    #     data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
-    # - Исправлены метки просмотренного в торрента файлах'
-    #     self.dialog.textviewer('Информация', data)
-    #     return
-#========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
         self.create_line(title='[B]Расписание[/B]', params={'mode': 'schedule_part'})
@@ -507,7 +500,7 @@ class Anilibria:
         self.create_line(title='[B]Каталог[/B]', params={'mode': 'catalog_part'})
         # if self.authorization:
         #     self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'favorites_part'})
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
@@ -530,9 +523,7 @@ class Anilibria:
                 data_array = addon.getSetting('alv3_search').split('|')                    
                 while len(data_array) >= 6:
                     data_array.pop(0)
-                #data_array = '{}|{}'.format('|'.join(data_array), self.params['search_string'])
                 data_array.append(self.params['search_string'])
-                #addon.setSetting('alv3_search', data_array)
                 addon.setSetting('alv3_search', '|'.join(data_array))
                 self.params['param'] = 'search_string'
             else:
@@ -550,7 +541,7 @@ class Anilibria:
 
             if not html:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             import json
@@ -577,7 +568,7 @@ class Anilibria:
 
             self.progress_bg.close()
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_schedule_part(self):
@@ -588,7 +579,7 @@ class Anilibria:
         
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         import json
@@ -619,7 +610,7 @@ class Anilibria:
         except:
             self.create_line(title='Ошибка Расписания - сообщите автору')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_updates_part(self):
@@ -631,7 +622,7 @@ class Anilibria:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         import json
@@ -658,7 +649,7 @@ class Anilibria:
 
         self.progress_bg.close()
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_favorites_part(self):
@@ -670,7 +661,7 @@ class Anilibria:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         import json
@@ -705,7 +696,7 @@ class Anilibria:
         except:
             pass
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_catalog_part(self):
@@ -733,7 +724,7 @@ class Anilibria:
             self.create_line(title='Статус релиза: [COLOR=gold]{}[/COLOR]'.format(
                 addon.getSetting('alv3_status')), params={'mode': 'catalog_part', 'param': 'status'})
             self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'catalog_part', 'param':'catalog'})            
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
 
         if 'genre' in self.params['param']:
             result = self.dialog.select('Жанр:', anilibria_genre)
@@ -790,7 +781,7 @@ class Anilibria:
 
             if not html:
                 self.create_line(title='Ошибка получения данных', folder=False)
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
 
             import json
@@ -825,7 +816,7 @@ class Anilibria:
             except:
                 pass
 
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_select_part(self):
@@ -851,7 +842,7 @@ class Anilibria:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         import json
@@ -860,7 +851,7 @@ class Anilibria:
 
         if len(array['player']['list']) < 1:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         info = self.create_info(array)
@@ -901,7 +892,7 @@ class Anilibria:
         except:
             self.create_line(title='Ошибка обработки блока - сообщите автору')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_torrent_part(self):
@@ -911,11 +902,8 @@ class Anilibria:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
-
-    #         #host = data['player']['host']
-    #         torrent_list = data['torrents']['list']
 
         import json
 
@@ -923,7 +911,7 @@ class Anilibria:
 
         if len(array['torrents']['list']) < 1:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         info = self.create_info(array)
@@ -952,14 +940,13 @@ class Anilibria:
 
                     label = u'{}{}{}'.format(episodes, quality, torrent_peer)
 
-                    #self.create_line(title=label, anime_id=anime_id, params={'mode': 'torrentlist_part', 'torrent_id': torrent_id, 'id': self.params['id'], 'param': torrent_url}, **info)
                     self.create_line(title=label, anime_id=anime_id, params={'tam': torrent_url}, **info)
                 except:
                     self.create_line(title='Ошибка обработки строки - сообщите автору')
         except:
             self.create_line(title='Ошибка обработки блока - сообщите автору')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+        xbmcplugin.endOfDirectory(handle)
         return
 #========================#========================#========================#
     def exec_play_part(self):
@@ -972,9 +959,8 @@ class Anilibria:
             li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
-        xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=li)
+        xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=li)
 #========================#========================#========================#
 def start():
     anilibria = Anilibria()
     anilibria.execute()
-    #del anilibria

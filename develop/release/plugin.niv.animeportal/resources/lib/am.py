@@ -2,7 +2,6 @@
 
 import os
 import sys
-import time
 
 import xbmc
 import xbmcgui
@@ -10,35 +9,32 @@ import xbmcplugin
 import xbmcaddon
 import xbmcvfs
 
-if sys.version_info.major > 2:
-    from urllib.request import urlopen
-    from urllib.parse import urlencode
-    from urllib.parse import quote
-    from urllib.parse import quote_plus
-    from urllib.parse import parse_qs
-    from urllib.parse import unquote
-    from html import unescape
-else:
-    from urllib import urlopen
-    from urllib import urlencode
-    from urllib import quote
-    from urllib import quote_plus
-    from urllib import unquote
-    from urlparse import parse_qs
-    import HTMLParser
-    unescape = HTMLParser.HTMLParser().unescape
-
-import json
-
 version = xbmc.getInfoLabel('System.BuildVersion')[:2]
 try:
     version = int(version)
 except:
     version = 0
 
+if version >= 19:
+    from urllib.parse import urlencode
+    from urllib.parse import quote
+    from urllib.parse import quote_plus
+    from urllib.parse import parse_qs
+    from urllib.parse import unquote
+else:
+    from urllib import urlencode
+    from urllib import quote
+    from urllib import quote_plus
+    from urllib import unquote
+    from urlparse import parse_qs
+
+import json
+
+handle = int(sys.argv[1])
+xbmcplugin.setContent(handle, 'tvshows')
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-if sys.version_info.major > 2:
+if version >= 19:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
@@ -48,14 +44,10 @@ else:
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
-from utility import clean_tags
-
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
 class Animedia:
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-
     def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
@@ -75,6 +67,7 @@ class Animedia:
         del WebTools
 #========================#========================#========================#
     def create_info(self, data):
+        from utility import clean_tags
         info = {
             'sorttitle': '',
             'cover': '',
@@ -181,27 +174,26 @@ class Animedia:
         params['portal'] = self.params['portal']
 
         if 'tam' in params:
+            label = u'{} | {}'.format(info['title'], title)
+
             if version <= 18:
                 try:
-                    label = info['sorttitle'].encode('utf-8')
+                    label = label.encode('utf-8')
                 except:
-                    label = info['sorttitle']
-            else:
-                label = info['sorttitle']
+                    pass
 
             info_data = repr({'title':label})
             url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(quote_plus(info_data), quote(params['tam']))
         else:
             url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
-        #xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TITLE)
+        #xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_TITLE)
 
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+        xbmcplugin.addDirectoryItem(handle, url=url, listitem=li, isFolder=folder)
+        return
 #========================#========================#========================#
     def execute(self):
-        getattr(self, 'exec_{}'.format(self.params['mode']))()        
-        try: self.database.end()
-        except: pass
+        getattr(self, 'exec_{}'.format(self.params['mode']))()
 #========================#========================#========================#
     def exec_addon_setting(self):
         addon.openSettings()
@@ -220,7 +212,7 @@ class Animedia:
     def exec_main_part(self):
         self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
         self.create_line(title='[B]Архив Торрентов[/B]', params={'mode': 'common_part'})
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if self.params['param'] == '':
@@ -287,7 +279,7 @@ class Animedia:
                     label = '[COLOR=gold]{}[/COLOR] из {} | Следующая страница - [COLOR=gold]{}[/COLOR]'.format(int(self.params['page']), pages[1], int(self.params['page'])+1)
                     self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'search_string': self.params['search_string'], 'page': int(self.params['page']) + 1})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_common_part(self, url=None):
@@ -325,7 +317,7 @@ class Animedia:
                 label = u'[COLOR=gold]{}[/COLOR] из {} | Следующая страница - [COLOR=gold]{}[/COLOR]'.format(int(self.params['page']), pages[1], int(self.params['page'])+1)            
                 self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_select_part(self):
@@ -346,7 +338,7 @@ class Animedia:
             label = torrent_label
             self.create_line(title=label, params={'mode': 'select_part', 'tam': torrent_url}, **info)
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
 def start():

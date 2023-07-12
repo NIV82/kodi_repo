@@ -4,7 +4,6 @@ import gc
 import os
 import sys
 
-import xbmc
 import xbmcgui
 import xbmcplugin
 import xbmcaddon
@@ -16,17 +15,15 @@ except:
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
+handle = int(sys.argv[1])
+xbmcplugin.setContent(handle, 'tvshows')
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
-xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
 
 if not addon.getSetting('settings'):
     try:
         addon.setSetting('settings','true')
     except:
         pass
-
-def data_print(data):
-    xbmc.log(str(data), xbmc.LOGFATAL)
 
 if not sys.argv[2]:
     portal_list = ('anidub', 'anilibria', 'animedia', 'anistar', 'shizaproject')
@@ -37,11 +34,9 @@ if not sys.argv[2]:
             active_portal.append(portal)
 
     if len(active_portal) < 1:
-        li = xbmcgui.ListItem(
-            '[B][COLOR=white]Нет Активных Сайтов[/COLOR][/B]')
-        xbmcplugin.addDirectoryItem(
-            int(sys.argv[1]), url=sys.argv[0], listitem=li, isFolder=True)
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
+        li = xbmcgui.ListItem('[B]Нет Активных Сайтов[/B]')
+        xbmcplugin.addDirectoryItem(handle, url=sys.argv[0], listitem=li, isFolder=False)
+        xbmcplugin.endOfDirectory(handle)
 
     if len(active_portal) == 1:
         sys.argv[2] = '?portal={}'.format(active_portal[0])
@@ -54,17 +49,10 @@ if not sys.argv[2]:
             url = '{}?{}'.format(sys.argv[0], urlencode(
                 {'mode': 'main_part', 'portal': portal}))
 
-            if 'animedia' in portal:
-                li.addContextMenuItems(
-                    [('[COLOR=white]Обновить Зеркало[/COLOR]',
-                      'Container.Update("plugin://plugin.niv.animeportal/?node=actual_url&portal=animedia")')]
-                )
-
             xbmcplugin.addDirectoryItem(
-                int(sys.argv[1]), url=url, listitem=li, isFolder=True)
+                handle, url=url, listitem=li, isFolder=True)
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]))
-
+        xbmcplugin.endOfDirectory(handle)
 
 if 'anidub' in sys.argv[2]:
     if '0' in addon.getSetting('anidub_mode'):

@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import json
 
 import xbmc
 import xbmcgui
@@ -10,13 +11,20 @@ import xbmcplugin
 import xbmcaddon
 import xbmcvfs
 
+version = xbmc.getInfoLabel('System.BuildVersion')[:2]
+try:
+    version = int(version)
+except:
+    version = 0
+
 def data_print(data):
     xbmc.log(str(data), xbmc.LOGFATAL)
 
-if sys.version_info.major > 2:
+if version >= 19:
     from urllib.request import urlopen
     from urllib.parse import urlencode
     from urllib.parse import quote
+    from urllib.parse import quote_plus
     from urllib.parse import parse_qs
     from urllib.parse import unquote
     from html import unescape
@@ -24,20 +32,17 @@ else:
     from urllib import urlopen
     from urllib import urlencode
     from urllib import quote
+    from urllib import quote_plus
     from urllib import unquote
     from urlparse import parse_qs
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape  
 
-version = xbmc.getInfoLabel('System.BuildVersion')[:2]
-try:
-    version = int(version)
-except:
-    version = 0
-
+handle = int(sys.argv[1])
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
+xbmcplugin.setContent(handle, 'tvshows')
 
-if sys.version_info.major > 2:
+if version >= 19:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
@@ -48,8 +53,6 @@ else:
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
 class Anidub:
-    xbmcplugin.setContent(int(sys.argv[1]), 'tvshows')
-
     def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
         self.dialog = xbmcgui.Dialog()
@@ -115,18 +118,25 @@ class Anidub:
         context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=proxy_data&param=renew&portal=anidub")'))
         return context_menu
 #========================#========================#========================#
-    def create_line(self, title=None, cover=None, params={}, info={}, anime_id=None, folder=True):
+    def create_line(self, title, anime_id=None, params={}, folder=True, **info):
         li = xbmcgui.ListItem(title)
 
-        if cover:
-            li.setArt({'icon': cover,'thumb': cover,'poster': cover})
+        if info:
+            if anime_id:
+                extended_info = self.database.extend_content(anime_id)
+                info['plot'] = u'{}\n{}'.format(info['plot'], extended_info)
 
-        if anime_id:
-            info.update(self.database.obtain_content(anime_id))
-            info.update({'title':title, 'tvshowtitle':title})
+            try:
+                cover = info.pop('cover')
+            except:
+                cover = None
 
-            extended_info = self.database.extend_content(anime_id)
-            info['plot'] = u'{}\n{}'.format(info['plot'], extended_info)
+            try:
+                info['title'] = info['sorttitle']
+            except:
+                pass
+
+            li.setArt({'icon': cover, 'thumb': cover, 'poster': cover})
 
             if version == 20:
                 videoinfo = li.getVideoInfoTag()
@@ -151,13 +161,20 @@ class Anidub:
         params['portal'] = self.params['portal']
 
         if 'tam' in params:
-            from urllib.parse import quote_plus
-            info = quote_plus(repr(info))
-            url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(info, quote(params['tam']))
+            label = u'{} | {}'.format(info['title'], title)
+
+            if version <= 18:
+                try:
+                    label = label.encode('utf-8')
+                except:
+                    pass
+
+            info_data = repr({'title':label})
+            url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(quote_plus(info_data), quote(params['tam']))
         else:
             url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+        xbmcplugin.addDirectoryItem(handle, url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
     def create_info(self, anime_id, update=False):
         url = '{}index.php?newsid={}'.format(self.site_url, anime_id)
@@ -417,18 +434,18 @@ class Anidub:
             pass
 #========================#========================#========================#
     def exec_main_part(self):
-        self.create_line(title='[B][COLOR=red]Поиск[/COLOR][/B]', params={'mode': 'search_part'})
+        self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
         if self.authorization:
-           self.create_line(title='[B][COLOR=white]Избранное[/COLOR][/B]', params={'mode': 'common_part', 'param':'favorites/'})
-        self.create_line(title='[B][COLOR=white]Популярное за неделю[/COLOR][/B]', params={'mode': 'popular_part'})
-        self.create_line(title='[B][COLOR=lime]Новое[/COLOR][/B]', params={'mode': 'common_part'})
-        self.create_line(title='[B][COLOR=lime]TV Онгоинги[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/anime_ongoing/'})
-        self.create_line(title='[B][COLOR=lime]TV 100+[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/shonen/'})
-        self.create_line(title='[B][COLOR=lime]TV Законченные[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_tv/full/'})
-        self.create_line(title='[B][COLOR=blue]Аниме OVA[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
-        self.create_line(title='[B][COLOR=blue]Аниме фильмы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
-        self.create_line(title='[B][COLOR=gold]Дорамы[/COLOR][/B]', params={'mode': 'common_part', 'param': 'dorama/'})
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+           self.create_line(title='[B]Избранное[/B]', params={'mode': 'common_part', 'param':'favorites/'})
+        self.create_line(title='[B]Популярное за неделю[/B]', params={'mode': 'popular_part'})
+        self.create_line(title='[B]Новое[/B]', params={'mode': 'common_part'})
+        self.create_line(title='[B]TV Онгоинги[/B]', params={'mode': 'common_part', 'param': 'anime_tv/anime_ongoing/'})
+        self.create_line(title='[B]TV 100+[/B]', params={'mode': 'common_part', 'param': 'anime_tv/shonen/'})
+        self.create_line(title='[B]TV Законченные[/B]', params={'mode': 'common_part', 'param': 'anime_tv/full/'})
+        self.create_line(title='[B]Аниме OVA[/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
+        self.create_line(title='[B]Аниме фильмы[/B]', params={'mode': 'common_part', 'param': 'anime_movie/'})
+        self.create_line(title='[B]Дорамы[/B]', params={'mode': 'common_part', 'param': 'dorama/'})
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
@@ -498,12 +515,12 @@ class Anidub:
 
             if not html:
                 self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             if not 'search_post">' in html:
                 self.create_line(title=u'Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
 
             self.progress_bg.create('AniDub', 'Инициализация')
@@ -537,6 +554,9 @@ class Anidub:
                         else:
                             anime_series = ''
 
+                        anime_title = anime_title
+                        if '/' in anime_title:
+                            anime_title = anime_title[:anime_title.find('/')]
                         anime_title = anime_title.strip()
 
                         anime_cover = data[data.rfind('<img src="')+10:]
@@ -558,8 +578,15 @@ class Anidub:
                         if not self.database.anime_in_db(anime_id):
                             self.create_info(anime_id)
 
+                        info = self.database.obtain_content(anime_id)
+
+                        info['cover'] = anime_cover
+                        info['rating'] = anime_rating
+                        info['sorttitle'] = anime_title
+                        info_data = json.dumps(info)
+
                         label = u'{}{}'.format(anime_title, anime_series)
-                        self.create_line(title=label, anime_id=anime_id, cover=anime_cover, params={'mode': 'select_part', 'param': anime_id}, info={'rating':anime_rating})
+                        self.create_line(title=label, anime_id=anime_id, params={'id': anime_id, 'mode': 'select_part', 'param': info_data}, **info)
                     except:
                         self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
             except:
@@ -571,7 +598,7 @@ class Anidub:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)
                 self.create_line(title=label, params={'mode': 'search_part', 'param': 'search_string', 'search_string': self.params['search_string'], 'page': int(self.params['page']) + 1})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def exec_popular_part(self):
         url = '{}'.format(self.site_url)
@@ -579,12 +606,12 @@ class Anidub:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         if not 'sb-light-skin">' in html:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         self.progress_bg.create('Популярное за неделю:', 'Инициализация')
@@ -621,6 +648,9 @@ class Anidub:
                     else:
                         anime_series = ''
                     
+                    anime_title = anime_title
+                    if '/' in anime_title:
+                        anime_title = anime_title[:anime_title.find('/')]
                     anime_title = anime_title.strip()
                     
                     anime_cover = data[data.rfind('<img src="')+10:]
@@ -642,15 +672,23 @@ class Anidub:
                     if not self.database.anime_in_db(anime_id):
                         self.create_info(anime_id)
 
+                    info = self.database.obtain_content(anime_id)
+                    info['cover'] = anime_cover
+                    info['rating'] = anime_rating
+                    info['sorttitle'] = anime_title
+
+                    info_data = json.dumps(info)
+
                     label = u'{}{}'.format(anime_title, anime_series)
-                    self.create_line(title=label, anime_id=anime_id, cover=anime_cover, params={'mode': 'select_part', 'param': anime_id}, info={'rating':anime_rating})
+                
+                    self.create_line(title=label, anime_id=anime_id, params={'id': anime_id, 'mode': 'select_part', 'param': info_data}, **info)
                 except:
                     self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
         except:
             self.create_line(title=u'[COLOR=red][B]Ошибка обработки блока - сообщите автору[/B][/COLOR]')
 
         self.progress_bg.close()
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def exec_common_part(self):
         url = '{}{}page/{}/'.format(self.site_url, quote(self.params['param']), self.params['page'])
@@ -658,12 +696,12 @@ class Anidub:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         if not '<h2>' in html:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         self.progress_bg.create('AniDub', 'Инициализация')
@@ -697,6 +735,9 @@ class Anidub:
                     else:
                         anime_series = ''
 
+                    anime_title = anime_title
+                    if '/' in anime_title:
+                        anime_title = anime_title[:anime_title.find('/')]
                     anime_title = anime_title.strip()
 
                     anime_cover = data[data.rfind('<img src="')+10:]
@@ -718,8 +759,15 @@ class Anidub:
                     if not self.database.anime_in_db(anime_id):
                         self.create_info(anime_id)
 
+                    info = self.database.obtain_content(anime_id)
+
+                    info['cover'] = anime_cover
+                    info['rating'] = anime_rating
+                    info['sorttitle'] = anime_title
+                    info_data = json.dumps(info)
+
                     label = u'{}{}'.format(anime_title, anime_series)
-                    self.create_line(title=label, anime_id=anime_id, cover=anime_cover, params={'mode': 'select_part', 'param': anime_id}, info={'rating':anime_rating})
+                    self.create_line(title=label, anime_id=anime_id, params={'id': anime_id, 'mode': 'select_part', 'param': info_data}, **info)
                 except:
                     self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
         except:
@@ -732,29 +780,23 @@ class Anidub:
             self.create_line(title=label, params={
                 'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#    
     def exec_select_part(self):
-        url = 'https://tr.anidub.com/index.php?newsid={}'.format(self.params['param'])
+        info = json.loads(self.params['param'])
+        url = 'https://tr.anidub.com/index.php?newsid={}'.format(self.params['id'])
         html = self.network.get_html(url=url)
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         if not '<div class="torrent_c">' in html:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
-        info = {}
-        title = html[html.find('og:title" content="')+19:]
-        title = title[:title.find('"')]
-        if '[' in title:
-            title = title[:title.find('[')]
-        info['title'] = title.strip()
-
         try:
             data_array = html[html.find('<div class="torrent_c">')+23:html.rfind(u'Управление')]
             data_array = data_array.split(u'Управление')
@@ -795,16 +837,15 @@ class Anidub:
                         
                         url = 'https://tr.anidub.com/engine/download.php?id={}'.format(torrent_id)
 
-                        self.create_line(title=label, params={'tam': url}, info=info)
+                        self.create_line(title=label, params={'tam': url}, **info)
                 except:
                     self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки - сообщите автору[/B][/COLOR]')
         except:
             self.create_line(title=u'[COLOR=red][B]Ошибка обработки блока - сообщите автору[/B][/COLOR]')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
 def start():
     anidub = Anidub()
     anidub.execute()
-    #del anidub

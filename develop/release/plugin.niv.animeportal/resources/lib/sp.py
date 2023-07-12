@@ -2,7 +2,6 @@
 
 import os
 import sys
-import time
 
 import xbmc
 import xbmcgui
@@ -10,37 +9,29 @@ import xbmcplugin
 import xbmcaddon
 import xbmcvfs
 
-if sys.version_info.major > 2:
-    from urllib.request import urlopen
-    from urllib.parse import urlencode
-    from urllib.parse import quote
-    from urllib.parse import quote_plus
-    from urllib.parse import parse_qs
-    from urllib.parse import unquote
-    from html import unescape
-else:
-    from urllib import urlopen
-    from urllib import urlencode
-    from urllib import quote
-    from urllib import quote_plus
-    from urllib import unquote
-    from urlparse import parse_qs
-    import HTMLParser
-    unescape = HTMLParser.HTMLParser().unescape
-
-shizaproject_season = {'':'','Весна':'SPRING','Лето':'SUMMER','Осень':'FALL','Зима':'WINTER'}
-shizaproject_categories = {'':'','Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=','Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=','Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=','Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}
-shizaproject_status = {'':'','Онгоинг':'ONGOING','Выпущено':'RELEASED'}
-shizaproject_form = {'':'','ТВ':'TV','ТВ-спешл':'TV_SPECIAL','Фильм':'MOVIE','Короткий Фильм':'SHORT_MOVIE','OVA':'OVA','ONA':'ONA','Музыкальный':'MUSIC','Остальное':'OTHER'}
-shizaproject_genre = {'':'','экшен':'R2VucmU6ODM0NDc2MjMxOTY4Njg2MDg=','комедия':'R2VucmU6ODM0NDc4NDQyNDA4ODM3MTI=','драма':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njg=','фантастика':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDE=','сверхъестественное':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTk=','фэнтези':'R2VucmU6ODM0NDgxMzc2MDMwODgzODQ=','романтика':'R2VucmU6ODM0NDc5NTcwNzYwNDk5MjA=','сёнен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODk=','приключения':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzE=','повседневность':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTY=','сейнен':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMTA=','этти':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzg=','детектив':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDU=','меха':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODQ=','военное':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDQ=','психологическое':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzA=','ужасы':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODI=','исторический':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODE=','сёдзё':'R2VucmU6ODE1OTEzMjc3NTM1MDI3MjA=','спорт':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTA=','музыка':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzI=','триллер':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDA=','игры':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njk=','пародия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODU=','боевые искусства':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDg=','сёдзё-ай':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTc=','дзёсей':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTg='}
-shizaproject_direction = {'По убыванию':'DESC','По возрастанию':'ASC'}
-shizaproject_sort = {'Дате публикации':'PUBLISHED_AT','Дате обновление':'UPDATED_AT','Просмотрам':'VIEW_COUNT','Названию EN':'ORIGINAL_NAME','Названию RU':'NAME','Рейтингу':'SCORE'}
-
 version = xbmc.getInfoLabel('System.BuildVersion')[:2]
 try:
     version = int(version)
 except:
     version = 0
+
+def data_print(data):
+    xbmc.log(str(data), xbmc.LOGFATAL)
+
+if version >= 19:
+    from urllib.request import urlopen
+    from urllib.parse import urlencode
+    from urllib.parse import quote_plus
+    from urllib.parse import quote
+    from urllib.parse import parse_qs
+    from urllib.parse import unquote
+else:
+    from urllib import urlopen
+    from urllib import urlencode
+    from urllib import quote_plus
+    from urllib import quote
+    from urllib import unquote
+    from urlparse import parse_qs
 
 try:
     xbmcaddon.Addon('inputstream.adaptive')
@@ -54,9 +45,19 @@ except:
         )
     xbmc.executebuiltin('RunPlugin("plugin://inputstream.adaptive")')
 
+shizaproject_season = {'':'','Весна':'SPRING','Лето':'SUMMER','Осень':'FALL','Зима':'WINTER'}
+shizaproject_categories = {'':'','Аниме':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzE=','Дорамы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzI=','Мультфильмы':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzM=','Разное':'Q2F0ZWdvcnk6NDU4OTE0MTQ4Njg4ODU1MzQ='}
+shizaproject_status = {'':'','Онгоинг':'ONGOING','Выпущено':'RELEASED'}
+shizaproject_form = {'':'','ТВ':'TV','ТВ-спешл':'TV_SPECIAL','Фильм':'MOVIE','Короткий Фильм':'SHORT_MOVIE','OVA':'OVA','ONA':'ONA','Музыкальный':'MUSIC','Остальное':'OTHER'}
+shizaproject_genre = {'':'','экшен':'R2VucmU6ODM0NDc2MjMxOTY4Njg2MDg=','комедия':'R2VucmU6ODM0NDc4NDQyNDA4ODM3MTI=','драма':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njg=','фантастика':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDE=','сверхъестественное':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTk=','фэнтези':'R2VucmU6ODM0NDgxMzc2MDMwODgzODQ=','романтика':'R2VucmU6ODM0NDc5NTcwNzYwNDk5MjA=','сёнен':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODk=','приключения':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzE=','повседневность':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTY=','сейнен':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMTA=','этти':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Nzg=','детектив':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDU=','меха':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODQ=','военное':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDQ=','психологическое':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzA=','ужасы':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODI=','исторический':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODE=','сёдзё':'R2VucmU6ODE1OTEzMjc3NTM1MDI3MjA=','спорт':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTA=','музыка':'R2VucmU6NDU4OTE0MjEzMzIzMDc5NzI=','триллер':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDA=','игры':'R2VucmU6NDU4OTE0MjEzMzIzMDc5Njk=','пародия':'R2VucmU6NDU4OTE0MjEzMzIzMDc5ODU=','боевые искусства':'R2VucmU6NDU4OTE0MjEzMzIzMDgwMDg=','сёдзё-ай':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTc=','дзёсей':'R2VucmU6NDU4OTE0MjEzMzIzMDc5OTg='}
+shizaproject_direction = {'По убыванию':'DESC','По возрастанию':'ASC'}
+shizaproject_sort = {'Дате публикации':'PUBLISHED_AT','Дате обновление':'UPDATED_AT','Просмотрам':'VIEW_COUNT','Названию EN':'ORIGINAL_NAME','Названию RU':'NAME','Рейтингу':'SCORE'}
+
+handle = int(sys.argv[1])
+xbmcplugin.setContent(handle, 'tvshows')
 addon = xbmcaddon.Addon(id='plugin.niv.animeportal')
 
-if sys.version_info.major > 2:
+if version >= 19:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
@@ -65,9 +66,6 @@ else:
     addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
-
-def data_print(data):
-    xbmc.log(str(data), xbmc.LOGFATAL)
     
 class Shiza:
     def __init__(self):
@@ -84,11 +82,8 @@ class Shiza:
             self.params[a] = unquote(args[a][0])
 
         self.proxy_data = None
-
         self.site_url = 'https://shiza-project.com/graphql'
-        
         self.authorization = False
-        
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(
@@ -473,7 +468,6 @@ class Shiza:
             if '1' in addon.getSetting('sp_playmode'):
                 context_menu.append(('Открыть Онлайн', 'Container.Update("plugin://plugin.niv.animeportal/?mode=select_part&slug={}&param=1&portal=shizaproject")'.format(slug)))
 
-        # context_menu.append(('[COLOR=lime]Новости обновлений[/COLOR]', 'Container.Update("plugin://plugin.niv.animeportal/?mode=information_part&param=news&portal=shizaproject")'))
         return context_menu
 #========================#========================#========================#
     def create_line(self, title, slug=None, params={}, folder=True, **info):
@@ -507,7 +501,6 @@ class Shiza:
                 videoinfo.setStudios(info['studio'])
             else:
                 li.setInfo(type='video', infoLabels=info)
-            #li.setInfo(type='video', infoLabels=info)
         
         li.addContextMenuItems(self.create_context(slug))
 
@@ -515,15 +508,23 @@ class Shiza:
             li.setProperty('isPlayable', 'true')
 
         params['portal'] = self.params['portal']
-        
+
         if 'tam' in params:
-            #info = quote_plus(repr(info))
-            info = {'title': 'test'}
-            url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(info, quote(params['tam']))
-            #url='plugin://plugin.video.tam/?mode=open&url={}'.format(quote(params['tam']))
+            label = u'{} | {}'.format(info['title'], title)
+
+            if version <= 18:
+                try:
+                    label = label.encode('utf-8')
+                except:
+                    pass
+
+            info_data = repr({'title':label})
+            url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(quote_plus(info_data), quote(params['tam']))
         else:
             url = '{}?{}'.format(sys.argv[0], urlencode(params))
-        xbmcplugin.addDirectoryItem(int(sys.argv[1]), url=url, listitem=li, isFolder=folder)
+
+        xbmcplugin.addDirectoryItem(handle, url=url, listitem=li, isFolder=folder)
+        return
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
@@ -536,12 +537,6 @@ class Shiza:
             self.dialog.notification(heading='Поиск',message='Ошибка',icon=icon,time=1000,sound=False)
             pass
 #========================#========================#========================#
-    # def exec_information_part(self):
-    #     data = u'[B][COLOR=darkorange]V-1.0.1[/COLOR][/B]\n\
-    # - Исправлены метки просмотренного в торрента файлах'
-    #     self.dialog.textviewer('Информация', data)
-    #     return
-#========================#========================#========================#
     def exec_main_part(self):
         self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
         self.create_line(title='[B]Все Релизы[/B]', params={'mode': 'common_part'})
@@ -550,7 +545,7 @@ class Shiza:
         self.create_line(title='[B]Мультфильмы[/B]', params={'mode': 'common_part', 'param': 'Мультфильмы'})
         self.create_line(title='[B]Кино и ТВ[/B]', params={'mode': 'common_part', 'param': 'Разное'})
         self.create_line(title='[B]Каталог[/B]', params={'mode': 'catalog_part'})
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
@@ -588,7 +583,7 @@ class Shiza:
 
             if not html:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
 
             import json
@@ -596,14 +591,14 @@ class Shiza:
 
             if not anime_data['data']['releases']['edges']:
                 self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             array = anime_data['data']['releases']['edges']
 
             if len(array) < 1:
                 self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
 
             try:
@@ -627,7 +622,7 @@ class Shiza:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)            
                 self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'after': after, 'page': (int(self.params['page']) + 1)})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_common_part(self):
@@ -636,7 +631,7 @@ class Shiza:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         import json
@@ -644,14 +639,14 @@ class Shiza:
 
         if not anime_data['data']['releases']['edges']:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         array = anime_data['data']['releases']['edges']
 
         if len(array) < 1:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         try:
@@ -675,7 +670,7 @@ class Shiza:
             label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)            
             self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'after': after, 'page': (int(self.params['page']) + 1)})
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_select_part(self):
@@ -701,7 +696,7 @@ class Shiza:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         import json
@@ -718,7 +713,7 @@ class Shiza:
 
         if len(episodes) < 1:
             self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         for ep in episodes:
@@ -763,7 +758,7 @@ class Shiza:
 
             self.create_line(title=label, slug=slug, params={'mode': 'play_part', 'param': episode_url}, folder=False, **info)
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_torrent_part(self):        
@@ -772,7 +767,7 @@ class Shiza:
 
         if not html:
             self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
         import json
@@ -789,7 +784,7 @@ class Shiza:
 
         if len(torrents) < 1:
             self.create_line(title='Контент отсутствует', folder=False)
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         try:
@@ -844,7 +839,7 @@ class Shiza:
         except:
             self.create_line(title='Ошибка блока - сообщите автору')
 
-        xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
     def exec_play_part(self):
@@ -889,7 +884,7 @@ class Shiza:
         #     li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
         #     li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
-        xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=li)
+        xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=li)
         return
 #========================#========================#========================#
     def exec_catalog_part(self):
@@ -917,7 +912,7 @@ class Shiza:
 
             self.create_line(title='[COLOR=gold][ Поиск ][/COLOR]', params={'mode': 'catalog_part', 'param':'catalog'})
             
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)  
+            xbmcplugin.endOfDirectory(handle, succeeded=True)  
             return          
         
         if 'sp_yearstart' in self.params['param']:
@@ -954,7 +949,7 @@ class Shiza:
 
             if not html:
                 self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             import json
@@ -962,14 +957,14 @@ class Shiza:
 
             if not anime_data['data']['releases']['edges']:
                 self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             array = anime_data['data']['releases']['edges']
 
             if len(array) < 1:
                 self.create_line(title='Контент отсутствует', params={'mode': 'main_part'})
-                xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)
+                xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             try:
@@ -993,10 +988,9 @@ class Shiza:
                 label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(int(self.params['page']), int(self.params['page'])+1)            
                 self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'after': after, 'page': (int(self.params['page']) + 1)})
 
-            xbmcplugin.endOfDirectory(int(sys.argv[1]), succeeded=True)            
+            xbmcplugin.endOfDirectory(handle, succeeded=True)            
             return
     
 def start():
     shiza = Shiza()
     shiza.execute()
-    #del shiza
