@@ -785,6 +785,7 @@ class Anistar:
             return
         
         current_quality = (addon.getSetting('as_quality'))
+        dubs = addon.getSetting('as_dubbing')
 
         try:
             for data in data_array:
@@ -796,6 +797,15 @@ class Anistar:
                     dubb = dubb[:dubb.find(',')]
                     dubb = dubb.replace('\'','').strip()
 
+                    if '1' in dubs:
+                        if '2' in dubb:
+                            continue
+                    elif '2' in dubs:
+                        if '1' in dubb:
+                            continue
+                    else:
+                        pass
+                    
                     video_quality = {'360':'', '720':''}
 
                     file_url = data[data.find('file:"')+6:]
@@ -862,15 +872,26 @@ class Anistar:
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
+        dubs = addon.getSetting('as_dubbing')
+
         try:
             for data in data_array:
                 try:
+                    title = data[data.find('info_d1">')+9:]
+                    title = title[:title.find('<')]
+
+                    if '1' in dubs:
+                        if u'Многоголос' in title:
+                            continue
+                    elif '2' in dubs:
+                        if not u'Многоголос' in title:
+                            continue
+                    else:
+                        pass
+
                     torrent_url = data[data.find('gettorrent.php?id=')+18:]
                     torrent_url = torrent_url[:torrent_url.find('">')]
                     torrent_url = u'{}/engine/gettorrent.php?id={}'.format(self.site_url, torrent_url)
-
-                    title = data[data.find('info_d1">')+9:]
-                    title = title[:title.find('<')]
 
                     seed = ''
                     if u'Раздают:' in data:
