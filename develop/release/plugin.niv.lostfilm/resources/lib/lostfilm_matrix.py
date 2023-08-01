@@ -1804,7 +1804,8 @@ class Lostfilm:
 
         html = self.network.get_html(url=url)
         
-        new_url = html[html.find('url=http')+4:html.find('&newbie=')]
+        new_url = html[html.find('url=http')+4:]
+        new_url = new_url[:new_url.find('"')]
 
         from network import WebTools
         self.net = WebTools()
