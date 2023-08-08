@@ -72,7 +72,6 @@ class DataBase:
             'plot': serial_info[7]
             }
 
-        del serial_info
         return content
 
     def obtain_cast(self, serial_id):
