@@ -36,22 +36,25 @@ def xml_rebuild():
         if os.path.isfile(develop_xml):
             with open(develop_xml, 'r') as open_file:
                 xml_data = open_file.read()
-                
+
             xml_data = xml_data.splitlines()
 
             for line in xml_data:
                 if '<?xml' in line:
                     continue
-                if '<icon>' in line:
-                    line = line.replace('resources/media/', '')
-                if '<fanart>' in line:
+                if 'resources/media/' in line:
                     line = line.replace('resources/media/', '')
 
                 full_xml = '{}{}\n'.format(full_xml, line)
-                
+
         full_xml = '{}\n'.format(full_xml)
-        
+
     full_xml = '{}{}'.format(full_xml, '</addons>')
+
+    try:
+        full_xml = full_xml.replace('\n\n\n','\n\n')
+    except:
+        pass
 
     with open(os.path.join(release_dir, 'addons.xml'), 'w') as open_file:
             open_file.write(full_xml)
@@ -65,10 +68,10 @@ root_dir = develop_dir[:develop_dir.find('\develop')]
 release_dir = os.path.join(root_dir, 'release')
 develop_plugins = os.listdir(develop_dir)
 
-for d in develop_plugins:
-    if not 'plugin.niv' in d:
-        develop_plugins.remove(d)
-
+#for d in develop_plugins:
+    # if not 'plugin.niv' in d:
+    #     develop_plugins.remove(d)
+    
 for develop_plugin in develop_plugins:
     plugin_path = os.path.join(develop_dir, develop_plugin)
 
