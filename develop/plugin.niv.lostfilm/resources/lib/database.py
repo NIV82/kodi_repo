@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+def data_print(data):
+    import xbmc
+    xbmc.log(str(data), xbmc.LOGFATAL)
+
 class DataBase:
     def __init__(self, data_file):
         import sqlite3 as db
@@ -88,3 +92,60 @@ class DataBase:
         self.cu.execute('SELECT title_ru, serial_id, image_id, title_en FROM serials_db')
         self.c.commit()
         return self.cu.fetchall()
+
+    def obtain_nfo(self, serial_id):
+        self.cu.execute('SELECT * FROM serials_db WHERE serial_id=?', (serial_id,))
+        self.c.commit()
+
+        #serial_id, title_ru, title_en, aired_on, genres, directors, producers, writers, studios, country, description, image_id, actors
+        serial_info = self.cu.fetchone()
+
+        actors = ''
+        if serial_info[12]:
+            actors_array = serial_info[12].split('*')
+
+            for node in actors_array:
+                node = node.split('|')
+
+                if not node[0]:
+                    node[0] = 'uknown'
+                if not node[1]:
+                    node[1] = 'uknown'
+                if node[2]:
+                    node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
+                        node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
+                
+                result = '    <actor>\n        <name>{}</name>\n        <role>{}</role>\n        <thumb>{}</thumb>\n    </actor>'.format(node[0], node[1], node[2])
+
+                actors = '{}{}'.format(actors,result)
+
+        director = ''
+        if serial_info[5]:
+            director = serial_info[5]
+
+            if serial_info[6]:
+                director = u'{}*{}'.format(director, serial_info[6])
+
+        try:
+            genre = serial_info[4].split('*')
+            genre = ','.join(genre)
+        except:
+            genre = serial_info[4].split('*')
+
+        content = {
+            'serial_id': serial_info[0],
+            'title_ru': serial_info[1],
+            'premiered': serial_info[3],
+            #'genre': serial_info[4].split('*'),
+            'genre': genre,
+            'director': director.split('*'),
+            'writer': serial_info[7].split('*'),
+            'studio': serial_info[8].split('*'),
+            'country': serial_info[9].split(','),
+            'plot': serial_info[10],
+            'image_id': serial_info[11],
+            # 'actors': serial_info[12],
+            'actors': actors,
+            }
+        
+        return content

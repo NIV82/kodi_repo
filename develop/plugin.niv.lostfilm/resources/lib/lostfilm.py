@@ -43,11 +43,20 @@ if version >= 19:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
+
+    library_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/')
+    source_path = xbmcvfs.translatePath('special://userdata/sources.xml')
+    mediadb_path = xbmcvfs.translatePath('special://database')
+
 else:
     from utility import fs_enc
     addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
+
+    library_path = fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/'))
+    source_path = fs_enc(xbmc.translatePath('special://userdata/sources.xml'))
+    mediadb_path = fs_enc(xbmc.translatePath('special://database'))
 
 class Lostfilm:
     def __init__(self):
@@ -60,7 +69,11 @@ class Lostfilm:
         self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
         if not os.path.exists(self.torrents_dir):
             os.mkdir(self.torrents_dir)
-        
+
+        self.library_dir = os.path.join(addon_data_dir, 'library')
+        if not os.path.exists(self.library_dir):
+            os.mkdir(self.library_dir)
+
         self.cookie_dir = os.path.join(addon_data_dir, 'cookies')
         if not os.path.exists(self.cookie_dir):
             os.mkdir(self.cookie_dir)
@@ -139,6 +152,14 @@ class Lostfilm:
             return site_url
         else:
             return current_url
+#========================#========================#========================#
+    # def create_nfo(self):
+    #     #self.database.
+    #     #from nfo import CreateNFO
+    #     #self.nfo = 
+
+        
+    #     return
 #========================#========================#========================#
     def create_proxy_data(self):
         if '0' in addon.getSetting('unblock'):
@@ -344,12 +365,13 @@ class Lostfilm:
         if serial_season == 999:
             serial_season = 1
 
-        image = (
-            'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season),
-            'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image),
-            'https://static.lostfilm.top/Images/{}/Posters/e_{}_{}.jpg'.format(serial_image, serial_season, serial_episode)
-        )
-        image = image[int(addon.getSetting('series_image_mode'))]
+        image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season)
+        # image = (
+        #     'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season),
+        #     'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image),
+        #     'https://static.lostfilm.top/Images/{}/Posters/e_{}_{}.jpg'.format(serial_image, serial_season, serial_episode)
+        # )
+        # image = image[int(addon.getSetting('series_image_mode'))]
 
         if serial_episode == 999:
             image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season)
@@ -404,7 +426,7 @@ class Lostfilm:
             if node[2]:
                 node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
                     node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
-            
+
             if version >= 20:
                 actors.append(xbmc.Actor(
                     name=node[0], role=node[1], order=1, thumbnail=node[2]))
@@ -426,6 +448,7 @@ class Lostfilm:
         if serial_id:
             context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&serial_id={}")'.format(serial_id)))
             context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(serial_id, ismovie)))
+            context_menu.append(('[COLOR=white]Добавить в Медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, ismovie)))
 
         if se_code and not '999' in serial_episode:
             if not ismovie:
@@ -578,17 +601,10 @@ class Lostfilm:
                 if '(' and ')' in studios:
                     info['country'] = data[data.find('(')+1:data.find(')')]
 
-                studios = studios.split(',')
-
-                for studio in studios:
-                    studio = studio[studio.find('">')+2:]
-                    studio = studio[:studio.find('</a>')]
-                    studio = studio.strip()
-
-                    if info['studios']:
-                        info['studios'] = u'{}*{}'.format(info['studios'], studio)
-                    else:
-                        info['studios'] = u'{}'.format(studio)
+                studio = studios[studios.find('">')+2:]
+                studio = studio[:studio.find('</a>')]
+                studio = studio.strip()
+                info['studios'] = u'{}'.format(studio)
 
             if 'itemprop="genre">' in data:
                 genres = data[data.find('itemprop="genre">')+17:]
@@ -689,6 +705,29 @@ class Lostfilm:
         addon.openSettings()
         return
 #========================#========================#========================#
+    def exec_library_part(self):
+        if 'create_source' in self.params['param']:
+            from sources import Sources
+            sources = Sources(source_path=source_path, mediadb_path=mediadb_path)
+            sources.add_source(library_path=library_path, label='LostFilm - NIV', icon=icon)
+            del Sources
+
+            return
+        
+        if 'create_media' in self.params['param']:
+            nfo_data = self.database.obtain_nfo(serial_id=self.params['id'])
+            #serial_url = '{}series/{}/seasons/'.format(self.site_url, self.params['id'])
+
+            from nfo import CreateNFO
+            nfo = CreateNFO(library_path=library_path, site_url=self.site_url, **nfo_data)
+            nfo.create_tvshows()
+            nfo.create_episodedetails()
+            del CreateNFO
+
+            return
+
+        return
+#========================#========================#========================#
     def exec_update_database(self):
         self.create_database()
         return
@@ -777,6 +816,7 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'films_part'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог'), params={'mode': 'catalog_part'})
+        self.create_line(title='Медиатека', params={'mode': 'library_part'})
         xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
