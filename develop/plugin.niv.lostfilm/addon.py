@@ -9,6 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 import lostfilm
 
 if __name__ == '__main__':
-    lostfilm.start()
+    lostfilm.lostfilm_start()
 
 gc.collect()

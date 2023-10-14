@@ -113,6 +113,9 @@ class Lostfilm:
         self.authorization = self.create_authorization()
 
         self.create_tclean()
+
+        # import tvshow
+        # tvshow.create_update_library()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'lostfilms.db')):
             self.create_database()
@@ -152,14 +155,6 @@ class Lostfilm:
             return site_url
         else:
             return current_url
-#========================#========================#========================#
-    # def create_nfo(self):
-    #     #self.database.
-    #     #from nfo import CreateNFO
-    #     #self.nfo = 
-
-        
-    #     return
 #========================#========================#========================#
     def create_proxy_data(self):
         if '0' in addon.getSetting('unblock'):
@@ -707,24 +702,25 @@ class Lostfilm:
 #========================#========================#========================#
     def exec_library_part(self):
         if 'create_source' in self.params['param']:
-            from sources import Sources
-            sources = Sources(source_path=source_path, mediadb_path=mediadb_path)
-            sources.add_source(library_path=library_path, label='LostFilm - NIV', icon=icon)
-            del Sources
+            try:
+                from sources import Sources
+                sources = Sources()
+                del Sources
 
-            return
-        
+                self.dialog.notification(heading='Добавляем Источник',message='Выполнено',icon=icon,time=1000,sound=False)
+            except:
+                self.dialog.notification(heading='Добавляем Источник',message='Ошибка',icon=icon,time=1000,sound=False)
+
         if 'create_media' in self.params['param']:
-            nfo_data = self.database.obtain_nfo(serial_id=self.params['id'])
-            #serial_url = '{}series/{}/seasons/'.format(self.site_url, self.params['id'])
+            try:
+                import tvshow
+                tvshow.create_tvshows(serial_id=self.params['id'])
+                self.dialog.notification(heading='Добавляем Сериал',message='Выполнено',icon=icon,time=1000,sound=False)
+            except:
+                self.dialog.notification(heading='Добавляем Сериал',message='Ошибка',icon=icon,time=1000,sound=False)
 
-            from nfo import CreateNFO
-            nfo = CreateNFO(library_path=library_path, site_url=self.site_url, **nfo_data)
-            nfo.create_tvshows()
-            nfo.create_episodedetails()
-            del CreateNFO
-
-            return
+            #self.create_tvshows()
+            #return
 
         return
 #========================#========================#========================#
@@ -2094,6 +2090,11 @@ class Lostfilm:
                 return False
         return
 
-def start():
+def lostfilm_start():
     lostfilm = Lostfilm()
     lostfilm.execute()
+
+# def update_library():
+#     library = Lostfilm()
+#     library.create_update_library()
+

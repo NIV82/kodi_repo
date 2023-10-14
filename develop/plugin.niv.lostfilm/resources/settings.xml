@@ -49,6 +49,10 @@
 
   <category label="Медиатека Kodi">
     <setting type="action" label="Добавить Источник" action="RunPlugin(plugin://plugin.niv.lostfilm/?mode=library_part&param=create_source)"/>
+    <setting type="sep"/>
+    <setting id="update_library" type="bool" label="Автоматическое обновление медиатеки" default="false"/>
+    <setting id="update_librarytime" type="slider" label="Частота обновления (часов)" default="12" range="1,1,24" option="int"/>
+    <setting id="library_time" label="status" type="text" default="" visible="false"/>
   </category>
 
   <category label="Оформление">

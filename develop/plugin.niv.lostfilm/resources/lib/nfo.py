@@ -13,9 +13,8 @@ class CreateNFO:
         self.nfo_data = nfo_data
         self.site_url = site_url
         self.serial_url = '{}series/{}/seasons/'.format(site_url, self.nfo_data['serial_id'])
-        
         self.serial_dir = os.path.join(self.library_path, self.nfo_data['serial_id'])
-    #https://www.lostfilm.today/v_search.php?c=779&s=1&e=2
+
     def create_tvshows(self):
         tvshowdetails = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<tvshow>\n    <title>{}</title>\n    <plot>{}</plot>\n    <genre>{}</genre>\n    <premiered>{}</premiered>\n    <studio>{}</studio>\n{}\n    <thumb>{}</thumb>\n</tvshow>'.format(
             self.nfo_data['title_ru'],
@@ -32,23 +31,14 @@ class CreateNFO:
         except:
             pass
 
-        #serial_dir = os.path.join(self.library_path, self.nfo_data['serial_id'])
         if not os.path.exists(self.serial_dir):
             os.mkdir(self.serial_dir)
         
         serial_nfo = os.path.join(self.serial_dir, 'tvshow.nfo')
-        try:
-            with open(serial_nfo, 'wb') as write_file:
-                write_file.write(tvshowdetails)
-        except Exception as e:
-            data_print(e)
-        return
 
+        with open(serial_nfo, 'wb') as write_file:
+            write_file.write(tvshowdetails)
 
-    # def create_movies(self):
-    #     return
-    
-    def create_episodedetails(self):
         from network import get_web
         html = get_web(url=self.serial_url)
 
@@ -79,19 +69,14 @@ class CreateNFO:
                     if not episode_title:
                         continue
                     
-                    p = int((float(i+1) / len(data_array)) * 100)
+                    #p = int((float(i+1) / len(data_array)) * 100)
 
                     #self.progress_bg.update(p, 'Обработано - {} из {}'.format(i, len(data_array)))
 
-                    # file_name = '{}.{}.{}.nfo'.format(self.nfo_data['serial_id'], season_mod, episode_mod)
                     file_name = '{}.{}.{}'.format(self.nfo_data['serial_id'], season_mod, episode_mod)
                     nfo_path = os.path.join(self.serial_dir, '{}.nfo'.format(file_name))
 
-                    #plugin://plugin.video.tam/?url=http%3A%2F%2F127.0.0.1%3A8095%2Fproxy%2Fhttp%3A%2F%2Frutor.is%2Fdownload%2F941749&ind=0&ad=0&mode=play&title=One+Piece.s01.e01
-                    #mode=play_part&id=Gen_V&param=779001001
-                    #['plugin://plugin.niv.lostfilm/', '47', '?mode=play_part&id=Gen_V&param=779001001', 'resume:false']
                     strm_path = os.path.join(self.serial_dir, '{}.strm'.format(file_name))                    
-                    #strm_content = '{}v_search.php?c={}&s={}&e={}'.format(self.site_url, self.nfo_data['image_id'], season, episode)
                     strm_content = 'plugin://plugin.niv.lostfilm/?mode=play_part&id={}&param={}'.format(self.nfo_data['serial_id'], se_code)
                     try:
                         strm_content = strm_content.encode('utf-8')
@@ -124,3 +109,7 @@ class CreateNFO:
             data_print('ERROR-2')
 
         return
+
+
+    # def create_movies(self):
+    #     return
