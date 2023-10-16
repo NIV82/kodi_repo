@@ -160,21 +160,24 @@ def create_seriesdetails(serial_info):
 
     return
 
-def create_update_library():    
-    if 'true' in addon.getSetting('update_library'):
-        pass
-    else:
-        return
+def create_update_library():
+    library_time = 0
+    update_time = 43200
 
-    try:
-        library_time = float(addon.getSetting('library_time'))
-    except:
-        library_time = 0
+    # if 'true' in addon.getSetting('update_library'):
+    #     pass
+    # else:
+    #     return
 
-    try:
-        update_time = int(addon.getSetting('update_librarytime')) * 60 * 60
-    except:
-        update_time = 43200
+    # try:
+    #     library_time = float(addon.getSetting('library_time'))
+    # except:
+    #     library_time = 0
+
+    # try:
+    #     update_time = int(addon.getSetting('update_librarytime')) * 60 * 60
+    # except:
+    #     update_time = 43200
 
     if time.time() - library_time > update_time:
         addon.setSetting('library_time', str(time.time()))
@@ -184,14 +187,14 @@ def create_update_library():
         if len(library_items) < 1:
             return
             
-        progress_bg.create('Обновляем медиатеку')
+        #progress_bg.create('Обновляем медиатеку')
 
         try:
             for i, item in enumerate(library_items):
                 try:
                     p = int((float(i+1) / len(library_items)) * 100)
-                    create_tvshows(serial_id=item)
-                    progress_bg.update(p, 'Обрабатываем - {} | {} из {}'.format(item, i, len(library_items)))
+                    #create_tvshows(serial_id=item)
+                    #progress_bg.update(p, 'Обрабатываем - {} | {} из {}'.format(item, i, len(library_items)))
                 except Exception as e:
                     xbmc.log(e, level=xbmc.LOGFATAL)
                     pass
@@ -199,10 +202,14 @@ def create_update_library():
             xbmc.log(e, level=xbmc.LOGFATAL)
             pass
 
-        progress_bg.close()
+        #progress_bg.close()
 
-    xbmc.executebuiltin('UpdateLibrary("video", "", "false")')
+    #xbmc.executebuiltin('UpdateLibrary("video", "", "false")')
     
+    return
+
+def update():
+    xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(library_path))
     return
 
 def create_tvshows(serial_id):
@@ -213,3 +220,7 @@ def create_tvshows(serial_id):
 
     create_tvshowdetails(serial_info=serial_info)
     create_seriesdetails(serial_info=serial_info)
+
+    update()
+    
+    return

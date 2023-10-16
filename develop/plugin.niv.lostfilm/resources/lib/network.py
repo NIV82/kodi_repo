@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 try:
-    # import ssl
-    # ssl._create_default_https_context = ssl._create_unverified_context
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
     from urllib2 import ProxyHandler
     from urllib2 import HTTPCookieProcessor
     from urllib2 import build_opener
@@ -10,9 +10,8 @@ try:
     from urllib2 import urlopen
     from cookielib import MozillaCookieJar
 except:
-    # import ssl
-    # ssl._create_default_https_context = ssl._create_unverified_context
-
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
     from urllib.request import ProxyHandler
     from urllib.request import HTTPCookieProcessor
     from urllib.request import build_opener

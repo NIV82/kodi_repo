@@ -47,7 +47,6 @@ if version >= 19:
     library_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/')
     source_path = xbmcvfs.translatePath('special://userdata/sources.xml')
     mediadb_path = xbmcvfs.translatePath('special://database')
-
 else:
     from utility import fs_enc
     addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
@@ -113,9 +112,6 @@ class Lostfilm:
         self.authorization = self.create_authorization()
 
         self.create_tclean()
-
-        # import tvshow
-        # tvshow.create_update_library()
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'lostfilms.db')):
             self.create_database()
@@ -707,17 +703,19 @@ class Lostfilm:
                 sources = Sources()
                 del Sources
 
-                self.dialog.notification(heading='Добавляем Источник',message='Выполнено',icon=icon,time=1000,sound=False)
+                #self.dialog.notification(heading='Добавляем Источник',message='Выполнено',icon=icon,time=1000,sound=False)
             except:
-                self.dialog.notification(heading='Добавляем Источник',message='Ошибка',icon=icon,time=1000,sound=False)
+                #self.dialog.notification(heading='Добавляем Источник',message='Ошибка',icon=icon,time=1000,sound=False)
+                pass
 
         if 'create_media' in self.params['param']:
             try:
                 import tvshow
                 tvshow.create_tvshows(serial_id=self.params['id'])
-                self.dialog.notification(heading='Добавляем Сериал',message='Выполнено',icon=icon,time=1000,sound=False)
+                #self.dialog.notification(heading='Добавляем Сериал',message='Выполнено',icon=icon,time=1000,sound=False)
             except:
-                self.dialog.notification(heading='Добавляем Сериал',message='Ошибка',icon=icon,time=1000,sound=False)
+                #self.dialog.notification(heading='Добавляем Сериал',message='Ошибка',icon=icon,time=1000,sound=False)
+                pass
 
             #self.create_tvshows()
             #return
@@ -2093,8 +2091,3 @@ class Lostfilm:
 def lostfilm_start():
     lostfilm = Lostfilm()
     lostfilm.execute()
-
-# def update_library():
-#     library = Lostfilm()
-#     library.create_update_library()
-
