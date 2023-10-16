@@ -117,7 +117,7 @@ class DataBase:
                 
                 result = '    <actor>\n        <name>{}</name>\n        <role>{}</role>\n        <thumb>{}</thumb>\n    </actor>'.format(node[0], node[1], node[2])
 
-                actors = '{}{}'.format(actors,result)
+                actors = '{}\n{}'.format(actors,result)
 
         director = ''
         if serial_info[5]:

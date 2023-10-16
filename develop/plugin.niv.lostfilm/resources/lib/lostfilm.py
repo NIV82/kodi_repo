@@ -44,18 +44,18 @@ if version >= 19:
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
 
-    library_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/')
-    source_path = xbmcvfs.translatePath('special://userdata/sources.xml')
-    mediadb_path = xbmcvfs.translatePath('special://database')
+    #library_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/')
+    #source_path = xbmcvfs.translatePath('special://userdata/sources.xml')
+    #mediadb_path = xbmcvfs.translatePath('special://database')
 else:
     from utility import fs_enc
     addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
-    library_path = fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/'))
-    source_path = fs_enc(xbmc.translatePath('special://userdata/sources.xml'))
-    mediadb_path = fs_enc(xbmc.translatePath('special://database'))
+    #library_path = fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/'))
+    #source_path = fs_enc(xbmc.translatePath('special://userdata/sources.xml'))
+    #mediadb_path = fs_enc(xbmc.translatePath('special://database'))
 
 class Lostfilm:
     def __init__(self):
@@ -697,28 +697,20 @@ class Lostfilm:
         return
 #========================#========================#========================#
     def exec_library_part(self):
-        if 'create_source' in self.params['param']:
-            try:
-                from sources import Sources
-                sources = Sources()
-                del Sources
+        import media_library
 
-                #self.dialog.notification(heading='Добавляем Источник',message='Выполнено',icon=icon,time=1000,sound=False)
-            except:
-                #self.dialog.notification(heading='Добавляем Источник',message='Ошибка',icon=icon,time=1000,sound=False)
-                pass
+        if 'create_source' in self.params['param']:
+            if media_library.create_sources():
+                self.dialog.notification(heading='Добавляем Источник',message='Выполнено',icon=icon,time=1000,sound=False)
+            else:
+                self.dialog.notification(heading='Добавляем Источник',message='Ошибка',icon=icon,time=1000,sound=False)
 
         if 'create_media' in self.params['param']:
-            try:
-                import tvshow
-                tvshow.create_tvshows(serial_id=self.params['id'])
-                #self.dialog.notification(heading='Добавляем Сериал',message='Выполнено',icon=icon,time=1000,sound=False)
-            except:
-                #self.dialog.notification(heading='Добавляем Сериал',message='Ошибка',icon=icon,time=1000,sound=False)
-                pass
-
-            #self.create_tvshows()
-            #return
+            if media_library.create_tvshows(serial_id=self.params['id']):
+                media_library.update()
+                self.dialog.notification(heading='Добавляем Сериал',message='Выполнено',icon=icon,time=1000,sound=False)
+            else:
+                self.dialog.notification(heading='Добавляем Сериал',message='Ошибка',icon=icon,time=1000,sound=False)
 
         return
 #========================#========================#========================#

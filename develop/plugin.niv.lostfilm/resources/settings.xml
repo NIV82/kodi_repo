@@ -47,13 +47,13 @@
     <setting id="tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
   </category>
 
-  <!-- <category label="Медиатека Kodi">
+  <category label="Медиатека Kodi">
     <setting type="action" label="Добавить Источник" action="RunPlugin(plugin://plugin.niv.lostfilm/?mode=library_part&param=create_source)"/>
     <setting type="sep"/>
     <setting id="update_library" type="bool" label="Автоматическое обновление медиатеки" default="false"/>
     <setting id="update_librarytime" type="slider" label="Частота обновления (часов)" default="12" range="1,1,24" option="int"/>
     <setting id="library_time" label="status" type="text" default="" visible="false"/>
-  </category> -->
+  </category>
 
   <category label="Оформление">
     <setting id="search_color" type="enum" label="Поиск" default="0" values="Нет|[COLOR=red]Красный[/COLOR]|[COLOR=lime]Зеленый[/COLOR]|[COLOR=blue]Синий[/COLOR]|[COLOR=gold]Желтый[/COLOR]|[COLOR=orange]Оранжевый[/COLOR]" />
