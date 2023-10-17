@@ -8,6 +8,7 @@ class DataBase:
     def __init__(self, data_file):
         import sqlite3 as db
         self.c = db.connect(database=data_file)
+        #self.c.text_factory = str
         del db
         self.cu = self.c.cursor()
         self.create_tables()
@@ -94,16 +95,38 @@ class DataBase:
         return self.cu.fetchall()
 
     def obtain_nfo(self, serial_id):
-        self.cu.execute('SELECT * FROM serials_db WHERE serial_id=?', (serial_id,))
+        self.cu.execute('SELECT title_ru,aired_on,genres,studios,country,description,image_id,actors FROM serials_db WHERE serial_id=?', (serial_id,))
         self.c.commit()
-
-        #serial_id, title_ru, title_en, aired_on, genres, directors, producers, writers, studios, country, description, image_id, actors
         serial_info = self.cu.fetchone()
 
-        actors = ''
-        if serial_info[12]:
-            actors_array = serial_info[12].split('*')
+        content = dict.fromkeys(
+            ['serial_id', 'title_ru', 'premiered', 'genre', 'studio', 'country', 'plot', 'image_id', 'actors'], '')
+        
+        content['serial_id'] = serial_id
 
+        if serial_info[0]:
+            content['title_ru'] = u'{}'.format(serial_info[0])
+
+        if serial_info[1]:
+            content['premiered'] = u'{}'.format(serial_info[1])
+
+        if serial_info[2]:
+            content['genre'] = u'{}'.format(serial_info[2].replace('*',','))
+
+        if serial_info[3]:
+            content['studio'] = u'{}'.format(serial_info[3].replace('*',','))
+
+        if serial_info[4]:
+            content['country'] = u'{}'.format(serial_info[4].replace('*',','))
+
+        if serial_info[5]:
+            content['plot'] = u'{}'.format(serial_info[5])
+
+        content['image_id'] = serial_info[6]
+
+        if serial_info[7]:
+            actors_array = serial_info[7].split('*')
+    
             for node in actors_array:
                 node = node.split('|')
 
@@ -115,37 +138,8 @@ class DataBase:
                     node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
                         node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
                 
-                result = '    <actor>\n        <name>{}</name>\n        <role>{}</role>\n        <thumb>{}</thumb>\n    </actor>'.format(node[0], node[1], node[2])
+                result = u'    <actor>\n        <name>{}</name>\n        <role>{}</role>\n        <thumb>{}</thumb>\n    </actor>'.format(node[0], node[1], node[2])
 
-                actors = '{}\n{}'.format(actors,result)
+                content['actors'] = u'{}\n{}'.format(content['actors'],result)
 
-        director = ''
-        if serial_info[5]:
-            director = serial_info[5]
-
-            if serial_info[6]:
-                director = u'{}*{}'.format(director, serial_info[6])
-
-        try:
-            genre = serial_info[4].split('*')
-            genre = ','.join(genre)
-        except:
-            genre = serial_info[4].split('*')
-
-        content = {
-            'serial_id': serial_info[0],
-            'title_ru': serial_info[1],
-            'premiered': serial_info[3],
-            #'genre': serial_info[4].split('*'),
-            'genre': genre,
-            'director': director.split('*'),
-            'writer': serial_info[7].split('*'),
-            'studio': serial_info[8].split('*'),
-            'country': serial_info[9].split(','),
-            'plot': serial_info[10],
-            'image_id': serial_info[11],
-            # 'actors': serial_info[12],
-            'actors': actors,
-            }
-        
         return content

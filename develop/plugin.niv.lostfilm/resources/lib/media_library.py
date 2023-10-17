@@ -49,7 +49,7 @@ def update():
 
 def create_tvshowdetails(serial_info):
     try:
-        tvshowdetails = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<tvshow>\n    <title>{}</title>\n    <plot>{}</plot>\n    <genre>{}</genre>\n    <premiered>{}</premiered>\n    <studio>{}</studio>\n{}\n    <thumb>{}</thumb>\n</tvshow>'.format(
+        tvshowdetails = u'<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<tvshow>\n    <title>{}</title>\n    <plot>{}</plot>\n    <genre>{}</genre>\n    <premiered>{}</premiered>\n    <studio>{}</studio>\n{}\n    <thumb>{}</thumb>\n</tvshow>'.format(
             serial_info['title_ru'],
             serial_info['plot'],
             serial_info['genre'],
@@ -92,7 +92,7 @@ def create_seriesdetails(serial_info):
     data_array.reverse()
 
     try:
-        for i, data in enumerate(data_array):
+        for data in data_array:
             try:
                 if not 'data-code=' in data:
                     continue
@@ -124,7 +124,7 @@ def create_seriesdetails(serial_info):
 
                 file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_info['image_id'], season)
 
-                episodedetails = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<episodedetails>\n    <title>{}</title>\n    <season>{}</season>\n    <episode>{}</episode>\n    <plot>{}</plot>\n    <thumb>{}</thumb>\n</episodedetails>'.format(
+                episodedetails = u'<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<episodedetails>\n    <title>{}</title>\n    <season>{}</season>\n    <episode>{}</episode>\n    <plot>{}</plot>\n    <thumb>{}</thumb>\n</episodedetails>'.format(
                     episode_title, season, episode, serial_info['plot'], file_thumb)
 
                 try:
@@ -140,12 +140,9 @@ def create_seriesdetails(serial_info):
                 with open(strm_path, 'wb') as write_file:
                     write_file.write(strm_content)
 
-            except Exception as e:
-                xbmc.log(e, level=xbmc.LOGFATAL)
+            except:
                 continue
-
-    except Exception as e:
-        xbmc.log(e, level=xbmc.LOGFATAL)
+    except:
         return False
 
     return True
@@ -178,11 +175,10 @@ def create_update_library():
             for item in library_items:
                 try:
                     create_tvshows(serial_id=item)
-                except Exception as e:
-                    xbmc.log(e, level=xbmc.LOGFATAL)
-                    pass
-        except Exception as e:
-            xbmc.log(e, level=xbmc.LOGFATAL)
+                except:
+                    continue
+
+        except:
             pass
 
         xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(library_path))
@@ -214,7 +210,7 @@ def create_xmlsource():
                 )
 
             xml_data = xml_data.replace(node_original, vid_modified)
-            
+
             with open(source_path, 'w') as write_file:
                 write_file.write(xml_data)
     except:

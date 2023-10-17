@@ -43,19 +43,11 @@ if version >= 19:
     addon_data_dir = xbmcvfs.translatePath(addon.getAddonInfo('profile'))
     icon = xbmcvfs.translatePath(addon.getAddonInfo('icon'))
     fanart = xbmcvfs.translatePath(addon.getAddonInfo('fanart'))
-
-    #library_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/')
-    #source_path = xbmcvfs.translatePath('special://userdata/sources.xml')
-    #mediadb_path = xbmcvfs.translatePath('special://database')
 else:
     from utility import fs_enc
     addon_data_dir = fs_enc(xbmc.translatePath(addon.getAddonInfo('profile')))
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
-
-    #library_path = fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/'))
-    #source_path = fs_enc(xbmc.translatePath('special://userdata/sources.xml'))
-    #mediadb_path = fs_enc(xbmc.translatePath('special://database'))
 
 class Lostfilm:
     def __init__(self):
@@ -802,7 +794,7 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'films_part'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог'), params={'mode': 'catalog_part'})
-        self.create_line(title='Медиатека', params={'mode': 'library_part'})
+        #self.create_line(title='[B]Медиатека[/B]', params={'mode': 'library_part'})
         xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
