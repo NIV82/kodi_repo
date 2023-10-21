@@ -89,6 +89,16 @@ class DataBase:
         self.c.commit()
         return self.cu.fetchone()[0]
 
+    def obtain_title_ru(self, serial_id):
+        self.cu.execute('SELECT title_ru FROM serials_db WHERE serial_id=?', (serial_id,))
+        self.c.commit()
+        return self.cu.fetchone()[0]
+    
+    def obtain_is_movie(self, serial_id):
+        self.cu.execute('SELECT title_en FROM serials_db WHERE serial_id=?', (serial_id,))
+        self.c.commit()
+        return True if '1' in self.cu.fetchone()[0] else False
+    
     def obtain_serials_id(self):
         self.cu.execute('SELECT title_ru, serial_id, image_id, title_en FROM serials_db')
         self.c.commit()

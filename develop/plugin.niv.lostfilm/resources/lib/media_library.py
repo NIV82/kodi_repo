@@ -42,10 +42,37 @@ def create_serial_info(serial_id):
     db.end()
 
     return serial_info
+
+def clean_dir(path=None):
+    if not path:
+        return
     
-def update():
-    xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(library_path))
+    if not os.path.isdir(path):
+        return
+    
+    for item in os.listdir(path):
+        full_path = os.path.join(path, item)
+        os.remove(full_path)
+
+    try:
+        os.rmdir(path)
+    except:
+        pass
+
     return
+
+def update(serial_id=None):
+    if serial_id:
+        full_path = os.path.join(library_path, serial_id, '')
+    else:
+        full_path = library_path
+
+    xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(full_path))
+    return
+
+# def update():
+#     xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(library_path))
+#     return
 
 def create_tvshowdetails(serial_info):
     try:
@@ -54,7 +81,7 @@ def create_tvshowdetails(serial_info):
             serial_info['plot'],
             serial_info['genre'],
             serial_info['premiered'],
-            ','.join(serial_info['studio']),
+            serial_info['studio'],
             serial_info['actors'],
             'https://static.lostfilm.top/Images/{}/Posters/shmoster_s1.jpg'.format(serial_info['image_id'])
             )
@@ -65,10 +92,16 @@ def create_tvshowdetails(serial_info):
             pass
 
         serial_dir = os.path.join(library_path, serial_info['serial_id'])
+
+        try:
+            clean_dir(path=serial_dir)
+        except:
+            pass
+        
         if not os.path.exists(serial_dir):
             os.mkdir(serial_dir)
 
-        serial_nfo = os.path.join(serial_dir, 'tvshow.nfo')        
+        serial_nfo = os.path.join(serial_dir, 'tvshow.nfo')
         with open(serial_nfo, 'wb') as write_file:
             write_file.write(tvshowdetails)
     except:
@@ -78,6 +111,7 @@ def create_tvshowdetails(serial_info):
 
 def create_seriesdetails(serial_info):    
     serial_dir = os.path.join(library_path, serial_info['serial_id'])
+
     site_url = create_site_url()
     serial_url = '{}series/{}/seasons/'.format(site_url, serial_info['serial_id'])
 
@@ -94,7 +128,7 @@ def create_seriesdetails(serial_info):
     try:
         for data in data_array:
             try:
-                if not 'data-code=' in data:
+                if not 'PlayEpisode(' in data:
                     continue
 
                 se_code = data[data.find('episode="')+9:]
@@ -171,64 +205,14 @@ def create_update_library():
         if len(library_items) < 1:
             return
 
-        try:
-            for item in library_items:
-                try:
-                    create_tvshows(serial_id=item)
-                except:
-                    continue
-
-        except:
-            pass
+        for item in library_items:
+            try:
+                create_tvshows(serial_id=item)
+            except:
+                continue
 
         xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(library_path))
     return
-
-def create_xmlsource():
-    label='LostFilm - NIV'
-    try:
-        if not os.path.exists(source_path):
-            with open(source_path, 'w') as write_file:
-                write_file.write(
-                    '<sources>\n    <programs>\n        <default pathversion="1"></default>\n    </programs>\n    <video>\n        <default pathversion="1"></default>\n    </video>\n    <music>\n        <default pathversion="1"></default>\n    </music>\n    <pictures>\n        <default pathversion="1"></default>\n    </pictures>\n    <files>\n        <default pathversion="1"></default>\n    </files>\n    <games>\n        <default pathversion="1"></default>\n    </games>\n</sources>'
-                    )
-                
-        with open(source_path, 'r') as read_file:
-            xml_data = read_file.read()
-        
-        if not label in xml_data:
-            node_original = xml_data[xml_data.find('<video>'):xml_data.find('</video>')+8]
-                    
-            if '<default pathversion="1"></default>' in node_original:
-                vid_modified = node_original.replace(
-                '<default pathversion="1"></default>', '<default pathversion="1"></default>\n        <source>\n            <name>{}</name>\n            <path pathversion="1">{}</path>\n            <thumbnail pathversion="1">{}</thumbnail>\n            <allowsharing>true</allowsharing>\n        </source>'.format(label, library_path , icon)
-                )
-
-            if '<default pathversion="1" />' in node_original:
-                vid_modified = node_original.replace(
-                '<default pathversion="1" />', '<default pathversion="1" />\n        <source>\n            <name>{}</name>\n            <path pathversion="1">{}</path>\n            <thumbnail pathversion="1">{}</thumbnail>\n            <allowsharing>true</allowsharing>\n        </source>'.format(label, library_path , icon)
-                )
-
-            xml_data = xml_data.replace(node_original, vid_modified)
-
-            with open(source_path, 'w') as write_file:
-                write_file.write(xml_data)
-    except:
-        return False
-
-    return True
-
-def create_dbsource():
-    try:
-        from mediadb import MediaDatabase
-        mdb = MediaDatabase(library_path=library_path, mediadb_path=mediadb_path)
-        mdb.add_dbsource()
-        mdb.end()
-        del MediaDatabase
-    except:
-        return False
-    
-    return True
 
 def create_tvshows(serial_id):
     if not serial_id:
@@ -244,8 +228,3 @@ def create_tvshows(serial_id):
             return True
     
     return False
-
-def create_sources():
-    if create_xmlsource():
-        if create_dbsource():
-            return True
