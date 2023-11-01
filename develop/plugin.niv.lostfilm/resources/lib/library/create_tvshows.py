@@ -1,67 +1,34 @@
 # -*- coding: utf-8 -*-
 
-import os
-import time
-import utility
+from library.manage import os
+from library.manage import xbmc
 
-import xbmc
-import xbmcaddon
-import xbmcvfs
+from library.manage import library_path
+from library.manage import database_path
+from library.manage import addon
+from library.manage import site_url
 
-addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
-
-try:
-    database_path = utility.fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/database/lostfilms.db'))
-    library_path = utility.fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/'))
-    source_path = utility.fs_enc(xbmc.translatePath('special://userdata/sources.xml'))
-    icon = utility.fs_enc(xbmc.translatePath('special://home/addons/plugin.niv.lostfilm/resources/media/icon.png'))
-    mediadb_path = utility.fs_enc(xbmc.translatePath('special://database'))
-except:
-    database_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/database/lostfilms.db')
-    library_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/')
-    source_path = xbmcvfs.translatePath('special://userdata/sources.xml')
-    icon = xbmcvfs.translatePath('special://home/addons/plugin.niv.lostfilm/resources/media/icon.png')
-    mediadb_path = xbmcvfs.translatePath('special://database')
-
-def create_site_url():
-    site_url = addon.getSetting('mirror_0')
-    current_mirror = 'mirror_{}'.format(addon.getSetting('mirror_mode'))
-    current_url = addon.getSetting(current_mirror)
-
-    if not current_url:
-        return site_url
-    else:
-        return current_url
-
-def create_serial_info(serial_id):
-    from database import DataBase
-    db = DataBase(database_path)
-    del DataBase
-
-    serial_info = db.obtain_nfo(serial_id=serial_id)
-    db.end()
-
-    return serial_info
-
-def clean_dir(path=None):
-    if not path:
+def clean_dir(serial_id=None):
+    if not serial_id:
         return
     
-    if not os.path.isdir(path):
+    serial_dir = os.path.join(library_path, serial_id)
+
+    if not os.path.isdir(serial_dir):
         return
     
-    for item in os.listdir(path):
-        full_path = os.path.join(path, item)
+    for item in os.listdir(serial_dir):
+        full_path = os.path.join(serial_dir, item)
         os.remove(full_path)
 
     try:
-        os.rmdir(path)
+        os.rmdir(serial_dir)
     except:
         pass
 
     return
 
-def update(serial_id=None):
+def tvshow_update(serial_id=None):
     if serial_id:
         full_path = os.path.join(library_path, serial_id, '')
     else:
@@ -70,9 +37,15 @@ def update(serial_id=None):
     xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(full_path))
     return
 
-# def update():
-#     xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(library_path))
-#     return
+def get_serialinfo(serial_id):
+    from database import DataBase
+    db = DataBase(database_path)
+    del DataBase
+
+    serial_info = db.obtain_nfo(serial_id=serial_id)
+    db.end()
+
+    return serial_info
 
 def create_tvshowdetails(serial_info):
     try:
@@ -92,27 +65,25 @@ def create_tvshowdetails(serial_info):
             pass
 
         serial_dir = os.path.join(library_path, serial_info['serial_id'])
-
+        
         try:
-            clean_dir(path=serial_dir)
+            clean_dir(serial_id=serial_info['serial_id'])
         except:
             pass
-        
+
         if not os.path.exists(serial_dir):
             os.mkdir(serial_dir)
 
         serial_nfo = os.path.join(serial_dir, 'tvshow.nfo')
         with open(serial_nfo, 'wb') as write_file:
             write_file.write(tvshowdetails)
+        return True
     except:
         return False
-    
-    return True
 
-def create_seriesdetails(serial_info):    
+def create_seriesdetails(serial_info):
     serial_dir = os.path.join(library_path, serial_info['serial_id'])
 
-    site_url = create_site_url()
     serial_url = '{}series/{}/seasons/'.format(site_url, serial_info['serial_id'])
 
     from network import get_web
@@ -155,8 +126,11 @@ def create_seriesdetails(serial_info):
                     strm_content = strm_content.encode('utf-8')
                 except:
                     pass
-
-                file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_info['image_id'], season)
+                
+                if '0' in addon.getSetting('tvshows_imagemod'):
+                    file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/e_{}_{}.jpg'.format(serial_info['image_id'], season, episode)
+                elif '1' in addon.getSetting('tvshows_imagemod'):
+                    file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_info['image_id'], season)
 
                 episodedetails = u'<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<episodedetails>\n    <title>{}</title>\n    <season>{}</season>\n    <episode>{}</episode>\n    <plot>{}</plot>\n    <thumb>{}</thumb>\n</episodedetails>'.format(
                     episode_title, season, episode, serial_info['plot'], file_thumb)
@@ -181,11 +155,11 @@ def create_seriesdetails(serial_info):
 
     return True
 
-def create_update_library():
-    if 'true' in addon.getSetting('update_library'):
-        pass
-    else:
+def update():
+    if not 'true' in addon.getSetting('update_library'):
         return
+
+    import time
 
     try:
         library_time = float(addon.getSetting('library_time'))
@@ -198,8 +172,6 @@ def create_update_library():
         update_time = 43200
 
     if time.time() - library_time > update_time:
-        addon.setSetting('library_time', str(time.time()))
-
         library_items = os.listdir(library_path)
 
         if len(library_items) < 1:
@@ -207,24 +179,15 @@ def create_update_library():
 
         for item in library_items:
             try:
-                create_tvshows(serial_id=item)
+                serial_info = get_serialinfo(serial_id=item)
+
+                if create_tvshowdetails(serial_info=serial_info):
+                    if create_seriesdetails(serial_info=serial_info):
+                        tvshow_update(serial_id=item)
+
+                xbmc.log(str('SUCCESS'), xbmc.LOGFATAL)
             except:
                 continue
 
-        xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(library_path))
+        addon.setSetting('library_time', str(time.time()))
     return
-
-def create_tvshows(serial_id):
-    if not serial_id:
-        return False
-
-    try:
-        serial_info = create_serial_info(serial_id)
-    except:
-        return False
-
-    if create_tvshowdetails(serial_info=serial_info):
-        if create_seriesdetails(serial_info=serial_info):
-            return True
-    
-    return False

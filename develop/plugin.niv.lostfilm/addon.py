@@ -2,7 +2,7 @@
 
 import os
 import sys
-import gc
+# import gc
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
@@ -11,4 +11,4 @@ import lostfilm
 if __name__ == '__main__':
     lostfilm.lostfilm_start()
 
-gc.collect()
+# gc.collect()

@@ -49,6 +49,23 @@ else:
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
+# library_dir = os.path.join(addon_data_dir, 'library')
+
+# if 'true' in addon.getSetting('userpath'):
+#     if addon.getSetting('library_userpath'):
+#         library_dir = addon.getSetting('library_userpath')
+#     else:
+#         xbmcgui.Dialog().notification(heading='LostFilm', message='Путь медиатеки не введен, переключаем на стандартный', icon=icon, time=1000, sound=False)
+#         addon.setSetting(id='userpath', value='false')
+
+# try:
+#     if not os.path.exists(library_dir):
+#         os.mkdir(library_dir)
+# except:
+#     pass
+
+# addon.setSetting(id='library_path', value=library_dir)
+
 class Lostfilm:
     def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
@@ -61,9 +78,9 @@ class Lostfilm:
         if not os.path.exists(self.torrents_dir):
             os.mkdir(self.torrents_dir)
 
-        self.library_dir = os.path.join(addon_data_dir, 'library')
-        if not os.path.exists(self.library_dir):
-            os.mkdir(self.library_dir)
+        # self.library_dir = os.path.join(addon_data_dir, 'library')
+        # if not os.path.exists(self.library_dir):
+        #     os.mkdir(self.library_dir)
 
         self.cookie_dir = os.path.join(addon_data_dir, 'cookies')
         if not os.path.exists(self.cookie_dir):
@@ -111,6 +128,25 @@ class Lostfilm:
         from database import DataBase
         self.database = DataBase(os.path.join(self.database_dir, 'lostfilms.db'))
         del DataBase
+#========================#========================#========================#
+    # def create_librarydir(self):
+    #     library_dir = os.path.join(addon_data_dir, 'library')
+
+    #     if 'true' in addon.getSetting('userpath'):
+    #         if addon.getSetting('library_userpath'):
+    #             library_dir = addon.getSetting('library_userpath')
+    #         else:
+    #             self.dialog.notification(heading='LostFilm', message='Путь медиатеки не введен, переключаем на стандартный', icon=icon, time=1000, sound=False)
+    #             addon.setSetting(id='userpath', value='false')
+
+    #     if not os.path.exists(library_dir):
+    #         try:
+    #             os.mkdir(library_dir)
+    #         except:
+    #             pass
+
+    #     addon.setSetting(id='library_path', value=library_dir)
+    #     return
 #========================#========================#========================#
     def create_tclean(self):
         try:
@@ -432,6 +468,7 @@ class Lostfilm:
                 context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&serial_id={}")'.format(serial_id)))
                 context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(serial_id, ismovie)))
                 context_menu.append(('[COLOR=white]Добавить в Медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, ismovie)))
+                context_menu.append(('[COLOR=white]Обновить медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=update_media")'))
 
             if se_code and not '999' in serial_episode:
                 if not ismovie:
@@ -721,42 +758,52 @@ class Lostfilm:
 #========================#========================#========================#
     def exec_library_part(self):
         if 'create_source' in self.params['param']:
-            import create_source
-            if create_source.create_sources():
-                self.dialog.notification(heading='Добавляем Источник',message='Выполнено',icon=icon,time=1000,sound=False)
+            import library.manage as manage
+
+            if manage.create_source():
+                self.dialog.notification(heading='Медиатека',message='Источник Добавлен',icon=icon,time=1000,sound=False)
             else:
-                self.dialog.notification(heading='Добавляем Источник',message='Ошибка',icon=icon,time=1000,sound=False)
+                self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
 
         if 'create_media' in self.params['param']:
-            import media_library
-            if media_library.create_tvshows(serial_id=self.params['id']):
-                media_library.update(serial_id=self.params['id'])
-                self.dialog.notification(heading='Добавляем Сериал',message='Выполнено',icon=icon,time=1000,sound=False)
+            import library.manage as manage
+
+            if manage.create_tvshows(serial_id=self.params['id']):
+                self.dialog.notification(heading='Медиатека',message='Сериал Добавлен',icon=icon,time=1000,sound=False)
             else:
-                self.dialog.notification(heading='Добавляем Сериал',message='Ошибка',icon=icon,time=1000,sound=False)
+                self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
         
-        if 'manage' in self.params['param']:
-            media_items = os.listdir(os.path.join(addon_data_dir, 'library'))
+        if 'update_media' in self.params['param']:
+            import library.manage as manage
+            try:
+                manage.update_tvshows()
+                self.dialog.notification(heading='Медиатека',message='Медиатека Обновлена',icon=icon,time=1000,sound=False)
+            except:
+                self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
 
-            if len(media_items) < 1:
-                self.dialog.notification(heading='Медиатека',message='Медиатека пуста',icon=icon,time=1000,sound=False)
-                return
+        
+        # if 'manage' in self.params['param']:
+        #     media_items = os.listdir(os.path.join(addon_data_dir, 'library'))
+
+        #     if len(media_items) < 1:
+        #         self.dialog.notification(heading='Медиатека',message='Медиатека пуста',icon=icon,time=1000,sound=False)
+        #         return
             
-            for serial_id in media_items:
-                image_id = self.database.obtain_image_id(serial_id)
-                is_movie = self.database.obtain_is_movie(serial_id)
-                title_ru = self.database.obtain_title_ru(serial_id)
+        #     for serial_id in media_items:
+        #         image_id = self.database.obtain_image_id(serial_id)
+        #         is_movie = self.database.obtain_is_movie(serial_id)
+        #         title_ru = self.database.obtain_title_ru(serial_id)
 
-                se_code = '{}001999'.format(image_id)
+        #         se_code = '{}001999'.format(image_id)
 
-                info = self.create_info_data(serial_id=serial_id, se_code=se_code, is_movie=is_movie)
+        #         info = self.create_info_data(serial_id=serial_id, se_code=se_code, is_movie=is_movie)
 
-                self.create_line(title=title_ru, params={'mode': 'select_part', 'id': serial_id, 'code': se_code}, **info)
+        #         self.create_line(title=title_ru, params={'mode': 'select_part', 'id': serial_id, 'code': se_code}, **info)
 
-            xbmcplugin.endOfDirectory(handle, succeeded=True)
+        #     xbmcplugin.endOfDirectory(handle, succeeded=True)
         
-        if 'remove_media' in self.params['param']:
-            data_print('111')
+        # if 'remove_media' in self.params['param']:
+        #     data_print('111')
 
         return
 #========================#========================#========================#

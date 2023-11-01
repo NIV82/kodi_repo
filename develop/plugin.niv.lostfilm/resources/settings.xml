@@ -48,11 +48,18 @@
   </category>
 
   <category label="Медиатека Kodi">
+    <setting id="library_label" label="Название Источника: " type="text"  subsetting="true" default="LostFilm - NIV"/>
+    <setting id="userpath" type="enum" label="Путь к папке библиотеки: " default="0" values="Стандартный|Выбрать|Ввести" />
+    <setting id="userpath_1" label="Выберите нужную папку" type="folder"  source="" option="writeable" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="userpath_2" label="Введите полный путь до папки" type="text"  subsetting="true" default="" visible="eq(-2,2)"/>
     <setting type="action" label="Добавить Источник" action="RunPlugin(plugin://plugin.niv.lostfilm/?mode=library_part&param=create_source)"/>
+    <setting type="sep"/>
+    <setting id="tvshows_imagemod" label="На сериях изображение от: " type="enum" default="0" values="Серий|Сериала" />
     <setting type="sep"/>
     <setting id="update_library" type="bool" label="Автоматическое обновление медиатеки" default="false"/>
     <setting id="update_librarytime" type="slider" label="Частота обновления (часов)" default="12" range="1,1,24" option="int"/>
     <setting id="library_time" label="status" type="text" default="" visible="false"/>
+
   </category>
 
   <category label="Оформление">
