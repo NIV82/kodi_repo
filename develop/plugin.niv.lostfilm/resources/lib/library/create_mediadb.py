@@ -1,32 +1,43 @@
 # -*- coding: utf-8 -*-
 
-from library.manage import library_path
-from library.manage import mediadb_path
+import sqlite3
+from library.manage import os
 
-import sqlite3 as db
-c = db.connect(database=mediadb_path, detect_types=db.PARSE_DECLTYPES, isolation_level=None)
-del db
-cu = c.cursor()
+class MediaDatabaseException(Exception):
+    pass
 
-def end():
-    c.close()
-    
-def add_dbsource(strContent='tvshows', strScraper='metadata.local', scanRecursive=0, useFolderNames=0, strSettings=None, noUpdate=0, exclude=0):
-    try:
-        cu.execute("SELECT * FROM path WHERE strPath=?", (library_path,))
-        path_exist = bool(cu.fetchone())
-
-        if path_exist:
-            cu.execute("UPDATE path SET strContent=?, strScraper=?, scanRecursive=?, useFolderNames=?, strSettings=?, noUpdate=?, exclude=? WHERE strPath=?",
-                (strContent, strScraper, scanRecursive, useFolderNames, strSettings, noUpdate, exclude, library_path))
-        else:
-            cu.execute("INSERT INTO path (strPath, strContent, strScraper, scanRecursive, useFolderNames, strSettings, noUpdate, exclude, dateAdded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATETIME('now'))",
-                (library_path, strContent, strScraper, scanRecursive, useFolderNames, strSettings, noUpdate, exclude))
+class MediaDatabase:
+    def __init__(self, mediadb_path=None, library_path=None):        
+        self.mediadb_path = mediadb_path
+        if self.mediadb_path is None:
+            raise MediaDatabaseException('mediadb_path not exist')
         
-        end()
-        return True
-    except:
-        return False
+        if not os.path.exists(self.mediadb_path):
+            raise MediaDatabaseException('database not exist')
+        
+        self.library_path = library_path
+        if self.library_path is None:
+            raise MediaDatabaseException('library_path not exist')
 
-def remove_source():
-    return
+        self.connection = sqlite3.connect(self.mediadb_path, detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
+        self.cursor = self.connection.cursor()
+
+    def close(self):
+        self.connection.close()
+
+    def path_in_db(self, library_path):
+        self.cursor.execute("SELECT * FROM path WHERE strPath=?", (library_path,))
+        return bool(self.cursor.fetchone())
+
+    def add_dbsource(self, strContent='tvshows', strScraper='metadata.local', scanRecursive=0, useFolderNames=0, strSettings=None, noUpdate=0, exclude=0):
+        try:
+            if self.path_in_db(library_path=self.library_path):
+                self.connection.execute("UPDATE path SET strContent=?, strScraper=?, scanRecursive=?, useFolderNames=?, strSettings=?, noUpdate=?, exclude=? WHERE strPath=?",
+                    (strContent, strScraper, scanRecursive, useFolderNames, strSettings, noUpdate, exclude, self.library_path))
+            else:
+                self.connection.execute("INSERT INTO path (strPath, strContent, strScraper, scanRecursive, useFolderNames, strSettings, noUpdate, exclude, dateAdded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATETIME('now'))",
+                    (self.library_path, strContent, strScraper, scanRecursive, useFolderNames, strSettings, noUpdate, exclude))
+
+            return True
+        except:
+            raise MediaDatabaseException('ERROR')

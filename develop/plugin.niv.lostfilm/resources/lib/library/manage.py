@@ -46,11 +46,6 @@ except:
     pass
 #========================#========================#========================#
 label = addon.getSetting('library_label')
-
-# try:
-#     label = label.encode('utf-8').decode('windows-1251')
-# except:
-#     pass
 #========================#========================#========================#
 site_url = addon.getSetting('mirror_0')
 current_mirror = 'mirror_{}'.format(addon.getSetting('mirror_mode'))
@@ -62,42 +57,39 @@ else:
     site_url =  current_url
 #========================#========================#========================#
 def create_source():
-    import library.create_source as create_source
-    if create_source.add_source():
-        import library.create_mediadb as create_mediadb
-        if create_mediadb.add_dbsource():
+    from library.create_source import Sources
+    sources = Sources(media_type='video', source_path=source_path)
+    del Sources
+
+    if sources.add_source(label=label, library_path=library_path, icon=icon):
+        sources.normalize_xml()
+
+        from library.create_mediadb import MediaDatabase
+        media_database = MediaDatabase(mediadb_path=mediadb_path, library_path=library_path)
+        del MediaDatabase
+
+        if media_database.add_dbsource():
+            media_database.close()
             return True
-    return False
+    
+    return False  
 #========================#========================#========================#
 def create_tvshows(serial_id):
-    if not serial_id:
-        return False
-    
-    import library.create_tvshows as tvshows
+    from library.create_tvshows import TVShows
+    tvshows = TVShows()
+    del TVShows
 
-    try:
-        serial_info = tvshows.get_serialinfo(serial_id=serial_id)
-    except:
-        return False
+    tvshows.serial_info = tvshows.get_serialinfo(serial_id=serial_id)
+    if tvshows.create_tvshowdetails():
+        if tvshows.create_seriesdetails():
+            tvshows.tvshow_update(serial_id=serial_id)
+            return True
 
-    try:
-        tvshows.clean_dir(serial_id=serial_info['serial_id'])
-    except:
-        pass
-
-    if tvshows.create_tvshowdetails(serial_info=serial_info):
-        if tvshows.create_seriesdetails(serial_info=serial_info):
-            try:
-                tvshows.tvshow_update(serial_id=serial_id)
-                return True
-            except:
-                return False
-        else:
-            return False
-    else:
-        return False
+    return False
 #========================#========================#========================#
 def update_tvshows():
-    import library.create_tvshows as create_tvshows
-    create_tvshows.update()
+    from library.create_tvshows import TVShows
+    tvshows = TVShows()
+    tvshows.update()
+    del TVShows
     return

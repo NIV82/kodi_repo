@@ -14,7 +14,6 @@ if __name__ == '__main__':
 
     while not monitor.abortRequested():
         manage.update_tvshows()
-        #xbmc.log(str('LOSTFILM START UPDATE'), xbmc.LOGFATAL)
 
         if monitor.waitForAbort(3600):
             break

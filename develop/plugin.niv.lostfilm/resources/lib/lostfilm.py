@@ -49,23 +49,6 @@ else:
     icon = fs_enc(xbmc.translatePath(addon.getAddonInfo('icon')))
     fanart = fs_enc(xbmc.translatePath(addon.getAddonInfo('fanart')))
 
-# library_dir = os.path.join(addon_data_dir, 'library')
-
-# if 'true' in addon.getSetting('userpath'):
-#     if addon.getSetting('library_userpath'):
-#         library_dir = addon.getSetting('library_userpath')
-#     else:
-#         xbmcgui.Dialog().notification(heading='LostFilm', message='Путь медиатеки не введен, переключаем на стандартный', icon=icon, time=1000, sound=False)
-#         addon.setSetting(id='userpath', value='false')
-
-# try:
-#     if not os.path.exists(library_dir):
-#         os.mkdir(library_dir)
-# except:
-#     pass
-
-# addon.setSetting(id='library_path', value=library_dir)
-
 class Lostfilm:
     def __init__(self):
         self.progress_bg = xbmcgui.DialogProgressBG()
@@ -77,10 +60,6 @@ class Lostfilm:
         self.torrents_dir = os.path.join(addon_data_dir, 'torrents')
         if not os.path.exists(self.torrents_dir):
             os.mkdir(self.torrents_dir)
-
-        # self.library_dir = os.path.join(addon_data_dir, 'library')
-        # if not os.path.exists(self.library_dir):
-        #     os.mkdir(self.library_dir)
 
         self.cookie_dir = os.path.join(addon_data_dir, 'cookies')
         if not os.path.exists(self.cookie_dir):
@@ -95,6 +74,8 @@ class Lostfilm:
         args = parse_qs(sys.argv[2][1:])
         for a in args:
             self.params[a] = unquote(args[a][0])
+        
+        #self.context_menu  = []
 
         self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
@@ -128,25 +109,6 @@ class Lostfilm:
         from database import DataBase
         self.database = DataBase(os.path.join(self.database_dir, 'lostfilms.db'))
         del DataBase
-#========================#========================#========================#
-    # def create_librarydir(self):
-    #     library_dir = os.path.join(addon_data_dir, 'library')
-
-    #     if 'true' in addon.getSetting('userpath'):
-    #         if addon.getSetting('library_userpath'):
-    #             library_dir = addon.getSetting('library_userpath')
-    #         else:
-    #             self.dialog.notification(heading='LostFilm', message='Путь медиатеки не введен, переключаем на стандартный', icon=icon, time=1000, sound=False)
-    #             addon.setSetting(id='userpath', value='false')
-
-    #     if not os.path.exists(library_dir):
-    #         try:
-    #             os.mkdir(library_dir)
-    #         except:
-    #             pass
-
-    #     addon.setSetting(id='library_path', value=library_dir)
-    #     return
 #========================#========================#========================#
     def create_tclean(self):
         try:
@@ -455,78 +417,52 @@ class Lostfilm:
 
         return actors
 #========================#========================#========================#
-    def create_context(self, serial_id='', se_code='', ismovie=False):
-        serial_episode = se_code[len(se_code)-3:len(se_code)]
-        serial_image = se_code[:len(se_code)-6]
-
+    def create_context(self, info=None, ismovie=False):
         context_menu = []
-        if not 'manage' in self.params['param']:
-            if 'search_part' in self.params['mode'] and self.params['param'] == '':
-                context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
 
-            if serial_id:
-                context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&serial_id={}")'.format(serial_id)))
-                context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(serial_id, ismovie)))
-                context_menu.append(('[COLOR=white]Добавить в Медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, ismovie)))
-                context_menu.append(('[COLOR=white]Обновить медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=update_media")'))
+        if 'search_part' in self.params['mode'] and self.params['param'] == '':
+            context_menu.append(('Очистить историю', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
 
-            if se_code and not '999' in serial_episode:
-                if not ismovie:
-                    context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
-                else:
-                    context_menu.append(('[COLOR=blue]Перейти к Фильму[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=movies_part&id={}&code={}001001")'.format(serial_id,serial_image)))
-                    
-                context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
-                context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
-                context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
-
-            context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'))
-            context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")'))
-            context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'))
-        else:
-            context_menu.append(('[COLOR=yellow]Удалить из Медиатеки[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=remove_media")'))
-        return context_menu
-    
-    # def create_context(self, serial_id='', se_code='', ismovie=False):
-    #     serial_episode = se_code[len(se_code)-3:len(se_code)]
-    #     serial_image = se_code[:len(se_code)-6]
-
-    #     context_menu = []
-
-    #     if 'search_part' in self.params['mode'] and self.params['param'] == '':
-    #         context_menu.append(('[COLOR=red]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
-
-    #     if serial_id:
-    #         context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&serial_id={}")'.format(serial_id)))
-    #         context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(serial_id, ismovie)))
-    #         context_menu.append(('[COLOR=white]Добавить в Медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, ismovie)))
-
-    #     if se_code and not '999' in serial_episode:
-    #         if not ismovie:
-    #             context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
-    #         else:
-    #             context_menu.append(('[COLOR=blue]Перейти к Фильму[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=movies_part&id={}&code={}001001")'.format(serial_id,serial_image)))
-                
-    #         context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
-    #         context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
-    #         context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
-
-    #     context_menu.append(('[COLOR=darkorange]Обновить Авторизацию[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'))
-    #     context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")'))
-    #     context_menu.append(('[COLOR=darkorange]Обновить Прокси[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'))
-        
-    #     return context_menu
-#========================#========================#========================#
-    def create_line(self, title, params={}, folder=True, **info):
-        li = xbmcgui.ListItem(title)
+        if 'main_part' in self.params['mode']:
+            context_menu.append(('Обновить Авторизацию', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'))
+            context_menu.append(('Обновить Базу Данных', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")'))
+            context_menu.append(('Обновить Прокси', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'))
+            context_menu.append(('Новости обновлений', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part")'))
 
         if info:
             serial_id = info.pop('serial_id')
             se_code = info.pop('se_code')
+            ismovie = info.pop('ismovie')
+
+            #serial_episode = se_code[len(se_code)-3:len(se_code)]
+            serial_image = se_code[:len(se_code)-6]
+
+            context_menu.append(('[COLOR=cyan]Избранное - Добавить \ Удалить [/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=favorites_part&serial_id={}")'.format(serial_id)))
+            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(serial_id, ismovie)))
+
+            if not ismovie:
+                context_menu.append(('[COLOR=blue]Перейти к Сериалу[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,serial_image)))
+            else:
+                context_menu.append(('[COLOR=blue]Перейти к Фильму[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=movies_part&id={}&code={}001001")'.format(serial_id,serial_image)))
+
+            context_menu.append(('[COLOR=white]Открыть торрент файл[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)))
+            context_menu.append(('[COLOR=yellow]Отметить как просмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)))
+            context_menu.append(('[COLOR=yellow]Отметить как непросмотренное[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)))
+
+            context_menu.append(('[COLOR=white]Добавить в Медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, ismovie)))
+            context_menu.append(('[COLOR=white]Обновить медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=update_media")'))
+
+        #     self.context_menu.append(('[COLOR=yellow]Удалить из Медиатеки[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=remove_media")'))
+
+        return context_menu
+#========================#========================#========================#
+    def create_line(self, title, params={}, folder=True, **info):
+        li = xbmcgui.ListItem(title)
+        
+        if info:
             status = info.pop('status')
             cover = info.pop('cover')
             cast = info.pop('cast')
-            is_movie = info.pop('ismovie')
 
             if cover:
                 li.setArt({
@@ -564,10 +500,8 @@ class Lostfilm:
                 info.update({'status': status})
                 li.setInfo(type='video', infoLabels=info)
 
-            li.addContextMenuItems(
-                self.create_context(serial_id = serial_id, se_code = se_code, ismovie=is_movie)
-                )
-        
+        li.addContextMenuItems(self.create_context(info))
+
         if folder==False:
             li.setProperty('isPlayable', 'true')
 
@@ -756,10 +690,24 @@ class Lostfilm:
         addon.openSettings()
         return
 #========================#========================#========================#
+    def exec_information_part(self):
+        lostfilm_data = u'[B][COLOR=darkorange]Version 1.2.1[/COLOR][/B]\n\
+        \n\
+    [B][COLOR=darkorange]Медиатека:[/COLOR][/B]\n\
+        - удален выбор изображений , теперь только иконки серий \n\
+        - удален выбор времени обновления, теперь только 12 часов\n\
+        - временно удалена проверка на наличие источника\n\
+        - общая оптимизация, модификация кода медиатеки\n\
+        \n\
+    [B][COLOR=darkorange]LostFilm:[/COLOR][/B]\n\
+    - исправления в контекстном меню, временные, будут переботаны полностью\n'
+        self.dialog.textviewer('Информация', lostfilm_data)
+        return
+#========================#========================#========================#
     def exec_library_part(self):
         if 'create_source' in self.params['param']:
             import library.manage as manage
-
+            
             if manage.create_source():
                 self.dialog.notification(heading='Медиатека',message='Источник Добавлен',icon=icon,time=1000,sound=False)
             else:
@@ -767,19 +715,28 @@ class Lostfilm:
 
         if 'create_media' in self.params['param']:
             import library.manage as manage
-
             if manage.create_tvshows(serial_id=self.params['id']):
                 self.dialog.notification(heading='Медиатека',message='Сериал Добавлен',icon=icon,time=1000,sound=False)
             else:
                 self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+
+
+
+        # if 'create_media' in self.params['param']:
+        #     import library.manage as manage
+
+        #     if manage.create_tvshows(serial_id=self.params['id']):
+        #         self.dialog.notification(heading='Медиатека',message='Сериал Добавлен',icon=icon,time=1000,sound=False)
+        #     else:
+        #         self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
         
-        if 'update_media' in self.params['param']:
-            import library.manage as manage
-            try:
-                manage.update_tvshows()
-                self.dialog.notification(heading='Медиатека',message='Медиатека Обновлена',icon=icon,time=1000,sound=False)
-            except:
-                self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+        # if 'update_media' in self.params['param']:
+        #     import library.manage as manage
+        #     try:
+        #         manage.update_tvshows()
+        #         self.dialog.notification(heading='Медиатека',message='Медиатека Обновлена',icon=icon,time=1000,sound=False)
+        #     except:
+        #         self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
 
         
         # if 'manage' in self.params['param']:
@@ -895,7 +852,7 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'films_part'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог'), params={'mode': 'catalog_part'})
-        self.create_line(title='[B]Медиатека[/B]', params={'mode': 'library_part', 'param': 'manage'})
+        #self.create_line(title='[B]Медиатека[/B]', params={'mode': 'library_part', 'param': 'manage'})
         xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#
@@ -910,6 +867,7 @@ class Lostfilm:
                 for data in data_array:
                     if data == '':
                         continue
+                    #self.context_menu.append(('Очистить историю', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'))
                     self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'search_part', 'param':'search_string', 'search_string': data})
             except:
                 addon.setSetting('search', '')
@@ -1766,10 +1724,12 @@ class Lostfilm:
                                     )
                             else:
                                 label = self.create_title(serial_title=episode_title, watched=is_watched, data_code=se_code)
-
+                            
+                            info['se_code'] = se_code
                             self.create_line(title=label, folder=False, params={'mode': 'play_part', 'id': self.params['id'], 'param': se_code}, **info)
                         else:
                             if not atl_names:
+
                                 label = '[COLOR=dimgray]S{:>02}E{:02} | {}[/COLOR]'.format(
                                     int(season_id), len(data_array), episode_title)
                                 

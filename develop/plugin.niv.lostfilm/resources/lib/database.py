@@ -104,6 +104,57 @@ class DataBase:
         self.c.commit()
         return self.cu.fetchall()
 
+    # def obtain_nfo(self, serial_id):
+    #     self.cu.execute('SELECT title_ru,aired_on,genres,studios,country,description,image_id,actors FROM serials_db WHERE serial_id=?', (serial_id,))
+    #     self.c.commit()
+    #     serial_info = self.cu.fetchone()
+
+    #     content = dict.fromkeys(
+    #         ['serial_id', 'title_ru', 'premiered', 'genre', 'studio', 'country', 'plot', 'image_id', 'actors'], '')
+        
+    #     content['serial_id'] = serial_id
+
+    #     if serial_info[0]:
+    #         content['title_ru'] = u'{}'.format(serial_info[0])
+
+    #     if serial_info[1]:
+    #         content['premiered'] = u'{}'.format(serial_info[1])
+
+    #     if serial_info[2]:
+    #         content['genre'] = u'{}'.format(serial_info[2].replace('*',','))
+
+    #     if serial_info[3]:
+    #         content['studio'] = u'{}'.format(serial_info[3].replace('*',','))
+
+    #     if serial_info[4]:
+    #         content['country'] = u'{}'.format(serial_info[4].replace('*',','))
+
+    #     if serial_info[5]:
+    #         content['plot'] = u'{}'.format(serial_info[5])
+
+    #     content['image_id'] = serial_info[6]
+
+    #     if serial_info[7]:
+    #         actors_array = serial_info[7].split('*')
+    
+    #         for node in actors_array:
+    #             node = node.split('|')
+
+    #             if not node[0]:
+    #                 node[0] = 'uknown'
+    #             if not node[1]:
+    #                 node[1] = 'uknown'
+    #             if node[2]:
+    #                 node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
+    #                     node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
+                
+    #             result = u'    <actor>\n        <name>{}</name>\n        <role>{}</role>\n        <thumb>{}</thumb>\n    </actor>'.format(node[0], node[1], node[2])
+
+    #             content['actors'] = u'{}\n{}'.format(content['actors'],result)
+
+    #     return content
+
+
     def obtain_nfo(self, serial_id):
         self.cu.execute('SELECT title_ru,aired_on,genres,studios,country,description,image_id,actors FROM serials_db WHERE serial_id=?', (serial_id,))
         self.c.commit()
@@ -135,6 +186,7 @@ class DataBase:
         content['image_id'] = serial_info[6]
 
         if serial_info[7]:
+            content['actors'] = []
             actors_array = serial_info[7].split('*')
     
             for node in actors_array:
@@ -147,9 +199,9 @@ class DataBase:
                 if node[2]:
                     node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
                         node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
-                
-                result = u'    <actor>\n        <name>{}</name>\n        <role>{}</role>\n        <thumb>{}</thumb>\n    </actor>'.format(node[0], node[1], node[2])
 
-                content['actors'] = u'{}\n{}'.format(content['actors'],result)
+                content['actors'].append(
+                    {'name':node[0], 'role': node[1], 'thumb': node[2]}
+                )
 
         return content

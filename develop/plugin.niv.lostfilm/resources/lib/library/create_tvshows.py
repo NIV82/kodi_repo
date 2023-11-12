@@ -2,192 +2,230 @@
 
 from library.manage import os
 from library.manage import xbmc
-
+from library.manage import site_url
+from library.manage import addon
 from library.manage import library_path
 from library.manage import database_path
-from library.manage import addon
-from library.manage import site_url
 
-def clean_dir(serial_id=None):
-    if not serial_id:
+import xml.etree.ElementTree as ET
+
+class TVShowsException(Exception):
+    pass
+
+class TVShows:
+    def __init__(self):
+        self.serial_info = None
+
+    def normalize_xml(self, xml_path):
+        sources_xml = ET.parse(xml_path)
+
+        elem = sources_xml.getroot()
+        tree = ET.ElementTree(elem)
+
+        def indent(elem, level=0):
+            i = "\n" + level*"  "
+            if len(elem):
+                if not elem.text or not elem.text.strip():
+                    elem.text = i + "  "
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+                for elem in elem:
+                    indent(elem, level+1)
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+            else:
+                if level and (not elem.tail or not elem.tail.strip()):
+                    elem.tail = i
+
+        indent(elem=elem)
+        tree.write(xml_path, encoding="utf-8", xml_declaration=True)
         return
-    
-    serial_dir = os.path.join(library_path, serial_id)
 
-    if not os.path.isdir(serial_dir):
-        return
-    
-    for item in os.listdir(serial_dir):
-        full_path = os.path.join(serial_dir, item)
-        os.remove(full_path)
-
-    try:
-        os.rmdir(serial_dir)
-    except:
-        pass
-
-    return
-
-def tvshow_update(serial_id=None):
-    if serial_id:
-        full_path = os.path.join(library_path, serial_id, '')
-    else:
-        full_path = library_path
-
-    xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(full_path))
-    return
-
-def get_serialinfo(serial_id):
-    from database import DataBase
-    db = DataBase(database_path)
-    del DataBase
-
-    serial_info = db.obtain_nfo(serial_id=serial_id)
-    db.end()
-
-    return serial_info
-
-def create_tvshowdetails(serial_info):
-    try:
-        tvshowdetails = u'<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<tvshow>\n    <title>{}</title>\n    <plot>{}</plot>\n    <genre>{}</genre>\n    <premiered>{}</premiered>\n    <studio>{}</studio>\n{}\n    <thumb>{}</thumb>\n</tvshow>'.format(
-            serial_info['title_ru'],
-            serial_info['plot'],
-            serial_info['genre'],
-            serial_info['premiered'],
-            serial_info['studio'],
-            serial_info['actors'],
-            'https://static.lostfilm.top/Images/{}/Posters/shmoster_s1.jpg'.format(serial_info['image_id'])
-            )
+    def get_serialinfo(self, serial_id=None):
+        if serial_id is None:
+            raise TVShowsException('not serial_id')
         
+        from database import DataBase
+        db = DataBase(database_path)
+        del DataBase
+
+        serial_info = db.obtain_nfo(serial_id=serial_id)
+        db.end()
+
+        return serial_info
+
+    def clean_dir(self, serial_id=None):
+        if serial_id is None:
+            raise TVShowsException('not serial_id')
+
+        serial_dir = os.path.join(library_path, serial_id)
+
+        if not os.path.isdir(serial_dir):
+            return
+        
+        for item in os.listdir(serial_dir):
+            full_path = os.path.join(serial_dir, item)
+            os.remove(full_path)
+
         try:
-            tvshowdetails = tvshowdetails.encode('utf-8')
+            os.rmdir(serial_dir)
         except:
             pass
 
-        serial_dir = os.path.join(library_path, serial_info['serial_id'])
-        
+        return
+
+    def tvshow_update(self, serial_id=None):
+        if serial_id:
+            full_path = os.path.join(library_path, serial_id, '')
+        else:
+            full_path = library_path
+
+        xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(full_path))
+        return
+
+    def create_tvshowdetails(self, serial_id=None):
         try:
-            clean_dir(serial_id=serial_info['serial_id'])
-        except:
-            pass
+            if serial_id is not None:
+                self.serial_info = self.get_serialinfo(serial_id=serial_id)
 
-        if not os.path.exists(serial_dir):
-            os.mkdir(serial_dir)
+            if self.serial_info is None:
+                self.serial_info = self.get_serialinfo(serial_id=serial_id)
 
-        serial_nfo = os.path.join(serial_dir, 'tvshow.nfo')
-        with open(serial_nfo, 'wb') as write_file:
-            write_file.write(tvshowdetails)
-        return True
-    except:
-        return False
+            file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s1.jpg'.format(self.serial_info['image_id'])
 
-def create_seriesdetails(serial_info):
-    serial_dir = os.path.join(library_path, serial_info['serial_id'])
+            tvshow = ET.Element('tvshow')
+            ET.SubElement(tvshow, 'title').text = self.serial_info['title_ru']
+            ET.SubElement(tvshow, 'plot').text = self.serial_info['plot']
+            ET.SubElement(tvshow, 'genre').text = self.serial_info['genre']
+            ET.SubElement(tvshow, 'premiered').text = self.serial_info['premiered']
+            ET.SubElement(tvshow, 'studio').text = self.serial_info['studio']
 
-    serial_url = '{}series/{}/seasons/'.format(site_url, serial_info['serial_id'])
+            for actor_node in self.serial_info['actors']:
+                actor = ET.SubElement(tvshow, 'actor')
+                ET.SubElement(actor, 'name').text = actor_node['name']
+                ET.SubElement(actor, 'role').text = actor_node['role']
+                ET.SubElement(actor, 'thumb').text = actor_node['thumb']
 
-    from network import get_web
-    html = get_web(url=serial_url)
+            ET.SubElement(tvshow, 'thumb').text = file_thumb
+            etree = ET.ElementTree(tvshow)
 
-    if not html:
-        return False
+            serial_dir = os.path.join(library_path, self.serial_info['serial_id'])
 
-    data_array = html[html.find('<div class="have'):html.rfind('holder"></td>')]
-    data_array = data_array.split('<td class="alpha">')
-    data_array.reverse()
-
-    try:
-        for data in data_array:
             try:
-                if not 'PlayEpisode(' in data:
-                    continue
-
-                se_code = data[data.find('episode="')+9:]
-                se_code = se_code[:se_code.find('"')]
-
-                season = int(se_code[len(se_code)-6:len(se_code)-3])
-                season_mod = 's{:>02}'.format(season)
-
-                episode = int(se_code[len(se_code)-3:len(se_code)])
-                episode_mod = 'e{:>02}'.format(episode)
-
-                episode_title = data[data.find('<td class="gamma'):data.find('<td class="delta"')]
-                if '<br>' in episode_title:
-                    episode_title = episode_title[episode_title.find('">')+2:episode_title.find('<br>')].strip()        
-                if '<br />' in episode_title:
-                    episode_title = episode_title[episode_title.find('<div>')+5:episode_title.find('<br />')].strip()
-                if not episode_title:
-                    continue
-                    
-                file_name = '{}.{}.{}'.format(serial_info['serial_id'], season_mod, episode_mod)
-                strm_content = 'plugin://plugin.niv.lostfilm/?mode=play_part&id={}&param={}'.format(serial_info['serial_id'], se_code)
-
-                try:
-                    strm_content = strm_content.encode('utf-8')
-                except:
-                    pass
-                
-                if '0' in addon.getSetting('tvshows_imagemod'):
-                    file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/e_{}_{}.jpg'.format(serial_info['image_id'], season, episode)
-                elif '1' in addon.getSetting('tvshows_imagemod'):
-                    file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_info['image_id'], season)
-
-                episodedetails = u'<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<episodedetails>\n    <title>{}</title>\n    <season>{}</season>\n    <episode>{}</episode>\n    <plot>{}</plot>\n    <thumb>{}</thumb>\n</episodedetails>'.format(
-                    episode_title, season, episode, serial_info['plot'], file_thumb)
-
-                try:
-                    episodedetails = episodedetails.encode('utf-8')
-                except:
-                    pass
-                
-                nfo_path = os.path.join(serial_dir, '{}.nfo'.format(file_name))
-                with open(nfo_path, 'wb') as write_file:
-                    write_file.write(episodedetails)
-
-                strm_path = os.path.join(serial_dir, '{}.strm'.format(file_name))
-                with open(strm_path, 'wb') as write_file:
-                    write_file.write(strm_content)
-
+                self.clean_dir(serial_id=self.serial_info['serial_id'])
             except:
-                continue
-    except:
-        return False
+                pass
 
-    return True
+            if not os.path.exists(serial_dir):
+                os.mkdir(serial_dir)
 
-def update():
-    if not 'true' in addon.getSetting('update_library'):
-        return
+            tvshow_nfo = os.path.join(serial_dir, 'tvshow.nfo')
 
-    import time
+            etree.write(tvshow_nfo, encoding='utf-8', xml_declaration=True)
+            self.normalize_xml(tvshow_nfo)
 
-    try:
-        library_time = float(addon.getSetting('library_time'))
-    except:
-        library_time = 0
+            return True
+        except:
+            return False
 
-    try:
-        update_time = int(addon.getSetting('update_librarytime')) * 60 * 60
-    except:
-        update_time = 43200
+    def create_seriesdetails(self, serial_id=None):
+        try:
+            if serial_id is not None:
+                self.serial_info = self.get_serialinfo(serial_id=serial_id)
 
-    if time.time() - library_time > update_time:
-        library_items = os.listdir(library_path)
+            if self.serial_info is None:
+                self.serial_info = self.get_serialinfo(serial_id=serial_id)
 
-        if len(library_items) < 1:
+            serial_dir = os.path.join(library_path, self.serial_info['serial_id'])
+
+            serial_url = '{}series/{}/seasons/'.format(site_url, self.serial_info['serial_id'])
+
+            from network import get_web
+            html = get_web(url=serial_url)
+
+            if not html:
+                return False
+
+            data_array = html[html.find('<div class="have'):html.rfind('holder"></td>')]
+            data_array = data_array.split('<td class="alpha">')
+            data_array.reverse()
+
+            for data in data_array:
+                try:
+                    if not 'PlayEpisode(' in data:
+                        continue
+
+                    se_code = data[data.find('episode="')+9:]
+                    se_code = se_code[:se_code.find('"')]
+
+                    season = int(se_code[len(se_code)-6:len(se_code)-3])
+                    episode = int(se_code[len(se_code)-3:len(se_code)])
+
+                    episode_title = data[data.find('<td class="gamma'):data.find('<td class="delta"')]
+                    if '<br>' in episode_title:
+                        episode_title = episode_title[episode_title.find('">')+2:episode_title.find('<br>')].strip()        
+                    if '<br />' in episode_title:
+                        episode_title = episode_title[episode_title.find('<div>')+5:episode_title.find('<br />')].strip()
+                    if not episode_title:
+                        continue
+                            
+                    file_name = '{0}.s{1:>02}.e{2:>02}'.format(self.serial_info['serial_id'], season, episode)
+                    file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/e_{}_{}.jpg'.format(self.serial_info['image_id'], season, episode)
+
+                    episodedetails = ET.Element('episodedetails')
+                    ET.SubElement(episodedetails, 'title').text = episode_title
+                    ET.SubElement(episodedetails, 'season').text = str(season)
+                    ET.SubElement(episodedetails, 'episode').text = str(episode)
+                    ET.SubElement(episodedetails, 'plot').text = self.serial_info['plot']
+                    ET.SubElement(episodedetails, 'thumb').text = file_thumb
+
+                    etree = ET.ElementTree(episodedetails)
+
+                    nfo_path = os.path.join(serial_dir, '{}.nfo'.format(file_name))
+
+                    etree.write(nfo_path, encoding='utf-8', xml_declaration=True)
+                    self.normalize_xml(nfo_path)
+
+                    strm_content = 'plugin://plugin.niv.lostfilm/?mode=play_part&id={}&param={}'.format(self.serial_info['serial_id'], se_code)
+                    strm_path = os.path.join(serial_dir, '{}.strm'.format(file_name))
+                    with open(strm_path, 'wb') as write_file:
+                        write_file.write(strm_content)
+
+                except:
+                    continue
+
+            return True
+        except:
+            return False
+
+    def update(self):
+        if not 'true' in addon.getSetting('update_library'):
             return
 
-        for item in library_items:
-            try:
-                serial_info = get_serialinfo(serial_id=item)
+        import time
 
-                if create_tvshowdetails(serial_info=serial_info):
-                    if create_seriesdetails(serial_info=serial_info):
-                        tvshow_update(serial_id=item)
+        try:
+            library_time = float(addon.getSetting('library_time'))
+        except:
+            library_time = 0
 
-                xbmc.log(str('SUCCESS'), xbmc.LOGFATAL)
-            except:
-                continue
+        update_time = 43200
 
-        addon.setSetting('library_time', str(time.time()))
-    return
+        if time.time() - library_time > update_time:
+            library_items = os.listdir(library_path)
+
+            if len(library_items) < 1:
+                return
+
+            for item in library_items:
+                try:
+                    self.serial_info = self.get_serialinfo(serial_id=item)
+
+                    if self.create_tvshowdetails():
+                        if self.create_seriesdetails():
+                            self.tvshow_update(serial_id=item)
+                except:
+                    continue
+
+            addon.setSetting('library_time', str(time.time()))
+        return

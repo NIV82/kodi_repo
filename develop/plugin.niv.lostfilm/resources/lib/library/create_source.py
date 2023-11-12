@@ -1,58 +1,110 @@
 # -*- coding: utf-8 -*-
 
+import xml.etree.ElementTree as ET
 from library.manage import os
-from library.manage import library_path
-from library.manage import source_path
-from library.manage import icon
-from library.manage import label
 
-def add_source():
-    try:
-        if not os.path.exists(source_path):
-            with open(source_path, 'w') as write_file:
-                write_file.write(
-                    '<sources>\n    <programs>\n        <default pathversion="1"></default>\n    </programs>\n    <video>\n        <default pathversion="1"></default>\n    </video>\n    <music>\n        <default pathversion="1"></default>\n    </music>\n    <pictures>\n        <default pathversion="1"></default>\n    </pictures>\n    <files>\n        <default pathversion="1"></default>\n    </files>\n    <games>\n        <default pathversion="1"></default>\n    </games>\n</sources>'
-                    )
-
-        with open(source_path, 'r') as read_file:
-            xml_data = read_file.read()
+class SourcesException(Exception):
+    pass
+                
+class Sources(object):
+    def __init__(self, media_type=None, source_path=None):
+        self.media_type = media_type
+        if self.media_type == None:
+            raise SourcesException('media_type is None')
         
-        if not library_path in xml_data:
-            node_original = xml_data[xml_data.find('<video>'):xml_data.find('</video>')+8]
-                    
-            if '<default pathversion="1"></default>' in node_original:
-                vid_modified = node_original.replace(
-                '<default pathversion="1"></default>', '<default pathversion="1"></default>\n        <source>\n            <name>{}</name>\n            <path pathversion="1">{}</path>\n            <thumbnail pathversion="1">{}</thumbnail>\n            <allowsharing>true</allowsharing>\n        </source>'.format(label, library_path , icon)
-                )
-
-            if '<default pathversion="1" />' in node_original:
-                vid_modified = node_original.replace(
-                '<default pathversion="1" />', '<default pathversion="1" />\n        <source>\n            <name>{}</name>\n            <path pathversion="1">{}</path>\n            <thumbnail pathversion="1">{}</thumbnail>\n            <allowsharing>true</allowsharing>\n        </source>'.format(label, library_path , icon)
-                )
-
-            xml_data = xml_data.replace(node_original, vid_modified)
-            # try:
-            #     xml_data = xml_data.encode('utf-8')
-            # except:
-            #     pass
-
-            # with open(self.source_path, 'wb') as write_file:
-            #     write_file.write(xml_data)
-
-            with open(source_path, 'w') as write_file:
-                write_file.write(xml_data)
+        self.source_path = source_path
+        if self.source_path == None:
+            raise SourcesException('source_path is None')
+        
+        if not os.path.exists(self.source_path):
+            sources = ET.Element('sources')
+            programs = ET.SubElement(sources, 'programs')
+            default_node = ET.SubElement(programs, 'default', {'pathversion': '1'})
+            video = ET.SubElement(sources, 'video')
+            default_node = ET.SubElement(video, 'default', {'pathversion': '1'})
+            music = ET.SubElement(sources, 'music')
+            default_node = ET.SubElement(music, 'default', {'pathversion': '1'})
+            pictures = ET.SubElement(sources, 'pictures')
+            default_node = ET.SubElement(pictures, 'default', {'pathversion': '1'})
+            files = ET.SubElement(sources, 'files')
+            default_node = ET.SubElement(files, 'default', {'pathversion': '1'})
+            games = ET.SubElement(sources, 'games')
+            default_node = ET.SubElement(games, 'default', {'pathversion': '1'})
             
-            return True
-        else:
-            return False
-    except:
+            etree = ET.ElementTree(sources)
+            etree.write(self.source_path, encoding='utf-8', xml_declaration=True)
+        
+        self.sources_xml = ET.parse(self.source_path)
+        self.sources = None
+
+    def normalize_xml(self):
+        elem = self.sources_xml.getroot()
+        tree = ET.ElementTree(elem)
+
+        def indent(elem, level=0):
+            i = "\n" + level*"  "
+            if len(elem):
+                if not elem.text or not elem.text.strip():
+                    elem.text = i + "  "
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+                for elem in elem:
+                    indent(elem, level+1)
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+            else:
+                if level and (not elem.tail or not elem.tail.strip()):
+                    elem.tail = i
+
+        indent(elem=elem)
+        tree.write(self.source_path, encoding="utf-8", xml_declaration=True)
+        return
+
+    def get_sources(self):
+        sources = {}
+
+        select_source = self.xml_tree.find(self.media_type)
+
+        for node in select_source.findall('source'):
+            name = ''
+            if node.find('name') is not None:
+                name = node.find('name').text
+
+            path = ''
+            if node.find('path') is not None:
+                path = node.find('path').text
+
+            thumb = ''
+            if node.find('thumbnail') is not None:
+                thumb = node.find('thumbnail').text
+
+            sources.update({name: [name,path,thumb]})
+            return sources
+
+    def path_exist(self, path=None):
+        if path is None:
+            return
+        sources = self.get_sources('video')
+
+        for source in sources.items():
+            self.source_path = source[1][1]
+            
+            if path == self.source_path:
+                return True
+
         return False
-    
-def delete_source():
-    return
 
-def edit_source():
-    return
+    def add_source(self, label, library_path, icon):
+        try:
+            select_source = self.sources_xml.find(self.media_type)
 
-def fix_source():
-    return
+            source = ET.SubElement(select_source, 'source')
+            ET.SubElement(source, 'name').text = label
+            ET.SubElement(source, 'path', {'pathversion': '1'}).text = library_path
+            ET.SubElement(source, 'thumbnail', {'pathversion': '1'}).text = icon
+            ET.SubElement(source, 'allowsharing').text = 'true'
+            self.sources_xml.write(self.source_path, 'utf-8', xml_declaration=True)
+
+            return True
+        except:
+            raise SourcesException('ERROR')
