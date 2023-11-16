@@ -7,10 +7,9 @@ from library.manage import addon
 from library.manage import library_path
 from library.manage import database_path
 
-import xml.etree.ElementTree as ET
+from library.manage import data_print
 
-class TVShowsException(Exception):
-    pass
+import xml.etree.ElementTree as ET
 
 class TVShows:
     def __init__(self):
@@ -43,8 +42,8 @@ class TVShows:
 
     def get_serialinfo(self, serial_id=None):
         if serial_id is None:
-            raise TVShowsException('not serial_id')
-        
+            return False
+
         from database import DataBase
         db = DataBase(database_path)
         del DataBase
@@ -56,7 +55,7 @@ class TVShows:
 
     def clean_dir(self, serial_id=None):
         if serial_id is None:
-            raise TVShowsException('not serial_id')
+            return False
 
         serial_dir = os.path.join(library_path, serial_id)
 
@@ -82,7 +81,7 @@ class TVShows:
 
         xbmc.executebuiltin('UpdateLibrary("video", {}, "true")'.format(full_path))
         return
-
+    
     def create_tvshowdetails(self, serial_id=None):
         try:
             if serial_id is not None:
@@ -188,9 +187,8 @@ class TVShows:
 
                     strm_content = 'plugin://plugin.niv.lostfilm/?mode=play_part&id={}&param={}'.format(self.serial_info['serial_id'], se_code)
                     strm_path = os.path.join(serial_dir, '{}.strm'.format(file_name))
-                    with open(strm_path, 'wb') as write_file:
+                    with open(strm_path, 'w') as write_file:
                         write_file.write(strm_content)
-
                 except:
                     continue
 
@@ -198,7 +196,7 @@ class TVShows:
         except:
             return False
 
-    def update(self):
+    def auto_update(self):
         if not 'true' in addon.getSetting('update_library'):
             return
 
@@ -228,4 +226,21 @@ class TVShows:
                     continue
 
             addon.setSetting('library_time', str(time.time()))
+        return
+
+    def force_update(self):
+        library_items = os.listdir(library_path)
+
+        if len(library_items) < 1:
+            return
+
+        for item in library_items:
+            try:
+                self.serial_info = self.get_serialinfo(serial_id=item)
+
+                if self.create_tvshowdetails():
+                    if self.create_seriesdetails():
+                        self.tvshow_update(serial_id=item)
+            except:
+                continue
         return

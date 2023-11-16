@@ -2,21 +2,18 @@
 
 import xml.etree.ElementTree as ET
 from library.manage import os
+from library.manage import source_path
+from library.manage import label
+from library.manage import library_path
+from library.manage import icon
 
-class SourcesException(Exception):
-    pass
-                
 class Sources(object):
-    def __init__(self, media_type=None, source_path=None):
+    def __init__(self, media_type=None):
         self.media_type = media_type
         if self.media_type == None:
-            raise SourcesException('media_type is None')
-        
-        self.source_path = source_path
-        if self.source_path == None:
-            raise SourcesException('source_path is None')
-        
-        if not os.path.exists(self.source_path):
+            return False
+
+        if not os.path.exists(source_path):
             sources = ET.Element('sources')
             programs = ET.SubElement(sources, 'programs')
             default_node = ET.SubElement(programs, 'default', {'pathversion': '1'})
@@ -32,9 +29,9 @@ class Sources(object):
             default_node = ET.SubElement(games, 'default', {'pathversion': '1'})
             
             etree = ET.ElementTree(sources)
-            etree.write(self.source_path, encoding='utf-8', xml_declaration=True)
+            etree.write(source_path, encoding='utf-8', xml_declaration=True)
         
-        self.sources_xml = ET.parse(self.source_path)
+        self.sources_xml = ET.parse(source_path)
         self.sources = None
 
     def normalize_xml(self):
@@ -57,12 +54,14 @@ class Sources(object):
                     elem.tail = i
 
         indent(elem=elem)
-        tree.write(self.source_path, encoding="utf-8", xml_declaration=True)
+        tree.write(source_path, encoding="utf-8", xml_declaration=True)
         return
 
     def get_sources(self):
-        sources = {}
+        elem = self.sources_xml.getroot()
+        self.xml_tree = ET.ElementTree(elem)
 
+        sources = {}
         select_source = self.xml_tree.find(self.media_type)
 
         for node in select_source.findall('source'):
@@ -78,23 +77,44 @@ class Sources(object):
             if node.find('thumbnail') is not None:
                 thumb = node.find('thumbnail').text
 
-            sources.update({name: [name,path,thumb]})
-            return sources
+            if name in sources.keys():
+                name = '{} - copy'.format(name)
+                
+            sources[name] = [name,path,thumb]
+        return sources
 
-    def path_exist(self, path=None):
-        if path is None:
-            return
-        sources = self.get_sources('video')
+    def bool_path_exist(self):
+        if library_path is None:
+            return None
+        
+        sources = self.get_sources()
 
         for source in sources.items():
-            self.source_path = source[1][1]
+            sc_path = source[1][1]
             
-            if path == self.source_path:
+            if library_path == sc_path:
                 return True
 
         return False
 
-    def add_source(self, label, library_path, icon):
+    def dict_path_exist(self):
+        if library_path is None:
+            return None
+        
+        sources = self.get_sources()
+        exist_sources = {}
+
+        for source in sources.values():
+            sc_name = source[0]
+            sc_path = source[1]
+
+            if library_path == sc_path:
+                exist_sources[sc_name] = source
+
+        del sources                
+        return exist_sources
+
+    def add_source(self):
         try:
             select_source = self.sources_xml.find(self.media_type)
 
@@ -103,8 +123,8 @@ class Sources(object):
             ET.SubElement(source, 'path', {'pathversion': '1'}).text = library_path
             ET.SubElement(source, 'thumbnail', {'pathversion': '1'}).text = icon
             ET.SubElement(source, 'allowsharing').text = 'true'
-            self.sources_xml.write(self.source_path, 'utf-8', xml_declaration=True)
+            self.sources_xml.write(source_path, 'utf-8', xml_declaration=True)
 
             return True
         except:
-            raise SourcesException('ERROR')
+            return False

@@ -458,8 +458,14 @@ class Lostfilm:
 #========================#========================#========================#
     def create_line(self, title, params={}, folder=True, **info):
         li = xbmcgui.ListItem(title)
-        
+
+        serial_data = {}
+
         if info:
+            serial_data['serial_id'] = info.pop('serial_id')
+            serial_data['se_code'] = info.pop('se_code')
+            serial_data['ismovie'] = info.pop('ismovie')
+
             status = info.pop('status')
             cover = info.pop('cover')
             cast = info.pop('cast')
@@ -500,7 +506,8 @@ class Lostfilm:
                 info.update({'status': status})
                 li.setInfo(type='video', infoLabels=info)
 
-        li.addContextMenuItems(self.create_context(info))
+        # li.addContextMenuItems(self.create_context(info))
+        li.addContextMenuItems(self.create_context(serial_data))
 
         if folder==False:
             li.setProperty('isPlayable', 'true')
@@ -707,36 +714,15 @@ class Lostfilm:
     def exec_library_part(self):
         if 'create_source' in self.params['param']:
             import library.manage as manage
-            
-            if manage.create_source():
-                self.dialog.notification(heading='Медиатека',message='Источник Добавлен',icon=icon,time=1000,sound=False)
-            else:
-                self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+            manage.create_source()
 
         if 'create_media' in self.params['param']:
             import library.manage as manage
-            if manage.create_tvshows(serial_id=self.params['id']):
-                self.dialog.notification(heading='Медиатека',message='Сериал Добавлен',icon=icon,time=1000,sound=False)
-            else:
-                self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
-
-
-
-        # if 'create_media' in self.params['param']:
-        #     import library.manage as manage
-
-        #     if manage.create_tvshows(serial_id=self.params['id']):
-        #         self.dialog.notification(heading='Медиатека',message='Сериал Добавлен',icon=icon,time=1000,sound=False)
-        #     else:
-        #         self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+            manage.create_tvshows(serial_id=self.params['id'])
         
-        # if 'update_media' in self.params['param']:
-        #     import library.manage as manage
-        #     try:
-        #         manage.update_tvshows()
-        #         self.dialog.notification(heading='Медиатека',message='Медиатека Обновлена',icon=icon,time=1000,sound=False)
-        #     except:
-        #         self.dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+        if 'update_media' in self.params['param']:
+            import library.manage as manage
+            manage.update_tvshows()
 
         
         # if 'manage' in self.params['param']:

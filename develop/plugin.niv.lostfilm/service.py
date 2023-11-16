@@ -13,7 +13,7 @@ if __name__ == '__main__':
     monitor = xbmc.Monitor()
 
     while not monitor.abortRequested():
-        manage.update_tvshows()
+        manage.auto_update()
 
         if monitor.waitForAbort(3600):
             break

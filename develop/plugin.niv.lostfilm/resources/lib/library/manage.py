@@ -6,12 +6,14 @@ import utility
 import xbmc
 import xbmcaddon
 import xbmcvfs
+import xbmcgui
 
 def data_print(data):
     import xbmc
     xbmc.log(str(data), xbmc.LOGFATAL)
     
 addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
+dialog = xbmcgui.Dialog()
 
 try:
     database_path = utility.fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/database/lostfilms.db'))
@@ -58,21 +60,38 @@ else:
 #========================#========================#========================#
 def create_source():
     from library.create_source import Sources
-    sources = Sources(media_type='video', source_path=source_path)
+    sources = Sources(media_type='video')
     del Sources
 
-    if sources.add_source(label=label, library_path=library_path, icon=icon):
-        sources.normalize_xml()
+    if sources.bool_path_exist():
+        dialog.ok('Добавление Источника', 'Источник с таким адресом уже существует\nАдрес в БД будет обновлен')
 
         from library.create_mediadb import MediaDatabase
-        media_database = MediaDatabase(mediadb_path=mediadb_path, library_path=library_path)
+        media_database = MediaDatabase()
         del MediaDatabase
 
         if media_database.add_dbsource():
             media_database.close()
-            return True
-    
-    return False  
+            
+            dialog.notification(heading='Медиатека',message='Путь обновлен',icon=icon,time=1000,sound=False)
+            return
+    else:
+        if sources.add_source():
+            sources.normalize_xml()
+
+            from library.create_mediadb import MediaDatabase
+            media_database = MediaDatabase()
+            del MediaDatabase
+
+            if media_database.add_dbsource():
+                media_database.close()
+
+                dialog.notification(heading='Медиатека',message='Источник добавлен',icon=icon,time=1000,sound=False)
+                return
+
+        dialog.notification(heading='Медиатека',message='Ошибка интеграции источника',icon=icon,time=1000,sound=False)
+
+    return
 #========================#========================#========================#
 def create_tvshows(serial_id):
     from library.create_tvshows import TVShows
@@ -83,13 +102,30 @@ def create_tvshows(serial_id):
     if tvshows.create_tvshowdetails():
         if tvshows.create_seriesdetails():
             tvshows.tvshow_update(serial_id=serial_id)
-            return True
 
-    return False
+            dialog.notification(heading='Медиатека',message='Сериал Добавлен',icon=icon,time=1000,sound=False)
+            return
+
+    dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+    return
 #========================#========================#========================#
 def update_tvshows():
     from library.create_tvshows import TVShows
     tvshows = TVShows()
-    tvshows.update()
     del TVShows
+
+    try:
+        tvshows.force_update()
+        dialog.notification(heading='Медиатека',message='Медиатека Обновлена',icon=icon,time=1000,sound=False)
+    except:
+        dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+
+    return
+#========================#========================#========================#
+def auto_update():
+    from library.create_tvshows import TVShows
+    tvshows = TVShows()
+    del TVShows
+
+    tvshows.auto_update()
     return
