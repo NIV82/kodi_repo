@@ -7,7 +7,7 @@ import xbmc
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
-import library.manage as manage
+from library import manage
 
 if __name__ == '__main__':
     monitor = xbmc.Monitor()

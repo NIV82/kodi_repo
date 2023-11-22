@@ -452,6 +452,11 @@ class Lostfilm:
             context_menu.append(('[COLOR=white]Добавить в Медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, ismovie)))
             context_menu.append(('[COLOR=white]Обновить медиатеку[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=update_media")'))
 
+        if 'library_part' in self.params['mode']:
+            if 'manage' in self.params['param']:
+                context_menu.append(('[COLOR=yellow]Удалить из Медиатеки[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=remove_media&id={}")'.format(serial_id)))
+
+        #params={'mode': 'library_part', 'param': 'manage'})
         #     self.context_menu.append(('[COLOR=yellow]Удалить из Медиатеки[/COLOR]', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=remove_media")'))
 
         return context_menu
@@ -725,28 +730,41 @@ class Lostfilm:
             manage.update_tvshows()
 
         
-        # if 'manage' in self.params['param']:
-        #     media_items = os.listdir(os.path.join(addon_data_dir, 'library'))
+        if 'manage' in self.params['param']:
+            media_items = os.listdir(os.path.join(addon_data_dir, 'library'))
 
-        #     if len(media_items) < 1:
-        #         self.dialog.notification(heading='Медиатека',message='Медиатека пуста',icon=icon,time=1000,sound=False)
-        #         return
-            
-        #     for serial_id in media_items:
-        #         image_id = self.database.obtain_image_id(serial_id)
-        #         is_movie = self.database.obtain_is_movie(serial_id)
-        #         title_ru = self.database.obtain_title_ru(serial_id)
+            if len(media_items) < 1:
+                self.dialog.notification(heading='Медиатека',message='Медиатека пуста',icon=icon,time=1000,sound=False)
+                return
 
-        #         se_code = '{}001999'.format(image_id)
+            for serial_id in media_items:
+                image_id = self.database.obtain_image_id(serial_id)
+                is_movie = self.database.obtain_is_movie(serial_id)
+                title_ru = self.database.obtain_title_ru(serial_id)
 
-        #         info = self.create_info_data(serial_id=serial_id, se_code=se_code, is_movie=is_movie)
+                se_code = '{}001999'.format(image_id)
 
-        #         self.create_line(title=title_ru, params={'mode': 'select_part', 'id': serial_id, 'code': se_code}, **info)
+                info = self.create_info_data(serial_id=serial_id, se_code=se_code, is_movie=is_movie)
 
-        #     xbmcplugin.endOfDirectory(handle, succeeded=True)
+                self.create_line(title=title_ru, params={'mode': 'select_part', 'id': serial_id, 'code': se_code}, **info)
+
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
         
-        # if 'remove_media' in self.params['param']:
-        #     data_print('111')
+        if 'remove_media' in self.params['param']:
+            from library.manage import library_path
+
+            serial_dir = os.path.join(library_path, self.params['id'])
+
+            if not os.path.isdir(serial_dir):
+                return
+
+            for item in os.listdir(serial_dir):
+                full_path = os.path.join(serial_dir, item)
+                os.remove(full_path)
+
+            os.rmdir(serial_dir)
+
+            self.dialog.notification(heading='Медиатека',message='Сериал Удален',icon=icon,time=1000,sound=False)
 
         return
 #========================#========================#========================#
@@ -838,7 +856,8 @@ class Lostfilm:
         self.create_line(title=self.create_colorize('Фильмы'), params={'mode': 'films_part'})
         self.create_line(title=self.create_colorize('Все сериалы'), params={'mode': 'serials_part'})
         self.create_line(title=self.create_colorize('Каталог'), params={'mode': 'catalog_part'})
-        #self.create_line(title='[B]Медиатека[/B]', params={'mode': 'library_part', 'param': 'manage'})
+        if 'true' in addon.getSetting('show_librarynode'):
+            self.create_line(title='[B]Медиатека[/B]', params={'mode': 'library_part', 'param': 'manage'})
         xbmcplugin.endOfDirectory(handle, succeeded=True)
         return
 #========================#========================#========================#

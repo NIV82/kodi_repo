@@ -2,6 +2,7 @@
 
 import os
 import utility
+#import time
 
 import xbmc
 import xbmcaddon
@@ -49,6 +50,8 @@ except:
 #========================#========================#========================#
 label = addon.getSetting('library_label')
 #========================#========================#========================#
+media_type = 'video'
+#========================#========================#========================#
 site_url = addon.getSetting('mirror_0')
 current_mirror = 'mirror_{}'.format(addon.getSetting('mirror_mode'))
 current_url = addon.getSetting(current_mirror)
@@ -59,73 +62,42 @@ else:
     site_url =  current_url
 #========================#========================#========================#
 def create_source():
-    from library.create_source import Sources
-    sources = Sources(media_type='video')
-    del Sources
+    import library.create_source as create_source
+    import library.create_mediadb as create_mediadb
 
-    if sources.bool_path_exist():
-        dialog.ok('Добавление Источника', 'Источник с таким адресом уже существует\nАдрес в БД будет обновлен')
-
-        from library.create_mediadb import MediaDatabase
-        media_database = MediaDatabase()
-        del MediaDatabase
-
-        if media_database.add_dbsource():
-            media_database.close()
-            
-            dialog.notification(heading='Медиатека',message='Путь обновлен',icon=icon,time=1000,sound=False)
-            return
+    if create_source.bool_path_exist():
+        dialog.notification(heading='Медиатека',message='Источник уже существует',icon=icon,time=1000,sound=False)
     else:
-        if sources.add_source():
-            sources.normalize_xml()
+        create_source.add_source()
 
-            from library.create_mediadb import MediaDatabase
-            media_database = MediaDatabase()
-            del MediaDatabase
-
-            if media_database.add_dbsource():
-                media_database.close()
-
-                dialog.notification(heading='Медиатека',message='Источник добавлен',icon=icon,time=1000,sound=False)
-                return
-
-        dialog.notification(heading='Медиатека',message='Ошибка интеграции источника',icon=icon,time=1000,sound=False)
-
+    create_mediadb.add_librarysource()
+    create_mediadb.close()
     return
 #========================#========================#========================#
 def create_tvshows(serial_id):
-    from library.create_tvshows import TVShows
-    tvshows = TVShows()
-    del TVShows
+    import library.create_tvshows as create_tvshows
+    
+    serial_dir = os.path.join(library_path, serial_id)
+    if not os.path.exists(serial_dir):
+        create_tvshows.create_serialdir(serial_id=serial_id)
+    else:
+        create_tvshows.clean_serialdir(serial_id=serial_id)
 
-    tvshows.serial_info = tvshows.get_serialinfo(serial_id=serial_id)
-    if tvshows.create_tvshowdetails():
-        if tvshows.create_seriesdetails():
-            tvshows.tvshow_update(serial_id=serial_id)
+    create_tvshows.tvshow_info = create_tvshows.get_serialinfo(serial_id=serial_id)
 
-            dialog.notification(heading='Медиатека',message='Сериал Добавлен',icon=icon,time=1000,sound=False)
-            return
-
-    dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
+    create_tvshows.create_tvshowdetails(serial_id=serial_id)
+    create_tvshows.create_seriesdetails(serial_id=serial_id)
+    create_tvshows.tvshow_allupdate()
+    del create_tvshows
+    
     return
 #========================#========================#========================#
 def update_tvshows():
-    from library.create_tvshows import TVShows
-    tvshows = TVShows()
-    del TVShows
-
-    try:
-        tvshows.force_update()
-        dialog.notification(heading='Медиатека',message='Медиатека Обновлена',icon=icon,time=1000,sound=False)
-    except:
-        dialog.notification(heading='Медиатека',message='Ошибка',icon=icon,time=1000,sound=False)
-
+    import library.create_tvshows as create_tvshows
+    create_tvshows.force_update()
     return
 #========================#========================#========================#
 def auto_update():
-    from library.create_tvshows import TVShows
-    tvshows = TVShows()
-    del TVShows
-
-    tvshows.auto_update()
+    import library.create_tvshows as create_tvshows
+    create_tvshows.auto_update()
     return
