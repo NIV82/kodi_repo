@@ -1,5 +1,5 @@
 ____
-<p align="center | right | justify">
+<p align="center">
   # **LostFilm.tv** 
 </p>
 
