@@ -14,7 +14,9 @@ ____
 - **TorrServer**
 - **Elementum**
 ____
+**Плагин можно установить:**
+- из [Репозитория Search.db](https://github.com/seppius-xbmc-repo/ru/tree/master/repository.search.db)
+- из [Репозитория NIV](https://github.com/NIV82/kodi_repo/tree/main/release/repository.niv)
+- отдельно zip файлом через пункт "Установить из zip файла" [Для всех версий Kodi](https://github.com/NIV82/kodi_repo/tree/main/release/plugin.niv.lostfilm)
 
-Плагин можно установить из [URL="https://github.com/seppius-xbmc-repo/ru/tree/master/repository.search.db"][B]Search.db[/B][/URL] (выбирать последнюю версию - zip файл)
-
-И отдельно zip файлом через пункт "Установить из zip файла" - [URL="https://github.com/NIV82/kodi_repo/tree/main/release/plugin.niv.lostfilm"][B]Для всех версий Kodi[/B][/URL] (выбирать последнюю версию - zip файл)
+выбирать последнюю версию - zip файл
