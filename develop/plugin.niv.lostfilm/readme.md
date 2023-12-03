@@ -1,7 +1,4 @@
-____
 # **LostFilm.tv**
-____
-![Alt-текст](https://github.com/NIV82/kodi_repo/raw/main/develop/plugin.niv.lostfilm/resources/media/icon_x256.png)
 ____
 
 - **Плагин**: для медиацентра **KODI** и систем основанных на KODI
