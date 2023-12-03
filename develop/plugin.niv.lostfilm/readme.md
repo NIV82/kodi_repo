@@ -1,6 +1,9 @@
-LostFilm.tv - плагин предоставляющий возможность просмотра контента с одноименного ресурса)
-===
-[IMG]https://github.com/NIV82/kodi_repo/raw/main/develop/plugin.niv.lostfilm/resources/media/icon.png[/IMG]
+____
+## **LostFilm.tv**
+## плагин предоставляющий возможность просмотра контента с одноименного ресурса
+____
+![Alt-текст](https://github.com/NIV82/kodi_repo/raw/main/develop/plugin.niv.lostfilm/resources/media/icon.png)
+
 ===
 
 - [B]Плагин[/B]: для медиацентра [B]KODI[/B], [B]LibreElec[/B]
