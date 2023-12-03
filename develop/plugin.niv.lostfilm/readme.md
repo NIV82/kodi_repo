@@ -1,10 +1,12 @@
 ____
-## **LostFilm.tv**
+<p align="center | right | justify">
+  # **LostFilm.tv** 
+</p>
+
 ## плагин предоставляющий возможность просмотра контента с одноименного ресурса
 ____
-![Alt-текст](https://github.com/NIV82/kodi_repo/raw/main/develop/plugin.niv.lostfilm/resources/media/icon.png)
-
-===
+![Alt-текст](https://github.com/NIV82/kodi_repo/raw/main/develop/plugin.niv.lostfilm/resources/media/icon_x256.png)
+____
 
 - [B]Плагин[/B]: для медиацентра [B]KODI[/B], [B]LibreElec[/B]
 - [B]Возможности[/B]: Торрент просмотр
