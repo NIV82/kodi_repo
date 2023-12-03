@@ -19,4 +19,4 @@ ____
 - из [Репозитория NIV](https://github.com/NIV82/kodi_repo/tree/main/release/repository.niv)
 - отдельно zip файлом через пункт "Установить из zip файла" [Для всех версий Kodi](https://github.com/NIV82/kodi_repo/tree/main/release/plugin.niv.lostfilm)
 
-выбирать последнюю версию - zip файл
+**выбирать последнюю версию - zip файл**
