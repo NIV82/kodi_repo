@@ -2,28 +2,24 @@
 
 import os
 import utility
-#import time
+import time
 
 import xbmc
 import xbmcaddon
 import xbmcvfs
 import xbmcgui
-
-def data_print(data):
-    import xbmc
-    xbmc.log(str(data), xbmc.LOGFATAL)
     
 addon = xbmcaddon.Addon(id='plugin.niv.lostfilm')
 dialog = xbmcgui.Dialog()
 
 try:
-    database_path = utility.fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/database/lostfilms.db'))
+    database_path = utility.fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/lostfilms.db'))
     library_path = utility.fs_enc(xbmc.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/'))
     source_path = utility.fs_enc(xbmc.translatePath('special://userdata/sources.xml'))
     icon = utility.fs_enc(xbmc.translatePath('special://home/addons/plugin.niv.lostfilm/resources/media/icon.png'))
     mediadb_path = utility.fs_enc(xbmc.translatePath('special://database'))
 except:
-    database_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/database/lostfilms.db')
+    database_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/lostfilms.db')
     library_path = xbmcvfs.translatePath('special://userdata/addon_data/plugin.niv.lostfilm/library/')
     source_path = xbmcvfs.translatePath('special://userdata/sources.xml')
     icon = xbmcvfs.translatePath('special://home/addons/plugin.niv.lostfilm/resources/media/icon.png')
@@ -60,6 +56,20 @@ if not current_url:
     pass
 else:
     site_url =  current_url
+#========================#========================#========================#
+if '0' in addon.getSetting('unblock'):
+    proxy_data = None
+elif '1' in addon.getSetting('unblock'):
+    if addon.getSetting('proxy'):
+        proxy_data = {'https': addon.getSetting('proxy')}
+    else:
+        proxy_data = {'https': 'http://185.85.121.12:1088'}
+else:
+    proxy_data = {'https': 'http://185.85.121.12:1088'}
+#========================#========================#========================#
+from network import WebTools
+net = WebTools(proxy_data=proxy_data)
+del WebTools
 #========================#========================#========================#
 def create_source():
     import library.create_source as create_source

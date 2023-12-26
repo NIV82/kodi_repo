@@ -6,6 +6,7 @@ from library.manage import site_url
 from library.manage import addon
 from library.manage import library_path
 from library.manage import database_path
+from library.manage import net
 
 import xml.etree.ElementTree as ET
 
@@ -133,8 +134,7 @@ def create_seriesdetails(serial_id):
     serial_dir = os.path.join(library_path, serial_id)
     serial_url = '{}series/{}/seasons/'.format(site_url, serial_id)
 
-    from network import get_web
-    html = get_web(url=serial_url)
+    html = net.get_html(url=serial_url)
 
     if not html:
         return False
