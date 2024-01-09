@@ -59,7 +59,7 @@ def bool_path_exist():
         sc_path = source[1][1]
         if library_path == sc_path:
             return True
-        return False
+    return False
 
 def dict_path_exist():
     sources = get_sources()

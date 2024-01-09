@@ -1262,13 +1262,13 @@ class Lostfilm:
                         ('Обновить описание', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(serial_id, is_movie)),
                         ('Открыть торрент файл', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)),
                         ('Отметить как просмотренное', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=on&id={}")'.format(se_code)),
-                        ('Отметить как непросмотренное', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code)),
-                        ('Добавить в Медиатеку', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, is_movie)),
-                        ('Обновить медиатеку', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=update_media")')
+                        ('Отметить как непросмотренное', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=mark_part&param=off&id={}")'.format(se_code))
                         ]
 
                     if not is_movie:
                         self.context_menu.append(('Перейти к Сериалу', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,se_code[0:3])))
+                        self.context_menu.append(('Добавить в Медиатеку', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, is_movie)))
+                        self.context_menu.append(('Обновить медиатеку', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=update_media")'))
                     else:
                         self.context_menu.append(('Перейти к Фильму', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=movies_part&id={}&code={}001001")'.format(serial_id,se_code[0:3])))
 

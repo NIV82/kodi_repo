@@ -145,6 +145,8 @@ def create_seriesdetails(serial_id):
 
     for data in data_array:
         try:
+            data = data[:data.find('<td class="placeholder">')]
+
             if not 'PlayEpisode(' in data:
                 continue
 
