@@ -766,17 +766,17 @@ class Lostfilm:
 
         if notice:
             if '"on' in str(html) or 'off' in str(html):
-                dialog.notification(heading='LostFilm',message='Выполнено',icon=icon,time=3000,sound=False)
+                dialog.notification(heading='LostFilm',message='Выполнено',icon=icon,time=1000,sound=False)
             if 'error' in str(html):
-                dialog.notification(heading='LostFilm',message='Ошибка',icon=icon,time=3000,sound=False)
+                dialog.notification(heading='LostFilm',message='Ошибка',icon=icon,time=1000,sound=False)
         return
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
             addon.setSetting('search', '')
-            dialog.notification(heading='LostFilm',message='Выполнено',icon=icon,time=3000,sound=False)
+            dialog.notification(heading='LostFilm',message='Выполнено',icon=icon,time=1000,sound=False)
         except:
-            dialog.notification(heading='LostFilm',message='Ошибка',icon=icon,time=3000,sound=False)
+            dialog.notification(heading='LostFilm',message='Ошибка',icon=icon,time=1000,sound=False)
             pass
 
         return

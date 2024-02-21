@@ -947,7 +947,6 @@ class RedHeadSound:
             else:
                 series_url = i[1]
 
-            series_url = 'https://bl.webcaster.pro/file/playlist/rhs2204583/5779_2883631739/1080/e9c67c925ffbd9171e362ba06c9a31df/1708454438.m3u8'
             self.create_line(title=series_label, params={'mode': 'play_part', 'param': series_url}, meta_info=meta_info, folder=False)
                                     
         xbmcplugin.endOfDirectory(handle, succeeded=True)
