@@ -8,13 +8,45 @@ try:
     from urllib2 import HTTPCookieProcessor
     from urllib2 import build_opener
     from urllib2 import Request
+    from urllib2 import urlopen
     from cookielib import MozillaCookieJar
 except:
     from urllib.request import ProxyHandler
     from urllib.request import HTTPCookieProcessor
     from urllib.request import build_opener
     from urllib.request import Request
+    from urllib.request import urlopen
     from http.cookiejar import MozillaCookieJar
+
+def get_web(url, post=None, bytes=False):
+    if post:
+        try:
+            post = post.encode(encoding='utf-8')
+        except:
+            pass
+
+    headers = {
+        'User-Agent': 'Kodi TV Show scraper by Team Kodi; contact pkscout@kodi.tv',
+        'Accept': 'application/json'
+        }
+
+    try:
+        request = Request(url=url, data=post, headers=headers)
+        #request.add_header('User-Agent', 'Kodi TV Show scraper by Team Kodi; contact pkscout@kodi.tv')
+        
+        content = urlopen(request)
+        html = content.read()
+        content.close()
+
+        if not bytes:
+            try:
+                html = html.decode(encoding='utf-8', errors='replace')
+            except:
+                pass
+
+        return html
+    except:
+        return False
     
 class WebTools:
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):

@@ -879,7 +879,7 @@ class RedHeadSound:
 
         import json
 
-        quality_list = {}
+        #quality_list = {}
 
         try:
             files = json.loads(data_array)
@@ -890,69 +890,206 @@ class RedHeadSound:
 
         if 'title' in files:
             file_title = files['title']
-            file_data = files['file']
-                
-            file_data = file_data.split(',')
-                
-            for node in file_data:
-                file_quality = node[1:node.find('p')].strip()
+            file_url = files['file']
+            file_url = file_url.replace('\/','/')
 
-                if not file_quality in quality_list:
-                    quality_list.update({file_quality:[]})
-                        
-                file_url = node[node.find('/'):]        
-                quality_list[file_quality].append((file_title, file_url))
+            self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
         else:
             files = files['file']
+
+            if 'folder' in files[0]:
+                for f in files:
+                    folder_title = f['title']
+                    self.create_line(title=folder_title)
+
+                    folder_files = f['folder']
+
+                    for node in folder_files:
+                        file_title = node['title']
+                        file_url = node['file']
+                        file_url = file_url.replace('\/','/')
+
+                        self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
+            else:
+                for i in files:
+                    file_title = i['title']
+                    file_url = i['file']
+                    file_url = file_url.replace('\/','/')
+
+                    self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
+                                    
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
+
+    # def exec_select_part(self):
+    #     url = self.params['url']
+    #     html = self.network.get_html(url=url)
+
+    #     if not html:
+    #         self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
+    #         return
+
+    #     if not '<iframe data-src="' in html:
+    #         self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
+    #         return
+
+    #     player_links = self.create_players(data=html)
+    #     player_choice = addon.getSetting('player')
+
+    #     if '0' in player_choice:
+    #         player_url = player_links['cdnvideohub']
+    #         if not player_url:
+    #             player_url = player_links['redheadsound']
+
+    #     if '1' in player_choice:
+    #         player_url = player_links['redheadsound']
+    #         if not player_url:
+    #             player_url = player_links['cdnvideohub']
+
+    #     meta_info = self.database.get_metainfo(unique_imdb= self.params['id'])
+    
+    #     html2 = self.network.get_html(url=player_url)
+
+    #     data_array = html2[html2.find('new Playerjs(')+13:html2.rfind(');')]
+
+    #     import json
+
+    #     quality_list = {}
+
+    #     try:
+    #         files = json.loads(data_array)
+    #     except:
+    #         files = self.normailze_json(data_array)
+    #         files = json.dumps(files)
+    #         files = json.loads(files)
+
+    #     if 'title' in files:
+    #         file_title = files['title']
+    #         file_data = files['file']
+                
+    #         file_data = file_data.split(',')
+                
+    #         for node in file_data:
+    #             file_quality = node[1:node.find('p')].strip()
+
+    #             if not file_quality in quality_list:
+    #                 quality_list.update({file_quality:[]})
+                        
+    #             file_url = node[node.find('/'):]        
+    #             quality_list[file_quality].append((file_title, file_url))
+    #     else:
+    #         files = files['file']
                     
-            for f in files:
-                file_title = f['title']
-                file_data = f['file']
-                file_data = file_data.replace('\/','/')
+    #         for f in files:
+    #             file_title = f['title']
+    #             file_data = f['file']
+    #             file_data = file_data.replace('\/','/')
                             
-                file_data = file_data.split(',')
+    #             file_data = file_data.split(',')
 
-                for node in file_data:
-                    if ']' in node:
-                        file_quality = node[1:node.find('p')].strip()
-                        file_url = node[node.find('/'):]
-                    else:
-                        file_quality = '1080'
-                        file_url = node
+    #             for node in file_data:
+    #                 if ']' in node:
+    #                     file_quality = node[1:node.find('p')].strip()
+    #                     file_url = node[node.find('/'):]
+    #                 else:
+    #                     file_quality = '1080'
+    #                     file_url = node
 
-                    if not file_quality in quality_list:
-                        quality_list.update({file_quality:[]})
+    #                 if not file_quality in quality_list:
+    #                     quality_list.update({file_quality:[]})
 
-                    quality_list[file_quality].append((file_title, file_url))
+    #                 quality_list[file_quality].append((file_title, file_url))
 
+    #     select_quality = int(addon.getSetting('quality'))
+
+    #     option_quality = ['480','720','1080']
+    #     current_quality = option_quality[select_quality]
+
+    #     if current_quality in quality_list:
+    #         result_quality = current_quality
+    #     else:
+    #         if '1080' in quality_list:
+    #             result_quality = '1080'
+    #         elif '720' in quality_list:
+    #             result_quality = '720'
+    #         elif ' 480' in quality_list:
+    #             result_quality = '480'
+
+    #     for i in quality_list[result_quality]:
+    #         series_label = i[0]
+    #         if not 'https' in i[1]:
+    #             series_url = 'https://redheadsound.video{}'.format(i[1])
+    #         else:
+    #             series_url = i[1]
+
+    #         self.create_line(title=series_label, params={'mode': 'play_part', 'param': series_url}, meta_info=meta_info, folder=False)
+                                    
+    #     xbmcplugin.endOfDirectory(handle, succeeded=True)
+#========================#========================#========================#
+    def process_url(self, raw_url):
         select_quality = int(addon.getSetting('quality'))
-
         option_quality = ['480','720','1080']
         current_quality = option_quality[select_quality]
 
-        if current_quality in quality_list:
-            result_quality = current_quality
-        else:
-            if '1080' in quality_list:
-                result_quality = '1080'
-            elif '720' in quality_list:
-                result_quality = '720'
-            elif ' 480' in quality_list:
-                result_quality = '480'
+        quality_list = {}
+        raw_url = raw_url.split(',')
 
-        for i in quality_list[result_quality]:
-            series_label = i[0]
-            if not 'https' in i[1]:
-                series_url = 'https://redheadsound.video{}'.format(i[1])
+        result_quality = ''
+        for node in raw_url:
+
+            if ']' in node:            
+                file_quality = node[1:node.find('p')].strip()
+                if not file_quality in quality_list:
+                    quality_list.update({file_quality:''})
+
+                file_url = node[node.find('/'):]
+                quality_list[file_quality] = file_url
             else:
-                series_url = i[1]
+                from network import get_web
+                data_array = get_web(url=node)
+                data_array = data_array.splitlines()
 
-            self.create_line(title=series_label, params={'mode': 'play_part', 'param': series_url}, meta_info=meta_info, folder=False)
-                                    
-        xbmcplugin.endOfDirectory(handle, succeeded=True)
+                for node in data_array:
+                    if 'https:' in node:
+                        node = node.strip()
+                        if '/1080/' in node:
+                            file_quality = '1080'
+                        elif '/720/' in node:
+                            file_quality = '720'
+                        elif '/480/' in node:
+                            file_quality = '480'
+                        elif '/360/' in node:
+                            file_quality = '360'
+                        else:
+                            continue
+                        
+                        if not file_quality in quality_list:
+                            quality_list.update({file_quality:''})
+                        
+                        quality_list[file_quality] = node
+
+            if current_quality in quality_list:
+                result_quality = quality_list[current_quality]
+            elif '1080' in quality_list:
+                result_quality = quality_list['1080']
+            elif '720' in quality_list:
+                result_quality = quality_list['720']
+            elif '480' in quality_list:
+                result_quality = quality_list['480']
+            elif '360' in quality_list:
+                result_quality = quality_list['360']    
+
+            if not 'https' in result_quality:
+                result_quality = 'https://redheadsound.video{}'.format(result_quality)       
+
+        return result_quality
 #========================#========================#========================#
+        
     def exec_play_part(self):
-        li = xbmcgui.ListItem(path=self.params['param'])
+        video_url = self.process_url(raw_url=self.params['param'])
+
+        li = xbmcgui.ListItem(path=video_url)
 
         if '0' in addon.getSetting('inputstream_adaptive'):
             li.setProperty('inputstream', "inputstream.adaptive")
