@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 
-db_content = {'media': """CREATE TABLE media (
+db_content = {'uniqueid':"""CREATE TABLE uniqueid (
+    uniqueid_id INTEGER PRIMARY KEY,
+    media_type  TEXT,
+    tmdb       TEXT,
+    imdb        TEXT,
+    kinopoisk TEXT)""",
+
+    'movie': """CREATE TABLE movie (
     idMedia INTEGER Primary Key,
     title TEXT,
     originaltitle TEXT,
@@ -17,22 +24,33 @@ db_content = {'media': """CREATE TABLE media (
     trailer TEXT,
     duration TEXT)""",
 
-    'uniqueid':"""CREATE TABLE uniqueid (
-    uniqueid_id INTEGER PRIMARY KEY,
-    media_type  TEXT,
-    tmdb       TEXT,
-    imdb        TEXT)""",
+    'series': """CREATE TABLE series (
+    idMedia INTEGER Primary Key,
+    title TEXT,
+    originaltitle TEXT,
+    plot TEXT,
+    tagline TEXT,
+    studio TEXT,
+    genre TEXT,
+    country TEXT,
+    credits TEXT,
+    director TEXT,
+    premiered TEXT,
+    tag TEXT,
+    mpaa TEXT,
+    trailer TEXT,
+    duration TEXT)""",
 
-    # 'actor': """CREATE TABLE actor (
-    # actor_id INTEGER PRIMARY KEY,
-    # name     TEXT,
-    # art_urls TEXT)""",
+    'actor': """CREATE TABLE actor (
+    actor_id INTEGER PRIMARY KEY,
+    name     TEXT,
+    art_urls TEXT)""",
 
-    # 'actor_link':"""CREATE TABLE actor_link (
-    # actor_id   INTEGER,
-    # media_id   INTEGER,
-    # role       TEXT,
-    # cast_order INTEGER)""",
+    'actor_link':"""CREATE TABLE actor_link (
+    actor_id   INTEGER,
+    media_id   INTEGER,
+    role       TEXT,
+    cast_order INTEGER)""",
 
     'arts':"""CREATE TABLE arts (
     idMedia INTEGER PRIMARY KEY,
@@ -78,42 +96,35 @@ class DataBase:
                 self.cu.execute(db_content[i])
                 self.c.commit()
 
+    def get_idSet(self, unique_imdb):
+        self.cu.execute('SELECT uniqueid_id, media_type, tmdb, imdb, kinopoisk FROM uniqueid WHERE imdb=?', (unique_imdb,))
+        self.c.commit()
+        res = self.cu.fetchone()
+        ids = {'uniqueid_id': res[0], 'media_type': res[1], 'tmdb': res[2], 'imdb':res[3], 'kinopoisk': res[4]}
+        return ids
+    
     def imdb_in_db(self, unique_imdb):
         self.cu.execute('SELECT COUNT(1) FROM uniqueid WHERE imdb=?', (unique_imdb,))
         self.c.commit()
         return False if self.cu.fetchone()[0] == 0 else True
+
+    def actor_in_db(self, unique_name):
+        self.cu.execute('SELECT COUNT(1) FROM actor WHERE name=?', (unique_name,))
+        self.c.commit()
+        return False if self.cu.fetchone()[0] == 0 else True
+
+    def get_actorId(self, unique_name):
+        self.cu.execute('SELECT actor_id FROM actor WHERE name=?', (unique_name,))
+        self.c.commit()
+        return self.cu.fetchone()[0]
 
     def get_mediaId(self, imdb_id):
         self.cu.execute('SELECT uniqueid_id FROM uniqueid WHERE imdb=?', (imdb_id,))
         self.c.commit()
         return self.cu.fetchone()[0]
 
-    def get_media(self, media_id):
-        self.cu.execute('SELECT title, originaltitle, plot, tagline, studio, genre, country, credits, director, premiered, tag, mpaa, trailer, duration FROM media WHERE idMedia=?', (media_id,))
-        self.c.commit()
-        res = self.cu.fetchone()
-
-        info = {
-            'title': res[0],
-            'originaltitle': res[1],
-            'plot': res[2],
-            'tagline': res[3],
-            'studio': res[4].split(' / '), #string (Warner Bros.) or list of strings (["Warner Bros.", "Disney", "Paramount"])
-            'genre': res[5].split(' / '), #string (Comedy) or list of strings (["Comedy", "Animation", "Drama"])
-            'country': res[6].split(' / '), #string (Germany) or list of strings (["Germany", "Italy", "France"])
-            'credits': res[7].split(' / '), #string (Andy Kaufman) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"]) - writing credits
-            'director': res[8].split(' / '), #string (Dagur Kari) or list of strings (["Dagur Kari", "Quentin Tarantino", "Chrstopher Nolan"])
-            'premiered': res[9], #string (2005-03-04)
-            'tag': res[10].split(' / '), #string (cult) or list of strings (["cult", "documentary", "best movies"]) - movie tag
-            'mpaa': res[11],
-            'trailer': res[12],
-            'duration': res[13], #integer (245) - duration in seconds
-        }
-
-        return info
-
-    def get_arts(self, media_id):
-        self.cu.execute('SELECT poster_url, poster_preview, landscape_url, landscape_preview, fanart_url, fanart_preview, clearlogo_url, clearlogo_preview FROM arts WHERE idMedia=?', (media_id,))
+    def get_arts(self, unique_set):
+        self.cu.execute('SELECT poster_url, poster_preview, landscape_url, landscape_preview, fanart_url, fanart_preview, clearlogo_url, clearlogo_preview FROM arts WHERE idMedia=?', (unique_set['uniqueid_id'],))
         self.c.commit()
         res = self.cu.fetchone()
 
@@ -135,36 +146,78 @@ class DataBase:
         }
 
         return arts
-    
-    def get_metainfo(self, unique_imdb):
-        self.cu.execute('SELECT uniqueid_id, media_type FROM uniqueid WHERE imdb=?', (unique_imdb,))
+
+    def get_content(self, unique_set):
+        request_string = 'SELECT title, originaltitle, plot, tagline, studio, genre, country, credits, director, premiered, tag, mpaa, trailer, duration FROM {} WHERE idMedia=?'.format(
+            unique_set['media_type'])
+
+        self.cu.execute(request_string, (unique_set['uniqueid_id'],))
         self.c.commit()
+        res = self.cu.fetchone()
 
-        media_id = self.get_mediaId(imdb_id=unique_imdb)
-        #result = self.cu.fetchone()
+        info = {
+            'title': res[0],
+            'originaltitle': res[1],
+            'plot': res[2],
+            'tagline': res[3],
+            'studio': res[4].split(' / '),
+            'genre': res[5].split(' / '),
+            'country': res[6].split(' / '),
+            'credits': res[7].split(' / '),
+            'director': res[8].split(' / '),
+            'premiered': res[9],
+            'tag': res[10].split(' / '),
+            'mpaa': res[11],
+            'trailer': res[12],
+            'duration': int(res[13])
+            }
 
-        # ids = {'uniqueid_id': result[0], 'media_type': result[1]}
-        #info = self.get_media(media_id=ids['uniqueid_id'])
-        #arts = self.get_arts(media_id=ids['uniqueid_id'])
+        return info
 
-        info = self.get_media(media_id=media_id)
-        arts = self.get_arts(media_id=media_id)
+    def get_actors(self, actor_id):
+        self.cu.execute('SELECT name, art_urls FROM actor WHERE actor_id=?', (actor_id,))
+        self.c.commit()
+        return self.cu.fetchone()
 
-        assemble = {
-            # 'ids': ids,
+    def get_cast(self, unique_set):
+        self.cu.execute('SELECT actor_id, role, cast_order FROM actor_link WHERE media_id=?', (unique_set['uniqueid_id'],))
+        self.c.commit()
+        result = self.cu.fetchall()
+
+        cast = []
+        for node in result:
+            actor = self.get_actors(actor_id=node[0])
+            cast.append({'name': actor[0],'role': node[1], 'thumbnail': actor[1],'order':node[2]})            
+
+        return cast
+
+    def get_metainfo(self, unique_imdb):
+        unique_set = self.get_idSet(unique_imdb=unique_imdb)
+
+        info = self.get_content(unique_set=unique_set)
+        arts = self.get_arts(unique_set=unique_set)
+        cast = self.get_cast(unique_set=unique_set)
+
+        meta_info = {
+            'uniqueid': unique_set,
             'info': info,
-            'arts': arts
+            'arts': arts,
+            'cast': cast
         }
 
-        return assemble
-        #return res
+        return meta_info
+############################################################################################################################################
+    def insert_uniqueid(self, unique_id):
+        ids = {'media_type':'', 'tmdb':'','imdb':'','kinopoisk':''}
+        ids.update(unique_id)
 
-    def insert_media(self, media_id, media):
-        for i in media:
-            if media[i] == None:
-                media[i] = ''
+        self.cu.execute('INSERT INTO uniqueid (media_type, tmdb, imdb, kinopoisk) VALUES (?,?,?,?)', (
+            ids['media_type'], ids['tmdb'], ids['imdb'], ids['kinopoisk']))
+        self.c.commit()
+        return
 
-        meta = {
+    def insert_media(self, meta_info, media_id, uniqueids, update=False):
+        info = {
             'title':'',
             'originaltitle':'',
             'plot':'',
@@ -178,55 +231,108 @@ class DataBase:
             'tag':'',
             'mpaa':'',
             'trailer':'',
-            'duration':'',
+            'duration': 0,
             }
-        meta.update(media)
+        info.update(meta_info)
 
-        if meta.get('genre'):
-            meta['genre'] = ' / '.join(meta['genre'])
-        if meta.get('tag'):
-            meta['tag'] = ' / '.join(meta['tag'])
-        if meta.get('studio'):
-            meta['studio'] = ' / '.join(meta['studio'])
-        if meta.get('country'):
-            meta['country'] = ' / '.join(meta['country'])
-        if meta.get('director'):
-            meta['director'] = ' / '.join(meta['director'])
-        if meta.get('credits'):
-            meta['credits'] = ' / '.join(meta['credits'])
+        for i in info:
+            if info[i] == None:
+                info[i] = ''
+            if type(info[i]) == list:
+                info[i] = ' / '.join(info[i])
 
-        self.cu.execute('INSERT INTO media (idMedia, title, originaltitle, plot, tagline, studio, genre, country, credits, director, premiered, tag, mpaa, trailer, duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                        (media_id, meta['title'],meta['originaltitle'],meta['plot'],meta['tagline'],meta['studio'],meta['genre'],meta['country'],meta['credits'],meta['director'],meta['premiered'],meta['tag'],meta['mpaa'],meta['trailer'],meta['duration']))
+        if update:
+            req_string = 'UPDATE {} SET title = ?, originaltitle = ?, plot = ?, tagline = ?, studio = ?, genre = ?, country = ?, credits = ?, director = ?, premiered = ?, tag = ?, mpaa = ?, trailer = ?, duration = ? WHERE idMedia = ?'.format(
+                uniqueids['media_type'])
+
+            self.cu.execute(req_string, (info['title'],info['originaltitle'],info['plot'],info['tagline'],info['studio'],info['genre'],info['country'],info['credits'],info['director'],info['premiered'],info['tag'],info['mpaa'],info['trailer'],info['duration'], media_id))
+        else:
+            req_string = 'INSERT INTO {} (idMedia, title, originaltitle, plot, tagline, studio, genre, country, credits, director, premiered, tag, mpaa, trailer, duration) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'.format(
+                uniqueids['media_type'])
+            
+            self.cu.execute(req_string, (media_id, info['title'],info['originaltitle'],info['plot'],info['tagline'],info['studio'],info['genre'],info['country'],info['credits'],info['director'],info['premiered'],info['tag'],info['mpaa'],info['trailer'],info['duration']))
+            
         self.c.commit()
 
         return
 
-    def insert_uniqueid(self, unique_id):
-        self.cu.execute('INSERT INTO uniqueid (media_type, tmdb, imdb) VALUES (?,?,?)', (
-            unique_id['media_type'], unique_id['tmdb'], unique_id['imdb']))
+    def insert_arts(self, media_id, arts, update=False):
+        info_arts = {
+            'poster_url': '',
+            'poster_preview': '',
+            'landscape_url': '',
+            'landscape_preview': '',
+            'fanart_url': '',
+            'fanart_preview': '',
+            'clearlogo_url':'',
+            'clearlogo_preview':''
+            }
+        
+        for i in arts:
+            if len(arts[i]) > 0:
+                for a in arts[i][0]:
+                    x = '{}_{}'.format(i,a)
+                    if x in info_arts:
+                        info_arts[x] = arts[i][0][a]
+        if update:
+            self.cu.execute('UPDATE arts SET poster_url=?, poster_preview=?, landscape_url=?, landscape_preview=?, fanart_url=?, fanart_preview=?, clearlogo_url=?, clearlogo_preview=? WHERE idMedia=?',
+                            (info_arts['poster_url'],info_arts['poster_preview'],info_arts['landscape_url'],info_arts['landscape_preview'],info_arts['fanart_url'],info_arts['fanart_preview'],info_arts['clearlogo_url'],info_arts['clearlogo_preview'], media_id))
+        else:
+            self.cu.execute('INSERT INTO arts (idMedia, poster_url, poster_preview, landscape_url, landscape_preview, fanart_url, fanart_preview, clearlogo_url, clearlogo_preview) VALUES (?,?,?,?,?,?,?,?,?)', 
+                                (media_id,info_arts['poster_url'],info_arts['poster_preview'],info_arts['landscape_url'],info_arts['landscape_preview'],info_arts['fanart_url'],info_arts['fanart_preview'],info_arts['clearlogo_url'],info_arts['clearlogo_preview']))
         self.c.commit()
 
         return
-    
-    def insert_arts(self, media_id, arts):
 
-        self.cu.execute('INSERT INTO arts (idMedia, poster_url, poster_preview, landscape_url, landscape_preview, fanart_url, fanart_preview, clearlogo_url, clearlogo_preview) VALUES (?,?,?,?,?,?,?,?,?)', 
-                            (media_id, arts['poster_url'],arts['poster_preview'],arts['landscape_url'],arts['landscape_preview'],arts['fanart_url'],arts['fanart_preview'],arts['clearlogo_url'],arts['clearlogo_preview']))
-        self.c.commit()
+    def insert_cast(self, media_id, cast):
+        for node in cast:
+            if not self.actor_in_db(unique_name=node['name']):
+                self.cu.execute('INSERT INTO actor (name, art_urls) VALUES (?,?)',
+                                (node['name'], node['thumbnail']))
+                self.c.commit()
 
-        return
+            actor_id = self.get_actorId(node['name'])
 
-    def insert_content(self, meta_info):
-        unique_id = meta_info.pop('unique_id')
-        self.insert_uniqueid(unique_id=unique_id)
-
-        media_id = self.get_mediaId(imdb_id=unique_id['imdb'])
-        media_id = int(media_id)
-
-        media = meta_info.pop('media')
-        self.insert_media(media_id, media)
-
-        available_art = meta_info.pop('available_arts')
-        self.insert_arts(media_id=media_id, arts=available_art)
+            self.cu.execute('INSERT INTO actor_link (actor_id, media_id, role, cast_order) VALUES (?,?,?,?)', 
+                            (actor_id, media_id, node['role'], node['order']))
+            self.c.commit()
 
         return
+############################################################################################################################################
+    def insert_content(self, meta_info, update=False):
+        uniqueids = meta_info.pop('uniqueids')
+        info = meta_info.pop('info')
+        cast = meta_info.pop('cast')
+        arts = meta_info.pop('available_art')
+
+        # if uniqueids.get('imdb'):
+        #     if self.imdb_in_db(unique_imdb=uniqueids.get('imdb')):
+        #         media_id = self.get_mediaId(imdb_id=uniqueids.get('imdb'))
+        #         update = True
+        #     else:
+        #         self.insert_uniqueid(unique_id=uniqueids)
+        #         media_id = self.get_mediaId(imdb_id=uniqueids.get('imdb'))
+        #         update = False
+
+        self.insert_uniqueid(unique_id=uniqueids)
+        media_id = self.get_mediaId(imdb_id=uniqueids.get('imdb'))
+
+        self.insert_media(meta_info=info, media_id=media_id, uniqueids=uniqueids, update=update)
+        self.insert_arts(media_id=media_id, arts=arts, update=update)
+        self.insert_cast(media_id=media_id, cast=cast)
+                
+        return
+
+    # def update_uniqueId(self, uniqueid):
+    #     ids = {
+    #         'media_type':'',
+    #         'tmdb': '',
+    #         'imdb': '',
+    #         'kinopoisk':''
+    #     }
+    #     ids.update(uniqueid)
+
+    #     self.cu.execute('UPDATE uniqueid SET kinopoisk=? WHERE imdb=?',
+    #                         (ids['kinopoisk'], ids['imdb']))
+    #     self.c.commit()
+    #     return

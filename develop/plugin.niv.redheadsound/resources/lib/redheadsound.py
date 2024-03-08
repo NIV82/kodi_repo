@@ -78,6 +78,7 @@ class RedHeadSound:
         if not os.path.exists(self.database_dir):
             os.mkdir(self.database_dir)
 
+        self.context_menu = []
         self.params = {'mode': 'main_part', 'param': '', 'url': '', 'page': '1'}
         
         args = parse_qs(sys.argv[2][1:])
@@ -93,8 +94,14 @@ class RedHeadSound:
                 os.remove(os.path.join(self.database_dir, 'redheadsound.db'))
             except:
                 pass
+
+        if os.path.exists(os.path.join(self.database_dir, 'rhs.db')):
+            try:
+                os.remove(os.path.join(self.database_dir, 'rhs.db'))
+            except:
+                pass
 #========================#========================#========================#
-        if not os.path.isfile(os.path.join(self.database_dir, 'rhs.db')):
+        if not os.path.isfile(os.path.join(self.database_dir, 'rhs_tmdb.db')):
             self.exec_update_database_part()
 #========================#========================#========================#
         from network import WebTools
@@ -102,7 +109,7 @@ class RedHeadSound:
         del WebTools
 #========================#========================#========================#
         from database import DataBase
-        self.database = DataBase(os.path.join(self.database_dir, 'rhs.db'))
+        self.database = DataBase(os.path.join(self.database_dir, 'rhs_tmdb.db'))
         del DataBase
 #========================#========================#========================#
     def create_site_url(self):
@@ -216,79 +223,88 @@ class RedHeadSound:
 
         return(result)
 #========================#========================#========================#
-    def create_context(self, ext={}):
-        context_menu = []
-        if 'search_part' in self.params['mode'] and self.params['param'] == '':
-            context_menu.append(('[COLOR=blue]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=clean_part")'))
+    # def create_context(self, ext={}):
+    #     context_menu = []
+    #     if 'search_part' in self.params['mode'] and self.params['param'] == '':
+    #         context_menu.append(('[COLOR=blue]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=clean_part")'))
 
-        if 'url' in list(ext.keys()):
-            context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content_part&url={}")'.format(ext['url'])))
+    #     if 'url' in list(ext.keys()):
+    #         context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content_part&url={}")'.format(ext['url'])))
 
-        context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_database_part")'))
-        return context_menu
+    #     context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_database_part")'))
+    #     return context_menu
 #========================#========================#========================#
     def create_arts(self, arts):
-        url = 'https://image-tmdb-org.translate.goog/t/p/original/'
-        unlock_url = 'https://image-tmdb-org.translate.goog/t/p/original/'
-        
-        # arts = {
-        #     'original': {
-        #         'poster': res[0],
-        #         'landscape': res[2],
-        #         'fanart': res[4],
-        #         'clearlogo': res[6],
-        #         'thumb': res[0]
-        #     },
-        #     'preview': {
-        #         'poster': res[1],
-        #         'landscape': res[3],
-        #         'fanart': res[5],
-        #         'clearlogo': res[7],
-        #         'thumb': res[1]
-        #     }
-        # }
+        if '0' in addon.getSetting('tmdb_images'):
+            art_set = arts.get('preview')
+        elif '1' in addon.getSetting('tmdb_images'):
+            art_set = arts.get('original')
 
-        arts_set = arts.pop('original')
-        for i in arts_set:
-            if arts_set[i]:
-                arts_set[i] = '{}{}'.format(unlock_url, arts_set[i])
+        if '0' in addon.getSetting('tmdb_unblock'):
+            for i in art_set:
+                art_set[i] = art_set[i].replace('image.tmdb.org', 'image-tmdb-org.translate.goog')
+
+        return art_set
+#========================#========================#========================#
+    def create_cast(self, cast_info):
+        actors = []
+        for cast in cast_info:
+            if '0' in addon.getSetting('tmdb_unblock'):
+                #url=url.replace('api.themoviedb.org','api-themoviedb-org.translate.goog')
+                cast['thumbnail'] = cast['thumbnail'].replace('image.tmdb.org', 'image-tmdb-org.translate.goog')
+
+            if sys.version_info.major == 3:                
+                actors.append(xbmc.Actor(
+                    name=cast['name'],
+                    role=cast['role'],
+                    order=cast['order'],
+                    thumbnail=cast['thumbnail']))
+            else:
+                actors.append(cast)
         
-        return arts_set
+        return actors
 #========================#========================#========================#
     def create_line(self, title, meta_info={}, params={}, folder=True, image=None):
         li = xbmcgui.ListItem(label=title)
 
         if meta_info:
-            arts = self.create_arts(meta_info.pop('arts'))
-            info = meta_info.pop('info')
+            arts = self.create_arts(meta_info['arts'])
+            info = meta_info['info']
+            cast = self.create_cast(cast_info=meta_info['cast'])
 
             li.setArt(arts)
 
             if sys.version_info.major < 3:
-                    #li.setCast(cast)
+                    li.setCast(cast)
                     #info.update({'status': status})
                     li.setInfo(type='video', infoLabels=info)
             else:
                 videoinfo = li.getVideoInfoTag()
-                videoinfo.setTitle(info.get('title'))
-                videoinfo.setOriginalTitle(info.get('originaltitle'))
-                videoinfo.setPlot(info.get('plot'))
-                videoinfo.setPremiered(info.get('premiered'))
-                # videoinfo.setTagLine(info.get('tagline'))
-                # videoinfo.setStudios(info.get('studio'))
-                # videoinfo.setGenres(info.get('genre'))
-                # videoinfo.setCountries(info.get('country'))
-                # videoinfo.setDirectors(info.get('director'))
-                #videoinfo.setYear(info.get('premiered'))
-                # videoinfo.setTags(info.get('tag'))
-                # videoinfo.setMpaa(info.get('mpaa'))
-                # videoinfo.setTrailer(info.get('trailer'))
-                # videoinfo.setDuration(info.get('duration'))
-                #videoinfo.setCast(cast)
+                videoinfo.setTitle(info.get('title')) #title	string - Title.
+                videoinfo.setOriginalTitle(info.get('originaltitle')) #string - Original title.
+                videoinfo.setPlot(info.get('plot')) #plot	string - Plot
+                videoinfo.setTagLine(info.get('tagline')) #tagLine	string - Tagline
+                videoinfo.setStudios(info.get('studio')) #studios	list - Studios
+                videoinfo.setGenres(info.get('genre')) #genre	list - Genres.
+                videoinfo.setCountries(info.get('country')) #countries	list - Countries.
+                videoinfo.setWriters(info.get('credits')) #writers	list - Writers.
+                videoinfo.setDirectors(info.get('director')) #setDirectors(directors)
+                #videoinfo.setYear() #year	integer - Year.
+
+                videoinfo.setPremiered(info.get('premiered')) #premiered	string - Premiere date
+                videoinfo.setTags(info.get('tag')) #tags	list - Tags
+                videoinfo.setMpaa(info.get('mpaa')) #mpaa	string - MPAA rating
+                videoinfo.setTrailer(info.get('trailer')) #[string] Trailer path
+                videoinfo.setDuration(info.get('duration')) #[unsigned int] Duration
+
+                videoinfo.setCast(cast) ##actors	list - Cast / Actors
+
                 #videoinfo.setPlaycount(info['playcount'])
                 #videoinfo.setTvShowStatus(status)
 
         #li.addContextMenuItems(self.create_context(ext))
+        li.addContextMenuItems(self.context_menu)
+
         if image:
             li.setArt({"icon": image})
 
@@ -299,223 +315,35 @@ class RedHeadSound:
 
         xbmcplugin.addDirectoryItem(handle, url=url, listitem=li, isFolder=folder)
 #========================#========================#========================#
-    def create_info(self, imdb_id):
-        if not imdb_id:
-            return False
+    def create_info(self, uniqueid, update=False):
+            #{'imdb': 'tt13159924', 'media_type': 'series', 'kinopoisk': '1431133'}
+            unblock = False
+            if '0' in addon.getSetting('tmdb_unblock'):
+                unblock = True
 
-        # with open('111.test', 'r') as rf:
-        #     html = rf.read()
-        url = 'https://api-themoviedb-org.translate.goog/3/find/{}?api_key=af3a53eb387d57fc935e9128468b1899&language=ru-RU&external_source=imdb_id'.format(imdb_id)
-        #html = get_web(url=url)
-        html = self.network.get_html(url=url)
+            from tmdbparser.tmdb import TMDBScraper
+            scraper = TMDBScraper(
+                language='ru-RU',
+                certification_country='us',
+                # search_language='en-US'
+                search_language='ru-RU',
+                unblock=unblock
+            )
 
-        # with open('111.test', 'w') as wf:
-        #     wf.write(html)
-            
-        data = json.loads(html)
+            del TMDBScraper
 
-        if data['movie_results']:
-            data = data['movie_results'][0]
-            is_movie = True
-        elif data['tv_results']:
-            data = data['tv_results'][0]
-            is_movie = False
-        else:
-            data = None
+            if uniqueid.get('tmdb'):
+                meta_info = scraper.get_details(uniqueids=uniqueid)
 
-        if not data:
-            return False
-
-
-        if is_movie:
-            info = {
-                'title': data.get('title'),
-                'originaltitle': data.get('original_title'),
-                'plot': data.get('overview'),
-                'country': data.get('origin_country'),
-                'premiered': data.get('release_date')
-                }
-        else:
-            info = {
-                'title': data.get('name'),
-                'originaltitle': data.get('original_name'),
-                'plot': data.get('overview'),
-                #'country': data.get('origin_country'),
-                'premiered': data.get('first_air_date')
-                }
-        
-        for i in info:
-            if info[i] == None:
-                info[i] = ''
-        
-        unique_id = {
-            'tmdb': data.get('id'),
-            'imdb': imdb_id,
-            'media_type': data.get('media_type')
-            }
-        
-        for i in unique_id:
-            if unique_id[i] == None:
-                unique_id[i] = ''
-
-        arts = {
-            'poster_url': data.get('poster_path'),
-            'poster_preview': '',
-            'landscape_url': '',
-            'landscape_preview': '',
-            'fanart_url': data.get('backdrop_path'),
-            'fanart_preview': '',
-            'clearlogo_url': '',
-            'clearlogo_preview':''
-            }
-        
-        for i in arts:
-            if arts[i] == None:
-                arts[i] = ''
-            if arts[i]:
-                arts[i] = arts[i].replace('/','')
-
-        meta_info = {'media': info, 'unique_id': unique_id, 'available_arts': arts}
-
-        self.database.insert_content(meta_info=meta_info)
-
-        return
-    # def create_info(self, serial_url=False, update=False):
-    #     from utility import clean_tags
-
-    #     html = self.network.get_html(serial_url)
-
-    #     data = html[html.find('class="page__header">')+21:html.find('<h2 class="page')]
-        
-    #     info = {
-    #         'serial_id': 0,
-    #         'title': '',
-    #         'year': 0,
-    #         'country': '',
-    #         'duration': 0,
-    #         'director': '',
-    #         'actors': '',
-    #         'genre': '',
-    #         'mpaa': '',
-    #         'plot': ''
-    #     }
-
-    #     serial_id = serial_url[serial_url.rfind('/')+1:serial_url.find('-')]
-    #     info['serial_id'] = int(serial_id)
-    #     del serial_id
-        
-    #     title = data[data.find('<h1>')+4:data.find('</h1>')]
-    #     if '(' in title:
-    #         title = title[:title.find('(')]
-    #         info['title'] = u'{}'.format(title.strip())
-    #         del title
-
-    #     if u'<div>Год выпуска' in data:
-    #         year = data[data.find(u'<div>Год выпуска'):]
-    #         year = year[year.find('">')+2:year.find('</a>')]
-    #         try:
-    #             year = int(year.strip())
-    #         except:
-    #             pass
-    #         info['year'] = year
-    #         del year
-
-    #     if u'<div>страна' in data:
-    #         country = data[data.find(u'<div>страна'):]
-    #         country = country[country.find('">')+2:country.find('</a>')]
-    #         info['country'] = u'{}'.format(country.strip())
-    #         del country
-
-    #     if u'<div>Продолжительность' in data:
-    #         duration = data[data.find(u'<div>Продолжительность'):]
-    #         duration = duration[duration.find('<span>')+6:duration.find('</span>')]
-            
-    #         if ':' in duration:
-    #             duration = duration.split(':')
-
-    #             if len(duration) > 2:
-    #                 try:
-    #                     duration = int(duration[0]) * 60 * 60 + int(duration[1]) * 60 + int(duration[2])
-    #                 except:
-    #                     duration = 0
-    #             else:
-    #                 try:
-    #                     duration = int(duration[0]) * 60
-    #                 except:
-    #                     duration = 0
-    #         else:
-    #             duration = 0
-
-    #         info['duration'] = duration
-    #         del duration
-
-    #     if u'<div>Режиссер' in data:
-    #         director = data[data.find(u'<div>Режиссер'):]
-    #         director = director[director.find('<span>')+6:director.find('</span>')]
-    #         info['director'] = u'{}'.format(director.strip())
-    #         del director
-
-    #     if u'<div>Актеры' in data:
-    #         actor = data[data.find(u'<div>Актеры'):]
-    #         actor = actor[actor.find('<a href="'):actor.find('</li>')]
-    #         actor = u'{}'.format(actor.strip())
-
-    #         if '>' in actor[len(actor)-1]:
-    #             actor = actor[:actor.rfind('</a>')]
-
-    #         actor_list = []
-            
-    #         if '</a>,' in actor:
-    #             actor = actor.split('</a>,')
+                self.database.insert_content(meta_info=meta_info)
+            else:
+                if not uniqueid.get('imdb'):
+                    return False
                 
-    #             for i in actor:
-    #                 i = i[i.find('">')+2:].strip()
-    #                 actor_list.append(i)
+                external_id = scraper.get_by_external_id(external_ids=uniqueid, return_ids=True)
+                self.create_info(uniqueid=external_id)
 
-    #         info['actors'] = u','.join(actor_list)
-    #         del actor_list, actor
-
-    #     if u'<div>Жанр' in data:
-    #         genre = data[data.find(u'<div>Жанр'):]
-    #         genre = genre[genre.find('<a href="'):genre.find('</li>')]
-    #         genre = u'{}'.format(genre.strip())
-            
-    #         if '>' in genre[len(genre)-1]:
-    #             genre = genre[:genre.rfind('</a>')]
-            
-    #         genre_list = []
-            
-    #         if '</a>' in genre:
-    #             genre = genre.split('</a>')
-                
-    #             for i in genre:
-    #                 i = i[i.find('">')+2:].strip()
-    #                 genre_list.append(i)
-
-    #         info['genre'] = u','.join(genre_list)
-    #         del genre_list, genre
-
-    #     if u'Возрастной рейтинг' in data:
-    #         mpaa = data[data.find(u'Возрастной рейтинг'):]
-    #         mpaa = mpaa[mpaa.find('<img src="/')+11:]
-    #         mpaa = mpaa[:mpaa.find('"')]
-    #         mpaa = mpaa[mpaa.rfind('/')+1:mpaa.rfind('.')]
-    #         info['mpaa'] = u'{}'.format(mpaa)
-    #         del mpaa
-
-    #     if 'text full-text clearfix">' in data:
-    #         plot = data[data.find('text full-text clearfix">')+25:]
-    #         if '<div class="link-mess">' in plot:
-    #             plot = plot[:plot.find('<div class="link-mess">')]
-    #         info['plot'] = u'{}'.format(clean_tags(plot))
-    #         del plot
-
-    #     if update:
-    #         self.database.update_content(info)
-    #     else:
-    #         self.database.insert_content(info)
-        
-    #     return info
+            return
 #========================#========================#========================#
     def execute(self):
         getattr(self, 'exec_{}'.format(self.params['mode']))()
@@ -530,9 +358,9 @@ class RedHeadSound:
     def exec_clean_part(self):
         try:
             addon.setSetting('search', '')
-            self.dialog.notification(heading='Red Head Sound', message='Выполнено',icon=icon,time=3000,sound=False)
+            self.dialog.notification(heading='RedHeadSound', message='Выполнено',icon=icon,time=1000,sound=False)
         except:
-            self.dialog.notification(heading='Red Head Sound', message='Ошибка',icon=icon,time=3000,sound=False)
+            self.dialog.notification(heading='RedHeadSound', message='Ошибка',icon=icon,time=1000,sound=False)
             pass
 #========================#========================#========================#
     def exec_update_proxy_data(self):
@@ -548,8 +376,8 @@ class RedHeadSound:
         except:
             pass
 
-        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/rhs.db'
-        target_path = os.path.join(self.database_dir, 'rhs.db')
+        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/rhs_tmdb.db'
+        target_path = os.path.join(self.database_dir, 'rhs_tmdb.db')
         
         try:
             os.remove(target_path)
@@ -608,10 +436,17 @@ class RedHeadSound:
 #========================#========================#========================#
     def exec_search_part(self):
         if not self.params['param']:
-            self.create_line(title=u'Поиск по названию', params={'mode': 'search_part', 'param': 'search_word'})
+            xbmcplugin.setContent(handle, '')
+
+            self.create_line(title=u'Поиск по названию', params={'mode': 'search_part', 'param': 'search_word'},
+                             image=os.path.join(plugin_dir, 'resources', 'media', 'search.png'))
             
             data_array = addon.getSetting('search').split('|')
             data_array.reverse()
+
+            self.context_menu = [
+                ('Очистить историю', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=clean_part")')
+                ]
             
             try:
                 for data in data_array:
@@ -623,7 +458,8 @@ class RedHeadSound:
                     except:
                         label = u'[COLOR=gray]{}[/COLOR]'.format(data)
 
-                    self.create_line(title=label, params={'mode': 'search_part', 'param':'search_string', 'search_string': data})
+                    self.create_line(title=label, params={'mode': 'search_part', 'param':'search_string', 'search_string': data},
+                                     image=os.path.join(plugin_dir, 'resources', 'media', 'tags.png'))
             except:
                 addon.setSetting('search', '')
 
@@ -672,18 +508,9 @@ class RedHeadSound:
 
             self.progress_bg.create(u'RedHeadSound', u'Инициализация')
 
-            ext = {
-                'serial_id': '',
-                'title': '',
-                'url': '',
-                'poster': '',
-                'rating': ''
-            }
-
             try:
                 data_array = html[html.find('<article class="card d-flex">')+29:html.rfind('</article>')]
                 data_array = data_array.split('<article class="card d-flex">')
-
                 for i, data in enumerate(data_array):
                     try:
                         data = data[:data.find('</article>')]
@@ -691,18 +518,28 @@ class RedHeadSound:
                         if '<div id="adfox' in data:
                             continue
 
-                        content = data[data.find('title"><a href="')+16:]
-                        content = content[:content.find('</a>')].split('">')
-                        ext['title'] = u'{}'.format(content[1])
-                        ext['url'] = u'{}'.format(content[0])
+                        imdb_id = data[data.find('data-text="IMDb">')+17:]
+                        imdb_id = imdb_id[imdb_id.find('title/')+6:]
+                        imdb_id = imdb_id[:imdb_id.find('"')].strip()
+                        imdb_id = imdb_id.replace('/','')
 
-                        serial_id = content[0][content[0].rfind('/')+1:]
-                        serial_id = serial_id[:serial_id.find('-')]
-                        ext['serial_id'] = serial_id
+                        if imdb_id == 'tt11213558':
+                            imdb_id = 'tt10954600'
 
-                        poster = data[data.find('<img src="/')+11:]
-                        poster = poster[:poster.find('"')]
-                        ext['poster'] = u'{}{}'.format(self.site_url, poster.strip())
+                        kinopoisk = ''
+                        if u'data-text="КиноПоиск">' in data:
+                            kinopoisk = data[data.find(u'data-text="КиноПоиск">')+22:]
+                            kinopoisk = kinopoisk[kinopoisk.find('kinopoisk.ru/')+13:]
+                            kinopoisk = kinopoisk[kinopoisk.find('/')+1:]
+                            kinopoisk = kinopoisk[:kinopoisk.find('"')]
+                            kinopoisk = kinopoisk.replace('/','').strip()
+                            if '?' in kinopoisk:
+                                kinopoisk = kinopoisk[:kinopoisk.find('?')]
+
+                        content_url = data[data.find('title"><a href="')+16:]
+                        content_url = content_url[:content_url.find('"')]
+
+                        uniqueid = {'imdb': imdb_id, 'media_type': '', 'kinopoisk': kinopoisk}
 
                         season = ''
                         if u'Сезон:' in data:
@@ -716,30 +553,26 @@ class RedHeadSound:
                             episodes = episodes[episodes.find('</span>')+7:episodes.find('</li>')]
                             episodes = u' | [COLOR=gold]{}[/COLOR]'.format(episodes.strip())
 
-                        if u'КиноПоиск">' in data:
-                            rating = data[data.find(u'КиноПоиск">')+11:]
-                            rating = rating[rating.find('">')+2:rating.find('</a>')]
-                            ext['rating'] = float(rating.strip())
-
                         node = ''
-                        if '/filmy/' in ext['url']:
-                                node = u' | [COLOR=blue]Фильм[/COLOR]'            
-                        if '/multfilmy/' in ext['url']:
-                                node = u' | [COLOR=blue]Мультфильм[/COLOR]'
-                        
-                        label = u'{}{}{}{}'.format(ext['title'],season,episodes,node)
+                        if '/filmy/' in content_url:
+                            node = u' | [COLOR=blue]Фильм[/COLOR]'
+                        if '/multfilmy/' in content_url:
+                            node = u' | [COLOR=blue]Мультфильм[/COLOR]'
+
+                        if not self.database.imdb_in_db(unique_imdb=imdb_id):
+                            self.create_info(uniqueid = uniqueid)
+
+                        meta_info = self.database.get_metainfo(unique_imdb=imdb_id)
+
+                        label = u'{}{}{}{}'.format(meta_info['info']['title'],season,episodes,node)
 
                         self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
-                        
-                        if not self.database.content_in_db(ext['serial_id']):
-                            self.create_info(serial_url=ext['url'])
 
-                        self.create_line(title=label, ext=ext, params={
-                                         'mode': 'select_part', 'id': ext['serial_id'], 'url': ext['url']})
+                        self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
                     except:
-                        self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]')
+                        self.create_line(title=u'Ошибка обработки строки')
             except:
-                self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]')
+                self.create_line(title=u'Ошибка - сообщите автору')
                 
             self.progress_bg.close()
 
@@ -780,6 +613,7 @@ class RedHeadSound:
         try:
             data_array = html[html.find('<article class="card d-flex">')+29:html.rfind('</article>')]
             data_array = data_array.split('<article class="card d-flex">')
+
             for i, data in enumerate(data_array):
                 try:
                     data = data[:data.find('</article>')]
@@ -792,8 +626,23 @@ class RedHeadSound:
                     imdb_id = imdb_id[:imdb_id.find('"')].strip()
                     imdb_id = imdb_id.replace('/','')
 
+                    if imdb_id == 'tt11213558':
+                        imdb_id = 'tt10954600'
+
+                    kinopoisk = ''
+                    if u'data-text="КиноПоиск">' in data:
+                        kinopoisk = data[data.find(u'data-text="КиноПоиск">')+22:]
+                        kinopoisk = kinopoisk[kinopoisk.find('kinopoisk.ru/')+13:]
+                        kinopoisk = kinopoisk[kinopoisk.find('/')+1:]
+                        kinopoisk = kinopoisk[:kinopoisk.find('"')]
+                        kinopoisk = kinopoisk.replace('/','').strip()
+                        if '?' in kinopoisk:
+                            kinopoisk = kinopoisk[:kinopoisk.find('?')]
+
                     content_url = data[data.find('title"><a href="')+16:]
                     content_url = content_url[:content_url.find('"')]
+
+                    uniqueid = {'imdb': imdb_id, 'media_type': '', 'kinopoisk': kinopoisk}
 
                     season = ''
                     if u'Сезон:' in data:
@@ -808,15 +657,13 @@ class RedHeadSound:
                         episodes = u' | [COLOR=gold]{}[/COLOR]'.format(episodes.strip())
 
                     node = ''
-                    #ismovie = False
                     if '/filmy/' in content_url:
                         node = u' | [COLOR=blue]Фильм[/COLOR]'
-                        #ismovie = True
                     if '/multfilmy/' in content_url:
-                        node = u' | [COLOR=blue]Мультфильм[/COLOR]'
+                        node = u' | [COLOR=blue]Мультфильм[/COLOR]' 
 
                     if not self.database.imdb_in_db(unique_imdb=imdb_id):
-                        self.create_info(imdb_id = imdb_id)
+                        self.create_info(uniqueid = uniqueid)
 
                     meta_info = self.database.get_metainfo(unique_imdb=imdb_id)
 
@@ -824,12 +671,13 @@ class RedHeadSound:
 
                     self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
 
-                    # self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url, 'ismovie':ismovie}, meta_info=meta_info)
                     self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
-                except:
-                    self.create_line(title=u'[COLOR=red][B]Ошибка обработки строки[/B][/COLOR]')
+
+                except Exception as e:
+                    data_print(e)
+                    self.create_line(title=u'Ошибка обработки строки')
         except:
-            self.create_line(title=u'[COLOR=red][B]Ошибка - сообщите автору[/B][/COLOR]')
+            self.create_line(title=u'Ошибка - сообщите автору')
             
         self.progress_bg.close()
         
@@ -871,15 +719,14 @@ class RedHeadSound:
             if not player_url:
                 player_url = player_links['cdnvideohub']
 
-        meta_info = self.database.get_metainfo(unique_imdb= self.params['id'])
+        meta_info = self.database.get_metainfo(unique_imdb = self.params['id'])
     
         html2 = self.network.get_html(url=player_url)
 
-        data_array = html2[html2.find('new Playerjs(')+13:html2.rfind(');')]
+        data_array = html2[html2.find('new Playerjs(')+13:]
+        data_array = data_array[:data_array.find(');')]
 
         import json
-
-        #quality_list = {}
 
         try:
             files = json.loads(data_array)
@@ -910,6 +757,7 @@ class RedHeadSound:
                         file_url = file_url.replace('\/','/')
 
                         self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
+            
             else:
                 for i in files:
                     file_title = i['title']
@@ -917,115 +765,8 @@ class RedHeadSound:
                     file_url = file_url.replace('\/','/')
 
                     self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
-                                    
+
         xbmcplugin.endOfDirectory(handle, succeeded=True)
-
-    # def exec_select_part(self):
-    #     url = self.params['url']
-    #     html = self.network.get_html(url=url)
-
-    #     if not html:
-    #         self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
-    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
-    #         return
-
-    #     if not '<iframe data-src="' in html:
-    #         self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
-    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
-    #         return
-
-    #     player_links = self.create_players(data=html)
-    #     player_choice = addon.getSetting('player')
-
-    #     if '0' in player_choice:
-    #         player_url = player_links['cdnvideohub']
-    #         if not player_url:
-    #             player_url = player_links['redheadsound']
-
-    #     if '1' in player_choice:
-    #         player_url = player_links['redheadsound']
-    #         if not player_url:
-    #             player_url = player_links['cdnvideohub']
-
-    #     meta_info = self.database.get_metainfo(unique_imdb= self.params['id'])
-    
-    #     html2 = self.network.get_html(url=player_url)
-
-    #     data_array = html2[html2.find('new Playerjs(')+13:html2.rfind(');')]
-
-    #     import json
-
-    #     quality_list = {}
-
-    #     try:
-    #         files = json.loads(data_array)
-    #     except:
-    #         files = self.normailze_json(data_array)
-    #         files = json.dumps(files)
-    #         files = json.loads(files)
-
-    #     if 'title' in files:
-    #         file_title = files['title']
-    #         file_data = files['file']
-                
-    #         file_data = file_data.split(',')
-                
-    #         for node in file_data:
-    #             file_quality = node[1:node.find('p')].strip()
-
-    #             if not file_quality in quality_list:
-    #                 quality_list.update({file_quality:[]})
-                        
-    #             file_url = node[node.find('/'):]        
-    #             quality_list[file_quality].append((file_title, file_url))
-    #     else:
-    #         files = files['file']
-                    
-    #         for f in files:
-    #             file_title = f['title']
-    #             file_data = f['file']
-    #             file_data = file_data.replace('\/','/')
-                            
-    #             file_data = file_data.split(',')
-
-    #             for node in file_data:
-    #                 if ']' in node:
-    #                     file_quality = node[1:node.find('p')].strip()
-    #                     file_url = node[node.find('/'):]
-    #                 else:
-    #                     file_quality = '1080'
-    #                     file_url = node
-
-    #                 if not file_quality in quality_list:
-    #                     quality_list.update({file_quality:[]})
-
-    #                 quality_list[file_quality].append((file_title, file_url))
-
-    #     select_quality = int(addon.getSetting('quality'))
-
-    #     option_quality = ['480','720','1080']
-    #     current_quality = option_quality[select_quality]
-
-    #     if current_quality in quality_list:
-    #         result_quality = current_quality
-    #     else:
-    #         if '1080' in quality_list:
-    #             result_quality = '1080'
-    #         elif '720' in quality_list:
-    #             result_quality = '720'
-    #         elif ' 480' in quality_list:
-    #             result_quality = '480'
-
-    #     for i in quality_list[result_quality]:
-    #         series_label = i[0]
-    #         if not 'https' in i[1]:
-    #             series_url = 'https://redheadsound.video{}'.format(i[1])
-    #         else:
-    #             series_url = i[1]
-
-    #         self.create_line(title=series_label, params={'mode': 'play_part', 'param': series_url}, meta_info=meta_info, folder=False)
-                                    
-    #     xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def process_url(self, raw_url):
         select_quality = int(addon.getSetting('quality'))
