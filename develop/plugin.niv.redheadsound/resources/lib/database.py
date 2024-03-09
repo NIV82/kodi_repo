@@ -210,7 +210,7 @@ class DataBase:
     def insert_uniqueid(self, unique_id):
         ids = {'media_type':'', 'tmdb':'','imdb':'','kinopoisk':''}
         ids.update(unique_id)
-
+        
         self.cu.execute('INSERT INTO uniqueid (media_type, tmdb, imdb, kinopoisk) VALUES (?,?,?,?)', (
             ids['media_type'], ids['tmdb'], ids['imdb'], ids['kinopoisk']))
         self.c.commit()
@@ -299,29 +299,44 @@ class DataBase:
 
         return
 ############################################################################################################################################
-    def insert_content(self, meta_info, update=False):
-        uniqueids = meta_info.pop('uniqueids')
-        info = meta_info.pop('info')
-        cast = meta_info.pop('cast')
-        arts = meta_info.pop('available_art')
-
-        # if uniqueids.get('imdb'):
-        #     if self.imdb_in_db(unique_imdb=uniqueids.get('imdb')):
-        #         media_id = self.get_mediaId(imdb_id=uniqueids.get('imdb'))
-        #         update = True
-        #     else:
-        #         self.insert_uniqueid(unique_id=uniqueids)
-        #         media_id = self.get_mediaId(imdb_id=uniqueids.get('imdb'))
-        #         update = False
+    def update_uniqueid(self, unique_id):
+        ids = {'media_type': '', 'tmdb': '', 'imdb': '', 'kinopoisk': ''}
+        ids.update(unique_id)
+        
+        self.cu.execute('UPDATE uniqueid SET media_type=?,tmdb=?,kinopoisk=?  WHERE imdb=?', (
+            ids['media_type'], ids['tmdb'], ids['kinopoisk'], ids['imdb']))
+        
+        self.c.commit()
+        return
+############################################################################################################################################
+    def insert_content(self, meta_info):
+        # uniqueids = meta_info.pop('uniqueids')
+        # info = meta_info.pop('info')
+        # cast = meta_info.pop('cast')
+        # arts = meta_info.pop('available_art')
+        uniqueids = meta_info['uniqueids']
+        info = meta_info['info']
+        cast = meta_info['cast']
+        arts = meta_info['available_art']
 
         self.insert_uniqueid(unique_id=uniqueids)
         media_id = self.get_mediaId(imdb_id=uniqueids.get('imdb'))
 
-        self.insert_media(meta_info=info, media_id=media_id, uniqueids=uniqueids, update=update)
-        self.insert_arts(media_id=media_id, arts=arts, update=update)
+        self.insert_media(meta_info=info, media_id=media_id, uniqueids=uniqueids)
+        self.insert_arts(media_id=media_id, arts=arts)
         self.insert_cast(media_id=media_id, cast=cast)
                 
         return
+
+    def update_content(self, meta_info):
+        uniqueids = meta_info['uniqueids']
+        info = meta_info['info']
+        cast = meta_info['cast']
+        arts = meta_info['available_art']
+
+        return
+
+
 
     # def update_uniqueId(self, uniqueid):
     #     ids = {

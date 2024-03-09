@@ -2,7 +2,7 @@
 
 import os
 import sys
-import time
+#import time
 import json
 
 import xbmc
@@ -55,7 +55,7 @@ except:
         heading='Установка Библиотеки - [COLOR=darkorange]inputstream.adaptive[/COLOR]',
         message='inputstream.adaptive',
         icon=None,
-        time=3000,
+        time=1000,
         sound=False
         )
     xbmc.executebuiltin('RunPlugin("plugin://inputstream.adaptive")')
@@ -85,6 +85,8 @@ class RedHeadSound:
         for a in args:
             self.params[a] = unquote(args[a][0])
 
+        self.context_menu = []
+
         self.proxy_data = None
         #self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
@@ -102,7 +104,7 @@ class RedHeadSound:
                 pass
 #========================#========================#========================#
         if not os.path.isfile(os.path.join(self.database_dir, 'rhs_tmdb.db')):
-            self.exec_update_database_part()
+            self.create_database()
 #========================#========================#========================#
         from network import WebTools
         self.network = WebTools(proxy_data=self.proxy_data)
@@ -121,6 +123,53 @@ class RedHeadSound:
             return site_url
         else:
             return current_url
+#========================#========================#========================#
+    def create_database(self):
+        try:
+            self.database.end()
+        except:
+            pass
+
+        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/rhs_tmdb.db'
+        target_path = os.path.join(self.database_dir, 'rhs_tmdb.db')
+        
+        try:
+            os.remove(target_path)
+        except:
+            pass
+        
+        try:
+            data = urlopen(target_url)
+            chunk_size = 8192
+            bytes_read = 0
+
+            if sys.version_info.major < 3:
+                file_size = int(data.info().getheaders("Content-Length")[0])
+            else:
+                file_size = int(data.getheader('Content-Length'))
+
+            self.progress_bg.create(u'Загрузка файла')
+            
+            try:
+                with open(target_path, 'wb') as write_file:
+                    while True:
+                        chunk = data.read(chunk_size)
+                        bytes_read = bytes_read + len(chunk)
+                        write_file.write(chunk)
+                        if len(chunk) < chunk_size:
+                            break
+                        self.progress_bg.update(int(bytes_read * 100 / file_size), u'Загружено: {} из {} MB'.format(
+                            '{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
+            except:
+                self.dialog.notification(heading='Red Head Sound', message='Ошибка', icon=icon,time=1000,sound=False)
+                pass
+
+            self.progress_bg.close()
+            
+            self.dialog.notification(heading='Red Head Sound', message='Выполнено', icon=icon,time=1000,sound=False)
+        except:
+            self.dialog.notification(heading='Red Head Sound', message='Ошибка', icon=icon,time=1000,sound=False)
+            pass
 #========================#========================#========================#
     def create_players(self, data):
         node_start = '<iframe data-src="'
@@ -329,19 +378,21 @@ class RedHeadSound:
                 search_language='ru-RU',
                 unblock=unblock
             )
-
             del TMDBScraper
 
             if uniqueid.get('tmdb'):
                 meta_info = scraper.get_details(uniqueids=uniqueid)
 
-                self.database.insert_content(meta_info=meta_info)
+                if update:
+                    self.database.insert_content(meta_info=meta_info)
+                else:
+                    self.database.update_content(meta_info=meta_info)
             else:
                 if not uniqueid.get('imdb'):
                     return False
                 
                 external_id = scraper.get_by_external_id(external_ids=uniqueid, return_ids=True)
-                self.create_info(uniqueid=external_id)
+                self.create_info(uniqueid=external_id, update=update)
 
             return
 #========================#========================#========================#
@@ -352,8 +403,27 @@ class RedHeadSound:
         except:
             pass
 #========================#========================#========================#
-    def exec_update_content_part(self):
-        self.create_info(serial_url=self.params['url'], update=True)
+    def exec_update_database(self):
+        self.create_database()
+        return
+#========================#========================#========================#
+    def exec_update_content(self):
+        uniqueid = eval(self.params['uniqueid'])
+
+        self.create_info(uniqueid=uniqueid, update=True)
+
+        return
+#========================#========================#========================#
+    def exec_information_part(self):
+        update_info = u'[B][COLOR=darkorange]Version 0.2.1[/COLOR][/B]\n\n\
+- В Основное меню (поиск, новинки...) добавлены пункты контекстного меню\n\
+    * добавлен пункт обновления БД с гитхаба\n\
+    * добавлен пункт Новостей обновления'
+        self.dialog.textviewer('Информация', update_info)
+        return
+#========================#========================#========================#
+    # def exec_update_content_part(self):
+    #     self.create_info(serial_url=self.params['url'], update=True)
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
@@ -370,55 +440,16 @@ class RedHeadSound:
         self.create_proxy_data()
         return
 #========================#========================#========================#
-    def exec_update_database_part(self):
-        try:
-            self.database.end()
-        except:
-            pass
-
-        target_url = 'https://github.com/NIV82/kodi_repo/raw/main/resources/rhs_tmdb.db'
-        target_path = os.path.join(self.database_dir, 'rhs_tmdb.db')
-        
-        try:
-            os.remove(target_path)
-        except:
-            pass
-        
-        try:
-            data = urlopen(target_url)
-            chunk_size = 8192
-            bytes_read = 0
-
-            if sys.version_info.major < 3:
-                file_size = int(data.info().getheaders("Content-Length")[0])
-            else:
-                file_size = int(data.getheader('Content-Length'))
-
-            self.progress_bg.create(u'Загрузка файла')
-            
-            try:
-                with open(target_path, 'wb') as write_file:
-                    while True:
-                        chunk = data.read(chunk_size)
-                        bytes_read = bytes_read + len(chunk)
-                        write_file.write(chunk)
-                        if len(chunk) < chunk_size:
-                            break
-                        self.progress_bg.update(int(bytes_read * 100 / file_size), u'Загружено: {} из {} MB'.format(
-                            '{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
-            except:
-                self.dialog.notification(heading='Red Head Sound', message='Ошибка', icon=icon,time=3000,sound=False)
-                pass
-
-            self.progress_bg.close()
-            
-            self.dialog.notification(heading='Red Head Sound', message='Выполнено', icon=icon,time=3000,sound=False)
-        except:
-            self.dialog.notification(heading='Red Head Sound', message='Ошибка', icon=icon,time=3000,sound=False)
-            pass
-#========================#========================#========================#
     def exec_main_part(self):
         xbmcplugin.setContent(handle, '')
+        
+        self.context_menu = [
+            ('Новости обновлений', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=information_part")'),
+            #('Обновить Авторизацию', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'),
+            ('Обновить Базу Данных', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_database")')
+            #('Обновить Прокси', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'),
+        ]
+
         self.create_line(title='Поиск', params={'mode': 'search_part'},
                          image=os.path.join(plugin_dir, 'resources', 'media', 'search.png'))
         self.create_line(title='Новинки', params={'mode': 'common_part', 'param': ''},
@@ -671,10 +702,17 @@ class RedHeadSound:
 
                     self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
 
+                    self.context_menu = [
+                        #('Избранное Добавить \ Удалить', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=favorites_part&serial_id={}")'.format(serial_id)),
+                        #('Обновить описание', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content&uniqueid={}")'.format(uniqueid)),
+                        #('Открыть торрент файл', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)),
+                        #('Отметить как просмотренное', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=mark_part&param=on&id={}")'.format(se_code)),
+                        #('Отметить как непросмотренное', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=mark_part&param=off&id={}")'.format(se_code))
+                        ]
+                    
                     self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
 
-                except Exception as e:
-                    data_print(e)
+                except:
                     self.create_line(title=u'Ошибка обработки строки')
         except:
             self.create_line(title=u'Ошибка - сообщите автору')
@@ -726,7 +764,7 @@ class RedHeadSound:
         data_array = html2[html2.find('new Playerjs(')+13:]
         data_array = data_array[:data_array.find(');')]
 
-        import json
+        #import json
 
         try:
             files = json.loads(data_array)
