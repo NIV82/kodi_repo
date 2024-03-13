@@ -85,8 +85,6 @@ class RedHeadSound:
         for a in args:
             self.params[a] = unquote(args[a][0])
 
-        self.context_menu = []
-
         self.proxy_data = None
         #self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
@@ -272,17 +270,6 @@ class RedHeadSound:
 
         return(result)
 #========================#========================#========================#
-    # def create_context(self, ext={}):
-    #     context_menu = []
-    #     if 'search_part' in self.params['mode'] and self.params['param'] == '':
-    #         context_menu.append(('[COLOR=blue]Очистить историю[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=clean_part")'))
-
-    #     if 'url' in list(ext.keys()):
-    #         context_menu.append(('[COLOR=white]Обновить описание[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content_part&url={}")'.format(ext['url'])))
-
-    #     context_menu.append(('[COLOR=darkorange]Обновить Базу Данных[/COLOR]', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_database_part")'))
-    #     return context_menu
-#========================#========================#========================#
     def create_arts(self, arts):
         if '0' in addon.getSetting('tmdb_images'):
             art_set = arts.get('preview')
@@ -384,9 +371,9 @@ class RedHeadSound:
                 meta_info = scraper.get_details(uniqueids=uniqueid)
 
                 if update:
-                    self.database.insert_content(meta_info=meta_info)
-                else:
                     self.database.update_content(meta_info=meta_info)
+                else:
+                    self.database.insert_content(meta_info=meta_info)                    
             else:
                 if not uniqueid.get('imdb'):
                     return False
@@ -415,15 +402,12 @@ class RedHeadSound:
         return
 #========================#========================#========================#
     def exec_information_part(self):
-        update_info = u'[B][COLOR=darkorange]Version 0.2.1[/COLOR][/B]\n\n\
-- В Основное меню (поиск, новинки...) добавлены пункты контекстного меню\n\
-    * добавлен пункт обновления БД с гитхаба\n\
-    * добавлен пункт Новостей обновления'
+        update_info = u'[B][COLOR=darkorange]Version 0.2.3[/COLOR][/B]\n\n\
+- Добавлен пункт Обновить Описание (на сериалах, фильмах...)\n\
+- В настройки добавлен пукт качества видео - 360p\n\
+    * 360p встречается в новом плеере'
         self.dialog.textviewer('Информация', update_info)
         return
-#========================#========================#========================#
-    # def exec_update_content_part(self):
-    #     self.create_info(serial_url=self.params['url'], update=True)
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
@@ -445,9 +429,9 @@ class RedHeadSound:
         
         self.context_menu = [
             ('Новости обновлений', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=information_part")'),
-            #('Обновить Авторизацию', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'),
+            #('Обновить Авторизацию', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_authorization")'),
             ('Обновить Базу Данных', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_database")')
-            #('Обновить Прокси', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'),
+            #('Обновить Прокси', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_proxy_data")'),
         ]
 
         self.create_line(title='Поиск', params={'mode': 'search_part'},
@@ -599,6 +583,14 @@ class RedHeadSound:
 
                         self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
 
+                        self.context_menu = [
+                            #('Избранное Добавить \ Удалить', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=favorites_part&serial_id={}")'.format(serial_id)),
+                            ('Обновить описание', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content&uniqueid={}")'.format(uniqueid)),
+                            #('Открыть торрент файл', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)),
+                            #('Отметить как просмотренное', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=mark_part&param=on&id={}")'.format(se_code)),
+                            #('Отметить как непросмотренное', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=mark_part&param=off&id={}")'.format(se_code))
+                            ]
+                        
                         self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
                     except:
                         self.create_line(title=u'Ошибка обработки строки')
@@ -640,7 +632,7 @@ class RedHeadSound:
             return
 
         self.progress_bg.create(u'RedHeadSound', u'Инициализация')
-
+        
         try:
             data_array = html[html.find('<article class="card d-flex">')+29:html.rfind('</article>')]
             data_array = data_array.split('<article class="card d-flex">')
@@ -704,14 +696,13 @@ class RedHeadSound:
 
                     self.context_menu = [
                         #('Избранное Добавить \ Удалить', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=favorites_part&serial_id={}")'.format(serial_id)),
-                        #('Обновить описание', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content&uniqueid={}")'.format(uniqueid)),
+                        ('Обновить описание', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_content&uniqueid={}")'.format(uniqueid)),
                         #('Открыть торрент файл', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=torrent_part&id={}&code={}")'.format(serial_id,se_code)),
                         #('Отметить как просмотренное', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=mark_part&param=on&id={}")'.format(se_code)),
                         #('Отметить как непросмотренное', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=mark_part&param=off&id={}")'.format(se_code))
                         ]
                     
                     self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
-
                 except:
                     self.create_line(title=u'Ошибка обработки строки')
         except:
@@ -764,8 +755,6 @@ class RedHeadSound:
         data_array = html2[html2.find('new Playerjs(')+13:]
         data_array = data_array[:data_array.find(');')]
 
-        #import json
-
         try:
             files = json.loads(data_array)
         except:
@@ -808,7 +797,7 @@ class RedHeadSound:
 #========================#========================#========================#
     def process_url(self, raw_url):
         select_quality = int(addon.getSetting('quality'))
-        option_quality = ['480','720','1080']
+        option_quality = ['360','480','720','1080']
         current_quality = option_quality[select_quality]
 
         quality_list = {}
@@ -864,7 +853,6 @@ class RedHeadSound:
 
         return result_quality
 #========================#========================#========================#
-        
     def exec_play_part(self):
         video_url = self.process_url(raw_url=self.params['param'])
 
