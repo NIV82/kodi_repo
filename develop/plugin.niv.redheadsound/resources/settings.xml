@@ -2,7 +2,7 @@
 <settings>
 
   <category label="Настройки">
-    <setting id="quality" label="Выбор Качества:" type="enum" default="2" values="360|480|720|1080" />
+    <setting id="quality" label="Выбор Качества:" type="enum" default="3" values="240|360|480|720|1080" />
     <setting id="player" label="Выбор Плеера:" type="enum" default="0" values="Новый|Старый" />
     
     <setting type="sep"/>

@@ -78,6 +78,10 @@ class RedHeadSound:
         if not os.path.exists(self.database_dir):
             os.mkdir(self.database_dir)
 
+        self.playlist_dir = os.path.join(addon_data_dir, 'playlist')
+        if not os.path.exists(self.playlist_dir):
+            os.mkdir(self.playlist_dir)
+
         self.context_menu = []
         self.params = {'mode': 'main_part', 'param': '', 'url': '', 'page': '1'}
         
@@ -210,6 +214,7 @@ class RedHeadSound:
                 players['cdnvideohub'] = i
 
         return players
+    
     # def create_proxy_data(self):
     #     if '0' in addon.getSetting('unblock'):
     #         return None
@@ -402,10 +407,8 @@ class RedHeadSound:
         return
 #========================#========================#========================#
     def exec_information_part(self):
-        update_info = u'[B][COLOR=darkorange]Version 0.2.3[/COLOR][/B]\n\n\
-- Добавлен пункт Обновить Описание (на сериалах, фильмах...)\n\
-- В настройки добавлен пукт качества видео - 360p\n\
-    * 360p встречается в новом плеере'
+        update_info = u'[B][COLOR=darkorange]Version 0.2.6[/COLOR][/B]\n\n\
+- Изменена системы выбора качества видео'
         self.dialog.textviewer('Информация', update_info)
         return
 #========================#========================#========================#
@@ -783,6 +786,7 @@ class RedHeadSound:
                         file_url = node['file']
                         file_url = file_url.replace('\/','/')
 
+
                         self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
             
             else:
@@ -796,72 +800,69 @@ class RedHeadSound:
         xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def process_url(self, raw_url):
-        select_quality = int(addon.getSetting('quality'))
-        option_quality = ['360','480','720','1080']
-        current_quality = option_quality[select_quality]
+        playlist = {}
+        if '[' in raw_url:
+            raw_url = raw_url.split(',')
 
-        quality_list = {}
-        raw_url = raw_url.split(',')
-
-        result_quality = ''
-        for node in raw_url:
-
-            if ']' in node:            
+            for node in raw_url:
                 file_quality = node[1:node.find('p')].strip()
-                if not file_quality in quality_list:
-                    quality_list.update({file_quality:''})
-
                 file_url = node[node.find('/'):]
-                quality_list[file_quality] = file_url
-            else:
-                from network import get_web
-                data_array = get_web(url=node)
-                data_array = data_array.splitlines()
+                file_url = 'https://redheadsound.video{}'.format(file_url)
 
-                for node in data_array:
-                    if 'https:' in node:
-                        node = node.strip()
-                        if '/1080/' in node:
-                            file_quality = '1080'
-                        elif '/720/' in node:
-                            file_quality = '720'
-                        elif '/480/' in node:
-                            file_quality = '480'
-                        elif '/360/' in node:
-                            file_quality = '360'
-                        else:
-                            continue
-                        
-                        if not file_quality in quality_list:
-                            quality_list.update({file_quality:''})
-                        
-                        quality_list[file_quality] = node
+                playlist.update({file_quality: file_url})
+        else:
+            html = self.network.get_html(url=raw_url)
+            if not html:
+                return False
+            
+            qlist = ['/240/','/360/','/480/','/720/','/1080/']
+            data = html.splitlines()
+            for node in data:
+                if node.startswith('#'):
+                    continue
 
-            if current_quality in quality_list:
-                result_quality = quality_list[current_quality]
-            elif '1080' in quality_list:
-                result_quality = quality_list['1080']
-            elif '720' in quality_list:
-                result_quality = quality_list['720']
-            elif '480' in quality_list:
-                result_quality = quality_list['480']
-            elif '360' in quality_list:
-                result_quality = quality_list['360']    
+                file_quality = ''
 
-            if not 'https' in result_quality:
-                result_quality = 'https://redheadsound.video{}'.format(result_quality)       
+                for q in qlist:
+                    if q in node:
+                        file_quality = q.replace('/','')
 
-        return result_quality
+                playlist.update({file_quality: node})
+
+
+        user_quality = addon.getSetting('quality')
+        values = ['240', '360', '480', '720', '1080']
+        user_value = values[int(user_quality)]
+
+        if user_value in playlist:
+            return playlist[user_value]
+        else:
+            quality = list(playlist.keys())
+            res = self.dialog.select(u'Доступное качество', list(playlist.keys()))
+
+            if res == -1:
+                return False
+            
+            quality_res = quality[res]        
+            quality_url = playlist[quality_res]
+            
+            return quality_url
 #========================#========================#========================#
     def exec_play_part(self):
         video_url = self.process_url(raw_url=self.params['param'])
 
+        if not video_url:
+            return
+        
         li = xbmcgui.ListItem(path=video_url)
 
         if '0' in addon.getSetting('inputstream_adaptive'):
             li.setProperty('inputstream', "inputstream.adaptive")
             li.setProperty('inputstream.adaptive.manifest_type', 'hls')
             li.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
+
+            #li.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
+
             li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
