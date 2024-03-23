@@ -68,10 +68,6 @@ root_dir = develop_dir[:develop_dir.find('\develop')]
 release_dir = os.path.join(root_dir, 'release')
 develop_plugins = os.listdir(develop_dir)
 
-#for d in develop_plugins:
-    # if not 'plugin.niv' in d:
-    #     develop_plugins.remove(d)
-    
 for develop_plugin in develop_plugins:
     plugin_path = os.path.join(develop_dir, develop_plugin)
 
@@ -82,7 +78,7 @@ for develop_plugin in develop_plugins:
 
     if not os.path.isfile(xml_path):
         continue
-
+    
     with open(xml_path, 'r') as open_file:
         data = open_file.read()
 
