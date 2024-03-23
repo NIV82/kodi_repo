@@ -407,8 +407,8 @@ class RedHeadSound:
         return
 #========================#========================#========================#
     def exec_information_part(self):
-        update_info = u'[B][COLOR=darkorange]Version 0.2.6[/COLOR][/B]\n\n\
-- Изменена системы выбора качества видео'
+        update_info = u'[B][COLOR=darkorange]Version 0.2.7[/COLOR][/B]\n\n\
+- Исправлен парсер ссылки imdb'
         self.dialog.textviewer('Информация', update_info)
         return
 #========================#========================#========================#
@@ -651,7 +651,8 @@ class RedHeadSound:
                     imdb_id = imdb_id[imdb_id.find('title/')+6:]
                     imdb_id = imdb_id[:imdb_id.find('"')].strip()
                     imdb_id = imdb_id.replace('/','')
-
+                    if '?' in imdb_id:
+                        imdb_id = imdb_id[:imdb_id.find('?')]
                     if imdb_id == 'tt11213558':
                         imdb_id = 'tt10954600'
 
@@ -706,7 +707,8 @@ class RedHeadSound:
                         ]
                     
                     self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
-                except:
+                except Exception as e:
+                    data_print(e)
                     self.create_line(title=u'Ошибка обработки строки')
         except:
             self.create_line(title=u'Ошибка - сообщите автору')
@@ -828,7 +830,6 @@ class RedHeadSound:
                         file_quality = q.replace('/','')
 
                 playlist.update({file_quality: node})
-
 
         user_quality = addon.getSetting('quality')
         values = ['240', '360', '480', '720', '1080']

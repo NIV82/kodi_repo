@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.niv.redheadsound" name="RedHeadSound" version="0.2.6" provider-name="NIV">
+<addon id="plugin.niv.redheadsound" name="RedHeadSound" version="0.2.7" provider-name="NIV">
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
   </extension>
@@ -10,6 +10,12 @@
     <description lang="ru">Red Head Sound - озвучка для тех, кто не согласен на меньшее</description>
     <disclaimer lang="en">The author of the plugin is not responsible for the content on the sites</disclaimer>
     <disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайтах</disclaimer>
+    <news lang="ru">redheadsound-0.2.7
+      - Исправления парсера ссылки imdb
+    </news>
+    <news lang="en">redheadsound-0.2.7
+      - imdb link parser fixes
+    </news>
     <assets>
         <icon>resources/media/icon.png</icon>
     </assets>
