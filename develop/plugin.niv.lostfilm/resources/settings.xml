@@ -28,7 +28,9 @@
   </category>
 
   <category label="Разблокировка">
-    <setting id="unblock" label="Разблокировка" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=lime][B]Антизапрет[/B][/COLOR]|[COLOR=lime][B]LostFilm[/B][/COLOR]" />
+    <setting id="unblock" label="Разблокировка" type="enum" default="0" values="Выключено|Антизапрет|LostFilm" />
+    <setting id="unblock_1" label="Адрес:" type="text" default="https://p.thenewone.lol:8443/proxy.pac" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="unblock_2" label="Адрес:" type="text" default="http://185.85.121.12:1088" subsetting="true" visible="eq(-2,2)"/>
     <setting type="sep"/>
     <setting id="mirror_mode" label="Зеркало:" type="enum" default="1" values="Базовый сайт|Зеркало-1" />
     <setting id="mirror_0" label="Адрес:" type="text" default="https://www.lostfilm.tv/" subsetting="true" visible="eq(-1,0)" enable="false"/>

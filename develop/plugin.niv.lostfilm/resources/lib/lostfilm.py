@@ -137,9 +137,11 @@ class Lostfilm:
             return None
         
         if '2' in addon.getSetting('unblock'):
-            proxy_data = {'https': 'http://185.85.121.12:1088'}
+            proxy_data = {'https': addon.getSetting('unblock_2')}
             return proxy_data
-        
+
+        pac_url = addon.getSetting('unblock_1')
+
         try:
             proxy_time = float(addon.getSetting('proxy_time'))
         except:
@@ -147,13 +149,13 @@ class Lostfilm:
 
         if time.time() - proxy_time > 604800:
             addon.setSetting('proxy_time', str(time.time()))
-            proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
+            proxy_pac = urlopen(pac_url).read()
 
             try:
                 proxy_pac = str(proxy_pac, encoding='utf-8')
             except:
                 pass
-
+#
             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
             addon.setSetting('proxy', proxy)
             proxy_data = {'https': proxy}
@@ -161,7 +163,7 @@ class Lostfilm:
             if addon.getSetting('proxy'):
                 proxy_data = {'https': addon.getSetting('proxy')}
             else:
-                proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
+                proxy_pac = urlopen(pac_url).read()
                 
                 try:
                     proxy_pac = str(proxy_pac, encoding='utf-8')
