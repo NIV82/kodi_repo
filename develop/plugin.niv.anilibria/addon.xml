@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.niv.anilibria" name="Anilibria" version="0.2.0" provider-name="NIV">
+<addon id="plugin.niv.anilibria" name="Anilibria" version="1.0.0" provider-name="NIV">
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
 	</extension>
+	<requires>
+		<import addon="script.module.torrent2http" optional="true"/>
+	</requires>
 	<extension point="xbmc.addon.metadata">
 		<summary lang="en_US">Anilibria</summary>
 		<summary lang="ru">Anilibria</summary>
@@ -11,7 +14,8 @@
 		<disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
 		<disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
 		<assets>
-			<icon>resources/media/icon.jpg</icon>
+			<icon>resources/media/icon.png</icon>
+			<fanart>resources/media/fanart.jpg</fanart>
 		</assets>
 	</extension>
 </addon>

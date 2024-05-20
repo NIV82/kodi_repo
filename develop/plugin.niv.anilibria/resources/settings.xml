@@ -1,44 +1,40 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
   <category label="Настройки">
-    <setting label="[B]Anilibria[/B]" type="bool" id="use_anilibria" default="true"/>
-    <setting type="sep"/>
-    <setting id="alv_mode" type="enum" label="Режим работы:" default="1" values="[COLOR=blue][B]API-V1[/B][/COLOR]|[COLOR=green][B]API-V3[/B][/COLOR]" enable="eq(-2,true)"/>
-    <setting type="sep"/>
-    <setting id="alv1_unblock" type="enum" label="Разблокировка" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" enable="false" visible="eq(-2,0)"/>
-    <setting id="alv1_proxy" type="text" label="proxy" default="" visible="false"/>
-    <setting id="alv1_proxytime" type="text" label="proxytime" default="" visible="false"/>
-    <setting id="alv3_unblock" type="enum" label="Разблокировка" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue]Включено[/COLOR]" enable="false" visible="eq(-5,1)"/>
-    <setting id="alv3_proxy" type="text" label="status" default="" visible="false"/>
-    <setting id="alv3_proxytime" type="text" label="status" default="" visible="false"/>
-    <setting type="sep"/>
-    <setting id="alv_authmode" type="enum" label="Авторизация:"  default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" enable="false"/>
-    <setting id="alv_username" type="text" label="Логин:" default="" subsetting="true" visible="eq(-1,1)"/>
-    <setting id="alv_password" type="text" label="Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
-    <setting type="sep"/>
-    <setting id="alv_mirrormode" type="enum" label="Выбрать адрес:" default="1" values="Базовый сайт|Зеркало" enable="eq(-15,true)"/>
-    <setting id="alv_mirror0" type="text" label="Адрес:" default="https://www.anilibria.tv" subsetting="true" visible="eq(-1,0)" enable="false"/>
-    <setting id="alv_mirror1" type="text" label="Адрес:" default="" subsetting="true" visible="eq(-2,1)" enable="eq(-17,true)"/>
-    <setting id="alv_mirrortime" label="mirrortime" type="text" default="" visible="false"/>
-    <setting type="sep"/>
-    <setting id="alv1_playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" visible="eq(-18,0)" enable="eq(-20,true)"/>
-    <setting id="alv3_playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" visible="eq(-19,1)" enable="eq(-21,true)"/>
-    <setting id="alv1_quality" type="select" label="Качество по умолчанию:" default="HD" values="FULLHD|HD|SD" visible="eq(-20,0)" enable="eq(-22,true)"/>
-    <setting id="alv3_quality" type="select" label="Качество по умолчанию:" default="HD" values="FHD|HD|SD" visible="eq(-21,1)" enable="eq(-23,true)"/>
-    <setting id="alv1_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" visible="eq(-22,0)" enable="eq(-24,true)"/>
-    <setting id="alv3_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" visible="eq(-23,1)" enable="eq(-25,true)"/>
-    <setting id="alv1_search" label="search" type="text" default="" visible="false"/>
-    <setting id="alv1_genre" label="genre" type="text" default="" visible="false"/>
-    <setting id="alv1_year" label="year" type="text" default="" visible="false"/>
-    <setting id="alv1_season" label="season" type="text" default="" visible="false"/>
-    <setting id="alv1_sort" label="sort" type="text" default="Новое" visible="false"/>
-    <setting id="alv1_status" label="status" type="text" default="В работе" visible="false"/>
-    <setting id="alv3_search" label="status" type="text" default="" visible="false"/>
-    <setting id="alv3_auth" label="auth" type="bool" default="false" visible="false"/>
-    <setting id="alv3_year" label="year" type="text" default="" visible="false"/>
-    <setting id="alv3_genre" label="genre" type="text" default="" visible="false"/>
-    <setting id="alv3_season" label="season" type="text" default="" visible="false"/>
-    <setting id="alv3_sort" label="sort" type="text" default="Новое" visible="false"/>
-    <setting id="alv3_status" label="status" type="text" default="Все релизы" visible="false"/>
+    <setting id="playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" />
+    <setting id="quality" type="select" label="Качество по умолчанию:" default="HD" values="FHD|HD|SD" />
+    <setting id="inputstream" type="enum" label="InputStream Adaptive:" default="0" values="Включено|Выключено" />
+    <setting id="search" label="status" type="text" default="" visible="false"/>
+    <setting id="auth" label="auth" type="bool" default="false" visible="false"/>
+    <setting id="year" label="year" type="text" default="" visible="false"/>
+    <setting id="genre" label="genre" type="text" default="" visible="false"/>
+    <setting id="season" label="season" type="text" default="" visible="false"/>
+    <setting id="sort" label="sort" type="text" default="Новое" visible="false"/>
+    <setting id="status" label="status" type="text" default="Все релизы" visible="false"/>
   </category>
+
+  <category label="Авторизация">
+    <setting id="auth_mode" type="enum" label="Авторизация:"  default="0" values="Выключено|Включено" enable="false"/>
+    <setting id="username" type="text" label="Логин:" default="" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="password" type="text" label="Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
+  </category>
+
+  <category label="Торрент движок">
+    <setting id="engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM|TORRSERVER|T2HTTP" />
+    <setting id="tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
+    <setting id="ts_host" type="text" label="Адрес сервера" default="127.0.0.1" visible="eq(-2,2)"/>
+    <setting id="ts_port" type="number" label="Порт" default="8091" visible="eq(-3,2)"/>
+  </category>
+
+  <category label="Разблокировка">
+    <setting id="unblock" type="enum" label="Разблокировка" default="0" values="Выключено|Включено" enable="false"/>
+    <setting id="proxy" type="text" label="status" default="" visible="false"/>
+    <setting id="proxy_time" type="text" label="status" default="" visible="false"/>
+    <setting type="sep"/>
+    <setting id="mirror_mode" type="enum" label="Выбрать адрес:" default="1" values="Базовый сайт|Зеркало"/>
+    <setting id="mirror_0" type="text" label="Адрес:" default="https://www.anilibria.tv" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="mirror_1" type="text" label="Адрес:" default="" subsetting="true" visible="eq(-2,1)"/>
+    <setting id="mirror_time" label="mirrortime" type="text" default="" visible="false"/>
+  </category>
+
 </settings>
