@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <category label="Настройки">
+    <setting id="mode" type="enum" label="Режим Работы:" default="0" values="Online|Torrent" />
+    <setting type="sep"/>
+    <setting id="anidub_inputstream" label="Inputstream Adaptive" type="enum" default="" values="Включено|Выключено"/>
+
+    <setting id="torrent_session" label="session" type="text" default="" visible="false"/>
+    <setting id="torrent_search" label="status" type="text" default="" visible="false"/>
+    <setting id="torrent_auth" label="auth" type="bool" default="false" visible="false"/>
+    <setting id="torrent_proxy" label="status" type="text" default="" visible="false"/>
+    <setting id="torrent_proxytime" label="status" type="text" default="" visible="false"/>
+    <setting id="online_session" label="session" type="text" default="" visible="false"/>
+    <setting id="online_search" label="status" type="text" default="" visible="false"/>
+    <setting id="online_auth" label="auth" type="bool" default="false" visible="false"/>
+    <setting id="online_proxy" label="status" type="text" default="" visible="false"/>
+    <setting id="online_proxytime" label="status" type="text" default="" visible="false"/>
+  </category>
+  
+  <category label="Разблокировка">
+    <setting id="online_unblock" type="enum" label="Разблокировка Online" default="0" values="Выключено|Прокси|Antizapret PAC файл"/>
+    <setting id="online_unblock_1" label="Адрес:" type="text" default="http://proxy_ip:proxy_port" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="online_unblock_2" label="Адрес:" type="text" default="https://p.thenewone.lol:8443/proxy.pac" subsetting="true" visible="eq(-2,2)"/>
+    <setting type="sep"/>
+    <setting id="torrent_unblock" type="enum" label="Разблокировка Torrent" default="0" values="Выключено|Прокси|Antizapret PAC файл"/>
+    <setting id="torrent_unblock_1" label="Адрес:" type="text" default="http://proxy_ip:proxy_port" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="torrent_unblock_2" label="Адрес:" type="text" default="https://p.thenewone.lol:8443/proxy.pac" subsetting="true" visible="eq(-2,2)"/>
+    <setting type="sep"/>
+    <setting id="online_mirrormode" label="Online Адрес:" type="enum" default="1" values="Базовый сайт|Зеркало"/>
+    <setting id="online_mirror_0" label="Базовый сайт Online:" type="text" default="https://anidub.com/" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="online_mirror_1" label="Зеркало Online:" type="text" default="https://anidub.pro/" subsetting="true" visible="eq(-2,1)"/>
+    <setting type="sep"/>
+    <setting id="torrent_mirrormode" label="Torrent Адрес:" type="enum" default="0" values="Базовый сайт|Зеркало"/>
+    <setting id="torrent_mirror_0" label="Базовый сайт:" type="text" default="https://tr.anidub.com/" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="torrent_mirror_1" label="Зеркало Torrent:" type="text" default="" subsetting="true" visible="eq(-2,1)"/>
+  </category>
+
+  <category label="Авторизация">
+    <setting id="online_authmode" type="enum" label="Авторизация Online" default="0" values="Выключено|Включено"/>
+    <setting id="online_username" type="text" label="Онлайн Логин:" default="" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="online_password" type="text" label="Онлайн Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
+    <setting type="sep"/>
+    <setting id="torrent_authmode" type="enum" label="Авторизация Torrent" default="0" values="Выключено|Включено"/>
+    <setting id="torrent_username" type="text" label="Торрент Логин:" default="" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="torrent_password" type="text" label="Торрент Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
+  </category>
+
+  <category label="Торрент движок">
+    <setting id="engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM|TORRSERVER|T2HTTP" />
+    <setting id="tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
+    <setting id="ts_host" type="text" label="Адрес сервера" default="127.0.0.1" visible="eq(-2,2)"/>
+    <setting id="ts_port" type="number" label="Порт" default="8091" visible="eq(-3,2)"/>
+  </category>
+
+  <!-- <category label="Настройки">
+    <setting id="playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" />
+    <setting id="quality" type="select" label="Качество по умолчанию:" default="HD" values="FHD|HD|SD" />
+    <setting id="inputstream" type="enum" label="InputStream Adaptive:" default="0" values="Включено|Выключено" />
+    <setting id="search" label="status" type="text" default="" visible="false"/>
+    <setting id="auth" label="auth" type="bool" default="false" visible="false"/>
+    <setting id="year" label="year" type="text" default="" visible="false"/>
+    <setting id="genre" label="genre" type="text" default="" visible="false"/>
+    <setting id="season" label="season" type="text" default="" visible="false"/>
+    <setting id="sort" label="sort" type="text" default="Новое" visible="false"/>
+    <setting id="status" label="status" type="text" default="Все релизы" visible="false"/>
+  </category>
+
+  <category label="Торрент движок">
+    <setting id="engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM|TORRSERVER|T2HTTP" />
+    <setting id="tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
+    <setting id="ts_host" type="text" label="Адрес сервера" default="127.0.0.1" visible="eq(-2,2)"/>
+    <setting id="ts_port" type="number" label="Порт" default="8091" visible="eq(-3,2)"/>
+  </category> -->
+
+</settings>
