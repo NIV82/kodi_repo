@@ -69,12 +69,12 @@ release_dir = os.path.join(root_dir, 'release')
 develop_plugins = os.listdir(develop_dir)
 
 for develop_plugin in develop_plugins:
+    if 'plugin.niv.animeportal' in develop_plugin:
+        continue
+
     plugin_path = os.path.join(develop_dir, develop_plugin)
 
     if not os.path.isdir(plugin_path):
-        continue
-
-    if 'plugin.niv.animeportal' in plugin_path:
         continue
 
     xml_path = os.path.join(plugin_path, 'addon.xml')
