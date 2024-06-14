@@ -74,6 +74,9 @@ for develop_plugin in develop_plugins:
     if not os.path.isdir(plugin_path):
         continue
 
+    if 'plugin.niv.animeportal' in plugin_path:
+        continue
+
     xml_path = os.path.join(plugin_path, 'addon.xml')
 
     if not os.path.isfile(xml_path):
