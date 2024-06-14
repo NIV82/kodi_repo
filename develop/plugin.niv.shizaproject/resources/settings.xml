@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <category label="Настройки">
+    <setting id="playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" />
+    <setting id="playerselect" type="select" label="Ссылки для плеера:" default="KODIK" values="KODIK|SIBNET" />
+    <setting id="inputstream" type="enum" label="InputStream Adaptive:" default="0" values="Включено|Выключено" visible="false"/>
+
+    <setting id="search" type="text" label="search" default="" visible="false"/>
+    <setting id="yearstart" type="text" label="year" default="1970" visible="false"/>
+    <setting id="yearend" type="text" label="year" default="2023" visible="false"/>
+    <setting id="season" type="text" label="season" default="" visible="false"/>
+    <setting id="categories" type="text" label="categories" default="Аниме" visible="false"/>
+    <setting id="status" type="text" label="status" default="" visible="false"/>
+    <setting id="form" type="text" label="form" default="" visible="false"/>
+    <setting id="genre" type="text" label="genre" default="" visible="false"/>
+    <setting id="sort" type="text" label="sort" default="Дате публикации" visible="false"/>
+    <setting id="direction" type="text" label="direction" default="По убыванию" visible="false"/>
+
+    <!-- <setting type="sep"/>
+
+    <setting id="torrent_session" label="session" type="text" default="" visible="false"/>
+    <setting id="torrent_search" label="status" type="text" default="" visible="false"/>
+    <setting id="torrent_auth" label="auth" type="bool" default="false" visible="false"/>
+    <setting id="torrent_proxy" label="status" type="text" default="" visible="false"/>
+    <setting id="torrent_proxytime" label="status" type="text" default="" visible="false"/>
+    <setting id="online_session" label="session" type="text" default="" visible="false"/>
+    <setting id="online_search" label="status" type="text" default="" visible="false"/>
+    <setting id="online_auth" label="auth" type="bool" default="false" visible="false"/>
+    <setting id="online_proxy" label="status" type="text" default="" visible="false"/>
+    <setting id="online_proxytime" label="status" type="text" default="" visible="false"/> -->
+  </category>
+  
+  <category label="Разблокировка">
+    <setting id="unblock" type="enum" label="Разблокировка" default="0" values="Выключено|Прокси|Antizapret PAC файл"/>
+    <setting id="unblock_1" label="Адрес:" type="text" default="http://proxy_ip:proxy_port" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="unblock_2" label="Адрес:" type="text" default="https://p.thenewone.lol:8443/proxy.pac" subsetting="true" visible="eq(-2,2)"/>
+    <setting type="sep"/>
+    <setting id="mirrormode" label="Адрес:" type="enum" default="0" values="Базовый сайт|Зеркало"/>
+    <setting id="mirror_0" label="Базовый сайт:" type="text" default="https://shiza-project.com/graphql" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="mirror_1" label="Зеркало:" type="text" default="https://shiza-project.com/graphql" subsetting="true" visible="eq(-2,1)"/>
+  </category>
+
+  <category label="Авторизация">
+    <setting id="authmode" type="enum" label="Авторизация:" default="0" values="Выключено|Включено" enable="false" />
+    <setting id="username" type="text" label="Логин:" default="" subsetting="true" visible="eq(-1,1)"/>
+    <setting id="password" type="text" label="Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
+  </category>
+
+  <category label="Торрент движок">
+    <setting id="engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM|TORRSERVER|T2HTTP" />
+    <setting id="tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
+    <setting id="ts_host" type="text" label="Адрес сервера" default="127.0.0.1" visible="eq(-2,2)"/>
+    <setting id="ts_port" type="number" label="Порт" default="8091" visible="eq(-3,2)"/>
+  </category>
+
+</settings>
