@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
 
-<addon id="plugin.niv.anidub" name="ANIDUB" version="1.0.0" provider-name="NIV">
+<addon id="plugin.niv.anidub" name="ANIDUB" version="1.0.1" provider-name="NIV">
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
 	</extension>

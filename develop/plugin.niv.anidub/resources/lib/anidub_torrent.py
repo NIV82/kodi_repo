@@ -452,9 +452,9 @@ class Anidub:
         self.create_line(title='[B]Поиск[/B]', params={'mode': 'search_part'})
         if self.authorization:
            self.create_line(title='[B]Избранное[/B]', params={'mode': 'common_part', 'param':'favorites/'})
+        self.create_line(title='[B]TV Онгоинги[/B]', params={'mode': 'common_part', 'param': 'anime_tv/anime_ongoing/'})
         self.create_line(title='[B]Популярное за неделю[/B]', params={'mode': 'popular_part'})
         self.create_line(title='[B]Новое[/B]', params={'mode': 'common_part'})
-        self.create_line(title='[B]TV Онгоинги[/B]', params={'mode': 'common_part', 'param': 'anime_tv/anime_ongoing/'})
         self.create_line(title='[B]TV 100+[/B]', params={'mode': 'common_part', 'param': 'anime_tv/shonen/'})
         self.create_line(title='[B]TV Законченные[/B]', params={'mode': 'common_part', 'param': 'anime_tv/full/'})
         self.create_line(title='[B]Аниме OVA[/B]', params={'mode': 'common_part', 'param': 'anime_ova/'})
