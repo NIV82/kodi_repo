@@ -68,10 +68,10 @@ root_dir = develop_dir[:develop_dir.find('\develop')]
 release_dir = os.path.join(root_dir, 'release')
 develop_plugins = os.listdir(develop_dir)
 
-for develop_plugin in develop_plugins:
-    if 'plugin.niv.animeportal' in develop_plugin:
-        continue
+if 'plugin.niv.animeportal' in develop_plugins:
+    develop_plugins.remove('plugin.niv.animeportal')
 
+for develop_plugin in develop_plugins:
     plugin_path = os.path.join(develop_dir, develop_plugin)
 
     if not os.path.isdir(plugin_path):
@@ -89,7 +89,7 @@ for develop_plugin in develop_plugins:
     package_name = '{}-{}'.format(develop_plugin, version)
     release_path = os.path.join(release_dir, develop_plugin)
     destination = os.path.join(release_path, package_name)
-
+    
     if not os.path.isfile('{}.zip'.format(destination)):
         packing(base_name=destination, root_dir=develop_dir, base_dir=develop_plugin)
 
