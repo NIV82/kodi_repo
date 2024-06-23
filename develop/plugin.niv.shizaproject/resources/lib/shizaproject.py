@@ -240,6 +240,7 @@ class Shiza:
 
             # new_url = 'https://{}/gvi'.format(url[0])
             new_url = 'https://{}/ftor'.format(url[0])
+
             payload = {'type': url[1], 'id': url[2], 'hash': url[3]}
             payload = urlencode(payload)
             html = get_web(url=new_url, post=payload)
@@ -249,7 +250,12 @@ class Shiza:
             links = data['links']
 
             for r in list(result.keys()):
-                result[r] = u'https:{}'.format(decode_kodik(links[r][0]['src']))
+                decode_url = decode_kodik(links[r][0]['src'])
+                if not 'http' in decode_url:
+                    result[r] = u'https:{}'.format(decode_url)
+                else:
+                    result[r] = decode_url
+                #result[r] = u'https:{}'.format(decode_kodik(links[r][0]['src']))
             
             if result['720']:
                 episode_hls = result['720']
