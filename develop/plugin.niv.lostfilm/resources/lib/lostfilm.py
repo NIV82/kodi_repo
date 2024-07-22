@@ -16,6 +16,7 @@ if version >= 19:
     from urllib.parse import urlencode
     from urllib.parse import quote
     from urllib.parse import unquote
+    from urllib.parse import urljoin
     from urllib.request import urlopen
     from urllib.parse import parse_qs
     from html import unescape
@@ -25,6 +26,7 @@ else:
     from urllib import unquote
     from urllib import urlopen
     from urlparse import parse_qs
+    from urlparse import urljoin
     import HTMLParser
     unescape = HTMLParser.HTMLParser().unescape
 
@@ -1713,7 +1715,6 @@ class Lostfilm:
 
             html = self.network.get_html(url=url)
 
-
             new_url = html[html.find('url=http')+4:]
             new_url = new_url[:new_url.find('"')]
 
@@ -1999,14 +2000,37 @@ class Lostfilm:
 
         new_url = html[html.find('url=http')+4:]
         new_url = new_url[:new_url.find('"')]
-
+        
         from network import get_web
         
         html = get_web(url=new_url)
 
-        if u'Контент недоступен на территории' in html:
-            label = u'Контент недоступен на территории Российской Федерации\nПриносим извинения за неудобства'
-            dialog.ok(u'LostFilm', label)
+        # if u'Контент недоступен на территории' in html:
+        #     label = u'Контент недоступен на территории Российской Федерации\nПриносим извинения за неудобства'
+        #     dialog.ok(u'LostFilm', label)
+        #     return
+
+        if html.find(u'Контент недоступен на территории') > -1:
+            if html.find(u'В случае ошибочного определения Вашего местоположения') > -1:
+                new_url2 = html[html.find(u'В случае ошибочного определения Вашего'):]
+                new_url2 = new_url2[new_url2.find('a href=')+7:]
+                new_url2 = new_url2[:new_url2.find('>')]
+                new_url2 = new_url2.replace('"','').replace('\'','')
+                new_url2 = new_url2.strip()
+                
+                if not 'http' in new_url2 or not 'https' in new_url2:
+                    new_url2 = urljoin(new_url, new_url2)
+
+                html = get_web(url=new_url2)
+            else:
+                label = u'Контент недоступен на территории Российской Федерации\nПриносим извинения за неудобства'
+                dialog.ok(u'LostFilm', label)
+                return
+
+        quality_block = html.find('<div class="inner-box--label">')
+        if quality_block == -1:
+            dialog.ok('LostFilm', u'Отдельная ссылка на видео не обнаружена\nНаведите на любую другую серию\nи в контекстном меню - Открыть Торрент Файл')
+            #dialog.notification(heading='LostFilm', message='Ссылка на видео не обнаружена', icon=icon, time=1000, sound=False)
             return
 
         data_array = html[html.find('<div class="inner-box--label">')+30:html.find('<div class="inner-box--info')]
@@ -2031,7 +2055,10 @@ class Lostfilm:
             url = quality[result_quality]
 
         html = get_web(url=url, bytes=True)
-
+        if not html:
+            dialog.notification(heading='LostFilm', message='Ссылка на видео не обнаружена', icon=icon, time=1000, sound=False)
+            return
+            
         file_name = '{}.torrent'.format(se_code)
         
         torrent_file = os.path.join(torrents_dir, file_name)
