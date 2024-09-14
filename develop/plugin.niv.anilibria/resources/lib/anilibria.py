@@ -66,7 +66,7 @@ class Anilibria:
         self.site_url = 'https://api.anilibria.tv/v3/'
         self.mirror = self.create_mirrror_url()
 
-        #self.proxy_data = self.create_proxy_data()
+        self.proxy_data = self.create_proxy_data()
         #self.sid_file = os.path.join(addon_data_dir, 'anilibria.sid')
         #self.authorization = self.exec_authorization_part()
 #========================#========================#========================#
@@ -326,43 +326,49 @@ class Anilibria:
     def exec_addon_setting(self):
         addon.openSettings()
 #========================#========================#========================#
-    # def create_proxy_data(self):
-    #     if '0' in addon.getSetting('unblock'):
-    #         return None
+    def create_proxy_data(self):
+        if '0' in addon.getSetting('unblock'):
+            return None
 
-    #     try:
-    #         proxy_time = float(addon.getSetting('proxy_time'))
-    #     except:
-    #         proxy_time = 0
+        import unblock
 
-    #     if time.time() - proxy_time > 604800:
-    #         addon.setSetting('proxy_time', str(time.time()))
-    #         proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
+        try:
+            proxy_time = float(addon.getSetting('proxy_time'))
+        except:
+            proxy_time = 0
 
-    #         try:
-    #             proxy_pac = str(proxy_pac, encoding='utf-8')
-    #         except:
-    #             pass
+        if time.time() - proxy_time > 604800:
+            addon.setSetting('proxy_time', str(time.time()))
+            
+            proxy = unblock.get_antizapret_proxy()
+            #proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
 
-    #         proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #         addon.setSetting('proxy', proxy)
-    #         proxy_data = {'https': proxy}
-    #     else:
-    #         if addon.getSetting('proxy'):
-    #             proxy_data = {'https': addon.getSetting('proxy')}
-    #         else:
-    #             proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
+            # try:
+            #     proxy_pac = str(proxy_pac, encoding='utf-8')
+            # except:
+            #     pass
+
+            #proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+            addon.setSetting('proxy', proxy)
+            proxy_data = {'https': proxy}
+        else:
+            if addon.getSetting('proxy'):
+                proxy_data = {'https': addon.getSetting('proxy')}
+            else:
+                #proxy_pac = urlopen("https://antizapret.prostovpn.org:8443/proxy.pac").read()
                 
-    #             try:
-    #                 proxy_pac = str(proxy_pac, encoding='utf-8')
-    #             except:
-    #                 pass
+                # try:
+                #     proxy_pac = str(proxy_pac, encoding='utf-8')
+                # except:
+                #     pass
 
-    #             proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-    #             addon.setSetting('proxy', proxy)
-    #             proxy_data = {'https': proxy}
+                #proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
+                proxy = unblock.get_antizapret_proxy()
 
-    #     return proxy_data
+                addon.setSetting('proxy', proxy)
+                proxy_data = {'https': proxy}
+
+        return proxy_data
 #========================#========================#========================#
     # def exec_authorization_part(self):
     #     if '0' in addon.getSetting('{}_auth_mode'.format(self.params['portal'])):
@@ -952,6 +958,8 @@ class Anilibria:
         return
 #========================#========================#========================#
     def exec_bencode_part(self):
+        from network import get_web
+
         anime_id = self.params['anime_id']
         torrent_id = self.params['torrent_id']
         torrent_url = u'{}/public/torrent/download.php?id={}'.format(self.mirror, torrent_id)
@@ -961,7 +969,8 @@ class Anilibria:
 
         #url = self.params['torrent_url']
 
-        data_request = self.network.get_bytes(url=torrent_url)
+        # data_request = self.network.get_bytes(url=torrent_url)
+        data_request = get_web(url=torrent_url)
 
         torrent_file = os.path.join(self.torrents_dir, torrent_id)
             

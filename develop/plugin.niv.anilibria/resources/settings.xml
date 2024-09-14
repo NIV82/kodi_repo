@@ -27,7 +27,7 @@
   </category>
 
   <category label="Разблокировка">
-    <setting id="unblock" type="enum" label="Разблокировка" default="0" values="Выключено|Включено" enable="false"/>
+    <setting id="unblock" type="enum" label="Разблокировка" default="0" values="Выключено|Включено"/>
     <setting id="proxy" type="text" label="status" default="" visible="false"/>
     <setting id="proxy_time" type="text" label="status" default="" visible="false"/>
     <setting type="sep"/>
