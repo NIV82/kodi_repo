@@ -4,37 +4,27 @@
     <setting id="playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" />
     <setting id="quality" type="select" label="Качество по умолчанию:" default="HD" values="FHD|HD|SD" />
     <setting id="inputstream" type="enum" label="InputStream Adaptive:" default="0" values="Включено|Выключено" />
-    <setting id="search" label="status" type="text" default="" visible="false"/>
+    <setting id="search_mode" type="enum" label="Транслит для поиска:" default="0" values="Выключено|Включено" />
+    <setting id="search_string" label="status" type="text" default="" visible="false"/>
     <setting id="auth" label="auth" type="bool" default="false" visible="false"/>
-    <setting id="year" label="year" type="text" default="" visible="false"/>
-    <setting id="genre" label="genre" type="text" default="" visible="false"/>
-    <setting id="season" label="season" type="text" default="" visible="false"/>
-    <setting id="sort" label="sort" type="text" default="Новое" visible="false"/>
-    <setting id="status" label="status" type="text" default="Все релизы" visible="false"/>
+    <setting id="genres" label="genres" type="text" default="" visible="false"/>
+    <setting id="types" label="types" type="text" default="" visible="false"/>
+    <setting id="publish" label="publish" type="text" default="" visible="false"/>
+    <setting id="production" label="production" type="text" default="" visible="false"/>
+    <setting id="sorting" label="sorting" type="text" default="Обновлены недавно" visible="false"/>
+    <setting id="seasons" label="seasons" type="text" default="" visible="false"/>
+    <setting id="from_year" label="from_year" type="text" default="1990" visible="false"/>
+    <setting id="to_year" label="to_year" type="text" default="2025" visible="false"/>
+    <setting id="mpaa" label="mpaa" type="text" default="" visible="false"/>
+    <setting id="search" label="search" type="text" default="" visible="false"/>
   </category>
-
-  <category label="Авторизация">
+  <!-- <category label="Авторизация">
     <setting id="auth_mode" type="enum" label="Авторизация:"  default="0" values="Выключено|Включено" enable="false"/>
     <setting id="username" type="text" label="Логин:" default="" subsetting="true" visible="eq(-1,1)"/>
     <setting id="password" type="text" label="Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)"/>
-  </category>
-
+  </category> -->
   <category label="Торрент движок">
-    <setting id="engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM|TORRSERVER|T2HTTP" />
-    <setting id="tam" type="enum" label="TAM-плеер:"  visible="eq(-1,0)" default="0" subsetting="true" values="DEFAULT|ACE|T2HTTP|YATP|TORRENTER|ELEMENTUM|XBMCTORRENT|ACE_PROXY|QUASAR|TORRSERVER|TORRSERVER_TAM|LT2HTTP" />
-    <setting id="ts_host" type="text" label="Адрес сервера" default="127.0.0.1" visible="eq(-2,2)"/>
-    <setting id="ts_port" type="number" label="Порт" default="8091" visible="eq(-3,2)"/>
-  </category>
-
-  <category label="Разблокировка">
-    <setting id="unblock" type="enum" label="Разблокировка" default="0" values="Выключено|Включено"/>
-    <setting id="proxy" type="text" label="status" default="" visible="false"/>
-    <setting id="proxy_time" type="text" label="status" default="" visible="false"/>
-    <setting type="sep"/>
-    <setting id="mirror_mode" type="enum" label="Выбрать адрес:" default="1" values="Базовый сайт|Зеркало"/>
-    <setting id="mirror_0" type="text" label="Адрес:" default="https://www.anilibria.tv" subsetting="true" visible="eq(-1,0)" enable="false"/>
-    <setting id="mirror_1" type="text" label="Адрес:" default="" subsetting="true" visible="eq(-2,1)"/>
-    <setting id="mirror_time" label="mirrortime" type="text" default="" visible="false"/>
+    <setting id="engine" type="enum" label="Торрент плеер:" default="0" values="TAM|ELEMENTUM" />
   </category>
 
 </settings>

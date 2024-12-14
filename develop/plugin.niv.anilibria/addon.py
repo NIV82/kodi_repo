@@ -6,8 +6,9 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'resources', 'lib'))
 
+import anilibria
+
 if __name__ == "__main__":
-    import anilibria
     anilibria.start()
-        
+
 gc.collect()
