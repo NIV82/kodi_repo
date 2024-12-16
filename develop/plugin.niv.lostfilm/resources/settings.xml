@@ -2,7 +2,7 @@
 <settings>
 
   <category label="Авторизация">
-    <setting id="username" label="Логин:" type="text" default=""/>
+    <setting id="username" label="Почта:" type="text" default=""/>
     <setting id="password" label="Пароль:" type="text" default="" option="hidden"/>
     <setting id="auth" label="auth" type="bool" default="false" visible="false"/>
     <setting id="auth_session" label="session" type="text" default="" visible="false"/>
