@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <category label="Настройки">
+    <setting id="inputstream" label="Inputstream Adaptive" type="enum" default="" values="Включено|Выключено"/>
+    <setting type="sep"/>
+    <setting id="title_mode" label="Названия аниме: " type="enum" default="" values="Русские|Английские"/>
+    <setting type="sep"/>
+    <setting id="player_mode" label="Плеер по умолчанию: " type="enum" default="" values="Основной|Запасной"/>
+    <setting type="sep"/>
+    <setting id="quality" type="select" label="Качество по умолчанию:" default="HD" values="AUTO|SD|FHD" />
+    <setting id="search_string" label="search_string" type="text" default="" visible="false"/>
+    <setting type="sep"/>
+    <setting id="mirrormode" label="Адрес:" type="enum" default="1" values="Базовый сайт|Зеркало"/>
+    <setting id="mirror_0" label="Базовый сайт:" type="text" default="anidub.com" subsetting="true" visible="eq(-1,0)" enable="false"/>
+    <setting id="mirror_1" label="Зеркало:" type="text" default="anidub.world" subsetting="true" visible="eq(-2,1)"/>
+  </category>
+
+</settings>
