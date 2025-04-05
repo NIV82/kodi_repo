@@ -8,7 +8,7 @@
     <setting type="sep"/>
     <setting id="player_mode" label="Плеер по умолчанию: " type="enum" default="" values="Основной|Запасной"/>
     <setting type="sep"/>
-    <setting id="quality" type="select" label="Качество по умолчанию:" default="HD" values="AUTO|SD|FHD" />
+    <setting id="quality" type="select" label="Качество по умолчанию:" default="AUTO" values="AUTO|SD|FHD" />
     <setting id="search_string" label="search_string" type="text" default="" visible="false"/>
     <setting type="sep"/>
     <setting id="mirrormode" label="Адрес:" type="enum" default="1" values="Базовый сайт|Зеркало"/>
