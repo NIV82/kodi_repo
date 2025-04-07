@@ -1,34 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
 
-<addon id="plugin.niv.ado" name="ANIDUB Online" version="0.0.3" provider-name="NIV">
+<addon id="plugin.niv.anidub" name="ANIDUB" version="1.1.0" provider-name="NIV">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0"/>
 	</requires>
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
 	</extension>
-	<extension point="xbmc.addon.metadata">
-		<summary lang="en_US">AniDub</summary>
-		<summary lang="ru">AniDub</summary>
-		<description lang="en_US">AniDub a popular creative association engaged in dubbing anime and doramas... ©</description>
-		<description lang="ru">AniDub - популярное творческое объединение, занимающееся озвучиванием аниме и дорам....©</description>
-		<disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
-		<disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
-		<assets>
-			<icon>icon.png</icon>
-			<fanart>fanart.jpg</fanart>
-		</assets>
-	</extension>
-</addon>
-
-<addon id="plugin.niv.anidub" name="ANIDUB" version="1.0.1" provider-name="NIV">
-	<extension point="xbmc.python.pluginsource" library="addon.py">
-		<provides>video</provides>
-	</extension>
-	<requires>
-		<import addon="script.module.torrent2http" optional="true"/>
-	</requires>
 	<extension point="xbmc.addon.metadata">
 		<summary lang="en_US">AniDub</summary>
 		<summary lang="ru">AniDub</summary>

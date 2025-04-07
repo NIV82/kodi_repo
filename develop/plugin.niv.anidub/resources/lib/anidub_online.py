@@ -21,7 +21,7 @@ def data_print(data):
     """PRINT LOG IN KODI"""
     xbmc.log(str(data), xbmc.LOGFATAL)
 
-addon = xbmcaddon.Addon(id='plugin.niv.ado')
+addon = xbmcaddon.Addon(id='plugin.niv.anidub')
 handle = int(sys.argv[1])
 #
 addon_path = xbmcvfs.translatePath(addon.getAddonInfo('path'))

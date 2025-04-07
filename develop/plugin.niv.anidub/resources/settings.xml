@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
 
-  <category label="Настройки">
+  <category label="ANIDUB ONLINE">
     <setting id="inputstream" label="Inputstream Adaptive" type="enum" default="" values="Включено|Выключено"/>
     <setting type="sep"/>
     <setting id="title_mode" label="Названия аниме: " type="enum" default="" values="Русские|Английские"/>
