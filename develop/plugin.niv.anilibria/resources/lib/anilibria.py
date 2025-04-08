@@ -443,7 +443,6 @@ class Anilibria:
             for ep in episodes:
                 release_data['duration'] = ep['duration']
                 vd = _hls_url(quality=addon.getSetting('quality'), episode=ep)
-
                 node = {
                     'label': vd['title'],
                     'params': {
@@ -640,6 +639,7 @@ def _hls_url(quality=None, episode=None):
     if quality is None or episode is None:
         return None
 
+    #data_print(epi)
     if episode['title'] and episode['ordinal']:
         title = f"{episode['ordinal']} - {episode['title']}"
     else:

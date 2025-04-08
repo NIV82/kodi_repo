@@ -432,13 +432,17 @@ def _assemble_episodes(episodes=None):
 
     for ep in episodes:
         item = kodi_schemes.episode_node.copy()
+        vurl = kodi_schemes.vurl_scheme.copy()
 
         item['title'] = ep['name']
         item['originaltitle'] = ep['name_english']
         item['ordinal'] = ep['ordinal']
-        item['video_url']['SD'] = ep['hls_480']
-        item['video_url']['HD'] = ep['hls_720']
-        item['video_url']['FHD'] = ep['hls_1080']
+        vurl = {
+            'SD': ep['hls_480'],
+            'HD': ep['hls_720'],
+            'FHD': ep['hls_1080']
+        }
+        item['video_url'] = vurl
         item['duration'] = ep['duration']
 
         episodes_info.append(item)

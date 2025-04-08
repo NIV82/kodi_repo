@@ -104,11 +104,17 @@ torrent_node = {
     'seeds': ''
     }
 
+vurl_scheme = {
+    'SD': '', 
+    'HD': '', 
+    'FHD': ''
+    }
+
 episode_node = {
     'title': '',
     'originaltitle': '',
     'ordinal': '',
-    'video_url': {'SD': '', 'HD': '', 'FHD': ''},
+    'video_url': {},
     'duration': 0
     }
 
