@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import socket
+
 try:
     from urllib2 import ProxyHandler
     from urllib2 import HTTPCookieProcessor
@@ -14,6 +16,8 @@ except:
     from urllib.request import Request
     from urllib.request import urlopen
     from http.cookiejar import MozillaCookieJar
+
+socket.setdefaulttimeout(3)
 
 def get_web(url, post=None, bytes=True):
     if post:

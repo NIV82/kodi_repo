@@ -220,9 +220,10 @@ class Shiza:
         return episode_url
 #========================#========================#========================#
     def create_kodik(self, url): #Общий функционал заимствован у автора Eviloid - SHIZA Project, переписан под нужды
+
         def decode_kodik(url):
             keys   = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-            result = 'NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm0123456789'
+            result = 'STUVWXYZABCDEFGHIJKLMNOPQRstuvwxyzabcdefghijklmnopqr0123456789'
 
             from base64 import standard_b64decode
 
@@ -235,14 +236,16 @@ class Shiza:
 
             result = {'360':'', '480':'', '720':''}
 
-            url = html[html.find("data-code='//")+13:]
-            url = url[:url.find("'")].split('/')
+            url = html[html.rfind("<td><input value='")+18:]
+            url = url[:url.find("'")]
+            url = url.split('/')
 
-            # new_url = 'https://{}/gvi'.format(url[0])
-            new_url = 'https://{}/ftor'.format(url[0])
+            new_url = 'https://{}/ftor'.format(url[2])
 
-            payload = {'type': url[1], 'id': url[2], 'hash': url[3]}
+            payload = {'type': url[3], 'id': url[4], 'hash': url[5]}
             payload = urlencode(payload)
+            payload = payload.replace('%27','%22')
+
             html = get_web(url=new_url, post=payload)
 
             data = json.loads(html)
@@ -250,7 +253,9 @@ class Shiza:
             links = data['links']
 
             for r in list(result.keys()):
+
                 decode_url = decode_kodik(links[r][0]['src'])
+
                 if not 'http' in decode_url:
                     result[r] = u'https:{}'.format(decode_url)
                 else:
@@ -977,6 +982,7 @@ class Shiza:
             return
         elif 'aniqit' in url or 'kodik' in url or 'anivod' in url:
             data = self.create_kodik(url=url)
+
             if data:
                 li = xbmcgui.ListItem(path=data)
             else:
