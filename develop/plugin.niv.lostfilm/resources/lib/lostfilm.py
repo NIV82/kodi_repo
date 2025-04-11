@@ -2000,7 +2000,10 @@ class Lostfilm:
 
         new_url = html[html.find('url=http')+4:]
         new_url = new_url[:new_url.find('"')]
-        
+
+        if addon.getSetting('insearch_fix') == 'true':
+            new_url = new_url.replace('insearch.site', 'www.a.retre.org')
+
         from network import get_web
         
         html = get_web(url=new_url)
