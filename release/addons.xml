@@ -43,6 +43,27 @@
 	</extension>
 </addon>
 
+<addon id="plugin.niv.anistar" name="ANISTAR" version="0.0.1" provider-name="NIV">
+	<requires>
+		<import addon="xbmc.python" version="3.0.0"/>
+	</requires>
+	<extension point="xbmc.python.pluginsource" library="addon.py">
+		<provides>video</provides>
+	</extension>
+	<extension point="xbmc.addon.metadata">
+		<summary lang="en_US">AniStar</summary>
+		<summary lang="ru">AniStar</summary>
+		<description lang="en_US">AniStar - The fastest high—quality voice acting of your favorite anime is only with us!... ©</description>
+		<description lang="ru">AniStar - Самая быстрая качественная озвучка твоих любимых аниме — только у нас!....©</description>
+		<disclaimer lang="en_US">The author of the plugin is not responsible for the content on the site</disclaimer>
+		<disclaimer lang="ru">Автор плагина не несет ответственность за содержимое на сайте</disclaimer>
+		<assets>
+			<icon>icon.png</icon>
+			<fanart>fanart.jpg</fanart>
+		</assets>
+	</extension>
+</addon>
+
 <addon id="plugin.niv.lostfilm" name="LostFilm" version="1.3.1" provider-name="NIV">
 	<extension point="xbmc.python.pluginsource" library="addon.py">
 		<provides>video</provides>
