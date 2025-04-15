@@ -150,7 +150,7 @@ class RedHeadSound:
             else:
                 file_size = int(data.getheader('Content-Length'))
 
-            self.progress_bg.create(u'Загрузка файла')
+            self.progress_bg.create('Загрузка файла')
             
             try:
                 with open(target_path, 'wb') as write_file:
@@ -160,7 +160,7 @@ class RedHeadSound:
                         write_file.write(chunk)
                         if len(chunk) < chunk_size:
                             break
-                        self.progress_bg.update(int(bytes_read * 100 / file_size), u'Загружено: {} из {} MB'.format(
+                        self.progress_bg.update(int(bytes_read * 100 / file_size), 'Загружено: {} из {} MB'.format(
                             '{:.2f}'.format(bytes_read/1024/1024.0), '{:.2f}'.format(file_size/1024/1024.0)))
             except:
                 self.dialog.notification(heading='Red Head Sound', message='Ошибка', icon=icon,time=1000,sound=False)
@@ -269,7 +269,7 @@ class RedHeadSound:
             if 'file:' in d:
                 d = d.replace('file:','"file":')
             
-            result = u'{}\n{}'.format(result,d)
+            result = '{}\n{}'.format(result,d)
 
         result = eval(result)
 
@@ -407,7 +407,7 @@ class RedHeadSound:
         return
 #========================#========================#========================#
     def exec_information_part(self):
-        update_info = u'[B][COLOR=darkorange]Version 0.2.7[/COLOR][/B]\n\n\
+        update_info = '[B][COLOR=darkorange]Version 0.2.7[/COLOR][/B]\n\n\
 - Исправлен парсер ссылки imdb'
         self.dialog.textviewer('Информация', update_info)
         return
@@ -424,7 +424,7 @@ class RedHeadSound:
         addon.setSetting('proxy','')
         addon.setSetting('proxy_time','')
 
-        self.create_proxy_data()
+        #self.create_proxy_data()
         return
 #========================#========================#========================#
     def exec_main_part(self):
@@ -456,7 +456,7 @@ class RedHeadSound:
         if not self.params['param']:
             xbmcplugin.setContent(handle, '')
 
-            self.create_line(title=u'Поиск по названию', params={'mode': 'search_part', 'param': 'search_word'},
+            self.create_line(title='Поиск по названию', params={'mode': 'search_part', 'param': 'search_word'},
                              image=os.path.join(plugin_dir, 'resources', 'media', 'search.png'))
             
             data_array = addon.getSetting('search').split('|')
@@ -472,9 +472,9 @@ class RedHeadSound:
                         continue
 
                     try:
-                        label = u'[COLOR=gray]{}[/COLOR]'.format(data.decode('utf-8'))
+                        label = '[COLOR=gray]{}[/COLOR]'.format(data.decode('utf-8'))
                     except:
-                        label = u'[COLOR=gray]{}[/COLOR]'.format(data)
+                        label = '[COLOR=gray]{}[/COLOR]'.format(data)
 
                     self.create_line(title=label, params={'mode': 'search_part', 'param':'search_string', 'search_string': data},
                                      image=os.path.join(plugin_dir, 'resources', 'media', 'tags.png'))
@@ -483,7 +483,7 @@ class RedHeadSound:
 
         if 'search_word' in self.params['param']:
             skbd = xbmc.Keyboard()
-            skbd.setHeading(u'Поиск:')
+            skbd.setHeading('Поиск:')
             skbd.doModal()
             if skbd.isConfirmed():
                 self.params['search_string'] = skbd.getText()
@@ -515,16 +515,16 @@ class RedHeadSound:
             html = self.network.get_html(url=self.site_url, post=urlencode(post_data))
                 
             if not html:
-                self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
             if not '<article class="card d-flex">' in html:
-                self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
+                self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
                 xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
 
-            self.progress_bg.create(u'RedHeadSound', u'Инициализация')
+            self.progress_bg.create('RedHeadSound', 'Инициализация')
 
             try:
                 data_array = html[html.find('<article class="card d-flex">')+29:html.rfind('</article>')]
@@ -545,8 +545,8 @@ class RedHeadSound:
                             imdb_id = 'tt10954600'
 
                         kinopoisk = ''
-                        if u'data-text="КиноПоиск">' in data:
-                            kinopoisk = data[data.find(u'data-text="КиноПоиск">')+22:]
+                        if 'data-text="КиноПоиск">' in data:
+                            kinopoisk = data[data.find('data-text="КиноПоиск">')+22:]
                             kinopoisk = kinopoisk[kinopoisk.find('kinopoisk.ru/')+13:]
                             kinopoisk = kinopoisk[kinopoisk.find('/')+1:]
                             kinopoisk = kinopoisk[:kinopoisk.find('"')]
@@ -560,31 +560,31 @@ class RedHeadSound:
                         uniqueid = {'imdb': imdb_id, 'media_type': '', 'kinopoisk': kinopoisk}
 
                         season = ''
-                        if u'Сезон:' in data:
-                            season = data[data.find(u'Сезон:'):]
+                        if 'Сезон:' in data:
+                            season = data[data.find('Сезон:'):]
                             season = season[season.find('</span>')+7:season.find('</li>')]
-                            season = u' | [COLOR=blue]S{:>02}[/COLOR]'.format(season.strip())
+                            season = ' | [COLOR=blue]S{:>02}[/COLOR]'.format(season.strip())
 
                         episodes = ''
-                        if u'Серий на сайте:' in data:
-                            episodes = data[data.find(u'Серий на сайте:'):]
+                        if 'Серий на сайте:' in data:
+                            episodes = data[data.find('Серий на сайте:'):]
                             episodes = episodes[episodes.find('</span>')+7:episodes.find('</li>')]
-                            episodes = u' | [COLOR=gold]{}[/COLOR]'.format(episodes.strip())
+                            episodes = ' | [COLOR=gold]{}[/COLOR]'.format(episodes.strip())
 
                         node = ''
                         if '/filmy/' in content_url:
-                            node = u' | [COLOR=blue]Фильм[/COLOR]'
+                            node = ' | [COLOR=blue]Фильм[/COLOR]'
                         if '/multfilmy/' in content_url:
-                            node = u' | [COLOR=blue]Мультфильм[/COLOR]'
+                            node = ' | [COLOR=blue]Мультфильм[/COLOR]'
 
                         if not self.database.imdb_in_db(unique_imdb=imdb_id):
                             self.create_info(uniqueid = uniqueid)
 
                         meta_info = self.database.get_metainfo(unique_imdb=imdb_id)
 
-                        label = u'{}{}{}{}'.format(meta_info['info']['title'],season,episodes,node)
+                        label = '{}{}{}{}'.format(meta_info['info']['title'],season,episodes,node)
 
-                        self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
+                        self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), 'Обработано - {} из {}'.format(i, len(data_array)))
 
                         self.context_menu = [
                             #('Избранное Добавить \ Удалить', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=favorites_part&serial_id={}")'.format(serial_id)),
@@ -596,9 +596,9 @@ class RedHeadSound:
                         
                         self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
                     except:
-                        self.create_line(title=u'Ошибка обработки строки')
+                        self.create_line(title='Ошибка обработки строки')
             except:
-                self.create_line(title=u'Ошибка - сообщите автору')
+                self.create_line(title='Ошибка - сообщите автору')
                 
             self.progress_bg.close()
 
@@ -613,7 +613,7 @@ class RedHeadSound:
                     page = 0
                 
                 if page > int(self.params['page']):
-                    label = u'[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
+                    label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
                         int(self.params['page']), int(self.params['page'])+1)                
                     self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'search_string': self.params['search_string'], 'page': (int(self.params['page']) + 1)})
             
@@ -625,16 +625,16 @@ class RedHeadSound:
         html = self.network.get_html(url=url)
 
         if not html:
-            self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         if not '<article class="card d-flex">' in html:
-            self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
+            self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
-        self.progress_bg.create(u'RedHeadSound', u'Инициализация')
+        self.progress_bg.create('RedHeadSound', 'Инициализация')
         
         try:
             data_array = html[html.find('<article class="card d-flex">')+29:html.rfind('</article>')]
@@ -657,8 +657,8 @@ class RedHeadSound:
                         imdb_id = 'tt10954600'
 
                     kinopoisk = ''
-                    if u'data-text="КиноПоиск">' in data:
-                        kinopoisk = data[data.find(u'data-text="КиноПоиск">')+22:]
+                    if 'data-text="КиноПоиск">' in data:
+                        kinopoisk = data[data.find('data-text="КиноПоиск">')+22:]
                         kinopoisk = kinopoisk[kinopoisk.find('kinopoisk.ru/')+13:]
                         kinopoisk = kinopoisk[kinopoisk.find('/')+1:]
                         kinopoisk = kinopoisk[:kinopoisk.find('"')]
@@ -672,31 +672,31 @@ class RedHeadSound:
                     uniqueid = {'imdb': imdb_id, 'media_type': '', 'kinopoisk': kinopoisk}
 
                     season = ''
-                    if u'Сезон:' in data:
-                        season = data[data.find(u'Сезон:'):]
+                    if 'Сезон:' in data:
+                        season = data[data.find('Сезон:'):]
                         season = season[season.find('</span>')+7:season.find('</li>')]
-                        season = u' | [COLOR=blue]S{:>02}[/COLOR]'.format(season.strip())
+                        season = ' | [COLOR=blue]S{:>02}[/COLOR]'.format(season.strip())
 
                     episodes = ''
-                    if u'Серий на сайте:' in data:
-                        episodes = data[data.find(u'Серий на сайте:'):]
+                    if 'Серий на сайте:' in data:
+                        episodes = data[data.find('Серий на сайте:'):]
                         episodes = episodes[episodes.find('</span>')+7:episodes.find('</li>')]
-                        episodes = u' | [COLOR=gold]{}[/COLOR]'.format(episodes.strip())
+                        episodes = ' | [COLOR=gold]{}[/COLOR]'.format(episodes.strip())
 
                     node = ''
                     if '/filmy/' in content_url:
-                        node = u' | [COLOR=blue]Фильм[/COLOR]'
+                        node = ' | [COLOR=blue]Фильм[/COLOR]'
                     if '/multfilmy/' in content_url:
-                        node = u' | [COLOR=blue]Мультфильм[/COLOR]' 
+                        node = ' | [COLOR=blue]Мультфильм[/COLOR]' 
 
                     if not self.database.imdb_in_db(unique_imdb=imdb_id):
                         self.create_info(uniqueid = uniqueid)
 
                     meta_info = self.database.get_metainfo(unique_imdb=imdb_id)
 
-                    label = u'{}{}{}{}'.format(meta_info['info']['title'],season,episodes,node)
+                    label = '{}{}{}{}'.format(meta_info['info']['title'],season,episodes,node)
 
-                    self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), u'Обработано - {} из {}'.format(i, len(data_array)))
+                    self.progress_bg.update(int((float(i+1) / len(data_array)) * 100), 'Обработано - {} из {}'.format(i, len(data_array)))
 
                     self.context_menu = [
                         #('Избранное Добавить \ Удалить', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=favorites_part&serial_id={}")'.format(serial_id)),
@@ -707,11 +707,10 @@ class RedHeadSound:
                         ]
                     
                     self.create_line(title=label, params={'mode': 'select_part', 'id': imdb_id, 'url': content_url}, meta_info=meta_info)
-                except Exception as e:
-                    data_print(e)
-                    self.create_line(title=u'Ошибка обработки строки')
+                except:
+                    self.create_line(title='Ошибка обработки строки')
         except:
-            self.create_line(title=u'Ошибка - сообщите автору')
+            self.create_line(title='Ошибка - сообщите автору')
             
         self.progress_bg.close()
         
@@ -720,7 +719,7 @@ class RedHeadSound:
             paginator = paginator[:paginator.find('</div>')]
             
             if '<a href="' in paginator:
-                label = u'[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
+                label = '[COLOR=gold]{:>02}[/COLOR] | Следующая страница - [COLOR=gold]{:>02}[/COLOR]'.format(
                     int(self.params['page']), int(self.params['page'])+1)
                 self.create_line(title=label, params={'mode': self.params['mode'], 'param': self.params['param'], 'page': (int(self.params['page']) + 1)})
             
@@ -728,78 +727,139 @@ class RedHeadSound:
 #========================#========================#========================#
     def exec_select_part(self):
         url = self.params['url']
+
         html = self.network.get_html(url=url)
 
         if not html:
-            self.create_line(title=u'Ошибка получения данных', params={'mode': 'main_part'})
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
         if not '<iframe data-src="' in html:
-            self.create_line(title=u'Контент отсутствует', params={'mode': self.params['mode']})
+            self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
-        player_links = self.create_players(data=html)
-        player_choice = addon.getSetting('player')
+        link = []
+        while html.find('<iframe data-src="') > -1:
+            link_data = html[html.find('<iframe data-src="'):]
+            link_data = link_data[:link_data.find('</iframe>')]
+            html = html.replace(link_data, '')
+            link_data = link_data[link_data.find('"')+1:]
+            link_data = link_data[:link_data.find('"')]
+            link.append(link_data)
 
-        if '0' in player_choice:
-            player_url = player_links['cdnvideohub']
-            if not player_url:
-                player_url = player_links['redheadsound']
+        videodata = []
+        for l in link:
+            data_array = self.network.get_bytes(url=l)
 
-        if '1' in player_choice:
-            player_url = player_links['redheadsound']
-            if not player_url:
-                player_url = player_links['cdnvideohub']
+            if not data_array['connection_reason'] == 'OK':
+                continue
+                #return _error('Ошибка запроса')
+            data_array = data_array['content'].decode('utf-8')
+
+            playlist = data_array[data_array.find('playerOptions'):]
+            playlist = playlist[:playlist.find('};')]
+            playlist = playlist.split('ad: [')
+
+            for node in playlist:
+                if not node.find('sources:') > -1:
+                    continue
+                node = node[node.find('sources')+7:]
+
+                src = node[node.find('src":"')+6:]
+                src = src[:src.find('"')]
+                src = src.replace(r'\u0026', '&')
+
+                title = node[node.find('title: "')+8:]
+                title = title[:title.find('"')]
+
+                videodata.append(
+                    {'title': title, 'src': src}
+                )
 
         meta_info = self.database.get_metainfo(unique_imdb = self.params['id'])
-    
-        html2 = self.network.get_html(url=player_url)
 
-        data_array = html2[html2.find('new Playerjs(')+13:]
-        data_array = data_array[:data_array.find(');')]
-
-        try:
-            files = json.loads(data_array)
-        except:
-            files = self.normailze_json(data_array)
-            files = json.dumps(files)
-            files = json.loads(files)
-
-        if 'title' in files:
-            file_title = files['title']
-            file_url = files['file']
-            file_url = file_url.replace('\/','/')
-
-            self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
-        else:
-            files = files['file']
-
-            if 'folder' in files[0]:
-                for f in files:
-                    folder_title = f['title']
-                    self.create_line(title=folder_title)
-
-                    folder_files = f['folder']
-
-                    for node in folder_files:
-                        file_title = node['title']
-                        file_url = node['file']
-                        file_url = file_url.replace('\/','/')
-
-
-                        self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
-            
-            else:
-                for i in files:
-                    file_title = i['title']
-                    file_url = i['file']
-                    file_url = file_url.replace('\/','/')
-
-                    self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
+        for vd in videodata:
+            self.create_line(title=vd['title'], params={'mode': 'play_part', 'param': vd['src']}, meta_info=meta_info, folder=False)
 
         xbmcplugin.endOfDirectory(handle, succeeded=True)
+
+    # def exec_select_part(self):
+    #     url = self.params['url']
+
+    #     html = self.network.get_html(url=url)
+
+    #     if not html:
+    #         self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
+    #         return
+
+    #     if not '<iframe data-src="' in html:
+    #         self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
+    #         return
+
+    #     player_links = self.create_players(data=html)
+    #     player_choice = addon.getSetting('player')
+
+    #     if '0' in player_choice:
+    #         player_url = player_links['cdnvideohub']
+    #         if not player_url:
+    #             player_url = player_links['redheadsound']
+
+    #     if '1' in player_choice:
+    #         player_url = player_links['redheadsound']
+    #         if not player_url:
+    #             player_url = player_links['cdnvideohub']
+
+    #     meta_info = self.database.get_metainfo(unique_imdb = self.params['id'])
+    
+    #     html2 = self.network.get_html(url=player_url)
+
+    #     data_array = html2[html2.find('new Playerjs(')+13:]
+    #     data_array = data_array[:data_array.find(');')]
+
+    #     try:
+    #         files = json.loads(data_array)
+    #     except:
+    #         files = self.normailze_json(data_array)
+    #         files = json.dumps(files)
+    #         files = json.loads(files)
+
+    #     if 'title' in files:
+    #         file_title = files['title']
+    #         file_url = files['file']
+    #         file_url = file_url.replace('\/','/')
+
+    #         self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
+    #     else:
+    #         files = files['file']
+
+    #         if 'folder' in files[0]:
+    #             for f in files:
+    #                 folder_title = f['title']
+    #                 self.create_line(title=folder_title)
+
+    #                 folder_files = f['folder']
+
+    #                 for node in folder_files:
+    #                     file_title = node['title']
+    #                     file_url = node['file']
+    #                     file_url = file_url.replace('\/','/')
+
+
+    #                     self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
+            
+    #         else:
+    #             for i in files:
+    #                 file_title = i['title']
+    #                 file_url = i['file']
+    #                 file_url = file_url.replace('\/','/')
+
+    #                 self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
+
+    #     xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def process_url(self, raw_url):
         playlist = {}
@@ -839,7 +899,7 @@ class RedHeadSound:
             return playlist[user_value]
         else:
             quality = list(playlist.keys())
-            res = self.dialog.select(u'Доступное качество', list(playlist.keys()))
+            res = self.dialog.select('Доступное качество', list(playlist.keys()))
 
             if res == -1:
                 return False
@@ -850,21 +910,22 @@ class RedHeadSound:
             return quality_url
 #========================#========================#========================#
     def exec_play_part(self):
-        video_url = self.process_url(raw_url=self.params['param'])
+        #video_url = self.process_url(raw_url=self.params['param'])
 
+        video_url = self.params['param']
         if not video_url:
             return
-        
+
         li = xbmcgui.ListItem(path=video_url)
 
         if '0' in addon.getSetting('inputstream_adaptive'):
             li.setProperty('inputstream', "inputstream.adaptive")
             li.setProperty('inputstream.adaptive.manifest_type', 'hls')
-            li.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
+            #li.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
 
-            #li.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
+            li.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
 
-            li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
+            #li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
         xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=li)
