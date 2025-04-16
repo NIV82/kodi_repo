@@ -918,14 +918,29 @@ class RedHeadSound:
 
         li = xbmcgui.ListItem(path=video_url)
 
+# quality_sheme = {
+#     #'sd': '480p',
+#     'sd' : '640p',
+#     #'hd': '720p',
+#     'fhd': '1080p',
+#     #'2k': '2K',
+#     #'2k': '1440p',
+#     #'4k': '4K'
+# }
+
         if '0' in addon.getSetting('inputstream_adaptive'):
             li.setProperty('inputstream', "inputstream.adaptive")
-            li.setProperty('inputstream.adaptive.manifest_type', 'hls')
-            #li.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
+            #li.setProperty('inputstream.adaptive.manifest_type', 'hls')
 
-            li.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
+            if addon.getSetting('quality') == 'AUTO':
+                li.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
+            elif addon.getSetting('quality') == 'SELECT':
+                li.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
+            else:
+                q = addon.getSetting('quality').lower()
+                li.setProperty('inputstream.adaptive.chooser_resolution_max', q)
+                li.setProperty('inputstream.adaptive.chooser_resolution_secure_max', q)
 
-            #li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
         xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=li)
