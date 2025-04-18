@@ -91,7 +91,8 @@ class RedHeadSound:
 
         self.proxy_data = None
         #self.proxy_data = self.create_proxy_data()
-        self.site_url = self.create_site_url()
+        #self.site_url = self.create_site_url()
+        self.site_url = 'https://redheadsound.studio/'
 
         if os.path.exists(os.path.join(self.database_dir, 'redheadsound.db')):
             try:
@@ -116,15 +117,15 @@ class RedHeadSound:
         self.database = DataBase(os.path.join(self.database_dir, 'rhs_tmdb.db'))
         del DataBase
 #========================#========================#========================#
-    def create_site_url(self):
-        site_url = addon.getSetting('mirror_0')
-        current_mirror = 'mirror_{}'.format(addon.getSetting('mirror_mode'))
-        current_url = addon.getSetting(current_mirror)
+    # def create_site_url(self):
+    #     site_url = addon.getSetting('mirror_0')
+    #     current_mirror = 'mirror_{}'.format(addon.getSetting('mirror_mode'))
+    #     current_url = addon.getSetting(current_mirror)
 
-        if not current_url:
-            return site_url
-        else:
-            return current_url
+    #     if not current_url:
+    #         return site_url
+    #     else:
+    #         return current_url
 #========================#========================#========================#
     def create_database(self):
         try:
