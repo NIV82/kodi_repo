@@ -7,41 +7,30 @@ from urllib.request import build_opener
 from urllib.request import Request
 from urllib.request import urlopen
 from http.cookiejar import MozillaCookieJar
+from urllib.parse import urlencode
 
 socket.setdefaulttimeout(3)
 
-def get_web(url, post=None, bytes=True):
-    if post:
-        try:
-            post = post.encode(encoding='utf-8')
-        except:
-            pass
+# def data_print(data):
+#     import xbmc
+#     xbmc.log(str(data), xbmc.LOGFATAL)
 
-    try:
-        request = Request(url=url, data=post)
-        request.add_header(
-            'User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0')
-        content = urlopen(request)
-        html = content.read()
-        content.close()
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36 OPR/46.0.2597.39',
+}
 
-        if not bytes:
-            try:
-                html = html.decode(encoding='utf-8', errors='replace')
-            except:
-                pass
-
-        return html
-    except:
-        return False
+def set_headers(headers):
+    HEADERS.clear()
+    HEADERS.update(headers)
 
 class WebTools:
-    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, portal=None):
-        self.headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0'}
-        if portal:
-            if 'shizaproject' in portal:
-                self.headers['Content-Type'] = 'application/json'
-        self.portal = portal
+    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
+        # self.headers = {
+        #     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36 OPR/46.0.2597.39',
+        #     }
+        #self.headers.update(headers)
+        #data_print(self.headers)
+
         self.auth_usage = auth_usage
         self.proxy_data = proxy_data
 
@@ -55,95 +44,48 @@ class WebTools:
         else:
             self.url_opener = build_opener(ProxyHandler(self.proxy_data))
 
-    def get_html(self, url, post=None):
-        if self.auth_usage and not self.auth_check():
+    def get_bytes(self, url=None, post=None):
+        """GET BYTE-DATA IMPLEMENTATION"""
+        if url is None:
             return None
 
-        try:
-            post = post.encode(encoding='utf-8')
-        except:
-            pass
+        if post:
+            post = urlencode(post)
+            post = post.replace('%27','%22')
+            post = post.encode('utf-8')
 
         try:
-            request = Request(url=url, data=post, headers=self.headers)
+            # request = Request(url=url, data=post, headers=self.headers)
+            request = Request(url=url, data=post, headers=HEADERS)
             connection = self.url_opener.open(request)
 
             data = connection.read()
+
+            content_encoding = connection.getheader('Content-Encoding')
+            content_type = connection.getheader('Content-Type')
+            connection_status = connection.status
+            connection_reason = connection.reason
+
             connection.close()
 
-            try:
-                data = data.decode(encoding='utf-8', errors='replace')
-            except:
-                pass
-            return data
+            result = {
+                'content_type': content_type,
+                'content_encoding': content_encoding,
+                'connection_status': connection_status,
+                'connection_reason': connection_reason,
+                'content': data
+            }
 
-        except:
-            return False
-        
-    def get_bytes(self, url, post=None):
-        try:
-            post = post.encode(encoding='utf-8')
-        except:
-            pass
+            return result
+        except Exception as err: # pylint: disable=broad-except
+            return err
 
-        try:
-            request = Request(url=url, data=post, headers=self.headers)
-            connection = self.url_opener.open(request)
-
-            data = connection.read()
-            connection.close()
-
-            return data
-        except:
-            return False
-            
     def get_file(self, url, post=None, destination_name=None):
         try:
-            url = self.url_opener.open(Request(url=url, data=post, headers=self.headers))
+            # url = self.url_opener.open(Request(url=url, data=post, headers=self.headers))
+            url = self.url_opener.open(Request(url=url, data=post, headers=HEADERS))
             with open(destination_name, 'wb') as write_file:
                 write_file.write(url.read())
             return destination_name
         except:
             return False
-
-    def auth_check(self):
-        if self.portal == None:
-            return False
-        if 'anidub' in self.portal:
-            return self.anidub_authorization()
-        return
-
-    def anidub_authorization(self):
-        if not self.auth_usage or not self.sid_file or not self.auth_url:
-            return False
-
-        try:
-            post_data = bytes(self.auth_post_data, encoding='utf-8')
-        except:
-            post_data = self.auth_post_data
-
-        if self.auth_status:
-            try:
-                self.mcj.load(self.sid_file)
-                if 'dle_user_id' in str(self.mcj):
-                    auth = True
-                else:
-                    auth = False
-            except:
-                self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-                if 'dle_user_id' in str(self.mcj):
-                    auth = True
-                else:
-                    auth = False
-                self.mcj.save(self.sid_file)
-        else:
-            self.url_opener.open(Request(self.auth_url, post_data, self.headers))
-            if 'dle_user_id' in str(self.mcj):
-                auth = True
-            else:
-                auth = False
-            self.mcj.save(self.sid_file)
-
-        self.auth_status = auth
-        
-        return auth

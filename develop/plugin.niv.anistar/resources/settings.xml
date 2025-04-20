@@ -9,7 +9,7 @@
     <setting id="as_password" type="text" label="Пароль:" default="" option="hidden" subsetting="true" visible="eq(-2,1)" />
     <setting type="sep"/>
     <setting id="as_playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" enable="false"/>
-    <setting id="as_quality" type="select" label="Качество по умолчанию:" default="720" values="720|360" />
+    <setting id="quality" type="select" label="Качество по умолчанию:" default="HD" values="SD|HD" />
     <setting id="as_dubbing" type="enum" label="Озвучка по умолчанию:" default="0" values="Все|Одноголосая|Многоголосая"/>
     <setting id="as_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" />
     <setting id="as_adult" label="Контент 18+ :" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" />

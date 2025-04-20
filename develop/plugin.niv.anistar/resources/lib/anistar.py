@@ -20,6 +20,9 @@ from urllib.parse import parse_qs
 from urllib.parse import unquote
 from html import unescape
 
+import schemes
+import network
+
 handle = int(sys.argv[1])
 xbmcplugin.setContent(handle, 'tvshows')
 addon = xbmcaddon.Addon(id='plugin.niv.anistar')
@@ -71,10 +74,11 @@ class Anistar:
         self.adult = self.create_adult()
 #========================#========================#========================#
         from network import WebTools
-        self.network = WebTools()
+        self.network = WebTools(
+            #headers={'Referer' : self.site_url}
+        )
         del WebTools
 #========================#========================#========================#
-
     def create_site_url(self):
         current_mirror = f"as_mirror{addon.getSetting('as_mirrormode')}"
 
@@ -431,12 +435,12 @@ class Anistar:
 
             html = self.network.get_bytes(url=url, post=post_data)
 
-            if not html:
-                self.create_line(title='Ошибка получения данных', folder=False)
+            if not html['connection_reason'] == 'OK':
+                self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
                 xbmcplugin.endOfDirectory(handle, succeeded=True)
                 return
             
-            html = html.decode('windows-1251').encode('utf-8')
+            html = html['content'].decode('windows-1251').encode('utf-8')
             html = html.decode('utf-8')
 
             data_array = html[html.find('title_left">')+12:]
@@ -491,12 +495,12 @@ class Anistar:
         url = '{}/raspisanie-vyhoda-seriy-ongoingov.html'.format(self.site_url)
         html = self.network.get_bytes(url=url)
         
-        if not html:
-            self.create_line(title='Ошибка получения данных', folder=False)
+        if not html['connection_reason'] == 'OK':
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
             
-        html = html.decode('windows-1251').encode('utf-8')
+        html = html['content'].decode('windows-1251').encode('utf-8')
         html = html.decode('utf-8')
 
         week_title = []
@@ -560,12 +564,12 @@ class Anistar:
 
         html = self.network.get_bytes(url=url)
 
-        if not html:
-            self.create_line(title='Ошибка получения данных', folder=False)
+        if not html['connection_reason'] == 'OK':
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
         
-        html = html.decode('windows-1251').encode('utf-8')
+        html = html['content'].decode('windows-1251').encode('utf-8')
         html = html.decode('utf-8')
 
         data_array = html[html.find('title_left">')+12:]
@@ -639,105 +643,167 @@ class Anistar:
 
         html = self.network.get_bytes(url=url)
 
-        if not html:
-            self.create_line(title='Ошибка получения данных', folder=False)
+        if not html['connection_reason'] == 'OK':
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
-        
-        html = html.decode('windows-1251').encode('utf-8')
-        html = html.decode('utf-8')
 
-        if 'vid_2" style="display:block;"><iframe src="' in html:
-            video_url = html[html.find('<iframe src="')+13:]
-            video_url = video_url[:video_url.find('"')]
-            video_url = '{}{}'.format(self.site_url, video_url)
-        elif 'id="vid_5"><iframe src="' in html:
-            video_url = html[html.find('id="vid_5"><iframe src="')+24:]
-            video_url = video_url[:video_url.find('"')]
-            if 'youtube.com' in video_url:
-                self.create_line(title='youtube ссылка - обработчик пока отсутствует', folder=False)
-                xbmcplugin.endOfDirectory(handle)
-                return
-        else:
-            self.create_line(title='Онлайн ссылки не обраружены', folder=False)
-            xbmcplugin.endOfDirectory(handle)
-            return
+        html = html['content']
 
-        html = self.network.get_html(url=video_url)
+        video_url = ''
+        if b'vid_2" style="display:block;"><iframe src="' in html:
+            video_url = html[html.find(b'<iframe src="')+13:]
+            video_url = video_url[:video_url.find(b'"')]
+            video_url = video_url.decode('utf-8')
+            video_url = f'{self.site_url}{video_url}'
 
-        if not html:
-            self.create_line(title='Ошибка получения данных', folder=False)
+        if not video_url:
+            self.create_line(title='Нет ссылки на видео', params={'mode': self.params['mode']})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
-        
-        data_array = html[html.find('playlst=[')+9:]
-        data_array = data_array[:data_array.find('];')]
-        data_array = data_array[:data_array.rfind('},')]
+
+        html = self.network.get_bytes(url=video_url)
+
+        if not html['connection_reason'] == 'OK':
+            self.create_line(title='Ошибка получения плейлиста', params={'mode': 'main_part'})
+            xbmcplugin.endOfDirectory(handle, succeeded=True)
+            return
+
+        html = html['content']
+
+        playlist_array = []
+
+        data_array = html[html.find(b'playlst=[')+9:]
+        data_array = data_array[:data_array.find(b'];')]
+        data_array = data_array[:data_array.rfind(b'},')]
+        data_array = data_array.decode('utf-8')
         data_array = data_array.split('},')
 
-        if len(data_array) < 1:
-            self.create_line(title='Контент отсутствует', folder=False)
-            xbmcplugin.endOfDirectory(handle, succeeded=True)
-            return
+        for data in data_array:
+            pl = _parse_playlistdata(pldata=data)
+            playlist_array.append(pl)
+
+        for node in playlist_array:
+            self.create_line(
+                title=node['title'],
+                anime_id=self.params['id'],
+                params={
+                    'mode': 'play_part',
+                    'param': node['file'] or node['file_h'],
+                    'id': self.params['id']
+                    },
+                folder=False,
+                **info
+                )
+
+        xbmcplugin.endOfDirectory(handle, succeeded=True)
+
+    # def exec_online_part(self):
+    #     info = json.loads(self.params['param'])
+
+    #     url = '{}/index.php?newsid={}'.format(self.site_url, self.params['id'])
+
+    #     html = self.network.get_bytes(url=url)
+
+    #     if not html:
+    #         self.create_line(title='Ошибка получения данных', folder=False)
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
+    #         return
         
-        current_quality = (addon.getSetting('as_quality'))
-        dubs = addon.getSetting('as_dubbing')
+    #     html = html.decode('windows-1251').encode('utf-8')
+    #     html = html.decode('utf-8')
 
-        try:
-            for data in data_array:
-                try:
-                    title = data[data.find('title:"')+7:]
-                    title = title[:title.find('"')]
+    #     if 'vid_2" style="display:block;"><iframe src="' in html:
+    #         video_url = html[html.find('<iframe src="')+13:]
+    #         video_url = video_url[:video_url.find('"')]
+    #         video_url = '{}{}'.format(self.site_url, video_url)
+    #     elif 'id="vid_5"><iframe src="' in html:
+    #         video_url = html[html.find('id="vid_5"><iframe src="')+24:]
+    #         video_url = video_url[:video_url.find('"')]
+    #         if 'youtube.com' in video_url:
+    #             self.create_line(title='youtube ссылка - обработчик пока отсутствует', folder=False)
+    #             xbmcplugin.endOfDirectory(handle)
+    #             return
+    #     else:
+    #         self.create_line(title='Онлайн ссылки не обраружены', folder=False)
+    #         xbmcplugin.endOfDirectory(handle)
+    #         return
 
-                    dubb = data[data.find('type_dub:')+9:]
-                    dubb = dubb[:dubb.find(',')]
-                    dubb = dubb.replace('\'','').strip()
+    #     html = self.network.get_html(url=video_url)
 
-                    if '1' in dubs:
-                        if '2' in dubb:
-                            continue
-                    elif '2' in dubs:
-                        if '1' in dubb:
-                            continue
-                    else:
-                        pass
+    #     if not html:
+    #         self.create_line(title='Ошибка получения данных', folder=False)
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
+    #         return
+        
+    #     data_array = html[html.find('playlst=[')+9:]
+    #     data_array = data_array[:data_array.find('];')]
+    #     data_array = data_array[:data_array.rfind('},')]
+    #     data_array = data_array.split('},')
+
+    #     if len(data_array) < 1:
+    #         self.create_line(title='Контент отсутствует', folder=False)
+    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
+    #         return
+        
+    #     current_quality = (addon.getSetting('as_quality'))
+    #     dubs = addon.getSetting('as_dubbing')
+
+    #     try:
+    #         for data in data_array:
+    #             try:
+    #                 title = data[data.find('title:"')+7:]
+    #                 title = title[:title.find('"')]
+
+    #                 dubb = data[data.find('type_dub:')+9:]
+    #                 dubb = dubb[:dubb.find(',')]
+    #                 dubb = dubb.replace('\'','').strip()
+
+    #                 if '1' in dubs:
+    #                     if '2' in dubb:
+    #                         continue
+    #                 elif '2' in dubs:
+    #                     if '1' in dubb:
+    #                         continue
+    #                 else:
+    #                     pass
                     
-                    video_quality = {'360':'', '720':''}
+    #                 video_quality = {'360':'', '720':''}
 
-                    file_url = data[data.find('file:"')+6:]
-                    file_url = unquote(file_url)
+    #                 file_url = data[data.find('file:"')+6:]
+    #                 file_url = unquote(file_url)
 
-                    if '360=' in file_url:
-                        q = file_url[file_url.find('360=')+4:]
-                        q = q[:q.find('&')]
-                        video_quality['360'] = q
+    #                 if '360=' in file_url:
+    #                     q = file_url[file_url.find('360=')+4:]
+    #                     q = q[:q.find('&')]
+    #                     video_quality['360'] = q
 
-                        if '720=' in file_url:
-                            video_quality['720'] = q.replace('360','720')
+    #                     if '720=' in file_url:
+    #                         video_quality['720'] = q.replace('360','720')
 
-                    label = u'{}'.format(title)
+    #                 label = u'{}'.format(title)
 
-                    if video_quality[current_quality]:
-                        episode_hls = video_quality[current_quality]
-                    elif video_quality['720']:
-                        episode_hls = video_quality['720']
-                        label = u'{} | 720'.format(label)
-                    elif video_quality['360']:
-                        episode_hls = video_quality['360']
-                        label = u'{} | 360'.format(label)
-                    else:
-                        self.create_line(title='Ссылка для проигрывателя не обнаружена', folder=False)
-                        xbmcplugin.endOfDirectory(handle)
-                        continue
+    #                 if video_quality[current_quality]:
+    #                     episode_hls = video_quality[current_quality]
+    #                 elif video_quality['720']:
+    #                     episode_hls = video_quality['720']
+    #                     label = u'{} | 720'.format(label)
+    #                 elif video_quality['360']:
+    #                     episode_hls = video_quality['360']
+    #                     label = u'{} | 360'.format(label)
+    #                 else:
+    #                     self.create_line(title='Ссылка для проигрывателя не обнаружена', folder=False)
+    #                     xbmcplugin.endOfDirectory(handle)
+    #                     continue
 
-                    self.create_line(title=label, anime_id=self.params['id'], params={'mode': 'play_part', 'param': episode_hls, 'id': self.params['id']}, folder=False, **info)
-                except:
-                    self.create_line(title='Ошибка обработки строки - сообщите автору')
-        except:
-            self.create_line(title='Ошибка обработки блока - сообщите автору')
+    #                 self.create_line(title=label, anime_id=self.params['id'], params={'mode': 'play_part', 'param': episode_hls, 'id': self.params['id']}, folder=False, **info)
+    #             except:
+    #                 self.create_line(title='Ошибка обработки строки - сообщите автору')
+    #     except:
+    #         self.create_line(title='Ошибка обработки блока - сообщите автору')
 
-        xbmcplugin.endOfDirectory(handle)
-        return
+    #     xbmcplugin.endOfDirectory(handle)
+    #     return
 #========================#========================#========================#
     def exec_torrent_part(self):
         info = json.loads(self.params['param'])
@@ -746,12 +812,12 @@ class Anistar:
 
         html = self.network.get_bytes(url=url)
 
-        if not html:
-            self.create_line(title='Ошибка получения данных', folder=False)
+        if not html['connection_reason'] == 'OK':
+            self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
-        html = html.decode('windows-1251').encode('utf-8')
+        html = html['content'].decode('windows-1251').encode('utf-8')
         html = html.decode('utf-8')
 
         if not '<div class="title">' in html:
@@ -814,18 +880,84 @@ class Anistar:
         xbmcplugin.endOfDirectory(handle)
         return
 #========================#========================#========================#
-    def exec_play_part(self):
-        li = xbmcgui.ListItem(path=self.params['param'])
+    def _parse_playurl(self, data):
+        if data.endswith('&type=.mp4'):
+            data = data[:-10]
 
-        if '0' in addon.getSetting('as_inputstream'):
+        vsd = data[data.find('360=')+4:]
+        vsd = vsd[:vsd.find('&')]
+
+        vhd = data[data.find('720=')+4:]
+        vhd = f"{vhd}|Referer:{self.site_url}"
+
+        return {'SD': vsd, 'HD': vhd}
+
+#========================#========================#========================#
+    def exec_play_part(self):
+        parse_url = self._parse_playurl(self.params['param'])
+        video_url = parse_url[addon.getSetting('quality')]
+
+        li = xbmcgui.ListItem(path=video_url)
+
+        if '0' in addon.getSetting('inputstream_adaptive'):
             li.setProperty('inputstream', "inputstream.adaptive")
-            li.setProperty('inputstream.adaptive.manifest_type', 'hls')
-            li.setProperty('inputstream.adaptive.stream_selection_type', 'adaptive')
-            li.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
+            li.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
 
         xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=li)
 #========================#========================#========================#
+
+
+def _parse_value(value=None):
+    value = value[value.find(':')+1:]
+    value = value[:value.rfind(',')]
+    value = value.replace('"','').replace("'",'')
+    value = value.strip()
+
+    return value
+
+def _parse_playlistdata(pldata=None):
+    #for pld in playlistdata:
+        #if 'title:'
+    playlist = schemes.playlist_scheme.copy()
+
+    pldata = pldata.splitlines()
+    for pld in pldata:
+        if pld.find('title:') > -1:
+            playlist['title'] = _parse_value(pld)
+
+        if pld.find('media_id:') > -1:
+            playlist['media_id'] = _parse_value(pld)
+
+        if pld.find('image:') > -1:
+            playlist['image'] = _parse_value(pld)
+
+        if pld.find('other_hd:') > -1:
+            playlist['other_hd'] = _parse_value(pld)
+
+        if pld.find('other_2:') > -1:
+            playlist['other_2'] = _parse_value(pld)
+
+        if pld.find('type_dub:') > -1:
+            playlist['type_dub'] = _parse_value(pld)
+
+        if pld.find('cdn:') > -1:
+            playlist['cdn'] = _parse_value(pld)
+
+        if pld.find('to_skeep_ad:') > -1:
+            playlist['to_skeep_ad'] = _parse_value(pld)
+
+        if pld.find('viewing:') > -1:
+            playlist['viewing'] = _parse_value(pld)
+
+        if pld.find('file:') > -1:
+            playlist['file'] = _parse_value(pld)
+
+        if pld.find('file_h:') > -1:
+            playlist['file_h'] = _parse_value(pld)
+
+    return playlist
+
 def start():
     anistar = Anistar()
     anistar.execute()
