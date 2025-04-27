@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
+"""WEB TOOLS"""
 
+#import gzip
 import socket
 from urllib.request import ProxyHandler
 from urllib.request import HTTPCookieProcessor
 from urllib.request import build_opener
 from urllib.request import Request
-from urllib.request import urlopen
-from http.cookiejar import MozillaCookieJar
+#from urllib.request import urlopen
 from urllib.parse import urlencode
+#from urllib.parse import quote
+from http.cookiejar import MozillaCookieJar
 
-socket.setdefaulttimeout(3)
+#from .brotli_decoder import brotlipython
 
-# def data_print(data):
-#     import xbmc
-#     xbmc.log(str(data), xbmc.LOGFATAL)
+socket.setdefaulttimeout(4)
 
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36 OPR/46.0.2597.39',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 YaBrowser/25.2.0.0 Safari/537.36',
 }
 
 def set_headers(headers):
@@ -24,19 +25,15 @@ def set_headers(headers):
     HEADERS.update(headers)
 
 class WebTools:
+    """WEB TOOLS IMPLEMENTATION"""
     def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
-        # self.headers = {
-        #     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36 OPR/46.0.2597.39',
-        #     }
-        #self.headers.update(headers)
-        #data_print(self.headers)
-
         self.auth_usage = auth_usage
         self.proxy_data = proxy_data
 
         if self.auth_usage:
             self.mcj = MozillaCookieJar()
-            self.url_opener = build_opener(HTTPCookieProcessor(self.mcj), ProxyHandler(self.proxy_data))
+            self.url_opener = build_opener(
+                HTTPCookieProcessor(self.mcj), ProxyHandler(self.proxy_data))
             self.auth_status = auth_status
             self.sid_file = None
             self.auth_url = None
@@ -55,7 +52,6 @@ class WebTools:
             post = post.encode('utf-8')
 
         try:
-            # request = Request(url=url, data=post, headers=self.headers)
             request = Request(url=url, data=post, headers=HEADERS)
             connection = self.url_opener.open(request)
 
@@ -67,6 +63,20 @@ class WebTools:
             connection_reason = connection.reason
 
             connection.close()
+
+            # if content_encoding == 'br':
+            #     try:
+            #         data = brotli_dec(data=data)
+            #         content_encoding = 'br_decoded'
+            #     except Exception as err: # pylint: disable=broad-except
+            #         connection_reason = f"br_decode error | {err}"
+
+            # if content_encoding == 'gzip':
+            #     try:
+            #         data = gzip.decompress(data).decode("utf-8")
+            #         content_encoding = 'gzip-encoded'
+            #     except Exception as err: # pylint: disable=broad-except
+            #         connection_reason = f"gzip-decode error | {err}"
 
             result = {
                 'content_type': content_type,
@@ -80,12 +90,12 @@ class WebTools:
         except Exception as err: # pylint: disable=broad-except
             return err
 
-    def get_file(self, url, post=None, destination_name=None):
+    def get_file(self, url, post=None, fpath=None):
+        """GET BYTE-DATA IMPLEMENTATION"""
         try:
-            # url = self.url_opener.open(Request(url=url, data=post, headers=self.headers))
-            url = self.url_opener.open(Request(url=url, data=post, headers=HEADERS))
-            with open(destination_name, 'wb') as write_file:
+            url = self.url_opener.open(Request(url=url, data=post, headers=self.headers))
+            with open(fpath, 'wb') as write_file:
                 write_file.write(url.read())
-            return destination_name
-        except:
-            return False
+            return fpath
+        except Exception as err: # pylint: disable=broad-except
+            return err

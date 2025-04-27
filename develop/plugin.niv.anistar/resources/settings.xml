@@ -10,6 +10,7 @@
     <setting type="sep"/>
     <setting id="as_playmode" type="enum" label="По умолчанию включать:" default="0" values="Online Ссылки|Torrent Ссылки" enable="false"/>
     <setting id="quality" type="select" label="Качество по умолчанию:" default="HD" values="SD|HD" />
+    <setting id="vkquality" type="select" label="Качество VK видео по умолчанию:" default="HD" values="SD|HD|FHD|HLS" />
     <setting id="as_dubbing" type="enum" label="Озвучка по умолчанию:" default="0" values="Все|Одноголосая|Многоголосая"/>
     <setting id="as_inputstream" type="enum" label="InputStream Adaptive:" default="0" values="[COLOR=blue][B]Включено[/B][/COLOR]|[COLOR=red][B]Выключено[/B][/COLOR]" />
     <setting id="as_adult" label="Контент 18+ :" type="enum" default="0" values="[COLOR=red][B]Выключено[/B][/COLOR]|[COLOR=blue][B]Включено[/B][/COLOR]" />
@@ -17,7 +18,7 @@
     <setting type="sep"/>
     <setting id="as_mirrormode" type="enum" label="Выбрать адрес:" default="1" values="Базовый сайт|Зеркало" />
     <setting id="as_mirror0" type="text" label="Адрес:" default="anistar.org" subsetting="true" visible="eq(-1,0)" />
-    <setting id="as_mirror1" type="text" label="Адрес:" default="v6.astar.bz" subsetting="true" visible="eq(-2,1)"/>
+    <setting id="as_mirror1" type="text" label="Адрес:" default="v7.astar.bz" subsetting="true" visible="eq(-2,1)"/>
     <setting id="as_mirrortime" type="text" label="mirrortime" default="" visible="false"/>
     <setting id="as_search" label="status" type="text" default="" visible="false"/>
     <!-- <setting type="sep"/>
