@@ -56,7 +56,9 @@ class Anilibria:
         if not os.path.exists(self.torrents_dir):
             os.mkdir(self.torrents_dir)
 
-        self.alapi = ALAPI()
+        self.alapi = ALAPI(
+            base_url=_assemble_siteurl()
+            )
 
     def exec_main_part(self):
         """MAIN MENU"""
@@ -682,6 +684,19 @@ def _pagination(pages=None):
         }
 
     return node
+
+def _assemble_siteurl():
+    """ASSEMBLE SITE_URL"""
+    current_mirror = f"mirror_{addon.getSetting('mirrormode')}"
+
+    if not addon.getSetting(current_mirror):
+        select_url = addon.getSetting('mirror_0')
+    else:
+        select_url = addon.getSetting(current_mirror)
+
+    select_url = f"https://{select_url}"
+
+    return select_url
 
 def _node(item=None):
     node_scheme = kodi_schemes.node_scheme.copy()
