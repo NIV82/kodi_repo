@@ -18,6 +18,7 @@ from urllib.parse import unquote
 from html import unescape
 
 import vkparse
+import kodikparse
 import schemes
 import network
 
@@ -647,6 +648,7 @@ class Anistar:
         info = json.loads(self.params['param'])
 
         url = '{}/index.php?newsid={}'.format(self.site_url, self.params['id'])
+        # url='https://v7.astar.bz/3938-za-gorizontom-log-horizon.html'
 
         html = self.network.get_bytes(url=url)
 
@@ -663,6 +665,9 @@ class Anistar:
 
         if html.find(b'<div class="video_as" id="vid1"  style="') > -1:
             playlist_array = self._parse_vkplayer(mpdata=html)
+
+        if html.find(b'vid_5"><iframe src="') > -1:
+            playlist_array = self._parse_kodikplayer(mpdata=html)
 
         for node in playlist_array:
             self.create_line(
@@ -978,6 +983,35 @@ class Anistar:
             playlist_array.append(pl)
 
         return playlist_array
+
+    def _parse_kodikplayer(self, mpdata):
+        pl_link = mpdata[mpdata.find(b'vid_5"><iframe src="')+20:]
+        pl_link = pl_link[:pl_link.find(b'"')]
+        pl_link = pl_link.decode('utf-8')
+        if pl_link.endswith('&episode=1'):
+            pl_link = pl_link[0:len(pl_link)-10]
+        if not pl_link.startswith('https:'):
+            pl_link = f"https:{pl_link}"
+
+        kodik_host = _parse_url(pl_link)
+
+        tbox = kodikparse.get_translate_box(url=pl_link)
+
+        trlist = [trlabel['title'] for trlabel in tbox]
+
+        dialog = xbmcgui.Dialog()
+        ret = dialog.select('Выбор Озвучки', trlist)
+
+        t = [node for node in tbox if trlist[ret] == node['title']]
+
+        if t:
+            t = t[0]
+
+        serial_url = f"https://{kodik_host}/serial/{t['media_id']}/{t['media_hash']}/720p?uid=R64WBn"
+
+        playlist = kodikparse.get_playlist_box(serial_url)
+
+        return playlist
 #========================#========================#========================#
     def _parse_playurl(self, data):
         if data.endswith('&type=.mp4'):
@@ -996,6 +1030,10 @@ class Anistar:
             vkp = vkparse.ParseVK(vkvideo_url=link)
             return vkp.get_playdata()
 
+        if 'kodik.' in link:
+            vkp = kodikparse.get_playurl(url=link)
+            return vkp
+
         parse_url = self._parse_playurl(link)
         return parse_url
 
@@ -1010,6 +1048,13 @@ class Anistar:
 
         if video_playdata['type'] == 'mainplayer':
             video_url = video_playdata[addon.getSetting('quality')]
+
+        if video_playdata['type'] == 'kodik':
+            quality = addon.getSetting('kodikquality')
+            if not quality:
+                quality = '720'
+
+            video_url = video_playdata[quality]
 
         li = xbmcgui.ListItem(path=video_url)
 
@@ -1101,6 +1146,13 @@ def _parse_vkplaylist(pldata=None):
         playlist_array.append(pls)
 
     return playlist_array
+
+def _parse_url(url):
+    if url.startswith('https://'):
+        url = url[8:]
+
+    url = url.split('/')
+    return url[0]
 
 def start():
     anistar = Anistar()
