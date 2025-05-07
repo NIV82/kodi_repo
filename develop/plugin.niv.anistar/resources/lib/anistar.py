@@ -647,8 +647,8 @@ class Anistar:
     def exec_online_part(self):
         info = json.loads(self.params['param'])
 
-        #url = '{}/index.php?newsid={}'.format(self.site_url, self.params['id'])
-        url='https://v7.astar.bz/3938-za-gorizontom-log-horizon.html'
+        url = '{}/index.php?newsid={}'.format(self.site_url, self.params['id'])
+        #url='https://v7.astar.bz/3938-za-gorizontom-log-horizon.html'
 
         html = self.network.get_bytes(url=url)
 
