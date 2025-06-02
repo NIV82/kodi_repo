@@ -3,7 +3,8 @@
 import os
 import sys
 #import time
-import json
+#import json
+import re
 
 import xbmc
 import xbmcgui
@@ -174,48 +175,7 @@ class RedHeadSound:
             self.dialog.notification(heading='Red Head Sound', message='Ошибка', icon=icon,time=1000,sound=False)
             pass
 #========================#========================#========================#
-    def create_players(self, data):
-        node_start = '<iframe data-src="'
-        node_end = '</iframe>'
-
-        if node_start in data:
-            data = data[data.find(node_start):]
-
-        start = data.find(node_start)
-        end = data.find(node_end)
-
-        result = []
-
-        while start < end and start > -1:
-            res = data[start:end+len(node_end)]
-            data = data.replace(res, '')
-
-            res = res[res.find('"')+1:]
-            res = res[:res.find('"')]
-
-            if 'player_mobile' in res: 
-                res = res[:res.find('?player')]
-
-                if res in result:
-                    pass
-                else:
-                    result.append(res)
-            else:
-                result.append(res)
-
-            start = data.find(node_start)
-            end = data.find(node_end)
-        
-        players = {'redheadsound':'', 'cdnvideohub':''}
-
-        for i in result:
-            if 'redheadsound' in i:
-                players['redheadsound'] = i
-            if 'cdnvideohub' in i:
-                players['cdnvideohub'] = i
-
-        return players
-    
+   
     # def create_proxy_data(self):
     #     if '0' in addon.getSetting('unblock'):
     #         return None
@@ -256,25 +216,25 @@ class RedHeadSound:
 
     #     return proxy_data
 #========================#========================#========================#
-    def normailze_json(self, data):
-        data = data.replace('\'','"')
-        data = data.splitlines()
+    # def normailze_json(self, data):
+    #     data = data.replace('\'','"')
+    #     data = data.splitlines()
 
-        result = ''
+    #     result = ''
 
-        for d in data:
-            if 'preroll' in d or 'pauseroll' in d or 'midroll' in d:
-                continue
-            if 'id:' in d:
-                d = d.replace('id:','"id":')
-            if 'file:' in d:
-                d = d.replace('file:','"file":')
+    #     for d in data:
+    #         if 'preroll' in d or 'pauseroll' in d or 'midroll' in d:
+    #             continue
+    #         if 'id:' in d:
+    #             d = d.replace('id:','"id":')
+    #         if 'file:' in d:
+    #             d = d.replace('file:','"file":')
             
-            result = '{}\n{}'.format(result,d)
+    #         result = '{}\n{}'.format(result,d)
 
-        result = eval(result)
+    #     result = eval(result)
 
-        return(result)
+    #     return(result)
 #========================#========================#========================#
     def create_arts(self, arts):
         if '0' in addon.getSetting('tmdb_images'):
@@ -316,30 +276,25 @@ class RedHeadSound:
 
             li.setArt(arts)
 
-            if sys.version_info.major < 3:
-                    li.setCast(cast)
-                    #info.update({'status': status})
-                    li.setInfo(type='video', infoLabels=info)
-            else:
-                videoinfo = li.getVideoInfoTag()
-                videoinfo.setTitle(info.get('title')) #title	string - Title.
-                videoinfo.setOriginalTitle(info.get('originaltitle')) #string - Original title.
-                videoinfo.setPlot(info.get('plot')) #plot	string - Plot
-                videoinfo.setTagLine(info.get('tagline')) #tagLine	string - Tagline
-                videoinfo.setStudios(info.get('studio')) #studios	list - Studios
-                videoinfo.setGenres(info.get('genre')) #genre	list - Genres.
-                videoinfo.setCountries(info.get('country')) #countries	list - Countries.
-                videoinfo.setWriters(info.get('credits')) #writers	list - Writers.
-                videoinfo.setDirectors(info.get('director')) #setDirectors(directors)
+            videoinfo = li.getVideoInfoTag()
+            videoinfo.setTitle(info.get('title')) #title	string - Title.
+            videoinfo.setOriginalTitle(info.get('originaltitle')) #string - Original title.
+            videoinfo.setPlot(info.get('plot')) #plot	string - Plot
+            videoinfo.setTagLine(info.get('tagline')) #tagLine	string - Tagline
+            videoinfo.setStudios(info.get('studio')) #studios	list - Studios
+            videoinfo.setGenres(info.get('genre')) #genre	list - Genres.
+            videoinfo.setCountries(info.get('country')) #countries	list - Countries.
+            videoinfo.setWriters(info.get('credits')) #writers	list - Writers.
+            videoinfo.setDirectors(info.get('director')) #setDirectors(directors)
                 #videoinfo.setYear() #year	integer - Year.
 
-                videoinfo.setPremiered(info.get('premiered')) #premiered	string - Premiere date
-                videoinfo.setTags(info.get('tag')) #tags	list - Tags
-                videoinfo.setMpaa(info.get('mpaa')) #mpaa	string - MPAA rating
-                videoinfo.setTrailer(info.get('trailer')) #[string] Trailer path
-                videoinfo.setDuration(info.get('duration')) #[unsigned int] Duration
+            videoinfo.setPremiered(info.get('premiered')) #premiered	string - Premiere date
+            videoinfo.setTags(info.get('tag')) #tags	list - Tags
+            videoinfo.setMpaa(info.get('mpaa')) #mpaa	string - MPAA rating
+            videoinfo.setTrailer(info.get('trailer')) #[string] Trailer path
+            videoinfo.setDuration(info.get('duration')) #[unsigned int] Duration
 
-                videoinfo.setCast(cast) ##actors	list - Cast / Actors
+            videoinfo.setCast(cast) ##actors	list - Cast / Actors
 
                 #videoinfo.setPlaycount(info['playcount'])
                 #videoinfo.setTvShowStatus(status)
@@ -407,11 +362,11 @@ class RedHeadSound:
 
         return
 #========================#========================#========================#
-    def exec_information_part(self):
-        update_info = '[B][COLOR=darkorange]Version 0.2.7[/COLOR][/B]\n\n\
-- Исправлен парсер ссылки imdb'
-        self.dialog.textviewer('Информация', update_info)
-        return
+#     def exec_information_part(self):
+#         update_info = '[B][COLOR=darkorange]Version 0.2.7[/COLOR][/B]\n\n\
+# - Исправлен парсер ссылки imdb'
+#         self.dialog.textviewer('Информация', update_info)
+#         return
 #========================#========================#========================#
     def exec_clean_part(self):
         try:
@@ -432,7 +387,7 @@ class RedHeadSound:
         xbmcplugin.setContent(handle, '')
         
         self.context_menu = [
-            ('Новости обновлений', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=information_part")'),
+            #('Новости обновлений', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=information_part")'),
             #('Обновить Авторизацию', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_authorization")'),
             ('Обновить Базу Данных', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_database")')
             #('Обновить Прокси', 'Container.Update("plugin://plugin.niv.redheadsound/?mode=update_proxy_data")'),
@@ -741,16 +696,11 @@ class RedHeadSound:
             xbmcplugin.endOfDirectory(handle, succeeded=True)
             return
 
-        link = []
-        while html.find('<iframe data-src="') > -1:
-            link_data = html[html.find('<iframe data-src="'):]
-            link_data = link_data[:link_data.find('</iframe>')]
-            html = html.replace(link_data, '')
-            link_data = link_data[link_data.find('"')+1:]
-            link_data = link_data[:link_data.find('"')]
-            link.append(link_data)
+        link = re.findall('https://embed.new.video(.*?)[\'"]', html)
+        link = [f"https://embed.new.video{node}" for node in link]
 
         videodata = []
+
         for l in link:
             data_array = self.network.get_bytes(url=l)
 
@@ -785,82 +735,6 @@ class RedHeadSound:
             self.create_line(title=vd['title'], params={'mode': 'play_part', 'param': vd['src']}, meta_info=meta_info, folder=False)
 
         xbmcplugin.endOfDirectory(handle, succeeded=True)
-
-    # def exec_select_part(self):
-    #     url = self.params['url']
-
-    #     html = self.network.get_html(url=url)
-
-    #     if not html:
-    #         self.create_line(title='Ошибка получения данных', params={'mode': 'main_part'})
-    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
-    #         return
-
-    #     if not '<iframe data-src="' in html:
-    #         self.create_line(title='Контент отсутствует', params={'mode': self.params['mode']})
-    #         xbmcplugin.endOfDirectory(handle, succeeded=True)
-    #         return
-
-    #     player_links = self.create_players(data=html)
-    #     player_choice = addon.getSetting('player')
-
-    #     if '0' in player_choice:
-    #         player_url = player_links['cdnvideohub']
-    #         if not player_url:
-    #             player_url = player_links['redheadsound']
-
-    #     if '1' in player_choice:
-    #         player_url = player_links['redheadsound']
-    #         if not player_url:
-    #             player_url = player_links['cdnvideohub']
-
-    #     meta_info = self.database.get_metainfo(unique_imdb = self.params['id'])
-    
-    #     html2 = self.network.get_html(url=player_url)
-
-    #     data_array = html2[html2.find('new Playerjs(')+13:]
-    #     data_array = data_array[:data_array.find(');')]
-
-    #     try:
-    #         files = json.loads(data_array)
-    #     except:
-    #         files = self.normailze_json(data_array)
-    #         files = json.dumps(files)
-    #         files = json.loads(files)
-
-    #     if 'title' in files:
-    #         file_title = files['title']
-    #         file_url = files['file']
-    #         file_url = file_url.replace('\/','/')
-
-    #         self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
-    #     else:
-    #         files = files['file']
-
-    #         if 'folder' in files[0]:
-    #             for f in files:
-    #                 folder_title = f['title']
-    #                 self.create_line(title=folder_title)
-
-    #                 folder_files = f['folder']
-
-    #                 for node in folder_files:
-    #                     file_title = node['title']
-    #                     file_url = node['file']
-    #                     file_url = file_url.replace('\/','/')
-
-
-    #                     self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
-            
-    #         else:
-    #             for i in files:
-    #                 file_title = i['title']
-    #                 file_url = i['file']
-    #                 file_url = file_url.replace('\/','/')
-
-    #                 self.create_line(title=file_title, params={'mode': 'play_part', 'param': file_url}, meta_info=meta_info, folder=False)
-
-    #     xbmcplugin.endOfDirectory(handle, succeeded=True)
 #========================#========================#========================#
     def process_url(self, raw_url):
         playlist = {}
@@ -918,16 +792,6 @@ class RedHeadSound:
             return
 
         li = xbmcgui.ListItem(path=video_url)
-
-# quality_sheme = {
-#     #'sd': '480p',
-#     'sd' : '640p',
-#     #'hd': '720p',
-#     'fhd': '1080p',
-#     #'2k': '2K',
-#     #'2k': '1440p',
-#     #'4k': '4K'
-# }
 
         if '0' in addon.getSetting('inputstream_adaptive'):
             li.setProperty('inputstream', "inputstream.adaptive")
