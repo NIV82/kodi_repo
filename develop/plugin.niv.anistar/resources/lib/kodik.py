@@ -69,7 +69,7 @@ def get_translate_box(url=None):
 
     return options
 
-def get_playlist_box(url=None):
+def get_playlist(url=None):
     domain = _parse_url(url=url)
 
     html = net.get_bytes(url=url)
@@ -87,24 +87,14 @@ def get_playlist_box(url=None):
 
     options = []
     for sd in serial_data:
-        pl = {
-            'title': '',
-            'media_id': '',
-            'image': '',
-            'other_hd': '',
-            'other_2': '',
-            'type_dub': '',
-            'cdn': '',
-            'to_skeep_ad': '',
-            'viewing': 'false',
-            'file': '',
-            'file_h': ''
-            }
+        pl = {'title': '', 'file': ''}
 
+        dataid = ''
         if sd.find('data-id=') > -1:
             dataid = sd[sd.find('data-id="')+9:]
-            pl['media_id'] = dataid[:dataid.find('"')]
+            dataid = dataid[:dataid.find('"')]
 
+        datahash = ''
         if sd.find('data-hash=') > -1:
             datahash = sd[sd.find('data-hash="')+11:]
             datahash = datahash[:datahash.find('"')]
@@ -113,8 +103,8 @@ def get_playlist_box(url=None):
             datatitle = sd[sd.find('data-title="')+12:]
             pl['title'] = datatitle[:datatitle.find('"')]
 
-        if datahash and pl['media_id']:
-            pl['file'] = f"https://{domain[0]}/seria/{pl['media_id']}/{datahash}/720p"
+        if datahash and dataid:
+            pl['file'] = f"https://{domain[0]}/seria/{dataid}/{datahash}/720p"
 
         options.append(pl)
 
