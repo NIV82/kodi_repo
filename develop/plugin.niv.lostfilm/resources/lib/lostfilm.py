@@ -1608,17 +1608,29 @@ class Lostfilm:
                     xbmcplugin.endOfDirectory(handle, succeeded=True)
                     return
 
-            try:
-                url = '{}ajaxik.php'.format(self.site_url)
-                post = {
-                    "act": "serial",
-                    "type": "getmarks",
-                    "id": image_id
-                    }                
-                post = urlencode(post)
+            # try:
+            #     url = '{}ajaxik.php'.format(self.site_url)
+            #     post = {
+            #         "act": "serial",
+            #         "type": "getmarks",
+            #         "id": image_id
+            #         }
+            #     post = urlencode(post)
 
-                watched_data = self.network.get_html(url=url, post=post)
-            except:
+            #     watched_data = self.network.get_html(url=url, post=post)
+
+            #     if False in watched_data:
+            #         watched_data = []
+            # except:
+            #     watched_data = []
+
+            url = '{}ajaxik.php'.format(self.site_url)
+            post = {"act": "serial","type": "getmarks","id": image_id}
+            post = urlencode(post)
+
+            watched_data = self.network.get_html(url=url, post=post)
+
+            if not watched_data:
                 watched_data = []
 
             serial_status = ''
@@ -1655,7 +1667,7 @@ class Lostfilm:
                             episode_title = episode_title[episode_title.find('<div>')+5:episode_title.find('<br />')].strip()
                         if not episode_title:
                             continue
-                        
+
                         is_watched = True if se_code in watched_data else False
                         
                         p = int((float(i+1) / len(data_array)) * 100)
@@ -1671,6 +1683,7 @@ class Lostfilm:
                                     )
                             else:
                                 label = self.create_title(serial_title=episode_title, watched=is_watched, data_code=se_code)
+
                             
                             info['se_code'] = se_code
 
