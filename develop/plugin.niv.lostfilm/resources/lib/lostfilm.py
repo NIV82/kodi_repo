@@ -785,6 +785,12 @@ class Lostfilm:
 
         return
 #========================#========================#========================#
+    def exec_delnode_part(self):
+        data_array = addon.getSetting('search').split('|')
+        data_array.remove(self.params['dn'])
+        addon.setSetting('search', '|'.join(data_array))
+        return
+#========================#========================#========================#
     def exec_main_part(self):
         xbmcplugin.setContent(handle, '')
 
@@ -825,13 +831,19 @@ class Lostfilm:
             data_array = addon.getSetting('search').split('|')
             data_array.reverse()
 
-            self.context_menu = [
-                ('Очистить историю', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")')
-                ]
-            
+            # self.context_menu = [
+            #     ('Очистить историю', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")')
+            #     ]
+
             for data in data_array:
                 if data == '':
                     continue
+
+                self.context_menu = [
+                    ('Очистить историю', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=clean_part")'),
+                    ('Удалить пункт','Container.Update("plugin://plugin.niv.lostfilm/?mode=delnode_part&dn={}")'.format(data))
+                ]
+
                 try:
                     self.create_line(title='[COLOR=gray]{}[/COLOR]'.format(data), params={'mode': 'search_part', 'param':'search_string', 'search_string': data},
                                      image=os.path.join(plugin_dir, 'resources', 'media', 'tags.png'))
