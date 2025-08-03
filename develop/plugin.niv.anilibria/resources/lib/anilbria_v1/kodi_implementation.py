@@ -72,11 +72,15 @@ class ALAPI:
 
             release_info = _assemble_info(site_url=self.site_url, data=data['release'])
 
-            if 'new_release_episode_ordinal' in data:
-                if data['new_release_episode_ordinal']:
-                    release_info['episode'] = int(data['new_release_episode_ordinal'])
-                else:
-                    release_info['episode'] = 0
+            if data.get('published_release_episode'):
+                release_episode = data['published_release_episode'].get('ordinal', 0)
+            else:
+                release_episode = data.get('next_release_episode_number', 0)
+
+            if not release_episode:
+                release_episode = 0
+
+            release_info['episode'] = int(release_episode)
 
             week[day].append(release_info)
 

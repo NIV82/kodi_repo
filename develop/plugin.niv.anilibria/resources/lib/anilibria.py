@@ -169,6 +169,7 @@ class Anilibria:
 
             for sd in schedule_data[day]:
                 sd['thumb'] = ''
+
                 title = f"[COLOR=blue]EP{sd['episode']:>03}[/COLOR] | {sd['title']}"
 
                 node = {
