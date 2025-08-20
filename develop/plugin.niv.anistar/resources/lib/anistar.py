@@ -18,7 +18,7 @@ from urllib.parse import parse_qs
 from urllib.parse import unquote
 from html import unescape
 
-#import network
+import network
 import mainplayer
 import kodik
 import vkparse
@@ -674,6 +674,7 @@ class Anistar:
                 data = data[:data.find('"')]
                 if 'about:' in data:
                     continue
+
                 vurl.append(data)
 
         if vurl:
@@ -752,6 +753,8 @@ class Anistar:
 
     def _parse_mainplayer(self, mlink):
         if not mlink.startswith('https'):
+            if mlink.startswith('/'):
+                mlink = mlink[1:]
             mlink = f"{self.site_url}{mlink}"
 
         mp_data = mainplayer.parse_mainplayer(mlink=mlink)
@@ -931,7 +934,8 @@ class Anistar:
         if '&' in vhd:
             vhd = vhd[:vhd.find('&')]
 
-        vhd = f"{vhd}|Referer:{self.site_url}"
+        #vhd = f"{vhd}|Referer:{self.site_url}"
+        vhd = f"{vhd}"
 
         return {'SD': vsd, 'HD': vhd, 'type': 'mainplayer'}
 
@@ -949,6 +953,25 @@ class Anistar:
             parse_url = self._parse_playurl(link)
             return parse_url
 
+    def _download_playlist(self, video_url):
+        network.set_headers({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0',
+            'Referer': f"{self.site_url}"
+            })
+
+        playlist_path = f"{addon_data_dir}\playlist"
+        try:
+            os.remove(playlist_path)
+        except:
+            pass
+
+        download_path = self.network.get_file(
+            url=video_url,
+            fpath=playlist_path
+            )
+
+        return download_path
+
 #========================#========================#========================#
     def exec_play_part(self):
         video_playdata = self._validate_url(self.params['param'])
@@ -959,7 +982,9 @@ class Anistar:
             video_url = video_playdata[quality]
 
         if video_playdata['type'] == 'mainplayer':
-            video_url = video_playdata[addon.getSetting('quality')]
+            webvideo_url = video_playdata[addon.getSetting('quality')]
+
+            video_url = self._download_playlist(video_url=webvideo_url)
 
         if video_playdata['type'] == 'kodik':
             quality = addon.getSetting('kodikquality')

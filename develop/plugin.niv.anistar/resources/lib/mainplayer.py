@@ -92,7 +92,8 @@ def parse_mainplayer(mlink):
         player_url = player_url.decode('utf-8')
         if not player_url.startswith('https'):
             player_url = f"https://{site_url}{player_url}"
-
+        # import xbmc 
+        # xbmc.log(str(player_url), xbmc.LOGFATAL)
     player_data = net.get_bytes(url=player_url)
     if not player_data['status'] == 200:
         return []
