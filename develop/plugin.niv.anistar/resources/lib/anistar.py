@@ -934,7 +934,6 @@ class Anistar:
         if '&' in vhd:
             vhd = vhd[:vhd.find('&')]
 
-        #vhd = f"{vhd}|Referer:{self.site_url}"
         vhd = f"{vhd}"
 
         return {'SD': vsd, 'HD': vhd, 'type': 'mainplayer'}
@@ -952,28 +951,10 @@ class Anistar:
         else:
             parse_url = self._parse_playurl(link)
             return parse_url
-
-    def _download_playlist(self, video_url):
-        network.set_headers({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0',
-            'Referer': f"{self.site_url}"
-            })
-
-        playlist_path = f"{addon_data_dir}\playlist"
-        try:
-            os.remove(playlist_path)
-        except:
-            pass
-
-        download_path = self.network.get_file(
-            url=video_url,
-            fpath=playlist_path
-            )
-
-        return download_path
-
 #========================#========================#========================#
     def exec_play_part(self):
+        req_headers: dict = {}
+        video_url: str = ''
         video_playdata = self._validate_url(self.params['param'])
 
         if video_playdata['type'] == 'vk':
@@ -982,9 +963,8 @@ class Anistar:
             video_url = video_playdata[quality]
 
         if video_playdata['type'] == 'mainplayer':
-            webvideo_url = video_playdata[addon.getSetting('quality')]
-
-            video_url = self._download_playlist(video_url=webvideo_url)
+            video_url = video_playdata[addon.getSetting('quality')]
+            req_headers['Referer'] = f"{self.site_url}"
 
         if video_playdata['type'] == 'kodik':
             quality = addon.getSetting('kodikquality')
@@ -997,11 +977,13 @@ class Anistar:
 
         li = xbmcgui.ListItem(path=video_url)
 
-        if '0' in addon.getSetting('inputstream_adaptive'):
+        if '0' in addon.getSetting('as_inputstream'):
             li.setProperty('inputstream', "inputstream.adaptive")
             li.setProperty('inputstream.adaptive.stream_selection_type', 'ask-quality')
             li.setProperty('inputstream.adaptive.play_timeshift_buffer', 'true')
-
+            if req_headers:
+                li.setProperty("inputstream.adaptive.stream_headers", urlencode(req_headers))
+                li.setProperty("inputstream.adaptive.manifest_headers", urlencode(req_headers))
         xbmcplugin.setResolvedUrl(handle=handle, succeeded=True, listitem=li)
 
 def start():
