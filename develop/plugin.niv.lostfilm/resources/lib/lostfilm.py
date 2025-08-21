@@ -63,7 +63,6 @@ class Lostfilm:
     def __init__(self):
         self.context_menu = []
 
-        self.proxy_data = self.create_proxy_data()
         self.site_url = self.create_site_url()
         self.sid_file = os.path.join(addon_data_dir, 'lostfilm.sid')
 
@@ -77,7 +76,7 @@ class Lostfilm:
         self.network = WebTools(
             auth_usage=True,
             auth_status=bool(addon.getSetting('auth') == 'true'),
-            proxy_data = self.proxy_data)
+            )
         
         self.network.auth_post_data = urlencode({
             "act": "users", 
@@ -133,50 +132,6 @@ class Lostfilm:
             return site_url
         else:
             return current_url
-#========================#========================#========================#
-    def create_proxy_data(self):
-        if '0' in addon.getSetting('unblock'):
-            return None
-        
-        if '2' in addon.getSetting('unblock'):
-            proxy_data = {'https': addon.getSetting('unblock_2')}
-            return proxy_data
-
-        pac_url = addon.getSetting('unblock_1')
-
-        try:
-            proxy_time = float(addon.getSetting('proxy_time'))
-        except:
-            proxy_time = 0
-
-        if time.time() - proxy_time > 604800:
-            addon.setSetting('proxy_time', str(time.time()))
-            proxy_pac = urlopen(pac_url).read()
-
-            try:
-                proxy_pac = str(proxy_pac, encoding='utf-8')
-            except:
-                pass
-#
-            proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-            addon.setSetting('proxy', proxy)
-            proxy_data = {'https': proxy}
-        else:
-            if addon.getSetting('proxy'):
-                proxy_data = {'https': addon.getSetting('proxy')}
-            else:
-                proxy_pac = urlopen(pac_url).read()
-                
-                try:
-                    proxy_pac = str(proxy_pac, encoding='utf-8')
-                except:
-                    pass
-
-                proxy = proxy_pac[proxy_pac.find('PROXY ')+6:proxy_pac.find('; DIRECT')].strip()
-                addon.setSetting('proxy', proxy)
-                proxy_data = {'https': proxy}
-
-        return proxy_data
 #========================#========================#========================#
     def create_authorization(self):
         if not addon.getSetting('username') or not addon.getSetting('password'):
@@ -459,19 +414,6 @@ class Lostfilm:
             li.setProperty('isPlayable', 'true')
 
         url = '{}?{}'.format(sys.argv[0], urlencode(params))
-        # if 'tam' in params:
-        #     label = u'{} | {}'.format(info['title'], title)
-
-        #     if version <= 18:
-        #         try:
-        #             label = label.encode('utf-8')
-        #         except:
-        #             pass
-
-        #     info_data = repr({'title':label})
-        #     url='plugin://plugin.video.tam/?mode=open&info={}&url={}'.format(quote_plus(info_data), quote(params['tam']))
-        # else:
-        #     url = '{}?{}'.format(sys.argv[0], urlencode(params))
 
         #xbmcplugin.addSortMethod(handle, xbmcplugin.SORT_METHOD_LABEL)
 
@@ -643,11 +585,6 @@ class Lostfilm:
         addon.openSettings()
         return
 #========================#========================#========================#
-    def exec_information_part(self):
-        from info import update_info
-        dialog.textviewer('Информация', update_info)
-        return
-#========================#========================#========================#
     def exec_library_part(self):
 
         if 'create_source' in self.params['param']:
@@ -719,13 +656,6 @@ class Lostfilm:
             )
         return
 #========================#========================#========================#
-    def exec_update_proxy_data(self):
-        addon.setSetting('proxy','')
-        addon.setSetting('proxy_time','')
-
-        self.create_proxy_data()
-        return
-#========================#========================#========================#
     def exec_update_authorization(self):
         addon.setSetting('auth', 'false')
         addon.setSetting('auth_session','')
@@ -734,8 +664,9 @@ class Lostfilm:
         self.network = WebTools(
             auth_usage=True,
             auth_status=False,
-            proxy_data = self.proxy_data)
-            
+            #proxy_data = self.proxy_data
+            )
+
         self.network.auth_post_data = urlencode({
             "act": "users",
             "type": "login",
@@ -796,9 +727,7 @@ class Lostfilm:
 
         self.context_menu = [
             ('Обновить Авторизацию', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_authorization")'),
-            ('Обновить Базу Данных', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")'),
-            ('Обновить Прокси', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_proxy_data")'),
-            ('Новости обновлений', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=information_part")')
+            ('Обновить Базу Данных', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_database")')
         ]
         self.create_line(title=self.colorize('Поиск'), params={'mode': 'search_part'},
                         image=os.path.join(plugin_dir, 'resources', 'media', 'search.png'))
@@ -1546,11 +1475,6 @@ class Lostfilm:
             data_array = data_array.split('<h2>')
             data_array.reverse()
 
-            # if len(data_array) < 2:
-            #     params={'mode': 'select_part', 'param': '{}001999'.format(image_id), 'id': self.params['id']}
-            #     self.exec_select_part(data_string=html)
-            #     return
-
             info = self.create_info_data(serial_id=self.params['id'], status=serial_status)
 
             progress_bg.create('LostFilm', 'Инициализация')
@@ -1619,22 +1543,6 @@ class Lostfilm:
                                      image=os.path.join(plugin_dir, 'resources', 'media', 'error.png'))
                     xbmcplugin.endOfDirectory(handle, succeeded=True)
                     return
-
-            # try:
-            #     url = '{}ajaxik.php'.format(self.site_url)
-            #     post = {
-            #         "act": "serial",
-            #         "type": "getmarks",
-            #         "id": image_id
-            #         }
-            #     post = urlencode(post)
-
-            #     watched_data = self.network.get_html(url=url, post=post)
-
-            #     if False in watched_data:
-            #         watched_data = []
-            # except:
-            #     watched_data = []
 
             url = '{}ajaxik.php'.format(self.site_url)
             post = {"act": "serial","type": "getmarks","id": image_id}
@@ -2032,11 +1940,6 @@ class Lostfilm:
         from network import get_web
         
         html = get_web(url=new_url)
-
-        # if u'Контент недоступен на территории' in html:
-        #     label = u'Контент недоступен на территории Российской Федерации\nПриносим извинения за неудобства'
-        #     dialog.ok(u'LostFilm', label)
-        #     return
 
         if html.find(u'Контент недоступен на территории') > -1:
             if html.find(u'В случае ошибочного определения Вашего местоположения') > -1:
