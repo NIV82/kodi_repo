@@ -1931,7 +1931,7 @@ class Lostfilm:
 
         html = self.network.get_html(url=url)
 
-        if 'Если по какой-то причине Вас' in html:
+        if u'Если по какой-то причине Вас' in html:
             new_url = html[html.find('location.replace(')+17:]
             new_url = new_url[:new_url.find(')')]
             new_url = new_url.replace('"','').strip()
