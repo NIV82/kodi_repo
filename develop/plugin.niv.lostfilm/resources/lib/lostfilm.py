@@ -1931,8 +1931,16 @@ class Lostfilm:
 
         html = self.network.get_html(url=url)
 
-        new_url = html[html.find('url=http')+4:]
-        new_url = new_url[:new_url.find('"')]
+        if 'Если по какой-то причине Вас' in html:
+            new_url = html[html.find('location.replace(')+17:]
+            new_url = new_url[:new_url.find(')')]
+            new_url = new_url.replace('"','').strip()
+            if new_url.startswith('/'):
+                new_url = new_url[1:]
+            new_url = '{}{}'.format(self.site_url, new_url)
+        else:
+            new_url = html[html.find('url=http')+4:]
+            new_url = new_url[:new_url.find('"')]
 
         if addon.getSetting('insearch_fix') == 'true':
             new_url = new_url.replace('insearch.site', 'www.a.retre.org')
