@@ -146,20 +146,4 @@
 	</extension>
 </addon>
 
-<addon id="script.module.niv.extlibs" name="External libraries" version="0.0.3" provider-name="NIV">
-    <requires>
-        <import addon="xbmc.python" version="3.0.0"/>
-    </requires>
-    <extension point="xbmc.python.module" library="resources/lib" />
-    <extension point="xbmc.addon.metadata">
-        <platform>all</platform>
-        <summary lang="en_GB">External libraries</summary>
-        <description lang="en_GB">External libraries</description>
-        <language>ru en</language>
-        <assets>
-            <icon>icon.png</icon>
-        </assets>
-    </extension>
-</addon>
-
 </addons>
