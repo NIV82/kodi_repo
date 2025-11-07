@@ -4,6 +4,8 @@ import os
 import shutil
 import hashlib
 
+from os.path import dirname
+
 def md5_generator(file_path):
     with open(file_path, 'rb') as open_file:
         data = hashlib.md5(open_file.read())
@@ -63,18 +65,23 @@ def xml_rebuild():
 
     return
 
-develop_dir = os.path.dirname(os.path.abspath(__file__))
-root_dir = develop_dir[:develop_dir.find(r'\develop')]
+
+root_dir = dirname(dirname(__file__))
+develop_dir = dirname(__file__)
 release_dir = os.path.join(root_dir, 'release')
 develop_plugins = os.listdir(develop_dir)
 
 for develop_plugin in develop_plugins:
     plugin_path = os.path.join(develop_dir, develop_plugin)
+    print(plugin_path)
 
     if not os.path.isdir(plugin_path):
         continue
 
     if '_old' in plugin_path:
+        continue
+
+    if 'script.module' in plugin_path:
         continue
 
     xml_path = os.path.join(plugin_path, 'addon.xml')
