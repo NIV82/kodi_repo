@@ -146,7 +146,7 @@
 	</extension>
 </addon>
 
-<addon id="script.module.niv.extlibs" name="External libraries" version="0.0.1" provider-name="NIV">
+<addon id="script.module.niv.extlibs" name="External libraries" version="0.0.2" provider-name="NIV">
     <extension point="xbmc.python.module" library="resources/lib" />
     <extension point="xbmc.addon.metadata">
         <platform>all</platform>
@@ -156,8 +156,6 @@
         <assets>
             <icon>icon.png</icon>
         </assets>
-        <reuselanguageinvoker>true</reuselanguageinvoker>
-        <debugging>true</debugging>
     </extension>
 </addon>
 
