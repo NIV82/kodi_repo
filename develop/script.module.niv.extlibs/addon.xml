@@ -1,5 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<addon id="script.module.niv.extlibs" name="External libraries" version="0.0.2" provider-name="NIV">
+<addon id="script.module.niv.extlibs" name="External libraries" version="0.0.3" provider-name="NIV">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
     <extension point="xbmc.python.module" library="resources/lib" />
     <extension point="xbmc.addon.metadata">
         <platform>all</platform>
