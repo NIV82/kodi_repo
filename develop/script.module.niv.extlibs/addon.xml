@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<addon id="script.module.niv.extlibs" name="External libraries" version="0.0.1" provider-name="NIV">
+    <extension point="xbmc.python.module" library="resources/lib" />
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <summary lang="en_GB">External libraries</summary>
+        <description lang="en_GB">External libraries</description>
+        <language>ru en</language>
+        <assets>
+            <icon>resources/media/icon.png</icon>
+        </assets>
+        <reuselanguageinvoker>true</reuselanguageinvoker>
+        <debugging>true</debugging>
+    </extension>
+</addon>
