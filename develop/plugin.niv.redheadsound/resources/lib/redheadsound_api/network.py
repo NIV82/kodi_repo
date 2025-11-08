@@ -4,8 +4,8 @@
 # parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # sys.path.insert(1, os.path.join(parent_dir, 'external_libraries'))
 
-from external_libraries.httpx import Client, HTTPStatusError
-from external_libraries.httpx import TimeoutException, ConnectError, RequestError, HTTPError
+from httpx import Client, HTTPStatusError
+from httpx import TimeoutException, ConnectError, RequestError, HTTPError
 from time import time, sleep
 
 #from ado.config import HTTPClientConfig
