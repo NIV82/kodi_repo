@@ -4,7 +4,7 @@ import sys
 from collections.abc import AsyncIterable, Iterable, Mapping, Sequence
 from io import BytesIO
 from os import PathLike
-from subprocess import PIPE, CalledProcessError, CompletedProcess
+from subprocess import DEVNULL, PIPE, CalledProcessError, CompletedProcess
 from typing import IO, Any, Union, cast
 
 from ..abc import Process
@@ -23,7 +23,6 @@ async def run_process(
     command: StrOrBytesPath | Sequence[StrOrBytesPath],
     *,
     input: bytes | None = None,
-    stdin: int | IO[Any] | None = None,
     stdout: int | IO[Any] | None = PIPE,
     stderr: int | IO[Any] | None = PIPE,
     check: bool = True,
@@ -46,8 +45,6 @@ async def run_process(
     :param command: either a string to pass to the shell, or an iterable of strings
         containing the executable name or path and its arguments
     :param input: bytes passed to the standard input of the subprocess
-    :param stdin: one of :data:`subprocess.PIPE`, :data:`subprocess.DEVNULL`,
-        a file-like object, or `None`; ``input`` overrides this
     :param stdout: one of :data:`subprocess.PIPE`, :data:`subprocess.DEVNULL`,
         a file-like object, or `None`
     :param stderr: one of :data:`subprocess.PIPE`, :data:`subprocess.DEVNULL`,
@@ -85,12 +82,9 @@ async def run_process(
 
         stream_contents[index] = buffer.getvalue()
 
-    if stdin is not None and input is not None:
-        raise ValueError("only one of stdin and input is allowed")
-
     async with await open_process(
         command,
-        stdin=PIPE if input else stdin,
+        stdin=PIPE if input else DEVNULL,
         stdout=stdout,
         stderr=stderr,
         cwd=cwd,
@@ -166,25 +160,38 @@ async def open_process(
         child process prior to the execution of the subprocess. (POSIX only)
     :param pass_fds: sequence of file descriptors to keep open between the parent and
         child processes. (POSIX only)
-    :param user: effective user to run the process as (POSIX only)
-    :param group: effective group to run the process as (POSIX only)
-    :param extra_groups: supplementary groups to set in the subprocess (POSIX only)
+    :param user: effective user to run the process as (Python >= 3.9; POSIX only)
+    :param group: effective group to run the process as (Python >= 3.9; POSIX only)
+    :param extra_groups: supplementary groups to set in the subprocess (Python >= 3.9;
+        POSIX only)
     :param umask: if not negative, this umask is applied in the child process before
-        running the given command (POSIX only)
+        running the given command (Python >= 3.9; POSIX only)
     :return: an asynchronous process object
 
     """
     kwargs: dict[str, Any] = {}
     if user is not None:
+        if sys.version_info < (3, 9):
+            raise TypeError("the 'user' argument requires Python 3.9 or later")
+
         kwargs["user"] = user
 
     if group is not None:
+        if sys.version_info < (3, 9):
+            raise TypeError("the 'group' argument requires Python 3.9 or later")
+
         kwargs["group"] = group
 
     if extra_groups is not None:
+        if sys.version_info < (3, 9):
+            raise TypeError("the 'extra_groups' argument requires Python 3.9 or later")
+
         kwargs["extra_groups"] = group
 
     if umask >= 0:
+        if sys.version_info < (3, 9):
+            raise TypeError("the 'umask' argument requires Python 3.9 or later")
+
         kwargs["umask"] = umask
 
     return await get_async_backend().open_process(

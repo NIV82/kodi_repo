@@ -7,15 +7,13 @@ import ssl
 import stat
 import sys
 from collections.abc import Awaitable
-from dataclasses import dataclass
-from ipaddress import IPv4Address, IPv6Address, ip_address
+from ipaddress import IPv6Address, ip_address
 from os import PathLike, chmod
 from socket import AddressFamily, SocketKind
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import Any, Literal, cast, overload
 
-from .. import ConnectionFailed, to_thread
+from .. import to_thread
 from ..abc import (
-    ByteStreamConnectable,
     ConnectedUDPSocket,
     ConnectedUNIXDatagramSocket,
     IPAddressType,
@@ -27,29 +25,14 @@ from ..abc import (
     UNIXSocketStream,
 )
 from ..streams.stapled import MultiListener
-from ..streams.tls import TLSConnectable, TLSStream
+from ..streams.tls import TLSStream
 from ._eventloop import get_async_backend
 from ._resources import aclose_forcefully
 from ._synchronization import Event
 from ._tasks import create_task_group, move_on_after
 
-if TYPE_CHECKING:
-    from _typeshed import FileDescriptorLike
-else:
-    FileDescriptorLike = object
-
 if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup
-
-if sys.version_info >= (3, 12):
-    from typing import override
-else:
-    from typing_extensions import override
-
-if sys.version_info < (3, 13):
-    from typing_extensions import deprecated
-else:
-    from warnings import deprecated
 
 IPPROTO_IPV6 = getattr(socket, "IPPROTO_IPV6", 41)  # https://bugs.python.org/issue29515
 
@@ -170,7 +153,7 @@ async def connect_tcp(
     :param happy_eyeballs_delay: delay (in seconds) before starting the next connection
         attempt
     :return: a socket stream object if no TLS handshake was done, otherwise a TLS stream
-    :raises ConnectionFailed: if the connection fails
+    :raises OSError: if the connection attempt fails
 
     """
     # Placed here due to https://github.com/python/mypy/issues/7057
@@ -203,14 +186,6 @@ async def connect_tcp(
     try:
         addr_obj = ip_address(remote_host)
     except ValueError:
-        addr_obj = None
-
-    if addr_obj is not None:
-        if isinstance(addr_obj, IPv6Address):
-            target_addrs = [(socket.AF_INET6, addr_obj.compressed)]
-        else:
-            target_addrs = [(socket.AF_INET, addr_obj.compressed)]
-    else:
         # getaddrinfo() will raise an exception if name resolution fails
         gai_res = await getaddrinfo(
             target_host, remote_port, family=family, type=socket.SOCK_STREAM
@@ -219,8 +194,8 @@ async def connect_tcp(
         # Organize the list so that the first address is an IPv6 address (if available)
         # and the second one is an IPv4 addresses. The rest can be in whatever order.
         v6_found = v4_found = False
-        target_addrs = []
-        for af, *_, sa in gai_res:
+        target_addrs: list[tuple[socket.AddressFamily, str]] = []
+        for af, *rest, sa in gai_res:
             if af == socket.AF_INET6 and not v6_found:
                 v6_found = True
                 target_addrs.insert(0, (af, sa[0]))
@@ -229,25 +204,27 @@ async def connect_tcp(
                 target_addrs.insert(1, (af, sa[0]))
             else:
                 target_addrs.append((af, sa[0]))
+    else:
+        if isinstance(addr_obj, IPv6Address):
+            target_addrs = [(socket.AF_INET6, addr_obj.compressed)]
+        else:
+            target_addrs = [(socket.AF_INET, addr_obj.compressed)]
 
     oserrors: list[OSError] = []
-    try:
-        async with create_task_group() as tg:
-            for _af, addr in target_addrs:
-                event = Event()
-                tg.start_soon(try_connect, addr, event)
-                with move_on_after(happy_eyeballs_delay):
-                    await event.wait()
+    async with create_task_group() as tg:
+        for i, (af, addr) in enumerate(target_addrs):
+            event = Event()
+            tg.start_soon(try_connect, addr, event)
+            with move_on_after(happy_eyeballs_delay):
+                await event.wait()
 
-        if connected_stream is None:
-            cause = (
-                oserrors[0]
-                if len(oserrors) == 1
-                else ExceptionGroup("multiple connection attempts failed", oserrors)
-            )
-            raise OSError("All connection attempts failed") from cause
-    finally:
-        oserrors.clear()
+    if connected_stream is None:
+        cause = (
+            oserrors[0]
+            if len(oserrors) == 1
+            else ExceptionGroup("multiple connection attempts failed", oserrors)
+        )
+        raise OSError("All connection attempts failed") from cause
 
     if tls or tls_hostname or ssl_context:
         try:
@@ -273,7 +250,6 @@ async def connect_unix(path: str | bytes | PathLike[Any]) -> UNIXSocketStream:
 
     :param path: path to the socket
     :return: a socket stream object
-    :raises ConnectionFailed: if the connection fails
 
     """
     path = os.fspath(path)
@@ -300,121 +276,64 @@ async def create_tcp_listener(
         2**16, or 65536)
     :param reuse_port: ``True`` to allow multiple sockets to bind to the same
         address/port (not supported on Windows)
-    :return: a multi-listener object containing one or more socket listeners
-    :raises OSError: if there's an error creating a socket, or binding to one or more
-        interfaces failed
+    :return: a list of listener objects
 
     """
     asynclib = get_async_backend()
     backlog = min(backlog, 65536)
     local_host = str(local_host) if local_host is not None else None
-
-    def setup_raw_socket(
-        fam: AddressFamily,
-        bind_addr: tuple[str, int] | tuple[str, int, int, int],
-        *,
-        v6only: bool = True,
-    ) -> socket.socket:
-        sock = socket.socket(fam)
-        try:
-            sock.setblocking(False)
-
-            if fam == AddressFamily.AF_INET6:
-                sock.setsockopt(IPPROTO_IPV6, socket.IPV6_V6ONLY, v6only)
-
-            # For Windows, enable exclusive address use. For others, enable address
-            # reuse.
-            if sys.platform == "win32":
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
-            else:
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-            if reuse_port:
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-
-            # Workaround for #554
-            if fam == socket.AF_INET6 and "%" in bind_addr[0]:
-                addr, scope_id = bind_addr[0].split("%", 1)
-                bind_addr = (addr, bind_addr[1], 0, int(scope_id))
-
-            sock.bind(bind_addr)
-            sock.listen(backlog)
-        except BaseException:
-            sock.close()
-            raise
-
-        return sock
-
-    # We passing type=0 on non-Windows platforms as a workaround for a uvloop bug
-    # where we don't get the correct scope ID for IPv6 link-local addresses when passing
-    # type=socket.SOCK_STREAM to getaddrinfo():
-    # https://github.com/MagicStack/uvloop/issues/539
     gai_res = await getaddrinfo(
         local_host,
         local_port,
         family=family,
-        type=socket.SOCK_STREAM if sys.platform == "win32" else 0,
+        type=socket.SocketKind.SOCK_STREAM if sys.platform == "win32" else 0,
         flags=socket.AI_PASSIVE | socket.AI_ADDRCONFIG,
     )
-
-    # The set comprehension is here to work around a glibc bug:
-    # https://sourceware.org/bugzilla/show_bug.cgi?id=14969
-    sockaddrs = sorted({res for res in gai_res if res[1] == SocketKind.SOCK_STREAM})
-
-    # Special case for dual-stack binding on the "any" interface
-    if (
-        local_host is None
-        and family == AddressFamily.AF_UNSPEC
-        and socket.has_dualstack_ipv6()
-        and any(fam == AddressFamily.AF_INET6 for fam, *_ in gai_res)
-    ):
-        raw_socket = setup_raw_socket(
-            AddressFamily.AF_INET6, ("::", local_port), v6only=False
-        )
-        listener = asynclib.create_tcp_listener(raw_socket)
-        return MultiListener([listener])
-
-    errors: list[OSError] = []
+    listeners: list[SocketListener] = []
     try:
-        for _ in range(len(sockaddrs)):
-            listeners: list[SocketListener] = []
-            bound_ephemeral_port = local_port
-            try:
-                for fam, *_, sockaddr in sockaddrs:
-                    sockaddr = sockaddr[0], bound_ephemeral_port, *sockaddr[2:]
-                    raw_socket = setup_raw_socket(fam, sockaddr)
+        # The set() is here to work around a glibc bug:
+        # https://sourceware.org/bugzilla/show_bug.cgi?id=14969
+        sockaddr: tuple[str, int] | tuple[str, int, int, int]
+        for fam, kind, *_, sockaddr in sorted(set(gai_res)):
+            # Workaround for an uvloop bug where we don't get the correct scope ID for
+            # IPv6 link-local addresses when passing type=socket.SOCK_STREAM to
+            # getaddrinfo(): https://github.com/MagicStack/uvloop/issues/539
+            if sys.platform != "win32" and kind is not SocketKind.SOCK_STREAM:
+                continue
 
-                    # Store the assigned port if an ephemeral port was requested, so
-                    # we'll bind to the same port on all interfaces
-                    if local_port == 0 and len(gai_res) > 1:
-                        bound_ephemeral_port = raw_socket.getsockname()[1]
+            raw_socket = socket.socket(fam)
+            raw_socket.setblocking(False)
 
-                    listeners.append(asynclib.create_tcp_listener(raw_socket))
-            except BaseException as exc:
-                for listener in listeners:
-                    await listener.aclose()
+            # For Windows, enable exclusive address use. For others, enable address
+            # reuse.
+            if sys.platform == "win32":
+                raw_socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            else:
+                raw_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-                # If an ephemeral port was requested but binding the assigned port
-                # failed for another interface, rotate the address list and try again
-                if (
-                    isinstance(exc, OSError)
-                    and exc.errno == errno.EADDRINUSE
-                    and local_port == 0
-                    and bound_ephemeral_port
-                ):
-                    errors.append(exc)
-                    sockaddrs.append(sockaddrs.pop(0))
-                    continue
+            if reuse_port:
+                raw_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 
-                raise
+            # If only IPv6 was requested, disable dual stack operation
+            if fam == socket.AF_INET6:
+                raw_socket.setsockopt(IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
 
-            return MultiListener(listeners)
+                # Workaround for #554
+                if "%" in sockaddr[0]:
+                    addr, scope_id = sockaddr[0].split("%", 1)
+                    sockaddr = (addr, sockaddr[1], 0, int(scope_id))
 
-        raise OSError(
-            f"Could not create {len(sockaddrs)} listeners with a consistent port"
-        ) from ExceptionGroup("Several bind attempts failed", errors)
-    finally:
-        del errors  # Prevent reference cycles
+            raw_socket.bind(sockaddr)
+            raw_socket.listen(backlog)
+            listener = asynclib.create_tcp_listener(raw_socket)
+            listeners.append(listener)
+    except BaseException:
+        for listener in listeners:
+            await listener.aclose()
+
+        raise
+
+    return MultiListener(listeners)
 
 
 async def create_unix_listener(
@@ -652,8 +571,6 @@ async def getaddrinfo(
     return [
         (family, type, proto, canonname, convert_ipv6_sockaddr(sockaddr))
         for family, type, proto, canonname, sockaddr in gai_res
-        # filter out IPv6 results when IPv6 is disabled
-        if not isinstance(sockaddr[0], int)
     ]
 
 
@@ -671,13 +588,12 @@ def getnameinfo(sockaddr: IPSockAddrType, flags: int = 0) -> Awaitable[tuple[str
     return get_async_backend().getnameinfo(sockaddr, flags)
 
 
-@deprecated("This function is deprecated; use `wait_readable` instead")
 def wait_socket_readable(sock: socket.socket) -> Awaitable[None]:
     """
-    .. deprecated:: 4.7.0
-       Use :func:`wait_readable` instead.
-
     Wait until the given socket has data to be read.
+
+    This does **NOT** work on Windows when using the asyncio backend with a proactor
+    event loop (default on py3.8+).
 
     .. warning:: Only use this on raw sockets that have not been wrapped by any higher
         level constructs like socket streams!
@@ -689,15 +605,11 @@ def wait_socket_readable(sock: socket.socket) -> Awaitable[None]:
         to become readable
 
     """
-    return get_async_backend().wait_readable(sock.fileno())
+    return get_async_backend().wait_socket_readable(sock)
 
 
-@deprecated("This function is deprecated; use `wait_writable` instead")
 def wait_socket_writable(sock: socket.socket) -> Awaitable[None]:
     """
-    .. deprecated:: 4.7.0
-       Use :func:`wait_writable` instead.
-
     Wait until the given socket can be written to.
 
     This does **NOT** work on Windows when using the asyncio backend with a proactor
@@ -713,88 +625,7 @@ def wait_socket_writable(sock: socket.socket) -> Awaitable[None]:
         to become writable
 
     """
-    return get_async_backend().wait_writable(sock.fileno())
-
-
-def wait_readable(obj: FileDescriptorLike) -> Awaitable[None]:
-    """
-    Wait until the given object has data to be read.
-
-    On Unix systems, ``obj`` must either be an integer file descriptor, or else an
-    object with a ``.fileno()`` method which returns an integer file descriptor. Any
-    kind of file descriptor can be passed, though the exact semantics will depend on
-    your kernel. For example, this probably won't do anything useful for on-disk files.
-
-    On Windows systems, ``obj`` must either be an integer ``SOCKET`` handle, or else an
-    object with a ``.fileno()`` method which returns an integer ``SOCKET`` handle. File
-    descriptors aren't supported, and neither are handles that refer to anything besides
-    a ``SOCKET``.
-
-    On backends where this functionality is not natively provided (asyncio
-    ``ProactorEventLoop`` on Windows), it is provided using a separate selector thread
-    which is set to shut down when the interpreter shuts down.
-
-    .. warning:: Don't use this on raw sockets that have been wrapped by any higher
-        level constructs like socket streams!
-
-    :param obj: an object with a ``.fileno()`` method or an integer handle
-    :raises ~anyio.ClosedResourceError: if the object was closed while waiting for the
-        object to become readable
-    :raises ~anyio.BusyResourceError: if another task is already waiting for the object
-        to become readable
-
-    """
-    return get_async_backend().wait_readable(obj)
-
-
-def wait_writable(obj: FileDescriptorLike) -> Awaitable[None]:
-    """
-    Wait until the given object can be written to.
-
-    :param obj: an object with a ``.fileno()`` method or an integer handle
-    :raises ~anyio.ClosedResourceError: if the object was closed while waiting for the
-        object to become writable
-    :raises ~anyio.BusyResourceError: if another task is already waiting for the object
-        to become writable
-
-    .. seealso:: See the documentation of :func:`wait_readable` for the definition of
-       ``obj`` and notes on backend compatibility.
-
-    .. warning:: Don't use this on raw sockets that have been wrapped by any higher
-        level constructs like socket streams!
-
-    """
-    return get_async_backend().wait_writable(obj)
-
-
-def notify_closing(obj: FileDescriptorLike) -> None:
-    """
-    Call this before closing a file descriptor (on Unix) or socket (on
-    Windows). This will cause any `wait_readable` or `wait_writable`
-    calls on the given object to immediately wake up and raise
-    `~anyio.ClosedResourceError`.
-
-    This doesn't actually close the object – you still have to do that
-    yourself afterwards. Also, you want to be careful to make sure no
-    new tasks start waiting on the object in between when you call this
-    and when it's actually closed. So to close something properly, you
-    usually want to do these steps in order:
-
-    1. Explicitly mark the object as closed, so that any new attempts
-       to use it will abort before they start.
-    2. Call `notify_closing` to wake up any already-existing users.
-    3. Actually close the object.
-
-    It's also possible to do them in a different order if that's more
-    convenient, *but only if* you make sure not to have any checkpoints in
-    between the steps. This way they all happen in a single atomic
-    step, so other tasks won't be able to tell what order they happened
-    in anyway.
-
-    :param obj: an object with a ``.fileno()`` method or an integer handle
-
-    """
-    get_async_backend().notify_closing(obj)
+    return get_async_backend().wait_socket_writable(sock)
 
 
 #
@@ -885,107 +716,3 @@ async def setup_unix_local_socket(
             raise
 
     return raw_socket
-
-
-@dataclass
-class TCPConnectable(ByteStreamConnectable):
-    """
-    Connects to a TCP server at the given host and port.
-
-    :param host: host name or IP address of the server
-    :param port: TCP port number of the server
-    """
-
-    host: str | IPv4Address | IPv6Address
-    port: int
-
-    def __post_init__(self) -> None:
-        if self.port < 1 or self.port > 65535:
-            raise ValueError("TCP port number out of range")
-
-    @override
-    async def connect(self) -> SocketStream:
-        try:
-            return await connect_tcp(self.host, self.port)
-        except OSError as exc:
-            raise ConnectionFailed(
-                f"error connecting to {self.host}:{self.port}: {exc}"
-            ) from exc
-
-
-@dataclass
-class UNIXConnectable(ByteStreamConnectable):
-    """
-    Connects to a UNIX domain socket at the given path.
-
-    :param path: the file system path of the socket
-    """
-
-    path: str | bytes | PathLike[str] | PathLike[bytes]
-
-    @override
-    async def connect(self) -> UNIXSocketStream:
-        try:
-            return await connect_unix(self.path)
-        except OSError as exc:
-            raise ConnectionFailed(f"error connecting to {self.path!r}: {exc}") from exc
-
-
-def as_connectable(
-    remote: ByteStreamConnectable
-    | tuple[str | IPv4Address | IPv6Address, int]
-    | str
-    | bytes
-    | PathLike[str],
-    /,
-    *,
-    tls: bool = False,
-    ssl_context: ssl.SSLContext | None = None,
-    tls_hostname: str | None = None,
-    tls_standard_compatible: bool = True,
-) -> ByteStreamConnectable:
-    """
-    Return a byte stream connectable from the given object.
-
-    If a bytestream connectable is given, it is returned unchanged.
-    If a tuple of (host, port) is given, a TCP connectable is returned.
-    If a string or bytes path is given, a UNIX connectable is returned.
-
-    If ``tls=True``, the connectable will be wrapped in a
-    :class:`~.streams.tls.TLSConnectable`.
-
-    :param remote: a connectable, a tuple of (host, port) or a path to a UNIX socket
-    :param tls: if ``True``, wrap the plaintext connectable in a
-        :class:`~.streams.tls.TLSConnectable`, using the provided TLS settings)
-    :param ssl_context: if ``tls=True``, the SSLContext object to use  (if not provided,
-        a secure default will be created)
-    :param tls_hostname: if ``tls=True``, host name of the server to use for checking
-        the server certificate (defaults to the host portion of the address for TCP
-        connectables)
-    :param tls_standard_compatible: if ``False`` and ``tls=True``, makes the TLS stream
-        skip the closing handshake when closing the connection, so it won't raise an
-        exception if the server does the same
-
-    """
-    connectable: TCPConnectable | UNIXConnectable | TLSConnectable
-    if isinstance(remote, ByteStreamConnectable):
-        return remote
-    elif isinstance(remote, tuple) and len(remote) == 2:
-        connectable = TCPConnectable(*remote)
-    elif isinstance(remote, (str, bytes, PathLike)):
-        connectable = UNIXConnectable(remote)
-    else:
-        raise TypeError(f"cannot convert {remote!r} to a connectable")
-
-    if tls:
-        if not tls_hostname and isinstance(connectable, TCPConnectable):
-            tls_hostname = str(connectable.host)
-
-        connectable = TLSConnectable(
-            connectable,
-            ssl_context=ssl_context,
-            hostname=tls_hostname,
-            standard_compatible=tls_standard_compatible,
-        )
-
-    return connectable

@@ -3,13 +3,7 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
-from collections.abc import (
-    AsyncIterator,
-    Callable,
-    Iterable,
-    Iterator,
-    Sequence,
-)
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import partial
 from os import PathLike
@@ -18,7 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AnyStr,
-    ClassVar,
+    AsyncIterator,
     Final,
     Generic,
     overload,
@@ -28,8 +22,6 @@ from .. import to_thread
 from ..abc import AsyncResource
 
 if TYPE_CHECKING:
-    from types import ModuleType
-
     from _typeshed import OpenBinaryMode, OpenTextMode, ReadableBuffer, WriteableBuffer
 else:
     ReadableBuffer = OpenBinaryMode = OpenTextMode = WriteableBuffer = object
@@ -101,10 +93,10 @@ class AsyncFile(AsyncResource, Generic[AnyStr]):
     async def readlines(self) -> list[AnyStr]:
         return await to_thread.run_sync(self._fp.readlines)
 
-    async def readinto(self: AsyncFile[bytes], b: WriteableBuffer) -> int:
+    async def readinto(self: AsyncFile[bytes], b: WriteableBuffer) -> bytes:
         return await to_thread.run_sync(self._fp.readinto, b)
 
-    async def readinto1(self: AsyncFile[bytes], b: WriteableBuffer) -> int:
+    async def readinto1(self: AsyncFile[bytes], b: WriteableBuffer) -> bytes:
         return await to_thread.run_sync(self._fp.readinto1, b)
 
     @overload
@@ -229,18 +221,13 @@ class Path:
     Some methods may be unavailable or have limited functionality, based on the Python
     version:
 
-    * :meth:`~pathlib.Path.copy` (available on Python 3.14 or later)
-    * :meth:`~pathlib.Path.copy_into` (available on Python 3.14 or later)
     * :meth:`~pathlib.Path.from_uri` (available on Python 3.13 or later)
-    * :meth:`~pathlib.PurePath.full_match` (available on Python 3.13 or later)
-    * :attr:`~pathlib.Path.info` (available on Python 3.14 or later)
+    * :meth:`~pathlib.Path.full_match` (available on Python 3.13 or later)
     * :meth:`~pathlib.Path.is_junction` (available on Python 3.12 or later)
-    * :meth:`~pathlib.PurePath.match` (the ``case_sensitive`` parameter is only
-      available on Python 3.13 or later)
-    * :meth:`~pathlib.Path.move` (available on Python 3.14 or later)
-    * :meth:`~pathlib.Path.move_into` (available on Python 3.14 or later)
-    * :meth:`~pathlib.PurePath.relative_to` (the ``walk_up`` parameter is only available
-      on Python 3.12 or later)
+    * :meth:`~pathlib.Path.match` (the ``case_sensitive`` paramater is only available on
+      Python 3.13 or later)
+    * :meth:`~pathlib.Path.relative_to` (the ``walk_up`` parameter is only available on
+      Python 3.12 or later)
     * :meth:`~pathlib.Path.walk` (available on Python 3.12 or later)
 
     Any methods that do disk I/O need to be awaited on. These methods are:
@@ -390,7 +377,7 @@ class Path:
         return self._path.as_uri()
 
     if sys.version_info >= (3, 13):
-        parser: ClassVar[ModuleType] = pathlib.Path.parser
+        parser = pathlib.Path.parser
 
         @classmethod
         def from_uri(cls, uri: str) -> Path:
@@ -409,51 +396,6 @@ class Path:
 
         def match(self, path_pattern: str) -> bool:
             return self._path.match(path_pattern)
-
-    if sys.version_info >= (3, 14):
-
-        @property
-        def info(self) -> Any:  # TODO: add return type annotation when Typeshed gets it
-            return self._path.info
-
-        async def copy(
-            self,
-            target: str | os.PathLike[str],
-            *,
-            follow_symlinks: bool = True,
-            preserve_metadata: bool = False,
-        ) -> Path:
-            func = partial(
-                self._path.copy,
-                follow_symlinks=follow_symlinks,
-                preserve_metadata=preserve_metadata,
-            )
-            return Path(await to_thread.run_sync(func, pathlib.Path(target)))
-
-        async def copy_into(
-            self,
-            target_dir: str | os.PathLike[str],
-            *,
-            follow_symlinks: bool = True,
-            preserve_metadata: bool = False,
-        ) -> Path:
-            func = partial(
-                self._path.copy_into,
-                follow_symlinks=follow_symlinks,
-                preserve_metadata=preserve_metadata,
-            )
-            return Path(await to_thread.run_sync(func, pathlib.Path(target_dir)))
-
-        async def move(self, target: str | os.PathLike[str]) -> Path:
-            # Upstream does not handle anyio.Path properly as a PathLike
-            target = pathlib.Path(target)
-            return Path(await to_thread.run_sync(self._path.move, target))
-
-        async def move_into(
-            self,
-            target_dir: str | os.PathLike[str],
-        ) -> Path:
-            return Path(await to_thread.run_sync(self._path.move_into, target_dir))
 
     def is_relative_to(self, other: str | PathLike[str]) -> bool:
         try:
@@ -540,14 +482,9 @@ class Path:
     async def is_symlink(self) -> bool:
         return await to_thread.run_sync(self._path.is_symlink, abandon_on_cancel=True)
 
-    async def iterdir(self) -> AsyncIterator[Path]:
-        gen = (
-            self._path.iterdir()
-            if sys.version_info < (3, 13)
-            else await to_thread.run_sync(self._path.iterdir, abandon_on_cancel=True)
-        )
-        async for path in _PathIterator(gen):
-            yield path
+    def iterdir(self) -> AsyncIterator[Path]:
+        gen = self._path.iterdir()
+        return _PathIterator(gen)
 
     def joinpath(self, *args: str | PathLike[str]) -> Path:
         return Path(self._path.joinpath(*args))
@@ -612,9 +549,7 @@ class Path:
         def relative_to(
             self, *other: str | PathLike[str], walk_up: bool = False
         ) -> Path:
-            # relative_to() should work with any PathLike but it doesn't
-            others = [pathlib.Path(other) for other in other]
-            return Path(self._path.relative_to(*others, walk_up=walk_up))
+            return Path(self._path.relative_to(*other, walk_up=walk_up))
 
     else:
 

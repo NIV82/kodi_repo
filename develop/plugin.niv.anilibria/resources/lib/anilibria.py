@@ -552,7 +552,7 @@ class Anilibria:
 
             if node['info']:
                 videoinfo = li.getVideoInfoTag()
-                videoinfo.setMediaType('video')
+                #videoinfo.setMediaType('video')
                 #
                 videoinfo.setTitle(node['info']['title'])
                 videoinfo.setSortTitle(node['info']['sorttitle'])

@@ -123,7 +123,7 @@ class MemoryObjectReceiveStream(Generic[T_co], ObjectReceiveStream[T_co]):
             try:
                 return receiver.item
             except AttributeError:
-                raise EndOfStream from None
+                raise EndOfStream
 
     def clone(self) -> MemoryObjectReceiveStream[T_co]:
         """
@@ -183,7 +183,6 @@ class MemoryObjectReceiveStream(Generic[T_co], ObjectReceiveStream[T_co]):
             warnings.warn(
                 f"Unclosed <{self.__class__.__name__} at {id(self):x}>",
                 ResourceWarning,
-                stacklevel=1,
                 source=self,
             )
 
@@ -314,6 +313,5 @@ class MemoryObjectSendStream(Generic[T_contra], ObjectSendStream[T_contra]):
             warnings.warn(
                 f"Unclosed <{self.__class__.__name__} at {id(self):x}>",
                 ResourceWarning,
-                stacklevel=1,
                 source=self,
             )

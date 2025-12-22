@@ -2,20 +2,16 @@ from __future__ import annotations
 
 import math
 from collections import deque
-from collections.abc import Callable
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TypeVar
 
 from sniffio import AsyncLibraryNotFoundError
 
-from ..lowlevel import checkpoint_if_cancelled
+from ..lowlevel import checkpoint
 from ._eventloop import get_async_backend
 from ._exceptions import BusyResourceError
 from ._tasks import CancelScope
 from ._testing import TaskInfo, get_current_task
-
-T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -113,7 +109,6 @@ class Event:
 
 class EventAdapter(Event):
     _internal_event: Event | None = None
-    _is_set: bool = False
 
     def __new__(cls) -> EventAdapter:
         return object.__new__(cls)
@@ -122,22 +117,14 @@ class EventAdapter(Event):
     def _event(self) -> Event:
         if self._internal_event is None:
             self._internal_event = get_async_backend().create_event()
-            if self._is_set:
-                self._internal_event.set()
 
         return self._internal_event
 
     def set(self) -> None:
-        if self._internal_event is None:
-            self._is_set = True
-        else:
-            self._event.set()
+        self._event.set()
 
     def is_set(self) -> bool:
-        if self._internal_event is None:
-            return self._is_set
-
-        return self._internal_event.is_set()
+        return self._internal_event is not None and self._internal_event.is_set()
 
     async def wait(self) -> None:
         await self._event.wait()
@@ -327,8 +314,7 @@ class Condition:
 
     async def wait(self) -> None:
         """Wait for a notification."""
-        await checkpoint_if_cancelled()
-        self._check_acquired()
+        await checkpoint()
         event = Event()
         self._waiters.append(event)
         self.release()
@@ -342,22 +328,6 @@ class Condition:
         finally:
             with CancelScope(shield=True):
                 await self.acquire()
-
-    async def wait_for(self, predicate: Callable[[], T]) -> T:
-        """
-        Wait until a predicate becomes true.
-
-        :param predicate: a callable that returns a truthy value when the condition is
-            met
-        :return: the result of the predicate
-
-        .. versionadded:: 4.11.0
-
-        """
-        while not (result := predicate()):
-            await self.wait()
-
-        return result
 
     def statistics(self) -> ConditionStatistics:
         """
@@ -526,7 +496,7 @@ class CapacityLimiter:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> None:
+    ) -> bool | None:
         raise NotImplementedError
 
     @property
@@ -651,7 +621,7 @@ class CapacityLimiterAdapter(CapacityLimiter):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> None:
+    ) -> bool | None:
         return await self._limiter.__aexit__(exc_type, exc_val, exc_tb)
 
     @property
@@ -749,5 +719,6 @@ class ResourceGuard:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> None:
+    ) -> bool | None:
         self._guarded = False
+        return None

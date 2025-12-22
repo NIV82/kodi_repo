@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import socket
 import sys
-from collections.abc import Callable, Generator, Iterator
+from collections.abc import Generator, Iterator
 from contextlib import ExitStack, contextmanager
 from inspect import isasyncgenfunction, iscoroutinefunction, ismethod
-from typing import Any, cast
+from typing import Any, Dict, Tuple, cast
 
 import pytest
 import sniffio
@@ -29,7 +28,7 @@ def extract_backend_and_options(backend: object) -> tuple[str, dict[str, Any]]:
         return backend, {}
     elif isinstance(backend, tuple) and len(backend) == 2:
         if isinstance(backend[0], str) and isinstance(backend[1], dict):
-            return cast(tuple[str, dict[str, Any]], backend)
+            return cast(Tuple[str, Dict[str, Any]], backend)
 
     raise TypeError("anyio_backend must be either a string or tuple of (string, dict)")
 
@@ -64,37 +63,19 @@ def get_runner(
             _runner_stack = _current_runner = None
 
 
-def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addini(
-        "anyio_mode",
-        default="strict",
-        help='AnyIO plugin mode (either "strict" or "auto")',
-        type="string",
-    )
-
-
-def pytest_configure(config: pytest.Config) -> None:
+def pytest_configure(config: Any) -> None:
     config.addinivalue_line(
         "markers",
-        "anyio: mark the (coroutine function) test to be run asynchronously via anyio.",
+        "anyio: mark the (coroutine function) test to be run "
+        "asynchronously via anyio.",
     )
-    if (
-        config.getini("anyio_mode") == "auto"
-        and config.pluginmanager.has_plugin("asyncio")
-        and config.getini("asyncio_mode") == "auto"
-    ):
-        config.issue_config_time_warning(
-            pytest.PytestConfigWarning(
-                "AnyIO auto mode has been enabled together with pytest-asyncio auto "
-                "mode. This may cause unexpected behavior."
-            ),
-            1,
-        )
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_fixture_setup(fixturedef: Any, request: Any) -> Generator[Any]:
-    def wrapper(anyio_backend: Any, request: SubRequest, **kwargs: Any) -> Any:
+    def wrapper(
+        *args: Any, anyio_backend: Any, request: SubRequest, **kwargs: Any
+    ) -> Any:
         # Rebind any fixture methods to the request instance
         if (
             request.instance
@@ -142,20 +123,13 @@ def pytest_fixture_setup(fixturedef: Any, request: Any) -> Generator[Any]:
 
 
 @pytest.hookimpl(tryfirst=True)
-def pytest_pycollect_makeitem(
-    collector: pytest.Module | pytest.Class, name: str, obj: object
-) -> None:
+def pytest_pycollect_makeitem(collector: Any, name: Any, obj: Any) -> None:
     if collector.istestfunction(obj, name):
         inner_func = obj.hypothesis.inner_test if hasattr(obj, "hypothesis") else obj
         if iscoroutinefunction(inner_func):
-            anyio_auto_mode = collector.config.getini("anyio_mode") == "auto"
             marker = collector.get_closest_marker("anyio")
             own_markers = getattr(obj, "pytestmark", ())
-            if (
-                anyio_auto_mode
-                or marker
-                or any(marker.name == "anyio" for marker in own_markers)
-            ):
+            if marker or any(marker.name == "anyio" for marker in own_markers):
                 pytest.mark.usefixtures("anyio_backend")(obj)
 
 
@@ -215,84 +189,3 @@ def anyio_backend_options(anyio_backend: Any) -> dict[str, Any]:
         return {}
     else:
         return anyio_backend[1]
-
-
-class FreePortFactory:
-    """
-    Manages port generation based on specified socket kind, ensuring no duplicate
-    ports are generated.
-
-    This class provides functionality for generating available free ports on the
-    system. It is initialized with a specific socket kind and can generate ports
-    for given address families while avoiding reuse of previously generated ports.
-
-    Users should not instantiate this class directly, but use the
-    ``free_tcp_port_factory`` and ``free_udp_port_factory`` fixtures instead. For simple
-    uses cases, ``free_tcp_port`` and ``free_udp_port`` can be used instead.
-    """
-
-    def __init__(self, kind: socket.SocketKind) -> None:
-        self._kind = kind
-        self._generated = set[int]()
-
-    @property
-    def kind(self) -> socket.SocketKind:
-        """
-        The type of socket connection (e.g., :data:`~socket.SOCK_STREAM` or
-        :data:`~socket.SOCK_DGRAM`) used to bind for checking port availability
-
-        """
-        return self._kind
-
-    def __call__(self, family: socket.AddressFamily | None = None) -> int:
-        """
-        Return an unbound port for the given address family.
-
-        :param family: if omitted, both IPv4 and IPv6 addresses will be tried
-        :return: a port number
-
-        """
-        if family is not None:
-            families = [family]
-        else:
-            families = [socket.AF_INET]
-            if socket.has_ipv6:
-                families.append(socket.AF_INET6)
-
-        while True:
-            port = 0
-            with ExitStack() as stack:
-                for family in families:
-                    sock = stack.enter_context(socket.socket(family, self._kind))
-                    addr = "::1" if family == socket.AF_INET6 else "127.0.0.1"
-                    try:
-                        sock.bind((addr, port))
-                    except OSError:
-                        break
-
-                    if not port:
-                        port = sock.getsockname()[1]
-                else:
-                    if port not in self._generated:
-                        self._generated.add(port)
-                        return port
-
-
-@pytest.fixture(scope="session")
-def free_tcp_port_factory() -> FreePortFactory:
-    return FreePortFactory(socket.SOCK_STREAM)
-
-
-@pytest.fixture(scope="session")
-def free_udp_port_factory() -> FreePortFactory:
-    return FreePortFactory(socket.SOCK_DGRAM)
-
-
-@pytest.fixture
-def free_tcp_port(free_tcp_port_factory: Callable[[], int]) -> int:
-    return free_tcp_port_factory()
-
-
-@pytest.fixture
-def free_udp_port(free_udp_port_factory: Callable[[], int]) -> int:
-    return free_udp_port_factory()

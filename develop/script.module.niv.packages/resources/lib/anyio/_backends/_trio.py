@@ -7,18 +7,8 @@ import socket
 import sys
 import types
 import weakref
-from collections.abc import (
-    AsyncGenerator,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Collection,
-    Coroutine,
-    Iterable,
-    Sequence,
-)
+from collections.abc import AsyncIterator, Iterable
 from concurrent.futures import Future
-from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from functools import partial
 from io import IOBase
@@ -28,10 +18,16 @@ from socket import AddressFamily, SocketKind
 from types import TracebackType
 from typing import (
     IO,
-    TYPE_CHECKING,
     Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Collection,
+    ContextManager,
+    Coroutine,
     Generic,
     NoReturn,
+    Sequence,
     TypeVar,
     cast,
     overload,
@@ -43,7 +39,6 @@ from outcome import Error, Outcome, Value
 from trio.lowlevel import (
     current_root_task,
     current_task,
-    notify_closing,
     wait_readable,
     wait_writable,
 )
@@ -54,7 +49,6 @@ from .. import (
     CapacityLimiterStatistics,
     EventStatistics,
     LockStatistics,
-    RunFinishedError,
     TaskInfo,
     WouldBlock,
     abc,
@@ -82,9 +76,6 @@ from .._core._tasks import CancelScope as BaseCancelScope
 from ..abc import IPSockAddrType, UDPPacketType, UNIXDatagramPacketType
 from ..abc._eventloop import AsyncBackend, StrOrBytesPath
 from ..streams.memory import MemoryObjectSendStream
-
-if TYPE_CHECKING:
-    from _typeshed import FileDescriptorLike
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec
@@ -134,11 +125,12 @@ class CancelScope(BaseCancelScope):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> bool:
+    ) -> bool | None:
+        # https://github.com/python-trio/trio-typing/pull/79
         return self.__original.__exit__(exc_type, exc_val, exc_tb)
 
-    def cancel(self, reason: str | None = None) -> None:
-        self.__original.cancel(reason)
+    def cancel(self) -> None:
+        self.__original.cancel()
 
     @property
     def deadline(self) -> float:
@@ -187,17 +179,17 @@ class TaskGroup(abc.TaskGroup):
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> bool:
+    ) -> bool | None:
         try:
-            # trio.Nursery.__exit__ returns bool; .open_nursery has wrong type
-            return await self._nursery_manager.__aexit__(exc_type, exc_val, exc_tb)  # type: ignore[return-value]
+            return await self._nursery_manager.__aexit__(exc_type, exc_val, exc_tb)
         except BaseExceptionGroup as exc:
-            if not exc.split(trio.Cancelled)[1]:
-                raise trio.Cancelled._create() from exc
+            _, rest = exc.split(trio.Cancelled)
+            if not rest:
+                cancelled_exc = trio.Cancelled._create()
+                raise cancelled_exc from exc
 
             raise
         finally:
-            del exc_val, exc_tb
             self._active = False
 
     def start_soon(
@@ -274,7 +266,7 @@ class ReceiveStreamWrapper(abc.ByteReceiveStream):
             raise BrokenResourceError from exc.__cause__
 
         if data:
-            return bytes(data)
+            return data
         else:
             raise EndOfStream
 
@@ -1095,11 +1087,7 @@ class TrioBackend(AsyncBackend):
         args: tuple[Unpack[PosArgsT]],
         token: object,
     ) -> T_Retval:
-        trio_token = cast("trio.lowlevel.TrioToken | None", token)
-        try:
-            return trio.from_thread.run(func, *args, trio_token=trio_token)
-        except trio.RunFinishedError:
-            raise RunFinishedError from None
+        return trio.from_thread.run(func, *args)
 
     @classmethod
     def run_sync_from_thread(
@@ -1108,11 +1096,7 @@ class TrioBackend(AsyncBackend):
         args: tuple[Unpack[PosArgsT]],
         token: object,
     ) -> T_Retval:
-        trio_token = cast("trio.lowlevel.TrioToken | None", token)
-        try:
-            return trio.from_thread.run_sync(func, *args, trio_token=trio_token)
-        except trio.RunFinishedError:
-            raise RunFinishedError from None
+        return trio.from_thread.run_sync(func, *args)
 
     @classmethod
     def create_blocking_portal(cls) -> abc.BlockingPortal:
@@ -1256,13 +1240,13 @@ class TrioBackend(AsyncBackend):
         type: int | SocketKind = 0,
         proto: int = 0,
         flags: int = 0,
-    ) -> Sequence[
+    ) -> list[
         tuple[
             AddressFamily,
             SocketKind,
             int,
             str,
-            tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes],
+            tuple[str, int] | tuple[str, int, int, int],
         ]
     ]:
         return await trio.socket.getaddrinfo(host, port, family, type, proto, flags)
@@ -1274,62 +1258,22 @@ class TrioBackend(AsyncBackend):
         return await trio.socket.getnameinfo(sockaddr, flags)
 
     @classmethod
-    async def wait_readable(cls, obj: FileDescriptorLike) -> None:
+    async def wait_socket_readable(cls, sock: socket.socket) -> None:
         try:
-            await wait_readable(obj)
+            await wait_readable(sock)
         except trio.ClosedResourceError as exc:
             raise ClosedResourceError().with_traceback(exc.__traceback__) from None
         except trio.BusyResourceError:
             raise BusyResourceError("reading from") from None
 
     @classmethod
-    async def wait_writable(cls, obj: FileDescriptorLike) -> None:
+    async def wait_socket_writable(cls, sock: socket.socket) -> None:
         try:
-            await wait_writable(obj)
+            await wait_writable(sock)
         except trio.ClosedResourceError as exc:
             raise ClosedResourceError().with_traceback(exc.__traceback__) from None
         except trio.BusyResourceError:
             raise BusyResourceError("writing to") from None
-
-    @classmethod
-    def notify_closing(cls, obj: FileDescriptorLike) -> None:
-        notify_closing(obj)
-
-    @classmethod
-    async def wrap_listener_socket(cls, sock: socket.socket) -> abc.SocketListener:
-        return TCPSocketListener(sock)
-
-    @classmethod
-    async def wrap_stream_socket(cls, sock: socket.socket) -> SocketStream:
-        trio_sock = trio.socket.from_stdlib_socket(sock)
-        return SocketStream(trio_sock)
-
-    @classmethod
-    async def wrap_unix_stream_socket(cls, sock: socket.socket) -> UNIXSocketStream:
-        trio_sock = trio.socket.from_stdlib_socket(sock)
-        return UNIXSocketStream(trio_sock)
-
-    @classmethod
-    async def wrap_udp_socket(cls, sock: socket.socket) -> UDPSocket:
-        trio_sock = trio.socket.from_stdlib_socket(sock)
-        return UDPSocket(trio_sock)
-
-    @classmethod
-    async def wrap_connected_udp_socket(cls, sock: socket.socket) -> ConnectedUDPSocket:
-        trio_sock = trio.socket.from_stdlib_socket(sock)
-        return ConnectedUDPSocket(trio_sock)
-
-    @classmethod
-    async def wrap_unix_datagram_socket(cls, sock: socket.socket) -> UNIXDatagramSocket:
-        trio_sock = trio.socket.from_stdlib_socket(sock)
-        return UNIXDatagramSocket(trio_sock)
-
-    @classmethod
-    async def wrap_connected_unix_datagram_socket(
-        cls, sock: socket.socket
-    ) -> ConnectedUNIXDatagramSocket:
-        trio_sock = trio.socket.from_stdlib_socket(sock)
-        return ConnectedUNIXDatagramSocket(trio_sock)
 
     @classmethod
     def current_default_thread_limiter(cls) -> CapacityLimiter:
@@ -1345,7 +1289,7 @@ class TrioBackend(AsyncBackend):
     @classmethod
     def open_signal_receiver(
         cls, *signals: Signals
-    ) -> AbstractContextManager[AsyncIterator[Signals]]:
+    ) -> ContextManager[AsyncIterator[Signals]]:
         return _SignalReceiver(signals)
 
     @classmethod

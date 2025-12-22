@@ -3,34 +3,27 @@ from __future__ import annotations
 import sys
 from collections.abc import Awaitable, Callable, Generator
 from concurrent.futures import Future
-from contextlib import (
-    AbstractAsyncContextManager,
-    AbstractContextManager,
-    contextmanager,
-)
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass, field
 from inspect import isawaitable
-from threading import Lock, Thread, current_thread, get_ident
+from threading import Lock, Thread, get_ident
 from types import TracebackType
 from typing import (
     Any,
+    AsyncContextManager,
+    ContextManager,
     Generic,
     TypeVar,
     cast,
     overload,
 )
 
-from ._core._eventloop import (
-    get_async_backend,
-    get_cancelled_exc_class,
-    threadlocals,
-)
-from ._core._eventloop import run as run_eventloop
-from ._core._exceptions import NoEventLoopError
+from ._core import _eventloop
+from ._core._eventloop import get_async_backend, get_cancelled_exc_class, threadlocals
 from ._core._synchronization import Event
 from ._core._tasks import CancelScope, create_task_group
+from .abc import AsyncBackend
 from .abc._tasks import TaskStatus
-from .lowlevel import EventLoopToken
 
 if sys.version_info >= (3, 11):
     from typing import TypeVarTuple, Unpack
@@ -42,73 +35,48 @@ T_co = TypeVar("T_co", covariant=True)
 PosArgsT = TypeVarTuple("PosArgsT")
 
 
-def _token_or_error(token: EventLoopToken | None) -> EventLoopToken:
-    if token is not None:
-        return token
-
-    try:
-        return threadlocals.current_token
-    except AttributeError:
-        raise NoEventLoopError(
-            "Not running inside an AnyIO worker thread, and no event loop token was "
-            "provided"
-        ) from None
-
-
 def run(
-    func: Callable[[Unpack[PosArgsT]], Awaitable[T_Retval]],
-    *args: Unpack[PosArgsT],
-    token: EventLoopToken | None = None,
+    func: Callable[[Unpack[PosArgsT]], Awaitable[T_Retval]], *args: Unpack[PosArgsT]
 ) -> T_Retval:
     """
     Call a coroutine function from a worker thread.
 
     :param func: a coroutine function
     :param args: positional arguments for the callable
-    :param token: an event loop token to use to get back to the event loop thread
-        (required if calling this function from outside an AnyIO worker thread)
     :return: the return value of the coroutine function
-    :raises MissingTokenError: if no token was provided and called from outside an
-        AnyIO worker thread
-    :raises RunFinishedError: if the event loop tied to ``token`` is no longer running
-
-    .. versionchanged:: 4.11.0
-        Added the ``token`` parameter.
 
     """
-    explicit_token = token is not None
-    token = _token_or_error(token)
-    return token.backend_class.run_async_from_thread(
-        func, args, token=token.native_token if explicit_token else None
-    )
+    try:
+        async_backend = threadlocals.current_async_backend
+        token = threadlocals.current_token
+    except AttributeError:
+        raise RuntimeError(
+            "This function can only be run from an AnyIO worker thread"
+        ) from None
+
+    return async_backend.run_async_from_thread(func, args, token=token)
 
 
 def run_sync(
-    func: Callable[[Unpack[PosArgsT]], T_Retval],
-    *args: Unpack[PosArgsT],
-    token: EventLoopToken | None = None,
+    func: Callable[[Unpack[PosArgsT]], T_Retval], *args: Unpack[PosArgsT]
 ) -> T_Retval:
     """
     Call a function in the event loop thread from a worker thread.
 
     :param func: a callable
     :param args: positional arguments for the callable
-    :param token: an event loop token to use to get back to the event loop thread
-        (required if calling this function from outside an AnyIO worker thread)
     :return: the return value of the callable
-    :raises MissingTokenError: if no token was provided and called from outside an
-        AnyIO worker thread
-    :raises RunFinishedError: if the event loop tied to ``token`` is no longer running
-
-    .. versionchanged:: 4.11.0
-        Added the ``token`` parameter.
 
     """
-    explicit_token = token is not None
-    token = _token_or_error(token)
-    return token.backend_class.run_sync_from_thread(
-        func, args, token=token.native_token if explicit_token else None
-    )
+    try:
+        async_backend = threadlocals.current_async_backend
+        token = threadlocals.current_token
+    except AttributeError:
+        raise RuntimeError(
+            "This function can only be run from an AnyIO worker thread"
+        ) from None
+
+    return async_backend.run_sync_from_thread(func, args, token=token)
 
 
 class _BlockingAsyncContextManager(Generic[T_co], AbstractContextManager):
@@ -119,9 +87,7 @@ class _BlockingAsyncContextManager(Generic[T_co], AbstractContextManager):
         type[BaseException] | None, BaseException | None, TracebackType | None
     ] = (None, None, None)
 
-    def __init__(
-        self, async_cm: AbstractAsyncContextManager[T_co], portal: BlockingPortal
-    ):
+    def __init__(self, async_cm: AsyncContextManager[T_co], portal: BlockingPortal):
         self._async_cm = async_cm
         self._portal = portal
 
@@ -146,8 +112,7 @@ class _BlockingAsyncContextManager(Generic[T_co], AbstractContextManager):
             # `_BlockingAsyncContextManager.__exit__` is called, and an
             # `_exit_exc_info` has been set.
             result = await self._async_cm.__aexit__(*self._exit_exc_info)
-
-        return result
+            return result
 
     def __enter__(self) -> T_co:
         self._enter_future = Future()
@@ -194,7 +159,7 @@ class BlockingPortal:
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> bool:
+    ) -> bool | None:
         await self.stop()
         return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
 
@@ -224,7 +189,7 @@ class BlockingPortal:
         self._event_loop_thread_id = None
         self._stop_event.set()
         if cancel_remaining:
-            self._task_group.cancel_scope.cancel("the blocking portal is shutting down")
+            self._task_group.cancel_scope.cancel()
 
     async def _call_func(
         self,
@@ -238,14 +203,14 @@ class BlockingPortal:
                 None,
                 get_ident(),
             ):
-                self.call(scope.cancel, "the future was cancelled")
+                self.call(scope.cancel)
 
         try:
             retval_or_awaitable = func(*args, **kwargs)
             if isawaitable(retval_or_awaitable):
                 with CancelScope() as scope:
                     if future.cancelled():
-                        scope.cancel("the future was cancelled")
+                        scope.cancel()
                     else:
                         future.add_done_callback(callback)
 
@@ -279,7 +244,7 @@ class BlockingPortal:
         """
         Spawn a new task using the given callable.
 
-        Implementers must ensure that the future is resolved when the task finishes.
+        Implementors must ensure that the future is resolved when the task finishes.
 
         :param func: a callable
         :param args: positional arguments to be passed to the callable
@@ -409,8 +374,8 @@ class BlockingPortal:
         return f, task_status_future.result()
 
     def wrap_async_context_manager(
-        self, cm: AbstractAsyncContextManager[T_co]
-    ) -> AbstractContextManager[T_co]:
+        self, cm: AsyncContextManager[T_co]
+    ) -> ContextManager[T_co]:
         """
         Wrap an async context manager as a synchronous context manager via this portal.
 
@@ -485,10 +450,7 @@ class BlockingPortalProvider:
 
 @contextmanager
 def start_blocking_portal(
-    backend: str = "asyncio",
-    backend_options: dict[str, Any] | None = None,
-    *,
-    name: str | None = None,
+    backend: str = "asyncio", backend_options: dict[str, Any] | None = None
 ) -> Generator[BlockingPortal, Any, None]:
     """
     Start a new event loop in a new thread and run a blocking portal in its main task.
@@ -497,7 +459,6 @@ def start_blocking_portal(
 
     :param backend: name of the backend
     :param backend_options: backend options
-    :param name: name of the thread
     :return: a context manager that yields a blocking portal
 
     .. versionchanged:: 3.0
@@ -507,16 +468,13 @@ def start_blocking_portal(
 
     async def run_portal() -> None:
         async with BlockingPortal() as portal_:
-            if name is None:
-                current_thread().name = f"{backend}-portal-{id(portal_):x}"
-
             future.set_result(portal_)
             await portal_.sleep_until_stopped()
 
     def run_blocking_portal() -> None:
         if future.set_running_or_notify_cancel():
             try:
-                run_eventloop(
+                _eventloop.run(
                     run_portal, backend=backend, backend_options=backend_options
                 )
             except BaseException as exc:
@@ -524,7 +482,7 @@ def start_blocking_portal(
                     future.set_exception(exc)
 
     future: Future[BlockingPortal] = Future()
-    thread = Thread(target=run_blocking_portal, daemon=True, name=name)
+    thread = Thread(target=run_blocking_portal, daemon=True)
     thread.start()
     try:
         cancel_remaining_tasks = False
@@ -556,10 +514,10 @@ def check_cancelled() -> None:
 
     """
     try:
-        token: EventLoopToken = threadlocals.current_token
+        async_backend: AsyncBackend = threadlocals.current_async_backend
     except AttributeError:
-        raise NoEventLoopError(
-            "This function can only be called inside an AnyIO worker thread"
+        raise RuntimeError(
+            "This function can only be run from an AnyIO worker thread"
         ) from None
 
-    token.backend_class.check_cancelled()
+    async_backend.check_cancelled()

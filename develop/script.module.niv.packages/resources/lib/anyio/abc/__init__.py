@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ._eventloop import AsyncBackend as AsyncBackend
 from ._resources import AsyncResource as AsyncResource
 from ._sockets import ConnectedUDPSocket as ConnectedUDPSocket
@@ -17,19 +19,16 @@ from ._sockets import UNIXSocketStream as UNIXSocketStream
 from ._streams import AnyByteReceiveStream as AnyByteReceiveStream
 from ._streams import AnyByteSendStream as AnyByteSendStream
 from ._streams import AnyByteStream as AnyByteStream
-from ._streams import AnyByteStreamConnectable as AnyByteStreamConnectable
 from ._streams import AnyUnreliableByteReceiveStream as AnyUnreliableByteReceiveStream
 from ._streams import AnyUnreliableByteSendStream as AnyUnreliableByteSendStream
 from ._streams import AnyUnreliableByteStream as AnyUnreliableByteStream
 from ._streams import ByteReceiveStream as ByteReceiveStream
 from ._streams import ByteSendStream as ByteSendStream
 from ._streams import ByteStream as ByteStream
-from ._streams import ByteStreamConnectable as ByteStreamConnectable
 from ._streams import Listener as Listener
 from ._streams import ObjectReceiveStream as ObjectReceiveStream
 from ._streams import ObjectSendStream as ObjectSendStream
 from ._streams import ObjectStream as ObjectStream
-from ._streams import ObjectStreamConnectable as ObjectStreamConnectable
 from ._streams import UnreliableObjectReceiveStream as UnreliableObjectReceiveStream
 from ._streams import UnreliableObjectSendStream as UnreliableObjectSendStream
 from ._streams import UnreliableObjectStream as UnreliableObjectStream
@@ -51,8 +50,8 @@ from .._core._tasks import CancelScope as CancelScope
 from ..from_thread import BlockingPortal as BlockingPortal
 
 # Re-export imports so they look like they live directly in this package
-for __value in list(locals().values()):
-    if getattr(__value, "__module__", "").startswith("anyio.abc."):
-        __value.__module__ = __name__
-
-del __value
+key: str
+value: Any
+for key, value in list(locals().items()):
+    if getattr(value, "__module__", "").startswith("anyio.abc."):
+        value.__module__ = __name__
