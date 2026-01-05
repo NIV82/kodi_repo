@@ -64,14 +64,13 @@ def plugin_rebuild():
 root_dir = dirname(dirname(__file__))
 develop_dir = os.path.join(root_dir, 'develop')
 release_dir = os.path.join(root_dir, 'release')
-packages_dir = os.path.join(root_dir, 'packages')
 
 develop_plugins = [
     'plugin.niv.anidub',
     'plugin.niv.anilibria',
     'plugin.niv.anistar',
     'plugin.niv.lostfilm',
-    #'plugin.niv.redheadsound', # временно отключен, не могу запустить DRM-ClearKey
+    'plugin.niv.redheadsound', # временно отключен, не могу запустить DRM-ClearKey
     'plugin.niv.shizaproject',
     'repository.niv',
     ]
@@ -96,7 +95,7 @@ for develop_plugin in develop_plugins:
     package_name = f"{develop_plugin}-{version}"
     destination = os.path.join(release_path, package_name)
 
-    # if not os.path.isfile(f"{destination}.zip"):
-    #     packing(base_name=destination, root_dir=develop_dir, base_dir=develop_plugin)
+    if not os.path.isfile(f"{destination}.zip"):
+        packing(base_name=destination, root_dir=develop_dir, base_dir=develop_plugin)
 
 plugin_rebuild()
