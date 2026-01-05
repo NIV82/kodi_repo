@@ -54,16 +54,15 @@ def plugin_rebuild():
     full_xml = f"{full_xml}{'</addons>'}"
     full_xml = full_xml.replace('\n\n\n','\n\n')
 
-    with open(os.path.join(release_dir, 'addons.xml'), 'w', encoding='utf-8') as write_file:
+    with open(os.path.join(packages_dir, 'addons.xml'), 'w', encoding='utf-8') as write_file:
         write_file.write(full_xml)
 
-    md5_generator(os.path.join(release_dir, 'addons.xml'))
+    md5_generator(os.path.join(packages_dir, 'addons.xml'))
 
     return
 
 root_dir = dirname(dirname(__file__))
 develop_dir = os.path.join(root_dir, 'develop')
-release_dir = os.path.join(root_dir, 'release')
 packages_dir = os.path.join(root_dir, 'packages')
 
 develop_plugins = [
@@ -84,7 +83,7 @@ for develop_plugin in develop_plugins:
     with open(xml_path, 'r') as open_file:
         data = open_file.read()
 
-    release_path = os.path.join(release_dir, develop_plugin)
+    release_path = os.path.join(packages_dir, develop_plugin)
 
     version = data[data.find('" version="')+11:data.find('" provider')]
     package_name = f"{develop_plugin}-{version}"
