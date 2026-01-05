@@ -96,7 +96,7 @@ for develop_plugin in develop_plugins:
     package_name = f"{develop_plugin}-{version}"
     destination = os.path.join(release_path, package_name)
 
-    if not os.path.isfile(f"{destination}.zip"):
-        packing(base_name=destination, root_dir=develop_dir, base_dir=develop_plugin)
+    # if not os.path.isfile(f"{destination}.zip"):
+    #     packing(base_name=destination, root_dir=develop_dir, base_dir=develop_plugin)
 
 plugin_rebuild()
