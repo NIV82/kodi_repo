@@ -2,13 +2,13 @@
 <settings>
 
   <category label="Настройки">
-    <setting id="quality" type="select" label="Качество по умолчанию:" default="AUTO" values="AUTO|480p|720p|1080p|SELECT" />
+    <!-- <setting id="quality" type="select" label="Качество по умолчанию:" default="AUTO" values="AUTO|480p|720p|1080p|SELECT" />
     <setting type="sep"/>
     <setting id="inputstream_adaptive" label="Inputstream Adaptive" type="enum" default="0" values="Включено|Выключено" />
     <setting id="search" label="search" type="text" default="" visible="false"/>
     <setting type="sep"/>
     <setting id="tmdb_unblock" label="TMDB для России" type="enum" default="0" values="Включено|Выключено" />
-    <setting id="tmdb_images" label="Выбор Постеров:" type="enum" default="0" values="Preview (меньше)|Original (больше)" />
+    <setting id="tmdb_images" label="Выбор Постеров:" type="enum" default="0" values="Preview (меньше)|Original (больше)" /> -->
   </category>
 
 </settings>

@@ -1,27 +1,20 @@
-# import sys
-# import os
-
-# parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# sys.path.insert(1, os.path.join(parent_dir, 'external_libraries'))
-
 from httpx import Client, HTTPStatusError
 from httpx import TimeoutException, ConnectError, RequestError, HTTPError
 from time import time, sleep
 
-#from ado.config import HTTPClientConfig
-
 HEADERS: dict = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 YaBrowser/25.2.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 YaBrowser/25.10.0.0 Safari/537.36',
+    'Referer': 'https://redheadsound.studio/'
 }
 
-# def set_headers(headers):
-#     """
-#     Функция для обновления заголовков без дополнительной передачи в класс.
+def set_headers(headers):
+    """
+    Функция для обновления заголовков без дополнительной передачи в класс.
 
-#     :param headers: headers | dict
-#     """
-#     HEADERS.clear()
-#     HEADERS.update(headers)
+    :param headers: headers | dict
+    """
+    HEADERS.clear()
+    HEADERS.update(headers)
 
 class BaseClient:
     """
@@ -68,16 +61,20 @@ class BaseClient:
         :param retry: количество повторных запросов
         :return: dict 
         """
+        result = {}
         try:
             response = self.client.get(url, params=params)
             response.raise_for_status()
-            result = {
-                    'status': response.status_code,
-                    'reason': response.reason_phrase,
-                    'encoding': response.encoding,
-                    'response': response,
-                    'error': None
-                }
+            if response.status_code in (200, 302, ):
+                return response
+            #result = response
+            # result = {
+            #         'status': response.status_code,
+            #         'reason': response.reason_phrase,
+            #         'encoding': response.encoding,
+            #         'response': response,
+            #         'error': None
+            #     }
         except HTTPStatusError as exc:
             result = {
                 'reason': f"{exc.request.url}",
@@ -110,16 +107,12 @@ class BaseClient:
         :param retry: количество повторных запросов
         :return: dict 
         """
+        result = {}
         try:
             response = self.client.post(url, data=data)
             response.raise_for_status()
-            result = {
-                    'status': response.status_code,
-                    'reason': response.reason_phrase,
-                    'encoding': response.encoding,
-                    'response': response,
-                    'error': None
-                }
+            if response.status_code in (200, 302, ):
+                return response
         except HTTPStatusError as exc:
             result = {
                 'reason': f"{exc.request.url}",
