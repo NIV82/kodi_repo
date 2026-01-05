@@ -222,10 +222,21 @@ class RHSAPI:
 
         plot = soup.find('div', {'class': 'modal', 'id': 'description-modal'})
         plot = plot.find_all('p')
-        plot = [desc.p.text for desc in plot if desc.p]
-        if len(plot) > 0:
-            plot = plot[0].strip()
+        # plot = [desc.p.text for desc in plot if desc.p]
+        # if len(plot) > 0:
+        #     plot = plot[0].strip()
 
+        description = ''
+
+        for p in plot:
+            if not p.text:
+                continue
+            p = p.text.strip()
+            if p not in description:
+                description = f'{description}{p}\n'
+
+        plot = description
+        
         data_array = soup.find(class_='fullstory-main-page')
 
         cover = data_array.find(class_='movies-detail__left').img.get('src')
