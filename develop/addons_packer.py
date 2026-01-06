@@ -70,7 +70,7 @@ develop_plugins = [
     'plugin.niv.anilibria',
     'plugin.niv.anistar',
     'plugin.niv.lostfilm',
-    'plugin.niv.redheadsound', # временно отключен, не могу запустить DRM-ClearKey
+    #'plugin.niv.redheadsound', # временно отключен, не могу запустить DRM-ClearKey
     'plugin.niv.shizaproject',
     'repository.niv',
     ]
