@@ -759,13 +759,16 @@ class Anistar:
 
         mp_data = mainplayer.parse_mainplayer(mlink=mlink)
 
+
         for node in mp_data:
             self.create_line(
                 title=node['title'],
                 anime_id=self.params['id'],
                 params={
                     'mode': 'play_part',
-                    'param': node['file'] or node['file_h'],
+                    # 'param': node['file'] or node['file_h'],
+                    #'param': node['files_mp4']['720'] or node['files']['720'],
+                    'param': node['files']['720'],# or node['files_mp4']['720'],
                     'id': self.params['id']
                     },
                 folder=False,
@@ -926,18 +929,23 @@ class Anistar:
         xbmcplugin.endOfDirectory(handle)
         return
 #========================#========================#========================#
+#     def _parse_playurl(self, data):
+# ##[{'title': 'Серия 1', 'media_id': '57791', 'other_2': 'https://n2.astar.bz/embed/212455', 'files': {'360': 'https://sf2.an-media.org/video/9e2faf1637e89a43769a1c947be7d145/360.mp4/index.m3u8', '720': 'https://sfv.an-media.org/key=ZIySAXRzqd56L4D8rK+z0A,end=1769020778/referer=/media=hls/video/9e2faf1637e89a43769a1c947be7d145/720.mp4'}, 'files_mp4': {'360': 'https://sf2.an-media.org/KhYApTY5cnDjzB-fYal5MA/1769114378/9e2faf1637e89a43769a1c947be7d145/360.mp4', '720': 'https://sf2.an-media.org/8UPSUzVP-TuC_awoGvHLgQ/1769114378/9e2faf1637e89a43769a1c947be7d145/720.mp4'}}, {'title': 'Серия 2', 'media_id': '57792', 'other_2': 'https://n2.astar.bz/embed/212456', 'files': {'360': 'https://sf2.an-media.org/video/dc8decda8c21d452e7e73923a388713f/360.mp4/index.m3u8', '720': 'https://sfv.an-media.org/key=agkDTrTu2wgzgrAc44pFpA,end=1769020778/referer=/media=hls/video/dc8decda8c21d452e7e73923a388713f/720.mp4'}, 'files_mp4': {'360': 'https://sf2.an-media.org/f7puFDF4v3c-pA-U40WIxQ/1769114378/dc8decda8c21d452e7e73923a388713f/360.mp4', '720': 'https://sf2.an-media.org/YwEKOIQQ5bCuHeJTtBZBkg/1769114378/dc8decda8c21d452e7e73923a388713f/720.mp4'}}, {'title': 'Серия 3', 'media_id': '57849', 'other_2': 'https://n2.astar.bz/embed/215699', 'files': {'360': 'https://sf2.an-media.org/video/799b9fd38b7bd22dc260d2a6cd880786/360.mp4/index.m3u8', '720': 'https://sfv.an-media.org/key=zKhpsPJyMJ0diBbcRCUxJw,end=1769020778/referer=/media=hls/video/799b9fd38b7bd22dc260d2a6cd880786/720.mp4'}, 'files_mp4': {'360': 'https://sf2.an-media.org/4VgaX-U-O68XlwpNq8vczQ/1769114378/799b9fd38b7bd22dc260d2a6cd880786/360.mp4', '720': 'https://sf2.an-media.org/xRnmjEpMJ6BZtX0gABiE-w/1769114378/799b9fd38b7bd22dc260d2a6cd880786/720.mp4'}}, {'title': 'Серия 4', 'media_id': '57952', 'other_2': 'https://n2.astar.bz/embed/218888', 'files': {'360': 'https://sf2.an-media.org/video/7abb1236e147ccb6051e8662d8245cde/360.mp4/index.m3u8', '720': 'https://sfv.an-media.org/key=3P2YnAbtHkUzHWoEpYzNAg,end=1769020778/referer=/media=hls/video/7abb1236e147ccb6051e8662d8245cde/720.mp4'}, 'files_mp4': {'360': 'https://sf2.an-media.org/4SqL_e080RXqwnHVm-7BSA/1769114378/7abb1236e147ccb6051e8662d8245cde/360.mp4', '720': 'https://sf2.an-media.org/AK-d-5Z2wL0L_jG535nSWw/1769114378/7abb1236e147ccb6051e8662d8245cde/720.mp4'}}]
+
+#         vsd = data[data.find('360=')+4:]
+#         vsd = vsd[:vsd.find('&')]
+
+#         vhd = data[data.find('720=')+4:]
+#         if '&' in vhd:
+#             vhd = vhd[:vhd.find('&')]
+
+#         vhd = f"{vhd}"
+
+#         return {'SD': vsd, 'HD': vhd, 'type': 'mainplayer'}
+
     def _parse_playurl(self, data):
-        vsd = data[data.find('360=')+4:]
-        vsd = vsd[:vsd.find('&')]
-
-        vhd = data[data.find('720=')+4:]
-        if '&' in vhd:
-            vhd = vhd[:vhd.find('&')]
-
-        vhd = f"{vhd}"
-
-        return {'SD': vsd, 'HD': vhd, 'type': 'mainplayer'}
-
+        return {'SD': '', 'HD': data, 'type': 'mainplayer'}
+    
     def _validate_url(self, link):
         if 'vkvideo' in link:
             vkp = vkparse.ParseVK(vkvideo_url=link)
@@ -956,6 +964,7 @@ class Anistar:
         req_headers: dict = {}
         video_url: str = ''
         video_playdata = self._validate_url(self.params['param'])
+
 
         if video_playdata['type'] == 'vk':
             ctab = {'SD': 'url480', 'HD': 'url720', 'FHD': 'url1080', 'HLS': 'hls'}
