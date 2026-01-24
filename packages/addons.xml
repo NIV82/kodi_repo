@@ -17,4 +17,20 @@
     </extension>
 </addon>
 
+<addon id="script.module.niv.httpx" name="HTTPX" version="0.0.1" provider-name="NIV">
+    <requires>
+        <import addon="xbmc.python" version="3.0.0"/>
+    </requires>
+    <extension point="xbmc.python.module" library="resources/lib" />
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <summary lang="en_GB">HTTPX</summary>
+        <description lang="en_GB">HTTPX</description>
+        <language>ru en</language>
+        <assets>
+            <icon>icon.png</icon>
+        </assets>
+    </extension>
+</addon>
+
 </addons>

@@ -67,6 +67,7 @@ packages_dir = os.path.join(root_dir, 'packages')
 
 develop_plugins = [
     'script.module.niv.packages',
+    'script.module.niv.httpx',
     ]
 
 for develop_plugin in develop_plugins:
