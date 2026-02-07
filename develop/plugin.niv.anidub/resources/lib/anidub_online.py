@@ -62,7 +62,7 @@ class ANIDUB:
                 },
             {
                 'label': '[B]Аниме[/B]',
-                'params': {'path': 'partition_part', 'param': 'anime_tv'},
+                'params': {'path': 'partition_part', 'param': 'full'},
                 'icon': os.path.join(media_path, 'series.png')
                 },
             {
@@ -88,7 +88,7 @@ class ANIDUB:
         items = [
             {
                 'label': '[B]Аниме TV[/B]',
-                'params': {'path': 'partition_part', 'param': 'anime_tv'},
+                'params': {'path': 'partition_part', 'param': 'full'},
                 'icon': os.path.join(media_path, 'series.png')
                 },
             {
@@ -112,38 +112,14 @@ class ANIDUB:
                 'icon': os.path.join(media_path, 'series.png')
                 },
             {
-                'label': '[B]Японские Сериалы и Фильмы[/B]',
-                'params': {'path': 'partition_part', 'param': 'japan_dorama'},
+                'label': '[B]Дорамы[/B]',
+                'params': {'path': 'partition_part', 'param': 'dorama'},
                 'icon': os.path.join(media_path, 'series.png')
                 },
+
             {
-                'label': '[B]Корейские Сериалы и Фильмы[/B]',
-                'params': {'path': 'partition_part', 'param': 'korea_dorama'},
-                'icon': os.path.join(media_path, 'series.png')
-                },
-            {
-                'label': '[B]Китайские Сериалы и Фильмы[/B]',
-                'params': {'path': 'partition_part', 'param': 'china_dorama'},
-                'icon': os.path.join(media_path, 'series.png')
-                },
-            {
-                'label': '[B]Многосерийный сёнэн[/B]',
-                'params': {'path': 'partition_part', 'param': 'shonen'},
-                'icon': os.path.join(media_path, 'series.png')
-                },
-            {
-                'label': '[B]18+[/B]',
-                'params': {'path': 'partition_part', 'param': 'xxx'},
-                'icon': os.path.join(media_path, 'series.png')
-                },
-            {
-                'label': '[B]Законченные сериалы[/B]',
-                'params': {'path': 'partition_part', 'param': 'full'},
-                'icon': os.path.join(media_path, 'series.png')
-                },
-            {
-                'label': '[B]Незаконченные сериалы[/B]',
-                'params': {'path': 'partition_part', 'param': 'unclosed'},
+                'label': '[B]Азиатские фильмы[/B]',
+                'params': {'path': 'partition_part', 'param': 'aziatskie-filmy'},
                 'icon': os.path.join(media_path, 'series.png')
                 },
             {
@@ -155,7 +131,7 @@ class ANIDUB:
                 'label': '[B]Дубляж Анидаба[/B]',
                 'params': {'path': 'partition_part', 'param': 'adubbing'},
                 'icon': os.path.join(media_path, 'series.png')
-                },
+                }
             ]
         self.create_line(items=items, content=True)
 
@@ -452,17 +428,21 @@ def _pagination(pages=None):
     return node
 
 def _assemble_siteurl():
-    """ASSEMBLE SITE_URL"""
-    current_mirror = f"mirror_{addon.getSetting('mirrormode')}"
-
-    if not addon.getSetting(current_mirror):
-        select_url = addon.getSetting('mirror_0')
-    else:
-        select_url = addon.getSetting(current_mirror)
-
-    select_url = f"https://{select_url}"
-
+    select_url = f"https://{addon.getSetting('mirror_1')}"
     return select_url
+
+# def _assemble_siteurl():
+#     """ASSEMBLE SITE_URL"""
+#     current_mirror = f"mirror_{addon.getSetting('mirrormode')}"
+
+#     if not addon.getSetting(current_mirror):
+#         select_url = addon.getSetting('mirror_0')
+#     else:
+#         select_url = addon.getSetting(current_mirror)
+
+#     select_url = f"https://{select_url}"
+
+#     return select_url
 #========================#========================#========================#
 def start():
     """START ANIDUB CLASS"""
