@@ -682,7 +682,8 @@ class Anistar:
 
         if 'kodik.' in vurl:
             self._parse_kodiktrbox(klink=vurl)
-        elif 'videoas.' in vurl:
+        # elif 'videoas.' in vurl:
+        elif 'videoas' in vurl:
             self._parse_mainplayer(mlink=vurl)
         elif 'playlist_anistar2' in vurl:
             self._parse_anistarplayer(alink=vurl)
@@ -758,7 +759,6 @@ class Anistar:
             mlink = f"{self.site_url}{mlink}"
 
         mp_data = mainplayer.parse_mainplayer(mlink=mlink)
-
 
         for node in mp_data:
             self.create_line(
