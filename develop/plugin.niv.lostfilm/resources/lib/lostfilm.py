@@ -64,6 +64,10 @@ class Lostfilm:
         self.context_menu = []
 
         self.site_url = self.create_site_url()
+
+        if not self.site_url.endswith('/'):
+            self.site_url = '{}/'.format(self.site_url)
+
         self.sid_file = os.path.join(addon_data_dir, 'lostfilm.sid')
 
         self.params = {'mode': 'main_part', 'param': '', 'page': '1', 'code': ''}
@@ -76,6 +80,7 @@ class Lostfilm:
         self.network = WebTools(
             auth_usage=True,
             auth_status=bool(addon.getSetting('auth') == 'true'),
+            base_url=self.site_url,
             )
         
         self.network.auth_post_data = urlencode({
@@ -295,15 +300,49 @@ class Lostfilm:
         if serial_season == 999:
             serial_season = 1
 
-        image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season)
+        # Изображения берём с того же зеркала, что и страницы сайта.
+        # Домен static.lostfilm.top отдаёт большие постеры крайне медленно
+        # (или не отдаёт вовсе), из-за чего часть картинок не загружалась.
+        image = '{}Static/Images/{}/Posters/shmoster_s{}.jpg'.format(
+            self.site_url, serial_image, serial_season)
 
-        if serial_episode == 999:
-            image = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s{}.jpg'.format(serial_image, serial_season)
-            
         if ismovie:
-            image = 'https://static.lostfilm.top/Images/{}/Posters/poster.jpg'.format(serial_image)
+            image = '{}Static/Images/{}/Posters/poster.jpg'.format(
+                self.site_url, serial_image)
 
         return image
+#========================#========================#========================#
+    def obtain_watched(self, image_id):
+        image_id = str(image_id)
+
+        if not hasattr(self, '_watched_cache'):
+            self._watched_cache = {}
+
+        if image_id not in self._watched_cache:
+            url = '{}ajaxik.php'.format(self.site_url)
+            post = urlencode({
+                "act": "serial",
+                "type": "getmarks",
+                "id": image_id
+                })
+
+            watched_data = self.network.get_html(url=url, post=post)
+
+            watched = set()
+            if watched_data:
+                try:
+                    import json
+                    data = json.loads(watched_data)
+                    for code in data.get('data', []):
+                        watched.add(str(code))
+                except:
+                    import re
+                    for code in re.findall(r'\d{6,}', str(watched_data)):
+                        watched.add(code)
+
+            self._watched_cache[image_id] = watched
+
+        return self._watched_cache[image_id]
 #========================#========================#========================#
     def create_title(self, serial_title, data_code=None, watched=False, ismovie=False):
 
@@ -348,8 +387,8 @@ class Lostfilm:
             if not node[1]:
                 node[1] = 'uknown'
             if node[2]:
-                node[2] = 'https://static.lostfilm.top/Names/{}/{}/{}/{}'.format(
-                    node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
+                node[2] = '{}Static/Names/{}/{}/{}/{}'.format(
+                    self.site_url, node[2][1:2], node[2][2:3], node[2][3:4], node[2].replace('t','m', 1))
 
             if version >= 20:
                 actors.append(xbmc.Actor(
@@ -664,6 +703,7 @@ class Lostfilm:
         self.network = WebTools(
             auth_usage=True,
             auth_status=False,
+            base_url=self.site_url,
             #proxy_data = self.proxy_data
             )
 
@@ -1211,11 +1251,11 @@ class Lostfilm:
                         ]
 
                     if not is_movie:
-                        self.context_menu.append(('Перейти к Сериалу', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,se_code[0:3])))
+                        self.context_menu.append(('Перейти к Сериалу', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=select_part&id={}&code={}001999")'.format(serial_id,se_code[:len(se_code)-6])))
                         self.context_menu.append(('Добавить в Медиатеку', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=create_media&id={}&ismovie={}")'.format(serial_id, is_movie)))
                         self.context_menu.append(('Обновить медиатеку', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=library_part&param=update_media")'))
                     else:
-                        self.context_menu.append(('Перейти к Фильму', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=movies_part&id={}&code={}001001")'.format(serial_id,se_code[0:3])))
+                        self.context_menu.append(('Перейти к Фильму', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=movies_part&id={}&code={}001001")'.format(serial_id,se_code[:len(se_code)-6])))
 
                     self.create_line(title=label, folder=False, params={'mode': 'play_part', 'id': serial_id, 'param': se_code}, **info)
                 except:
@@ -1366,6 +1406,10 @@ class Lostfilm:
             is_watched = False
             if 'isawthat-btn checked' in html:
                 is_watched = True
+            elif info['se_code'] in self.obtain_watched(self.params['code'][:-6]):
+                is_watched = True
+
+            if is_watched:
                 info['playcount'] = 1
 
             self.context_menu = [
@@ -1471,6 +1515,16 @@ class Lostfilm:
 
             image_id = self.params['code'][:len(self.params['code'])-6]
 
+            # Берём актуальный id постера со страницы сериала: в базе он
+            # может быть устаревшим, а в старых ссылках — обрезанным.
+            if '/Images/' in html:
+                page_image_id = html[html.find('/Images/')+8:]
+                page_image_id = page_image_id[:page_image_id.find('/')].strip()
+                if page_image_id.isdigit():
+                    image_id = page_image_id
+
+            watched = self.obtain_watched(image_id)
+
             data_array = html[html.find('<h2>')+4:html.rfind('holder"></td>')+13]
             data_array = data_array.split('<h2>')
             data_array.reverse()
@@ -1501,6 +1555,18 @@ class Lostfilm:
                         se_code = '{}{:>03}999'.format(image_id, int(season))
                         info['se_code'] = se_code
                         info['cover'] = self.create_image(se_code=se_code)
+
+                        # Сезон считается просмотренным, когда отмечены все
+                        # уже вышедшие серии (как на самом сайте).
+                        season_episodes = []
+                        for part in data.split('data-episode="')[1:]:
+                            episode_code = part[:part.find('"')]
+                            button = part[:part.find('>')]
+                            if episode_code and episode_code[-3:] != '999' and 'data-code=' in button:
+                                season_episodes.append(episode_code)
+
+                        info['playcount'] = 1 if season_episodes and all(
+                            code in watched for code in season_episodes) else 0
 
                         p = int((float(i+1) / len(data_array)) * 100)
 
@@ -1544,14 +1610,17 @@ class Lostfilm:
                     xbmcplugin.endOfDirectory(handle, succeeded=True)
                     return
 
-            url = '{}ajaxik.php'.format(self.site_url)
-            post = {"act": "serial","type": "getmarks","id": image_id}
-            post = urlencode(post)
+            # Уточняем id постера по самой странице сезона, чтобы старые
+            # или обрезанные ссылки не приводили к чужой картинке и
+            # неверному запросу отметок о просмотре.
+            if '/Images/' in html:
+                page_image_id = html[html.find('/Images/')+8:]
+                page_image_id = page_image_id[:page_image_id.find('/')].strip()
+                if page_image_id.isdigit():
+                    image_id = page_image_id
+                    code = '{}{}'.format(image_id, code[len(code)-6:])
 
-            watched_data = self.network.get_html(url=url, post=post)
-
-            if not watched_data:
-                watched_data = []
+            watched_data = self.obtain_watched(image_id)
 
             serial_status = ''
             if '<div class="status">' in html: #and not atl_names:
@@ -1562,7 +1631,7 @@ class Lostfilm:
             
             info = self.create_info_data(
                 serial_id=self.params['id'],
-                se_code=self.params['param'],
+                se_code=code,
                 status = serial_status
                 )
 
@@ -1588,7 +1657,7 @@ class Lostfilm:
                         if not episode_title:
                             continue
 
-                        is_watched = True if se_code in watched_data else False
+                        is_watched = se_code in watched_data
                         
                         p = int((float(i+1) / len(data_array)) * 100)
 
@@ -1606,6 +1675,7 @@ class Lostfilm:
 
                             
                             info['se_code'] = se_code
+                            info['playcount'] = 1 if is_watched else 0
 
                             self.context_menu = [
                                 ('Обновить описание', 'Container.Update("plugin://plugin.niv.lostfilm/?mode=update_serial&id={}&ismovie={}")'.format(self.params['id'], False)),

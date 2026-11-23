@@ -68,7 +68,7 @@ else:
     proxy_data = {'https': 'http://185.85.121.12:1088'}
 #========================#========================#========================#
 from network import WebTools
-net = WebTools(proxy_data=proxy_data)
+net = WebTools(proxy_data=proxy_data, base_url=site_url)
 del WebTools
 #========================#========================#========================#
 def create_source():

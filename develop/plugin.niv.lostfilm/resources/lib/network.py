@@ -45,12 +45,19 @@ def get_web(url, post=None, bytes=False):
         return False
 
 class WebTools:
-    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None):
+    def __init__(self, auth_usage=False, auth_status=False, proxy_data=None, base_url=None):
+        if not base_url:
+            base_url = 'https://www.lostfilm.tv/'
+
+        if not base_url.endswith('/'):
+            base_url = '{}/'.format(base_url)
+
+        self.base_url = base_url
         self.headers = {
                     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'Origin':'https://www.lostfilm.tv/',
-                    'Referer': 'https://www.lostfilm.tv/'
+                    'Origin': base_url.rstrip('/'),
+                    'Referer': base_url
                     }
         
         self.auth_usage = auth_usage

@@ -102,7 +102,7 @@ def create_tvshowdetails(serial_id):
         serial_info = tvshow_info
 
     tvshow_nfo = os.path.join(serial_dir, 'tvshow.nfo')
-    file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/shmoster_s1.jpg'.format(serial_info['image_id'])
+    file_thumb = '{}Static/Images/{}/Posters/shmoster_s1.jpg'.format(site_url, serial_info['image_id'])
 
     tvshow = ET.Element('tvshow')
     ET.SubElement(tvshow, 'title').text = serial_info['title_ru']
@@ -110,14 +110,13 @@ def create_tvshowdetails(serial_id):
     ET.SubElement(tvshow, 'genre').text = serial_info['genre']
     ET.SubElement(tvshow, 'premiered').text = serial_info['premiered']
     ET.SubElement(tvshow, 'studio').text = serial_info['studio']
+    ET.SubElement(tvshow, 'thumb').text = file_thumb
 
     for actor_node in serial_info['actors']:
         actor = ET.SubElement(tvshow, 'actor')
         ET.SubElement(actor, 'name').text = actor_node['name']
         ET.SubElement(actor, 'role').text = actor_node['role']
         ET.SubElement(actor, 'thumb').text = actor_node['thumb']
-
-        ET.SubElement(tvshow, 'thumb').text = file_thumb
 
     etree = ET.ElementTree(tvshow)
     etree.write(tvshow_nfo, encoding='utf-8', xml_declaration=True)
@@ -165,7 +164,7 @@ def create_seriesdetails(serial_id):
                 continue
                             
             file_name = '{0}.s{1:>02}.e{2:>02}'.format(serial_id, season, episode)
-            file_thumb = 'https://static.lostfilm.top/Images/{}/Posters/e_{}_{}.jpg'.format(serial_info['image_id'], season, episode)
+            file_thumb = '{}Static/Images/{}/Posters/e_{}_{}.jpg'.format(site_url, serial_info['image_id'], season, episode)
 
             episodedetails = ET.Element('episodedetails')
             ET.SubElement(episodedetails, 'title').text = episode_title
